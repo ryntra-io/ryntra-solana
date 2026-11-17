@@ -5,7 +5,7 @@ import { cityLine, startersFor, moveOf, type Details } from '@/city/lib/assistan
 import { QUESTION_MAX } from '@/city/lib/assistant/ask';
 import { useAssistant } from '@/city/lib/assistant/store';
 import { useCity } from '@/city/lib/city/store';
-import { bookNow, cityDoors, contextNow, gatesNow, withCoinOnScreen } from '@/city/lib/command/doors';
+import { bookNow, cityDoors, contextNow, gatesNow, ladderAskOf, withCoinOnScreen } from '@/city/lib/command/doors';
 import { toggleCommand, useCommand } from '@/city/lib/command/store';
 import { dateText, useWords, type TextKey } from '@/city/lib/i18n/dict';
 import { ONE_SENTENCE_OPEN } from '@/city/lib/instruct/flag';
@@ -165,6 +165,14 @@ function Panel() {
       setText('');
       useAssistant.getState().hide();
       cityDoors.openDollar(saver);
+      return;
+    }
+    // «Buy BONK cheaper», «sell half at 2x» said to Ryntra opens the coin's window with its ladder filled in.
+    const ladder = ladderAskOf(q);
+    if (ladder && fit({ kind: 'ladder', ask: ladder }, gates)) {
+      setText('');
+      useAssistant.getState().hide();
+      cityDoors.openLadder(ladder);
       return;
     }
     const ask = gates.agentTrade || gates.agentLaunch ? readAsk(q, bookNow()) : null;

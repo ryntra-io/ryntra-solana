@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { TERMINAL_MODE } from "../terminal/shell/flag.ts";
 import { PUBLIC_LOCALE_CODES } from "./i18n/locales.ts";
 import { HOMEPAGE_CATEGORY, HOMEPAGE_COPY } from "../lib/site/homepage-copy.ts";
 import { publicUrl } from "../lib/product/app-address.ts";
@@ -272,8 +273,39 @@ export const CITY_WORDS = {
   description: "Say it, your AI agent does the rest: launch coins, trade and earn on Solana on autopilot. Watch your tower rise in a living 3D city.",
 } as const;
 
-export function buildCityMetadata(): Metadata {
-  return buildMissionControlMetadata(CITY_WORDS, "/", `/opengraph-image?v=${cityCardVersion()}`, CITY_CARD_SIZE);
+export function buildCityMetadata(path = "/"): Metadata {
+  return buildMissionControlMetadata(path === "/" ? CITY_WORDS : CITY_HOME_WORDS, path, `/opengraph-image?v=${cityCardVersion()}`, CITY_CARD_SIZE);
+}
+
+/** The city at its own address, `/city`, once the terminal is the home page. */
+export const CITY_HOME_WORDS = {
+  title: "Ryntra City — the Solana market as a living 3D city",
+  description: "Every coin a tower, every launch a new building. Walk the Solana market at night and trade it from your own wallet.",
+} as const;
+
+/**
+ * The terminal, the home page at `/` once its switch is open: the line of the first rule — say
+ * it, the agent does the rest — and the terminal's own card (a frame of the live Market, the mark and the line).
+ */
+export const TERMINAL_WORDS = {
+  title: "Ryntra — your AI agent on Solana",
+  description: "Say it, your AI agent does the rest: trade, launch coins and earn on Solana in one pro terminal. Your wallet, your keys.",
+} as const;
+
+/** A section of the terminal, in a tab and a link's preview: its name before the brand. */
+export function buildTerminalMetadata(section?: Readonly<{ name: string; path: string; index?: boolean }>): Metadata {
+  const base = buildMissionControlMetadata(TERMINAL_WORDS, section?.path ?? "/", `/opengraph-image?v=${cityCardVersion()}`, CITY_CARD_SIZE);
+  /* A stand is never offered to the index; the build people use offers its sections, a person's own excepted. */
+  const offered = LANDING_IS_LIVE && TERMINAL_MODE === "open";
+  if (!section) return { ...base, robots: { index: offered, follow: offered } };
+  const title = `${section.name} · Ryntra`;
+  return {
+    ...base,
+    title: { absolute: title },
+    robots: { index: offered && section.index !== false, follow: offered },
+    openGraph: { ...base.openGraph, title },
+    twitter: { ...base.twitter, title },
+  };
 }
 
 /**

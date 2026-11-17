@@ -1,0 +1,64 @@
+[
+ {
+  "obligationAddress": "DTC2FQPScaJ5Lv1sv5S2fLhQ8Wwc3grow464redr4QYQ",
+  "humanTag": "Vanilla",
+  "obligationTag": 0,
+  "state": {
+   "owner": "6mch5rCLBtZ9DCnM2mx18Ud1XXhXAip7otw9LkrTXwTD",
+   "lendingMarket": "7u3HeHxYDLhnCoErrtycNokbQYbWGzLs6JSDqGAv5PfF",
+   "deposits": [
+    {
+     "depositReserve": "7mZ7oeb8mDvWrD63TvgzPFa9daJs7ByBgE2yRXMozBET",
+     "depositedAmount": "9500000000",
+     "marketValueSf": "1642913144064756940800"
+    },
+    {
+     "depositReserve": "CyKwbPYACyfVaFbBtvacuFK63XTwVFpR7MiJwACKnV38",
+     "depositedAmount": "1000",
+     "marketValueSf": "86469112845513523200"
+    },
+    {
+     "depositReserve": "11111111111111111111111111111111",
+     "depositedAmount": "0",
+     "marketValueSf": "0"
+    }
+   ],
+   "borrows": [
+    {
+     "borrowReserve": "7BWj5zG1BVG78dcuLCw6tEKia3FY3VKZq7EN9cY3tJQD",
+     "borrowedAmountSf": "461168601842738790400000000",
+     "marketValueSf": "461214718702923087872"
+    },
+    {
+     "borrowReserve": "11111111111111111111111111111111",
+     "borrowedAmountSf": "0",
+     "marketValueSf": "0"
+    }
+   ]
+  },
+  "refreshedStats": {
+   "userTotalDeposit": 1500.0,
+   "userTotalBorrow": 400.04,
+   "netAccountValue": 1099.96,
+   "loanToValue": 0.2667
+  }
+ },
+ {
+  "obligationAddress": "DjUvYurpWTuWbmk3okbistDxoPH4mxPsHk6Yi1yx4KV4",
+  "humanTag": "Vanilla",
+  "obligationTag": 0,
+  "state": {
+   "owner": "6mch5rCLBtZ9DCnM2mx18Ud1XXhXAip7otw9LkrTXwTD",
+   "lendingMarket": "7u3HeHxYDLhnCoErrtycNokbQYbWGzLs6JSDqGAv5PfF",
+   "deposits": [
+    {
+     "depositReserve": "7BWj5zG1BVG78dcuLCw6tEKia3FY3VKZq7EN9cY3tJQD",
+     "depositedAmount": "50000000",
+     "marketValueSf": "58222535982645772288"
+    }
+   ],
+   "borrows": []
+  },
+  "refreshedStats": {}
+ }
+]

@@ -6,10 +6,12 @@ import { shrinkPicture } from '@/lib/launch/picture.client';
 import type { LaunchPresetView } from '@/lib/api/v1/contract';
 import { isPhoneUserAgent, PHANTOM_DOWNLOAD_URL, phantomBrowseUrl } from '@/lib/solana/open-in-wallet';
 import { openBerth } from '@/city/lib/launch/berth-store';
-import { landed, launchEngine, launchPrep, launchWallet, useLaunch } from '@/city/lib/launch/district';
+import { landed, launchEngine, launchPoolEngine, launchPrep, launchWallet, poolLanded, useLaunch } from '@/city/lib/launch/district';
 import { failureWords, pictureRefused, readRefusal, runLaunch, type LaunchFailure, type Phase } from '@/city/lib/launch/flow';
 import { runEarlyAccess } from '@/city/lib/launch/early-flow';
 import { earlyDoorOpen, earlyRules } from '@/city/lib/launch/early';
+import { POOL_FEE, POOL_LADDER, POOL_SPLIT, poolDoorOpen, poolOpensAt, usePool, feeText } from '@/city/lib/launch/pool';
+import { POOL_HALF_WAY, runPoolLaunch } from '@/city/lib/launch/pool-flow';
 import { othersOf, shareOpen, shareProblem, sharesOf, type ShareRow } from '@/city/lib/launch/share';
 import { openMoney } from '@/city/lib/money/open';
 import { REFUSAL_WORDS } from '@/city/lib/launch/words';
@@ -24,7 +26,9 @@ import { useWords, type Same } from '@/city/lib/i18n/dict';
 import { BerthGlyph } from '../berth/glyphs';
 import { tickerAfterName } from '@/city/lib/launch/ticker';
 import { LaunchPreview } from './LaunchPreview';
-import { EarlyDoor, EarlyFacts, OpenedCard, ShareDoor } from './LaunchDoors';
+import { EarlyDoor, EarlyFacts, OpenedCard, ShareDoor, clock } from './LaunchDoors';
+import { PoolCost, PoolDoor, PoolFacts, PooledCard } from './PoolDoor';
+import { POOL_WORDS } from './pool-words';
 import s from './launch.module.css';
 import { LAUNCH } from './words';
 
@@ -256,7 +260,11 @@ function ReviewStep({ onClose }: { onClose: () => void }) {
   const earlySwitch = useLaunch((st) => st.earlySwitch);
   const shareSwitch = useLaunch((st) => st.shareSwitch);
   const w = useWords(LAUNCH);
+  const pw = useWords(POOL_WORDS);
   const lang = useLang();
+  const poolChoice = usePool((st) => st.choice);
+  const poolSwitch = usePool((st) => st.switchOpen);
+  const setPoolChoice = usePool((st) => st.setChoice);
   const setConnection = useLaunch((st) => st.setConnection);
   const [options, setOptions] = useState<readonly WalletOption[] | null>(null);
   const [connecting, setConnecting] = useState<string | null>(null);
@@ -274,14 +282,43 @@ function ReviewStep({ onClose }: { onClose: () => void }) {
   const earlyDoor = earlyDoorOpen(network, earlyBounds, earlySwitch);
   const earlyOn = earlyDoor && early !== null && earlyBounds !== null;
   const earlyPreview = useMemo(() => (earlyOn ? earlyRules(early, earlyBounds, Math.floor(Date.now() / 1000)) : null), [earlyOn, early, earlyBounds]);
-  const shareDoor = shareOpen(network, undefined, shareSwitch) && !earlyOn;
+  /* The third door. A launch into a pool is its own launch too — no curve —, so with it on the curve's rows and the other doors give way. */
+  const poolDoor = poolDoorOpen(network, poolSwitch) && !earlyOn;
+  const poolOn = poolDoor && poolChoice !== null;
+  const shareDoor = shareOpen(network, undefined, shareSwitch) && !earlyOn && !poolOn;
   const shared = shareDoor ? shareRows : NO_SHARES;
   const splitProblem = shareProblem(shared, connection?.address ?? null);
   const splitReady = shared.length > 0 && splitProblem === null;
   const rows = reviewRows(preset, network, cost, halo);
   const line = rows.find((row) => row.id === 'line')!;
-  const lineParts = earlyOn ? [w.earlyLineOne, w.earlyLineLocked, w.earlyLineFree, line.lines[line.lines.length - 1]!] : line.lines;
-  const detailRows = earlyOn
+  const mine = feeText(POOL_SPLIT.creatorBps);
+  const lineParts = poolOn
+    ? [
+        pw.lineLive(clock(poolOpensAt(poolChoice, Math.floor(Date.now() / 1000)))),
+        ...(poolChoice.ladder ? [pw.lineLockedPart(feeText(10_000 - POOL_LADDER.shareBps)), pw.lineLadder(feeText(POOL_LADDER.shareBps), `×${POOL_LADDER.near}`, `×${POOL_LADDER.far}`)] : [pw.lineLocked]),
+        pw.lineShare(mine),
+        line.lines[line.lines.length - 1]!,
+      ]
+    : earlyOn
+      ? [w.earlyLineOne, w.earlyLineLocked, w.earlyLineFree, line.lines[line.lines.length - 1]!]
+      : line.lines;
+  const detailRows = poolOn
+    ? [
+        {
+          id: 'pool',
+          label: pw.details,
+          lines: [
+            pw.howPool,
+            pw.howFee(feeText(POOL_FEE.startBps), feeText(POOL_FEE.endBps), `×${POOL_FEE.priceMultiple}`),
+            poolChoice.ladder ? pw.howLockPart(feeText(10_000 - POOL_LADDER.shareBps)) : pw.howLock,
+            pw.howShare(mine, feeText(POOL_SPLIT.ryntraBps)),
+            ...(poolChoice.ladder ? [pw.howLadder(feeText(POOL_LADDER.shareBps), `×${POOL_LADDER.near}`, `×${POOL_LADDER.far}`)] : []),
+            pw.howSteps,
+            poolChoice.ladder ? pw.howRentLadder : pw.howRent,
+          ],
+        },
+      ]
+    : earlyOn
     ? [{ id: 'early', label: w.earlyDetails, lines: [w.earlyHow, w.earlyPublic, w.earlyKeeps] }]
     : [...rows.filter((row) => row.id !== 'line' && row.id !== 'network'), ...(splitReady ? [{ id: 'share', label: w.shareDetails, lines: [w.shareFixed, w.shareClaims] }] : [])];
 
@@ -291,11 +328,11 @@ function ReviewStep({ onClose }: { onClose: () => void }) {
   }, [fields]);
   const simShares = useMemo(() => (connection && splitReady ? sharesOf(connection.address, shared) : null), [connection, splitReady, shared]);
   useEffect(() => {
-    if (!fields || !connection || !storedOk || working || earlyOn) return;
+    if (!fields || !connection || !storedOk || working || earlyOn || poolOn) return;
     /* While the split is being typed the engine is not asked: a half-typed split would cost the creator's hourly builds. */
     if (shared.length > 0 && !simShares) return;
     void launchPrep().simulate({ fields, creator: connection.address, preset, network, switchOpen: stub || undefined, shares: simShares });
-  }, [fields, connection, storedOk, working, preset, network, stub, earlyOn, shared.length, simShares]);
+  }, [fields, connection, storedOk, working, preset, network, stub, earlyOn, poolOn, shared.length, simShares]);
 
   /* A wallet this browser connected before is restored without a prompt. */
   useEffect(() => {
@@ -346,6 +383,26 @@ function ReviewStep({ onClose }: { onClose: () => void }) {
     try {
       const wallet = await launchWallet();
       const prep = launchPrep();
+      if (poolOn) {
+        /* A launch that stopped between its steps is taken up at the step the chain shows — never minted again. */
+        const half = phase?.step === 'failed' && phase.failure.code === POOL_HALF_WAY ? phase.failure.token : null;
+        const result = await runPoolLaunch({
+          engine: launchEngine(),
+          pool: await launchPoolEngine(),
+          signer: wallet.signer(connection),
+          fields: { name: check.clean.name, symbol: check.clean.symbol, picture: draft.picture },
+          network,
+          choice: poolChoice,
+          resume: half,
+          onPhase: setPhase,
+          switchOpen: stub || undefined,
+          poolSwitch,
+          poolWord: stub || undefined,
+          stored: half ? null : prep.store(fields),
+        });
+        if (result.step === 'pooled') poolLanded(result.pooled, connection.address);
+        return;
+      }
       if (earlyOn && earlyBounds) {
         const choice = early;
         await runEarlyAccess({
@@ -399,15 +456,18 @@ function ReviewStep({ onClose }: { onClose: () => void }) {
         <div className={s.headTitle}>
           <h2 className={`${s.display} ${s.title}`}>${symbol}</h2>
           <div className={s.headName}>
-            {earlyOn ? check.clean.name : `${check.clean.name} · ${preset.name[lang] ?? preset.name.en}`}
+            {earlyOn || poolOn ? check.clean.name : `${check.clean.name} · ${preset.name[lang] ?? preset.name.en}`}
           </div>
         </div>
       </div>
       {/* Early access is its own creation: the curve's simulated cost is not its cost, so the line says the network's fee alone. */}
-      <CostLine preset={preset} simulated={!earlyOn} />
-      {!earlyOn && (halo ? <HaloRow preset={preset} /> : <ShieldSwitch disabled={working} />)}
-      {earlyDoor && <EarlyDoor disabled={working} />}
-      {earlyOn && earlyPreview ? (
+      {poolOn ? <PoolCost /> : <CostLine preset={preset} simulated={!earlyOn} />}
+      {!earlyOn && !poolOn && (halo ? <HaloRow preset={preset} /> : <ShieldSwitch disabled={working} />)}
+      {poolDoor && <PoolDoor disabled={working} />}
+      {earlyDoor && !poolOn && <EarlyDoor disabled={working} />}
+      {poolOn ? (
+        <PoolFacts choice={poolChoice} />
+      ) : earlyOn && earlyPreview ? (
         <EarlyFacts rules={earlyPreview} />
       ) : (
         <div className={s.facts}>
@@ -465,6 +525,18 @@ function ReviewStep({ onClose }: { onClose: () => void }) {
             setDraft({ name: '', symbol: '', picture: null });
             setShares([]);
             setEarly(null);
+            setPhase(null);
+            setStep('form');
+            onClose();
+          }}
+        />
+      ) : phase?.step === 'pooled' ? (
+        <PooledCard
+          pooled={phase.pooled}
+          onClose={() => {
+            launchPrep().reset();
+            setDraft({ name: '', symbol: '', picture: null });
+            setPoolChoice(null);
             setPhase(null);
             setStep('form');
             onClose();
@@ -592,11 +664,16 @@ export function WalletList({ options, connecting, onPick, back }: { options: rea
 type Ways = Readonly<{ onRetry: () => void; onEdit: () => void; onPicture: () => void; onTopUp: () => void; onClose: () => void }>;
 
 /** Where the launch is: one line while it runs; when it stopped, what happened, whether money moved, and one way on. */
-function Progress({ phase, wallet, ...ways }: { phase: Exclude<Phase, { step: 'done' } | { step: 'opened' }>; wallet: string | null } & Ways) {
+function Progress({ phase, wallet, ...ways }: { phase: Exclude<Phase, { step: 'done' } | { step: 'opened' } | { step: 'pooled' }>; wallet: string | null } & Ways) {
   const w = useWords(LAUNCH);
+  const pw = useWords(POOL_WORDS);
   if (phase.step === 'failed') return <Refused failure={phase.failure} wallet={wallet} ways={ways} />;
-  const words =
-    phase.step === 'upload'
+  /* A launch into a pool is three approvals — the step's number and its name, in the creator's words. */
+  const stage = phase.step === 'sign' || phase.step === 'send' ? (phase.pool?.stage ?? null) : null;
+  const stageName = stage === 'COIN' ? pw.stepCoin : stage === 'POOL' ? pw.stepPool : pw.stepSupply;
+  const words = stage
+    ? [pw.stepOf(stage === 'COIN' ? 1 : stage === 'POOL' ? 2 : 3, 3), phase.step === 'sign' ? `${pw.signStep(stageName)}${stage === 'POOL' && phase.pool?.opensAt ? ` · ${pw.setLine(clock(phase.pool.opensAt))}` : ''}` : pw.sendingStep(stageName)]
+    : phase.step === 'upload'
       ? [w.saving, w.savingLine]
       : phase.step === 'build'
         ? [w.building, w.buildingLine]

@@ -62,7 +62,7 @@ import {
   serviceFeeUnconfigured,
   type RyntraServiceFee,
 } from "../swap/service-fee.ts";
-import { RELAY_API_ORIGIN, RELAY_CHAIN_IDS } from "./chains.ts";
+import { RELAY_API_ORIGIN, RELAY_CHAIN_IDS, RELAY_ORDER_CHAIN_NAMES } from "./chains.ts";
 import { relayJsonHeaders } from "./http.ts";
 
 export const RELAY_QUOTE_PATH = "/quote";
@@ -406,7 +406,7 @@ function objectAt(value: unknown, key: string): Record<string, unknown> | null {
  * not the address the person entered is refused, as the deposit-address flow
  * already refuses it (`deposit-address.ts`). The same for both currencies on
  * both chains, an input above the amount asked, and a refund to anyone but the
- * sending wallet.
+ * sending wallet on the source chain or the recipient on the destination chain.
  */
 export function relayQuoteMatchesRequest(
   quote: RelayRawQuote,
@@ -431,15 +431,29 @@ export function relayQuoteMatchesRequest(
   if (BigInt(input.amount) > BigInt(request.amountRaw)) {
     return refuse("amount", "Relay's quote spends more than the amount you entered; nothing was built.");
   }
-  /* Where a failed fill pays back. Absent is Relay's default — the sender; present, it must be the sender. */
+  /* Where a failed fill pays back. Absent is Relay's default. Present, every
+     refund names one side of this order and the address the person gave for
+     that side: on the source chain the sending wallet, on the destination
+     chain the recipient checked above. Relay's live orders carry both since at
+     least 2026-11-16 — the second in the destination currency, and
+     neither `refundTo` nor `refundOnOrigin` removes it. Any other chain, or any
+     other address on either side, is refused. */
   const orderInputs = objectAt(objectAt(objectAt(quote, "protocol"), "v2"), "orderData")?.inputs;
   const refunds = (Array.isArray(orderInputs) ? orderInputs : []).flatMap((entry) => {
     const list = entry && typeof entry === "object" ? (entry as { refunds?: unknown }).refunds : null;
     return Array.isArray(list) ? list : [];
   });
-  const refundRecipient = (refund: unknown) => (refund && typeof refund === "object" ? (refund as { recipient?: unknown }).recipient : null);
-  if (refunds.some((refund) => !sameAddress(request.fromNetwork, refundRecipient(refund), request.user))) {
-    return refuse("refund", "Relay's quote refunds to an address other than your wallet; nothing was built.");
+  const originChain = RELAY_ORDER_CHAIN_NAMES[request.fromNetwork];
+  const destinationChain = RELAY_ORDER_CHAIN_NAMES[request.toNetwork];
+  const refundGoesToThePerson = (refund: unknown) => {
+    if (!refund || typeof refund !== "object") return false;
+    const { chainId, recipient } = refund as { chainId?: unknown; recipient?: unknown };
+    if (originChain !== undefined && chainId === originChain) return sameAddress(request.fromNetwork, recipient, request.user);
+    if (destinationChain !== undefined && chainId === destinationChain) return sameAddress(request.toNetwork, recipient, request.recipient);
+    return false;
+  };
+  if (!refunds.every(refundGoesToThePerson)) {
+    return refuse("refund", "Relay's quote refunds to an address other than your wallet or the recipient you entered; nothing was built.");
   }
   return { ok: true };
 }

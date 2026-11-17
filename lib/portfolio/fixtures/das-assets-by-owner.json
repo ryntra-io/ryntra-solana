@@ -1,0 +1,61 @@
+{
+  "jsonrpc": "2.0",
+  "id": "portfolio-1",
+  "result": {
+    "total": 5,
+    "limit": 1000,
+    "page": 1,
+    "items": [
+      {
+        "interface": "FungibleToken",
+        "id": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "content": { "metadata": { "name": "USD Coin", "symbol": "USDC" } },
+        "token_info": {
+          "symbol": "USDC",
+          "balance": 125500000,
+          "supply": 9000000000000000,
+          "decimals": 6,
+          "token_program": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+          "associated_token_address": "33w1PyANFmgmc4VmK1CpGg6AGLPZKFtiMUG2o6bQxECG",
+          "price_info": { "price_per_token": 1.0001, "total_price": 125.512, "currency": "USDC" }
+        }
+      },
+      {
+        "interface": "FungibleToken",
+        "id": "J1toso1uCk3RLmjorhTtrVwY9HJ7X8V9yYac6Y7kGCPn",
+        "content": { "metadata": { "name": "Jito Staked SOL", "symbol": "JitoSOL" } },
+        "token_info": {
+          "symbol": "JitoSOL",
+          "balance": 2000000000,
+          "decimals": 9,
+          "token_program": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+          "associated_token_address": "4B9pzCvfFJFZEYThFM8zPnNz6iUCTCukj2cUvaEtLJN2"
+        }
+      },
+      {
+        "interface": "FungibleToken",
+        "id": "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263",
+        "content": { "metadata": { "name": "Bonk", "symbol": "Bonk" } },
+        "token_info": {
+          "symbol": "Bonk",
+          "balance": 9876543210987654321,
+          "decimals": 5,
+          "token_program": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+          "associated_token_address": "5Esu2AZmNhLxcBqPGMEPWL3ppM1UhRZLgyvi4G6LwVw"
+        }
+      },
+      {
+        "interface": "FungibleAsset",
+        "id": "FWhtSf4vXhRXDDhdk2QwtYeGLXqu5jMCrXNU11iMZ42d",
+        "content": { "metadata": { "name": "Position NFT" } },
+        "token_info": { "balance": 1, "decimals": 0, "token_program": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb" }
+      },
+      {
+        "interface": "V1_NFT",
+        "id": "4e2pvH9nqStwmK5fiPB8gygkbEMpkdDSASksLzjfbgMk",
+        "content": { "metadata": { "name": "An airdropped picture" } }
+      }
+    ],
+    "nativeBalance": { "lamports": 3250000000, "price_per_sol": 142.5, "total_price": 463.125 }
+  }
+}

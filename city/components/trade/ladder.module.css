@@ -1,0 +1,232 @@
+/* «Buy cheaper», «sell higher» in the coin's window. The ticket's own parts — its tabs, its amount, its
+   slider, its one amber action — are the trade card's (`trade.module.css`); here is only what the panel adds. */
+
+.line {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 44px;
+  margin-top: 10px;
+  padding: 0 12px;
+  border: 0;
+  font-size: var(--type-small);
+  font-weight: 700;
+  color: var(--ice);
+  text-align: left;
+  background: rgba(255, 104, 28, 0.12);
+  box-shadow: inset 0 0 0 1px rgba(255, 104, 28, 0.34);
+  clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+}
+
+.line:hover {
+  background: rgba(255, 104, 28, 0.22);
+}
+
+.line svg {
+  width: 18px;
+  height: 18px;
+  flex: none;
+  color: #ff9a5c;
+}
+
+.lineWord {
+  flex: 0 1 auto;
+  min-width: 0;
+  font-size: var(--type-caption);
+  letter-spacing: 0.1em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.lineMore {
+  flex: none;
+  margin-left: auto;
+  color: var(--text-dim);
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-variant-numeric: tabular-nums;
+}
+
+.panel {
+  /* Unfolded, it comes into view under the window's head, not under it. */
+  scroll-margin-top: 12px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(238, 241, 255, 0.08);
+  min-width: 0;
+}
+
+/* The slider's fill and thumb take the brand's orange from the block they stand in. */
+.accent {
+  --accent: #ff681c;
+}
+
+.reach {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin-top: 14px;
+  min-width: 0;
+}
+
+.reachFigure {
+  flex: none;
+  font-size: clamp(34px, 10vw, 44px);
+  line-height: 1;
+  color: var(--ice);
+  font-variant-numeric: tabular-nums;
+}
+
+.sub {
+  min-width: 0;
+  font-size: 14px;
+  line-height: 1.35;
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.get {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  margin-top: 12px;
+  min-width: 0;
+}
+
+.getFigure {
+  font-size: 22px;
+  line-height: 1.1;
+  color: var(--ice);
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.agent {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  margin-top: 6px;
+  font-size: 15px;
+  color: var(--ice);
+  cursor: pointer;
+}
+
+.agent input {
+  width: 20px;
+  height: 20px;
+  flex: none;
+  accent-color: #ff681c;
+}
+
+.done {
+  display: grid;
+  gap: 6px;
+  padding: 6px 0 2px;
+}
+
+.doneTitle {
+  font-size: 24px;
+  line-height: 1.1;
+  color: var(--mint);
+}
+
+.orders {
+  display: grid;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.order {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  background: rgba(238, 241, 255, 0.05);
+  box-shadow: inset 0 0 0 1px rgba(238, 241, 255, 0.08);
+  clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+}
+
+.orderHead {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  min-width: 0;
+}
+
+.orderWord {
+  font-size: 16px;
+  color: var(--ice);
+}
+
+.filled {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+}
+
+.filledTitle {
+  font-size: 15px;
+  color: var(--mint);
+}
+
+.filledPrice {
+  font-size: 15px;
+  color: var(--ice);
+  font-variant-numeric: tabular-nums;
+}
+
+.orderActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.take,
+.quiet {
+  min-height: 44px;
+  padding: 0 16px;
+  border: 0;
+  font-size: 14px;
+  white-space: nowrap;
+  clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+}
+
+.take {
+  color: var(--ink);
+  background: linear-gradient(100deg, var(--warm), var(--amber));
+}
+
+.quiet {
+  color: var(--ice);
+  background: rgba(255, 255, 255, 0.07);
+  box-shadow: inset 0 0 0 1px rgba(238, 241, 255, 0.1);
+}
+
+.panel > .quiet {
+  width: 100%;
+  margin-top: 14px;
+}
+
+.take:disabled,
+.quiet:disabled {
+  cursor: default;
+  color: var(--text-dim);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+/* The two sides say a whole phrase each: on a phone they keep one line. */
+@media (max-width: 480px) {
+  .panel [role='tab'] {
+    letter-spacing: 0.04em;
+    font-size: 12px;
+    padding: 0 6px;
+  }
+}

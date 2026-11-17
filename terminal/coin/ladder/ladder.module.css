@@ -1,0 +1,144 @@
+/* The ticket's Limit tab: the distance from the price, the four tiles, the orders under the chart. Measures from the
+   approved design (docs/terminal/design/2026-11-16/CoinLimit.dc.html); colours and type are the terminal's tokens. */
+
+.reach {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.reachHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+}
+
+.reachValue {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+}
+
+.reachPrice {
+  font-size: var(--type-caption);
+  color: var(--dim);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* The per cent: amber as the approved design writes it, typed in place. */
+.percent {
+  display: inline-flex;
+  align-items: baseline;
+  font: 700 var(--type-title) / 1 var(--display);
+  color: var(--amber);
+  font-variant-numeric: tabular-nums;
+}
+
+.percent[data-side='sell'] {
+  color: var(--mint);
+}
+
+.percentInput {
+  min-width: 1ch;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  text-align: right;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px dashed transparent;
+  outline: none;
+}
+
+.percentInput:hover,
+.percentInput:focus-visible {
+  border-bottom-color: currentColor;
+}
+
+.tiles {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.tile {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  padding: 12px 14px;
+  background: var(--well);
+  border: 1px solid var(--line);
+}
+
+.tile > :last-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.count {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.steps {
+  display: inline-flex;
+  gap: 4px;
+}
+
+/* A quiet square step beside the count: big enough for a finger, never louder than the figure. */
+.step {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  font: 600 var(--type-base) / 1 var(--ui);
+  color: var(--lilac);
+  background: transparent;
+  border: 1px solid var(--glass-edge);
+  border-radius: var(--r-ctl);
+}
+
+.step:hover:not(:disabled) {
+  color: var(--ice);
+  background: rgba(153, 69, 255, 0.18);
+}
+
+.step:disabled {
+  opacity: 0.35;
+}
+
+/* ── orders under the chart ───────────────────────────────────────────── */
+
+.orderName {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.orderSub {
+  font-size: var(--type-caption);
+  font-weight: 500;
+  color: var(--dim);
+}
+
+.acts {
+  display: inline-flex;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+@media (max-width: 767px) {
+  .tile {
+    padding: 10px 12px;
+  }
+}

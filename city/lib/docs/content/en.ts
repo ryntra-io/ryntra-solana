@@ -12,7 +12,7 @@ export const EN: Sections = {
   start: ({ f, say }) => ({
     lead: 'Ryntra is your AI agent on Solana, and the whole market is a live 3D city. In a few minutes you can connect a wallet and make your first trade.',
     related: ['city', 'trade', 'money'],
-    action: { label: 'Enter the city', href: '/' },
+    action: { label: 'Enter the city', href: '/city' },
     parts: [
       part(
         'what',
@@ -67,7 +67,7 @@ export const EN: Sections = {
   city: ({ say, f }) => ({
     lead: 'The whole Solana market, as one skyline you can read at a glance. Size is what a coin is worth, light is what is moving right now.',
     related: ['trade', 'launch', 'agent'],
-    action: { label: 'Enter the city', href: '/' },
+    action: { label: 'Enter the city', href: '/city' },
     parts: [
       part(
         'what',
@@ -494,7 +494,7 @@ export const EN: Sections = {
   guard: () => ({
     lead: 'Before you sign something you do not fully trust, paste it here. In one line you read what it would do to your wallet.',
     related: ['security', 'agent', 'trade'],
-    action: { label: 'Enter the city', href: '/' },
+    action: { label: 'Enter the city', href: '/city' },
     parts: [
       part(
         'what',
@@ -656,7 +656,7 @@ export const EN: Sections = {
     return {
       lead: 'Every fee Ryntra takes, in one place. You see the one that applies before you sign, in your own trade.',
       related: ['trade', 'launch', 'money'],
-      action: { label: 'Enter the city', href: '/' },
+      action: { label: 'Enter the city', href: '/city' },
       parts: [
         part('what', WHAT, p('Ryntra earns a fee on trades and launches. There is no subscription, and nothing to pay for browsing or for holding coins. Network costs, price movement and other teams’ fees are not Ryntra’s; they are shown apart before you sign.')),
         part(
@@ -728,7 +728,7 @@ export const EN: Sections = {
   security: () => ({
     lead: 'Your money stays in your wallet and your keys stay with you. Here is what Ryntra can and cannot do, and what is still your own to watch.',
     related: ['guard', 'agent', 'help'],
-    action: { label: 'Enter the city', href: '/' },
+    action: { label: 'Enter the city', href: '/city' },
     parts: [
       part(
         'what',

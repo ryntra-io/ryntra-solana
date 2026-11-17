@@ -1,0 +1,11 @@
+/* The Market's page: the hero and the depth have their own sheets (home.module.css, depth.module.css). */
+
+/* The page's heading for the reader and the index, not the eye. */
+.hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}

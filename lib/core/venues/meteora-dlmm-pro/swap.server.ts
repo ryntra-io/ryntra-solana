@@ -85,6 +85,8 @@ export type DlmmProQuote = Readonly<{
   priceBefore: number;
   priceAfter: number;
   tickAfter: number;
+  /** The square-root price the quote ends at, Q64.64 — the program's own number, for a build that follows the swap. */
+  sqrtPriceAfterX64: string;
   /** Whether Ryntra's referral account is in the swap. */
   referral: boolean;
   /** The walk the swap is built with. */
@@ -175,6 +177,7 @@ export function createDlmmProSwap(context: DlmmProContext) {
       priceBefore: priceOfSqrtX64(big(pool.sqrtPrice), decimalsX, decimalsY),
       priceAfter: priceOfSqrtX64(big(result.nextSqrtPrice), decimalsX, decimalsY),
       tickAfter: result.nextTickId,
+      sqrtPriceAfterX64: result.nextSqrtPrice.toString(),
       referral: referral !== null,
       tickArrays: answer.tickArrays.map((key) => key.toBase58()),
       bitmapExtension: answer.tickArrayBitmapExtension?.toBase58() ?? null,

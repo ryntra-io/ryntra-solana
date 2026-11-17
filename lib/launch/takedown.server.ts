@@ -28,7 +28,12 @@ async function addressesOf(deps: Readonly<{ store: GuardStore; cluster: string; 
   /* A launch with early access keeps its record apart (`launchEarlyAccess`): the same token, the same metadata — found there too (review 9.11). */
   const record: LaunchRow | null =
     (await deps.store.collection<LaunchRow>("launches").get(launchKey(deps.cluster, token))) ??
-    (await readEarlyAccessRecord(deps.store, deps.cluster, token).then((early) => (early ? { token: early.mint, metadataUri: early.metadataUri } : null)));
+    (await readEarlyAccessRecord(deps.store, deps.cluster, token).then((early) => (early ? { token: early.mint, metadataUri: early.metadataUri } : null))) ??
+    /* A launch straight into a pool keeps its record apart too (`launchDlmmPro`) — read by its key, so the moderation does not load the venue. */
+    (await deps.store
+      .collection<Readonly<{ mint: string; metadataUri: string }>>("launchDlmmPro")
+      .get(`${deps.cluster}:${token}`)
+      .then((pooled) => (pooled ? { token: pooled.mint, metadataUri: pooled.metadataUri } : null)));
   if (!record) return "NOT_FOUND";
   const metadata = new RegExp(`^${escape(deps.origin)}/api/launch/metadata/${SHA}$`).exec(record.metadataUri)?.[1];
   if (!metadata) return "NOT_OURS";

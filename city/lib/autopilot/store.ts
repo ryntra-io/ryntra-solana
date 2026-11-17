@@ -6,7 +6,9 @@ import type { Picture } from '../../../lib/launch/picture.client.ts';
 import { MANDATE_NET, MANDATE_PRESETS, useMandate, type MandateRecord } from '../bots/mandate.ts';
 import { useMine } from '../trade/mine-store.ts';
 import { useWallet } from '../trade/wallet.ts';
-import { launchOpenHere, useLaunch } from '../launch/district.ts';
+import { launchOpenHere, poolDoorHere, useLaunch } from '../launch/district.ts';
+import { poolChoiceOf, usePool } from '../launch/pool.ts';
+import { poolAskOf } from '../launch/pool-ask.ts';
 import { AUTOPILOT_NET } from './flag.ts';
 import { presetFor, proposal, type Proposal } from './plan.ts';
 import type { AgentAsk } from './read.ts';
@@ -327,6 +329,9 @@ export function launchProposal(): boolean {
   }
   const fields = { name: st.proposal.name, symbol: st.proposal.symbol, picture: st.picture };
   useLaunch.getState().setDraft(fields);
+  // A sentence that asked for a pool turns the pool's door on with the time and the pair it said.
+  const said = st.ask?.kind === 'launch' ? st.ask.said : '';
+  usePool.getState().setChoice(poolDoorHere() && poolAskOf(said, new Date()).asked ? poolChoiceOf(said, new Date()) : null);
   // The review hands the fields to the engine's store and simulates the launch itself.
   useLaunch.getState().setStep('review');
   useAutopilot.getState().close();

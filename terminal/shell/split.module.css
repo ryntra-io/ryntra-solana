@@ -1,0 +1,239 @@
+/* A screen with a side column (Split.tsx): the screen's own column, a strip that drags, the side column; on a
+   narrow desk the side column under the screen's; on a phone a sheet over the tab bar. Measures from the v2 design
+   (docs/terminal/design/2026-11-17/, «Розкладка»): the ticket 400 px on a 1440 window, wider on a wider one. The numbers
+   here are split-rules.ts's: SIDE_MIN 340, SIDE_WIDE 480, MAIN_MIN 480, GUTTER 16. */
+
+.split {
+  container-type: inline-size;
+  min-width: 0;
+}
+
+.grid {
+  /* The default follows the window: 22 % of it and 84 px is 400 at 1440, 506 → 480 at 1920. */
+  --side-w: clamp(380px, calc(22vw + 84px), 480px);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 16px max(340px, min(var(--side-w), calc(100% - 496px)));
+  align-items: start;
+}
+
+.main,
+.side {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+/* ── the strip between ─────────────────────────────────────────────────── */
+
+.gutter {
+  position: relative;
+  align-self: stretch;
+  min-height: 100%;
+}
+
+.handle {
+  position: absolute;
+  inset: 36px 0 0;
+  cursor: col-resize;
+  touch-action: none;
+  outline-offset: -2px;
+}
+
+/* A hairline the height of the screen and a short grip of dots where the eye is; both light up under the pointer. */
+.handle::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 2px;
+  margin-left: -1px;
+  background: rgba(255, 255, 255, 0.05);
+  transition: background-color 0.15s, box-shadow 0.15s;
+}
+
+.grip {
+  position: absolute;
+  top: clamp(24px, calc(40vh - 120px), calc(100% - 64px));
+  left: 50%;
+  width: 6px;
+  height: 44px;
+  margin-left: -3px;
+  background: repeating-linear-gradient(180deg, rgba(238, 241, 255, 0.5) 0 2px, transparent 2px 6px);
+  transition: opacity 0.15s;
+  opacity: 0.75;
+}
+
+.handle:hover::before,
+.handle:focus-visible::before,
+.split[data-dragging] .handle::before {
+  background: linear-gradient(180deg, transparent, var(--lilac), transparent);
+  box-shadow: 0 0 12px rgba(201, 162, 255, 0.45);
+}
+
+.handle:hover .grip,
+.split[data-dragging] .grip {
+  opacity: 1;
+}
+
+.split[data-dragging] {
+  cursor: col-resize;
+  user-select: none;
+}
+
+.split[data-dragging] :is(iframe, canvas) {
+  pointer-events: none;
+}
+
+.fold,
+.unfold {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--r-ctl);
+  color: var(--dim);
+  transition: color 0.15s, background-color 0.15s;
+}
+
+.fold {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  margin-left: -14px;
+  z-index: 1;
+}
+
+.fold:hover,
+.unfold:hover {
+  color: var(--ice);
+  background: rgba(238, 241, 255, 0.06);
+}
+
+.unfold,
+.sheetGrip,
+.peek {
+  display: none;
+}
+
+/* ── folded on a desk: a narrow strip with the button that brings it back ─ */
+
+@container (min-width: 836px) {
+  .split[data-shut] .grid {
+    grid-template-columns: minmax(0, 1fr) 16px 44px;
+  }
+
+  .split[data-shut] .sideBody {
+    display: none;
+  }
+
+  .split[data-shut] .unfold {
+    display: flex;
+    width: 44px;
+    height: 44px;
+    border: 1px solid var(--line);
+  }
+}
+
+/* ── a narrow desk: the side column under the screen's own ─────────────── */
+
+@container (max-width: 835px) {
+  .grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
+  }
+
+  .gutter {
+    display: none;
+  }
+}
+
+.sideBody {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+/* ── a phone: the side column as a sheet over the tab bar ──────────────── */
+
+@media (max-width: 767px) {
+  .split[data-phone='sheet'] .side {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: calc(var(--tabbar) + env(safe-area-inset-bottom));
+    /* Under the header (z 4), so its lists — the events, the wallets, the agent's rows — stand over the sheet. */
+    z-index: 3;
+    gap: 12px;
+    max-height: 64dvh;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 0 16px 16px;
+    /* The sheet is square, from edge to edge: a line of light along its top and a grip say it lifts. */
+    background: linear-gradient(180deg, rgb(28, 22, 48), rgb(14, 11, 26));
+    border-top: 1px solid rgba(201, 162, 255, 0.34);
+    box-shadow: 0 -30px 60px -10px rgba(0, 0, 0, 0.8);
+    animation: up 0.2s ease-out;
+    /* The sheet is the glass: the action panel in it draws no layer of its own (terminal/ui: `.hi::before`), and a
+       panel keeps to the sheet's column. */
+    --hi-layer: none;
+    --bleed: 0px;
+  }
+
+  .split[data-phone='sheet'] .sheetGrip {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    height: 28px;
+    margin: 0 -16px;
+    background: rgb(28, 22, 48);
+  }
+
+  .sheetBar {
+    width: 40px;
+    height: 4px;
+    background: rgba(238, 241, 255, 0.24);
+  }
+
+  .split[data-phone='sheet'][data-folded] .sideBody {
+    display: none;
+  }
+
+  /* The sheet is the glass: a panel in it draws no second frame (as the v2 kadr A-MarketPhone). */
+  .split[data-phone='sheet'] .sideBody > * {
+    padding-left: 0;
+    padding-right: 0;
+    background: none;
+    border: 0;
+    box-shadow: none;
+    backdrop-filter: none;
+  }
+
+  .split[data-phone='sheet'] .sideBody > * + * {
+    padding-top: 16px;
+    border-top: 1px solid var(--line);
+  }
+
+  .split[data-phone='sheet'][data-folded] .peek {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    min-height: 44px;
+    text-align: left;
+  }
+}
+
+@keyframes up {
+  from {
+    transform: translateY(24px);
+    opacity: 0;
+  }
+}

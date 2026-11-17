@@ -38,6 +38,11 @@
  *
  * The NFT's mint is a fresh key the program creates the mint at, so it signs the placing once; the caller makes it and
  * passes its address — the venue holds no key. Everything else the wallet signs alone.
+ *
+ * **What a person says** — «buy cheaper», «sell higher», how far from the price — becomes a ladder in
+ * `./ladder.ts`. `quote` tells it before anything is built: the prices, what rests on each, what the whole of it pays
+ * once filled, and the maker's share of the fee as one number with Ryntra's part of it. `placeIntent` is that quote
+ * placed — the same `place`, relative to the price at landing unless the caller asked for fixed ticks.
  */
 
 import {
@@ -49,6 +54,7 @@ import {
   decodeLimitOrderDataFromData,
   deriveLimitOrder,
   findNftAccount,
+  getSqrtPriceFromTickId,
   isSupportExtension,
   limitOrderDelegatePermissionMask,
   limitOrderTicksFromShape,
@@ -59,17 +65,19 @@ import {
   type OpenLimitOrderParameters,
   type Pool,
 } from "@meteora-ag/dlmm-pro-sdk";
-import { TOKEN_2022_PROGRAM_ID, createApproveInstruction, createRevokeInstruction, getAssociatedTokenAddressSync } from "@solana/spl-token";
-import { PublicKey, type TransactionInstruction } from "@solana/web3.js";
+import { ASSOCIATED_TOKEN_PROGRAM_ID, TOKEN_2022_PROGRAM_ID, TOKEN_PROGRAM_ID, createApproveInstruction, createAssociatedTokenAccountIdempotentInstruction, createRevokeInstruction, getAssociatedTokenAddressSync } from "@solana/spl-token";
+import { PublicKey, VersionedTransaction, type TransactionInstruction } from "@solana/web3.js";
 import BN from "bn.js";
 
 import type { Address } from "../../contracts.ts";
+import type { CollectorFacts } from "./collector.ts";
 import { FEE_SHARES } from "./fee.ts";
-import { collectPayoutOf, orderFillOf, orderSummaryOf, type OrderFill, type OrderFillState, type TickOrderState } from "./orders.ts";
-import { DLMM_PRO_ACCOUNT_BYTES, assertAffords, assertHolds, assertOpen, assertSigner, bitmapExtensionFor, clientPastDust, clockOf, isPayableTokenAccount, missingTickArrays, modelWith, poolWhole, tokenProgramOf, transferFeeMintOf, type DlmmProContext } from "./pools.server.ts";
+import { LadderRefusal, ladderPlanOf, ladderReachOf, makerShareOf, type LadderIntent, type LadderPlan } from "./ladder.ts";
+import { collectPayoutOf, orderFillOf, orderSummaryOf, xForY, yForX, type OrderFill, type OrderFillState, type TickOrderState } from "./orders.ts";
+import { DLMM_PRO_ACCOUNT_BYTES, TOKEN_ACCOUNT_BYTES, TOKEN_ACCOUNT_DELEGATED_AMOUNT_OFFSET, TOKEN_ACCOUNT_DELEGATE_OFFSET, assertAffords, assertHolds, assertOpen, assertSigner, bitmapExtensionFor, clientPastDust, clockOf, isPayableTokenAccount, missingTickArrays, modelWith, poolWhole, tokenProgramOf, transferFeeMintOf, type DlmmProContext } from "./pools.server.ts";
 import { DlmmProRefusal, refusing } from "./sdk.server.ts";
 import { shapeOf, shapeViewOf, type ShapeRequest, type ShapeView } from "./shapes.server.ts";
-import { MAX_ORDER_TICKS, MAX_TICK_ID, MIN_TICK_ID, TICKS_PER_ARRAY } from "./ticks.ts";
+import { MAX_ORDER_TICKS, MAX_TICK_ID, MIN_TICK_ID, TICKS_PER_ARRAY, priceOfSqrtX64 } from "./ticks.ts";
 import { DLMM_PRO_UNITS, keyOf, rawOf, seal, simulationOf, unitsOf, type DlmmProBuild, type DlmmProTx, type SealOptions } from "./tx.server.ts";
 
 export type LadderRequest = Readonly<{
@@ -95,6 +103,12 @@ export type LadderRequest = Readonly<{
    * owner, where one is configured; null — nobody.
    */
   referralWallet?: Address | null;
+  /**
+   * A wallet let to collect the order — and nothing else — from the moment it rests: the approval on the NFT's account
+   * and the order's permission bit, in the placing itself, so the order never rests without the collector the person
+   * asked for. Absent or null — nobody; the owner may still name one later (`delegate`).
+   */
+  delegate?: Address | null;
 }>;
 
 export type LadderBuild = DlmmProBuild &
@@ -102,6 +116,8 @@ export type LadderBuild = DlmmProBuild &
     order: Address;
     /** The wallet the order names as its referral; null — nobody. */
     referral: Address | null;
+    /** The wallet the placing lets collect the order; null — nobody. */
+    delegate: Address | null;
     nftMint: Address;
     nftAccount: Address;
     side: "bid" | "ask";
@@ -114,6 +130,55 @@ export type LadderBuild = DlmmProBuild &
     band: Readonly<{ minTickId: number; maxTickId: number }> | null;
     shape: ShapeView;
   }>;
+
+/** What a person asks for: a side, a coin of the pool, how far from the price, and how much. */
+export type IntentRequest = Readonly<{
+  pool: Address;
+  /** The person's coin — one of the pool's two. «Cheaper» and «higher» are of this coin's price in the other. */
+  coin: Address;
+  /** Of the coin the order rests in — what a buy spends, what a sell sells — before its own transfer fee. */
+  amountRaw: string;
+  /** The wallet that takes a fifth of the maker's fee. Absent — the venue's own referral owner; null — nobody. */
+  referralWallet?: Address | null;
+}> &
+  Omit<LadderIntent, "coin">;
+
+/** A ladder to place: what was asked, who pays and owns it, the fresh key of its NFT, and who may collect it. */
+export type IntentPlacing = IntentRequest & Readonly<{ wallet: Address; nftMint: Address; delegate?: Address | null }>;
+
+/** A ladder told before it is built: what would rest where, what it pays filled, and what the maker keeps of the fee. */
+export type LadderQuote = Readonly<{
+  pool: Address;
+  action: "buy" | "sell";
+  side: "bid" | "ask";
+  /** The coin the order rests in and the coin a fill pays. */
+  restsIn: Address;
+  paysIn: Address;
+  /** Nearest the price first. `price` — the coin's price in the other coin at the rung, whole tokens: a number to show. */
+  rungs: readonly Readonly<{ tickId: number; awayBps: number; price: number; amountRaw: string; paysRaw: string }>[];
+  /** What rests in the order — the asked amount less what its weights cannot split — and what it pays once every rung is filled, at the rungs' exact prices. */
+  amountRaw: string;
+  paysRaw: string;
+  /** The coin's price now and the average price of the whole ladder filled — numbers to show. */
+  price: number;
+  averagePrice: number;
+  nearBps: number;
+  farBps: number;
+  /** How far the price may move before the ladder lands; null — fixed ticks. */
+  corridorBps: number | null;
+  slippageTicks: number | null;
+  /** The farthest this side may reach on this pool, basis points of the coin's price: a slider's end. */
+  reachBps: number;
+  /**
+   * The maker's share of the fee, basis points of what fills, at the pool's fee now: `ownerBps` is the person's,
+   * `referralBps` Ryntra's fifth of the maker's half (D-M3), `referral` the wallet named — null — nobody, and the
+   * person keeps the whole of it. `feeIn` — the coin it is paid in.
+   */
+  bonus: Readonly<{ feeBps: number; makerBps: number; ownerBps: number; referralBps: number; referral: Address | null; feeIn: Address }>;
+  plan: LadderPlan;
+}>;
+
+export type IntentBuild = LadderBuild & Readonly<{ quote: LadderQuote }>;
 
 export type OrderTickView = Readonly<{
   tickId: number;
@@ -180,6 +245,11 @@ export type CollectRequest = Readonly<{
   /** The least to receive, per coin, after transfer fees. Absent — none: a payout is at fixed prices and moves only as more of the order fills. */
   minimumXRaw?: string;
   minimumYRaw?: string;
+  /**
+   * The signer opens nothing: the holder's accounts of both coins must stand already, and a build that would open one
+   * on the signer's rent is refused instead. For a collector that pays its own fees and must not be made to pay rent.
+   */
+  opensNothing?: boolean;
 }>;
 
 /** What a collect pays, and to whom. */
@@ -208,6 +278,33 @@ export type CollectBuild = DlmmProBuild & Readonly<{ order: Address; tickIds: re
 
 const big = (value: { toString(): string }) => BigInt(value.toString());
 const DEFAULT = PublicKey.default;
+
+/** The token accounts a built transaction closes (the token programs' CloseAccount), by address. */
+export function closedTokenAccounts(wireBase64: string): readonly string[] {
+  return [...tokenAccountsAfter([wireBase64])].filter(([, stands]) => !stands).map(([address]) => address);
+}
+
+/**
+ * What a series of built transactions leaves of the token accounts they open or close, in order: an associated
+ * account created stands, one closed is gone — the last word on each address wins. Addresses neither opens nor
+ * closes are not in the map.
+ */
+export function tokenAccountsAfter(wires: readonly string[]): ReadonlyMap<string, boolean> {
+  const programs = new Set([TOKEN_PROGRAM_ID.toBase58(), TOKEN_2022_PROGRAM_ID.toBase58()]);
+  const ata = ASSOCIATED_TOKEN_PROGRAM_ID.toBase58();
+  const after = new Map<string, boolean>();
+  for (const wire of wires) {
+    const tx = VersionedTransaction.deserialize(Buffer.from(wire, "base64"));
+    const keys = tx.message.staticAccountKeys.map((key) => key.toBase58());
+    for (const ix of tx.message.compiledInstructions) {
+      const program = keys[ix.programIdIndex] ?? "";
+      const at = (index: number) => keys[ix.accountKeyIndexes[index] ?? -1] ?? "";
+      if (program === ata && (ix.data.length === 0 || (ix.data.length === 1 && ix.data[0] === 1)) && at(1)) after.set(at(1), true);
+      else if (programs.has(program) && ix.data.length === 1 && ix.data[0] === 9 && at(0)) after.set(at(0), false);
+    }
+  }
+  return after;
+}
 
 const emptyTick = (tickId: number): TickOrderState => ({
   tickId,
@@ -386,6 +483,8 @@ export function createDlmmProLimitOrders(context: DlmmProContext) {
       /* The order names the venue's own referral owner unless the caller names another, or says none. */
       const named = request.referralWallet === undefined ? context.referralOwner : request.referralWallet;
       const referral = named ? keyOf(named, "The referral wallet") : null;
+      const collector = request.delegate ? keyOf(request.delegate, "The delegate") : null;
+      if (collector?.equals(wallet)) throw new DlmmProRefusal("BAD_INPUT", "The owner collects its own order without being named.");
       const aligned = Math.floor(pool.tickCurrentId / pool.tickSpacing) * pool.tickSpacing;
       const tickIds = picked.ticks.map((tick) => (relative ? aligned + tick.id * pool.tickSpacing : tick.id));
       /* A relative order lands shifted with the price, by up to its band either way: every tick its ticks may then stand on — the two ends, and one in every tick array between. */
@@ -409,12 +508,19 @@ export function createDlmmProLimitOrders(context: DlmmProContext) {
         referral,
         ...(extension.extension ? { tickArrayBitmapExtension: extension.extension } : {}),
       });
+      /* The collector, named in the placing itself: approved on the NFT's account the order has just made (amount 0) and given the one permission there is. */
+      const handover = collector
+        ? [
+            createApproveInstruction(built.nftAccount, collector, wallet, 0, [], TOKEN_2022_PROGRAM_ID),
+            ...(await client.limitOrder.updateLimitOrderDelegatePermission({ nftMint, owner: wallet, permission: limitOrderDelegatePermissionMask([LimitOrderDelegatePermission.CancelLimitOrder]) })).tx.instructions,
+          ]
+        : [];
       const sealed = await seal({
         connection,
         wallet,
-        instructions: [...extension.make, ...built.tx.instructions],
+        instructions: [...extension.make, ...built.tx.instructions, ...handover],
         fresh: [nftMint],
-        units: unitsOf(DLMM_PRO_UNITS.openLimitOrder.base, DLMM_PRO_UNITS.openLimitOrder.perTick, picked.ticks.length, DLMM_PRO_UNITS.tokenAccount + extension.units),
+        units: unitsOf(DLMM_PRO_UNITS.openLimitOrder.base, DLMM_PRO_UNITS.openLimitOrder.perTick, picked.ticks.length, DLMM_PRO_UNITS.tokenAccount + extension.units + (collector ? DLMM_PRO_UNITS.delegate : 0)),
         options,
       });
       /*
@@ -439,6 +545,7 @@ export function createDlmmProLimitOrders(context: DlmmProContext) {
         ...cost,
         order: built.limitOrder.toBase58(),
         referral: referral ? referral.toBase58() : null,
+        delegate: collector ? collector.toBase58() : null,
         nftMint: nftMint.toBase58(),
         nftAccount: built.nftAccount.toBase58(),
         side: request.side,
@@ -501,7 +608,16 @@ export function createDlmmProLimitOrders(context: DlmmProContext) {
       minAmountY: new BN(request.minimumYRaw ? rawOf(request.minimumYRaw, "The least of token Y").toString() : "0"),
       referralToken,
     });
-    return { instructions: built.tx.instructions as readonly TransactionInstruction[], signer, owner, tickIds: wanted, payout };
+    let instructions = built.tx.instructions as readonly TransactionInstruction[];
+    if (request.opensNothing) {
+      /* The program reads both of the holder's accounts, whichever coin it pays: each must stand, of its coin and not frozen. */
+      const accounts = coinsOf(pool).map((coin) => ({ coin, address: getAssociatedTokenAddressSync(coin.mint, owner, true, coin.program) }));
+      const infos = await connection.getMultipleAccountsInfo(accounts.map((entry) => entry.address), "confirmed");
+      const missing = accounts.find((entry, index) => !isPayableTokenAccount(infos[index] ?? null, entry.coin.mint, entry.coin.program));
+      if (missing) throw new DlmmProRefusal("BAD_INPUT", `The holder has no account of ${missing.coin.mint.toBase58()} to be paid into; the holder opens it, not the signer.`);
+      instructions = instructions.filter((instruction) => !instruction.programId.equals(ASSOCIATED_TOKEN_PROGRAM_ID));
+    }
+    return { instructions, signer, owner, tickIds: wanted, payout };
   }
 
   /** Collects ticks of an order — some, or all that are left: unfilled back, proceeds and the maker's fee out. */
@@ -573,6 +689,102 @@ export function createDlmmProLimitOrders(context: DlmmProContext) {
     });
   }
 
+  /** The wallet an order would name as its referral: the caller's, the venue's own, or nobody. */
+  const referralNamed = (asked: Address | null | undefined): Address | null => (asked === undefined ? context.referralOwner : asked);
+
+  /**
+   * A ladder for what a person asked, told before anything is built: the same ticks and amounts `place` would hand the
+   * program for this pool as it stands now. A relative ladder lands shifted with the price — its rungs keep their
+   * distances from it.
+   */
+  async function quote(request: IntentRequest): Promise<LadderQuote> {
+    return refusing(async () => {
+      const poolKey = keyOf(request.pool, "The pool");
+      const coin = keyOf(request.coin, "The coin");
+      const total = rawOf(request.amountRaw, "The amount");
+      if (total <= 0n) throw new DlmmProRefusal("AMOUNT_ZERO", "The amount is zero.");
+      const { model, pool } = await modelWith(context, poolKey, null);
+      const isX = coin.equals(pool.tokenXMint);
+      if (!isX && !coin.equals(pool.tokenYMint)) throw new DlmmProRefusal("BAD_INPUT", "The coin is not one of the pool's two.");
+      const at = { tickSpacing: pool.tickSpacing, tickId: pool.tickCurrentId };
+      let plan: LadderPlan;
+      try {
+        plan = ladderPlanOf({ action: request.action, coin: isX ? "x" : "y", nearBps: request.nearBps, farBps: request.farBps, rungs: request.rungs, spread: request.spread, corridorBps: request.corridorBps }, at);
+      } catch (error) {
+        if (error instanceof LadderRefusal) throw new DlmmProRefusal("BAD_INPUT", error.message);
+        throw error;
+      }
+      const isAsk = plan.side === "ask";
+      const relative = plan.slippageTicks !== null;
+      /* A budget is split by whole weights: less than their sum would leave a price with nothing on it. */
+      if (total < BigInt(plan.rungs.reduce((sum, rung) => sum + rung.weight, 0))) throw new DlmmProRefusal("BAD_INPUT", "The amount is too small to rest on every price of the ladder.");
+      const picked = limitOrderTicksFromShape({ shape: shapeOf(plan.shape, pool), side: plan.side, totalAmount: new BN(total.toString()), relative });
+      const aligned = Math.floor(pool.tickCurrentId / pool.tickSpacing) * pool.tickSpacing;
+      const amounts = new Map(picked.ticks.map((tick) => [relative ? aligned + tick.id * pool.tickSpacing : tick.id, big(tick.amount)] as const));
+      /* The coin's price in the other coin, whole tokens: the pool's own price where the coin is token X, one over it where it is token Y. */
+      const shown = (sqrtPrice: bigint) => {
+        const price = priceOfSqrtX64(sqrtPrice, model.tokenX.decimals, model.tokenY.decimals);
+        return isX ? price : 1 / price;
+      };
+      const rungs = plan.rungs.map((rung) => {
+        const amount = amounts.get(rung.tickId);
+        if (amount === undefined) throw new DlmmProRefusal("FAILED", `The ladder's tick ${rung.tickId} is not among the ticks the order would rest on.`);
+        const sqrtPrice = big(getSqrtPriceFromTickId(rung.tickId));
+        /* What the rung pays filled whole — at its tick's exact price, rounded down, as the program settles it. */
+        const pays = isAsk ? yForX(amount, sqrtPrice) : xForY(amount, sqrtPrice);
+        return { tickId: rung.tickId, awayBps: rung.awayBps, price: shown(sqrtPrice), amountRaw: amount.toString(), paysRaw: pays.toString() };
+      });
+      const rests = rungs.reduce((sum, rung) => sum + BigInt(rung.amountRaw), 0n);
+      const pays = rungs.reduce((sum, rung) => sum + BigInt(rung.paysRaw), 0n);
+      /* Whole tokens of each side of the ladder, to tell its average price: the other coin per coin. */
+      const restsWhole = Number(rests) / 10 ** (isAsk ? model.tokenX.decimals : model.tokenY.decimals);
+      const paysWhole = Number(pays) / 10 ** (isAsk ? model.tokenY.decimals : model.tokenX.decimals);
+      /* The coin is what rests in a sell and what a buy is paid in. */
+      const coinRests = isAsk === isX;
+      const averagePrice = pays === 0n || rests === 0n ? 0 : coinRests ? paysWhole / restsWhole : restsWhole / paysWhole;
+      const referral = referralNamed(request.referralWallet);
+      const share = makerShareOf(model.fee.totalBps, referral !== null);
+      return {
+        pool: poolKey.toBase58(),
+        action: request.action,
+        side: plan.side,
+        restsIn: (isAsk ? pool.tokenXMint : pool.tokenYMint).toBase58(),
+        paysIn: (isAsk ? pool.tokenYMint : pool.tokenXMint).toBase58(),
+        rungs,
+        amountRaw: rests.toString(),
+        paysRaw: pays.toString(),
+        price: shown(big(pool.sqrtPrice)),
+        averagePrice,
+        nearBps: plan.nearBps,
+        farBps: plan.farBps,
+        corridorBps: plan.corridorBps,
+        slippageTicks: plan.slippageTicks,
+        reachBps: ladderReachOf(request.action, isX ? "x" : "y", at),
+        bonus: { feeBps: model.fee.totalBps, ...share, referral, feeIn: feeCoinOf(pool, plan.side).mint.toBase58() },
+        plan,
+      };
+    });
+  }
+
+  /**
+   * Places the ladder a person asked for — unsigned; the wallet and the fresh NFT mint sign. The quote it comes back
+   * with is the one the build stands on: where the price moved a spacing between the two, the ladder is refused as
+   * stale rather than handed out with a quote that is not its own.
+   */
+  async function placeIntent(request: IntentPlacing, options: SealOptions = {}): Promise<IntentBuild> {
+    /* Twice at the most: a price that crossed a spacing between the quote and the build is quoted and built once more. */
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      const told = await quote(request);
+      const built = await place(
+        { pool: request.pool, wallet: request.wallet, nftMint: request.nftMint, side: told.side, shape: told.plan.shape, totalAmountRaw: request.amountRaw, slippageTicks: told.slippageTicks, referralWallet: told.bonus.referral, delegate: request.delegate ?? null },
+        options,
+      );
+      const same = built.ticks.length === told.rungs.length && built.ticks.every((tick) => told.rungs.some((rung) => rung.tickId === tick.tickId && rung.amountRaw === tick.amountRaw));
+      if (same) return { ...built, quote: told };
+    }
+    throw new DlmmProRefusal("FAILED", "The price moved while the ladder was being built. Ask again.");
+  }
+
   /**
    * Lets `delegate` collect the order — and nothing else — or takes that back (`delegate` null): the approval on the
    * NFT's account (amount 0: a delegated amount fails every delegated call) and the order's own permission bit, in one
@@ -593,7 +805,94 @@ export function createDlmmProLimitOrders(context: DlmmProContext) {
     });
   }
 
-  return { read, place, collect, close, delegate };
+  /**
+   * Opens the holder's own accounts of the pool's two coins where they are missing — unsigned, the holder pays and
+   * signs. A collector opens nothing (`opensNothing`), so the holder who names one opens these itself. Null — both
+   * stand already. An account that stands and cannot be paid into — frozen, or not a token account — is refused.
+   */
+  async function prepare(request: Readonly<{ pool: Address; owner: Address; after?: readonly string[] }>, options: SealOptions = {}): Promise<DlmmProBuild | null> {
+    return refusing(async () => {
+      const poolKey = keyOf(request.pool, "The pool");
+      const owner = keyOf(request.owner, "The owner");
+      const { pool } = await poolWhole(context, poolKey);
+      const accounts = coinsOf(pool).map((coin) => ({ coin, address: getAssociatedTokenAddressSync(coin.mint, owner, true, coin.program) }));
+      const infos = await connection.getMultipleAccountsInfo(accounts.map((entry) => entry.address), "confirmed");
+      /*
+       * What the transactions signed before this one close, it opens again: a build the owner signs closes its
+       * wrapped-SOL account at its end (the SDK unwraps), and a collector opens nothing — so it is opened again here,
+       * after them, in the same approval.
+       */
+      const after = tokenAccountsAfter(request.after ?? []);
+      /* Lamports somebody left at the address are not an account: the token program makes one there all the same. What the builds before open or close is what stands when this one runs. */
+      const stands = (index: number) => after.get(accounts[index]!.address.toBase58()) ?? (infos[index] != null && infos[index]!.data.length > 0);
+      /* Only an account on the chain now that no build before opens or closes can be one that refuses to be paid into: what a build opens is opened right. */
+      const broken = accounts.find((entry, index) => !after.has(entry.address.toBase58()) && infos[index] != null && infos[index]!.data.length > 0 && !isPayableTokenAccount(infos[index]!, entry.coin.mint, entry.coin.program));
+      if (broken) throw new DlmmProRefusal("BAD_INPUT", `The holder's account of ${broken.coin.mint.toBase58()} cannot be paid into.`);
+      const missing = accounts.filter((_, index) => !stands(index));
+      if (missing.length === 0) return null;
+      const instructions = missing.map((entry) => createAssociatedTokenAccountIdempotentInstruction(owner, entry.address, owner, entry.coin.mint, entry.coin.program));
+      const sealed = await seal({ connection, wallet: owner, instructions, units: missing.length * DLMM_PRO_UNITS.tokenAccount, options });
+      return { ...sealed, ...(await assertPaysFor(owner, sealed, instructions)) };
+    });
+  }
+
+  /** Whether the holder's own accounts of both coins of a pool stand to be paid into — all a collector's collect needs of them. */
+  async function accountsReady(request: Readonly<{ pool: Address; owner: Address }>): Promise<boolean> {
+    return refusing(async () => {
+      const owner = keyOf(request.owner, "The owner");
+      const { pool } = await poolWhole(context, keyOf(request.pool, "The pool"));
+      const coins = coinsOf(pool);
+      const infos = await connection.getMultipleAccountsInfo(coins.map((coin) => getAssociatedTokenAddressSync(coin.mint, owner, true, coin.program)), "confirmed");
+      return coins.every((coin, index) => isPayableTokenAccount(infos[index] ?? null, coin.mint, coin.program));
+    });
+  }
+
+  /**
+   * Who may collect an order beside its holder: the delegate approved on the holder's NFT account with nothing
+   * delegated, where the order's own bit lets a delegate collect. Null — nobody.
+   */
+  async function collectorOf(request: Readonly<{ nftMint: Address; owner: Address }>): Promise<Address | null> {
+    return refusing(async () => {
+      const nftMint = keyOf(request.nftMint, "The order's NFT");
+      const owner = keyOf(request.owner, "The owner");
+      const [nft, order] = await connection.getMultipleAccountsInfo([findNftAccount(nftMint, owner), deriveLimitOrder(nftMint, programId)], "confirmed");
+      if (!nft || !order || !order.owner.equals(programId) || nft.data.length < TOKEN_ACCOUNT_BYTES) return null;
+      const data = Buffer.from(nft.data);
+      if (data.readBigUInt64LE(64) !== 1n || data.readUInt32LE(TOKEN_ACCOUNT_DELEGATE_OFFSET) !== 1 || data.readBigUInt64LE(TOKEN_ACCOUNT_DELEGATED_AMOUNT_OFFSET) !== 0n) return null;
+      const head = client.program.coder.accounts.decode<LimitOrder>("limitOrder", Buffer.from(order.data));
+      if ((head.delegatePermission & (1 << LimitOrderDelegatePermission.CancelLimitOrder)) === 0) return null;
+      return new PublicKey(data.subarray(TOKEN_ACCOUNT_DELEGATE_OFFSET + 4, TOKEN_ACCOUNT_DELEGATE_OFFSET + 36)).toBase58();
+    });
+  }
+
+  /**
+   * What a collector's judge holds a collect to (`./collector.ts`), read from the chain and derived — never from the
+   * build it will judge: the order and its NFT account, the pool's coins, and the referral accounts a collect of this
+   * order may pay — the order's own referral, in each of the two coins a fee can be in.
+   */
+  async function collectorFacts(request: Readonly<{ pool: Address; nftMint: Address; owner: Address; collector: Address }>): Promise<CollectorFacts> {
+    return refusing(async () => {
+      const poolKey = keyOf(request.pool, "The pool");
+      const nftMint = keyOf(request.nftMint, "The order's NFT");
+      const owner = keyOf(request.owner, "The owner");
+      const state = await loaded(poolKey, nftMint);
+      const [x, y] = coinsOf(state.pool);
+      const named = !state.head.referral.equals(DEFAULT) && !state.head.referral.equals(owner);
+      return {
+        program: programId.toBase58(),
+        collector: keyOf(request.collector, "The collector").toBase58(),
+        owner: owner.toBase58(),
+        pool: poolKey.toBase58(),
+        order: state.orderKey.toBase58(),
+        nftAccount: findNftAccount(nftMint, owner).toBase58(),
+        tokenX: { mint: x!.mint.toBase58(), program: x!.program.toBase58() },
+        tokenY: { mint: y!.mint.toBase58(), program: y!.program.toBase58() },
+        referralAccounts: named ? [x!, y!].map((coin) => getAssociatedTokenAddressSync(coin.mint, state.head.referral, true, coin.program).toBase58()) : [],
+      };
+    });
+  }
+
+  return { read, quote, place, placeIntent, prepare, accountsReady, collect, close, delegate, collectorOf, collectorFacts };
 }
 
 export type DlmmProLimitOrders = ReturnType<typeof createDlmmProLimitOrders>;

@@ -7,6 +7,7 @@ import { BRAND } from '@/city/lib/brand';
 import { publicHttps } from '@/city/lib/net';
 import { PALETTE } from '@/city/lib/palette';
 import { cityFonts, markUri, sceneUri } from '@/city/lib/share/card.server';
+import { terminalOpen } from '@/terminal/shell/flag';
 import type { CoinCard } from './read.server';
 
 /**
@@ -86,7 +87,10 @@ function symbolSize(symbol: string): number {
 }
 
 export async function coinOpenGraph(coin: CoinCard | null): Promise<ImageResponse> {
-  const [faces, city, pic] = await Promise.all([cityFonts(), sceneUri(), picture(coin).catch(() => null)]);
+  /* Once the terminal is the home page the card stands on the night's ink with a violet haze: the site's frame is another
+     coin's chart, whose prices would read as this coin's. */
+  const terminal = terminalOpen();
+  const [faces, city, pic] = await Promise.all([cityFonts(), terminal ? null : sceneUri(), picture(coin).catch(() => null)]);
   const display = faces ? 'Hubot Sans' : 'sans-serif';
   const ui = faces ? 'Mona Sans' : 'sans-serif';
   const symbol = coin ? `$${coin.symbol.toUpperCase().slice(0, 14)}` : BRAND.name.toUpperCase();
@@ -94,18 +98,19 @@ export async function coinOpenGraph(coin: CoinCard | null): Promise<ImageRespons
   const move = coin?.change24h != null ? Number(coin.change24h.toFixed(1)) : null;
   const up = (move ?? 0) >= 0;
   const moveColour = move === 0 ? 'rgba(238,241,255,0.78)' : up ? PALETTE.mint : PALETTE.flare;
-  const tag = !coin ? null : coin.launch ? 'Ryntra Launch' : coin.inCity ? 'A tower of the city' : coin.verified ? 'Verified by Jupiter' : 'Not verified by Jupiter';
+  const tag = !coin ? null : coin.launch ? 'Ryntra Launch' : coin.inCity ? (terminal ? 'Top of the Solana market' : 'A tower of the city') : coin.verified ? 'Verified by Jupiter' : 'Not verified by Jupiter';
   const headers = { 'cache-control': faces ? `public, max-age=${COIN_OG_SECONDS}, s-maxage=${COIN_OG_SECONDS}, stale-while-revalidate=${COIN_OG_SECONDS * 4}` : 'public, max-age=60, s-maxage=60' };
   return new ImageResponse(
     <div style={{ display: 'flex', position: 'relative', width: '100%', height: '100%', background: PALETTE.inkDeep, color: PALETTE.ice, fontFamily: ui }}>
       {city ? <img src={city} alt="" width={1200} height={630} style={{ position: 'absolute', left: 0, top: 0, width: 1200, height: 630 }} /> : null}
+      {terminal ? <div style={{ position: 'absolute', left: 0, top: 0, width: 1200, height: 630, display: 'flex', background: 'radial-gradient(circle at 88% 18%, rgba(153,69,255,0.42) 0%, rgba(42,22,64,0.5) 34%, rgba(6,5,12,0) 70%)' }} /> : null}
       <div style={{ position: 'absolute', left: 0, top: 0, width: 1200, height: 630, display: 'flex', background: 'linear-gradient(90deg, rgba(6,5,12,0.96) 0%, rgba(6,5,12,0.86) 46%, rgba(6,5,12,0.25) 100%)' }} />
       <div style={{ position: 'absolute', left: 0, bottom: 0, width: 1200, height: 220, display: 'flex', background: 'linear-gradient(0deg, rgba(6,5,12,0.92) 0%, rgba(6,5,12,0) 100%)' }} />
       <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', width: '100%', height: '100%', padding: '52px 64px 48px' }}>
         <div style={{ display: 'flex', alignItems: 'center' }}>
           <img src={markUri()} alt="" width={52} height={52} />
           <div style={{ display: 'flex', marginLeft: 14, fontFamily: display, fontWeight: 900, fontSize: 30, letterSpacing: 3 }}>{BRAND.name.toUpperCase()}</div>
-          <div style={{ display: 'flex', marginLeft: 18, fontSize: 20, fontWeight: 600, letterSpacing: 2, color: 'rgba(238,241,255,0.62)' }}>CITY · SOLANA</div>
+          <div style={{ display: 'flex', marginLeft: 18, fontSize: 20, fontWeight: 600, letterSpacing: 2, color: 'rgba(238,241,255,0.62)' }}>{terminal ? 'SOLANA' : 'CITY · SOLANA'}</div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', marginTop: 'auto' }}>
           <div style={{ display: 'flex', width: 148, height: 148, borderRadius: 74, padding: 6, background: `linear-gradient(135deg, ${PALETTE.violet}, ${PALETTE.warmWhite})`, flexShrink: 0 }}>
@@ -139,7 +144,7 @@ export async function coinOpenGraph(coin: CoinCard | null): Promise<ImageRespons
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: 34 }}>
           <div style={{ display: 'flex', alignItems: 'center', fontSize: 24, fontWeight: 800, color: PALETTE.ice }}>
             <div style={{ display: 'flex', width: 40, height: 5, background: PALETTE.amber, marginRight: 16 }} />
-            {coin ? `Open $${coin.symbol.toUpperCase().slice(0, 14)} in the city · ${BRAND.domain}` : BRAND.domain}
+            {coin ? `${terminal ? 'Trade' : 'Open'} $${coin.symbol.toUpperCase().slice(0, 14)}${terminal ? '' : ' in the city'} · ${BRAND.domain}` : BRAND.domain}
           </div>
           <div style={{ display: 'flex', fontSize: 17, fontWeight: 600, color: 'rgba(238,241,255,0.5)' }}>Market data: Jupiter · not financial advice</div>
         </div>

@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 
 import { refParamRedirect } from "./lib/growth/ref-param.ts";
 import { LANGUAGE_COOKIE, ukAddressRoute, withLanguageCookie } from "./lib/site/localized.ts";
+import { homeAsk } from "./terminal/shell/home.ts";
 
 /**
  * The Ukrainian addresses of the site.
@@ -28,6 +29,18 @@ export function middleware(request: NextRequest) {
   const invited = refParamRedirect(new URL(request.url));
   if (invited) return NextResponse.redirect(invited, 302);
   const { pathname } = request.nextUrl;
+  /* With the terminal as the home page, a link that asks the city's home for a window or a coin
+     (`/?open=trade`, `/?coin=<mint>` — posts, notes, the agent's reports) opens the terminal's section that does it,
+     or the city at `/city` with the same ask; the rest of the query is kept. With the switch closed it is never asked. */
+  if (pathname === "/") {
+    const ask = homeAsk(request.nextUrl.search);
+    if (ask) {
+      const url = request.nextUrl.clone();
+      url.pathname = ask.path;
+      for (const key of ask.drop) url.searchParams.delete(key);
+      return NextResponse.redirect(url, 307);
+    }
+  }
   const landing = pathname === "/uk";
   const path = landing ? null : ukAddressRoute(pathname, request.headers.get("host"));
   if (!landing && !path) return NextResponse.next();
@@ -59,5 +72,8 @@ export const config = {
     { source: "/", has: [{ type: "query", key: "utm_source" }] },
     { source: "/app/:path*", has: [{ type: "query", key: "utm_source" }] },
     { source: "/solana/:path*", has: [{ type: "query", key: "utm_source" }] },
+    /* The city's home asked for a window or a coin: the terminal's section, once it is the home page. */
+    { source: "/", has: [{ type: "query", key: "open" }] },
+    { source: "/", has: [{ type: "query", key: "coin" }] },
   ],
 };

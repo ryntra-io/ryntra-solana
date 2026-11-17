@@ -47,6 +47,23 @@ export const RELAY_CHAIN_IDS: Readonly<Record<SwapNetwork, number>> = {
 };
 
 /**
+ * How Relay's order (`protocol.v2.orderData`) names a chain: a word, not the
+ * number, and not always the `/chains` slug — BNB Chain is `bnb` in the order
+ * and `bsc` in `/chains`. Each was read off a live quote on 2026-11-16. Arc is absent because no live Arc order was read; a refund named
+ * on a chain missing here is refused rather than guessed.
+ */
+export const RELAY_ORDER_CHAIN_NAMES: Readonly<Partial<Record<SwapNetwork, string>>> = {
+  solana: "solana",
+  base: "base",
+  ethereum: "ethereum",
+  arbitrum: "arbitrum",
+  optimism: "optimism",
+  polygon: "polygon",
+  bnb: "bnb",
+  robinhood: "robinhood",
+};
+
+/**
  * How Relay names an asset: the contract on an EVM chain, the mint on Solana,
  * and a zero address for the chain's own coin — except on Solana, where the
  * native coin is the System Program id rather than a run of zeroes. Both were

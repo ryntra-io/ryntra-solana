@@ -538,6 +538,13 @@ export const GUARD_COLLECTIONS = [
   "launchEarlyAccess",
   "launchEarlyAccessBuilds",
   "launchEarlyAccessSends",
+  /* Ryntra Launch, straight into a pool on Meteora DLMM Pro: a coin launched with no curve, keyed
+     `<cluster>:<mint>` — its pool, its opening time, the fee its pool settles at, its locked positions, each step's
+     signatures and state; the builds waiting for a signature, keyed `<cluster>:<build id>`; and each build that was
+     sent, under the same key. A value in the same column; no DDL. */
+  "launchDlmmPro",
+  "launchDlmmProBuilds",
+  "launchDlmmProSends",
   /* Ryntra Launch: every send of a launch, keyed `solana:<cluster>:<creator>:<build>` — the creator's day and the
      network's hour are counted from it, the sends the chain refused included. */
   "launchAttempts",

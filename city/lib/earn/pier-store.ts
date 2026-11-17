@@ -12,6 +12,7 @@ import {
   DEFAULT_STYLE,
   defaultGoal,
   pierCosts,
+  pierHalf,
   pierMinimum,
   pierOf,
   pierRestBody,
@@ -19,6 +20,9 @@ import {
   pierZapBody,
   PIER_RESERVE_LAMPORTS,
   solUsd,
+  STYLE_HALF,
+  isPierHalf,
+  styleOfHalf,
   zapFit,
   zapMax,
   type Pier,
@@ -31,7 +35,7 @@ import {
 } from './pier.ts';
 import { createPierEngine, type PierEngine } from './pier-engine.ts';
 import type { PierStates } from './pier-gate.ts';
-import { closesOf } from './pier-history.ts';
+import { closesOf, dayRangeOf } from './pier-history.ts';
 import { lamportsFromText } from './saver.ts';
 import { earnWords } from './words.ts';
 
@@ -100,7 +104,7 @@ const CEILING_MARGIN = 0.98;
  * What the card stands on for a typed amount of SOL: whether the wallet holds it with the SOL kept aside, the live
  * minimum (from the Review's costs once there is one) and the ceiling this wallet has now. The wallet needs no other coin.
  */
-export function pierChoice(pier: Pier, style: PierStyle, typed: string, holdings: Holdings | null, owner: string | null, ceilingUsd: number | null, costs: PierCosts | null, goal: PierGoal = 'even'): PierChoice {
+export function pierChoice(pier: Pier, style: PierStyle, typed: string, holdings: Holdings | null, owner: string | null, ceilingUsd: number | null, costs: PierCosts | null, goal: PierGoal = 'even', half: number | null = null): PierChoice {
   const lamports = lamportsFromText(typed);
   const price = solUsd(pier);
   const ceiling = ceilingUsd !== null && price !== null ? BigInt(Math.floor((ceilingUsd * CEILING_MARGIN * 1e9) / price)) : null;
@@ -117,7 +121,10 @@ export function pierChoice(pier: Pier, style: PierStyle, typed: string, holdings
   else if (lamports < minimum) problem = 'min';
   else if (ceiling !== null && lamports > ceiling) problem = 'ceiling';
   else if (!fits) problem = 'sol';
-  const key = owner && lamports && !problem ? `zap:${owner}:${pier.pool.address}:${style}${goal === 'even' ? '' : `:${goal}`}:${lamports}` : null;
+  // A width of the person's own is a Review of its own; one that equals the style's is the style's.
+  const own = pierHalf(style, half);
+  const width = own === STYLE_HALF[style] ? style : `h${own}`;
+  const key = owner && lamports && !problem ? `zap:${owner}:${pier.pool.address}:${width}${goal === 'even' ? '' : `:${goal}`}:${lamports}` : null;
   return { lamports, split, fits, minimum, ceiling, max, problem, key };
 }
 
@@ -186,6 +193,8 @@ type Store = {
   style: PierStyle;
   /** What the person picked; null — the pier's own default (`pierGoal`). */
   goal: PierGoal | null;
+  /** A width of the person's own, bins each side; null — the style's. */
+  half: number | null;
   copy: PierCopy | null;
   typed: string;
   boat: PositionView | null;
@@ -201,6 +210,8 @@ type Store = {
   /** «Take the rest» of the Zap last sent, when it landed in part. */
   rest: PierRest | null;
   candles: Readonly<Record<string, Loaded<ReadonlyMap<number, number>>>>;
+  /** Each coin's lowest and highest over the last 24 hours, wicks included; null — not read. */
+  days: Readonly<Record<string, Readonly<{ low: number; high: number }> | null>>;
   openPier: (pool: HarborPool) => void;
   /** The same card on a strategy's pier, its style fixed. */
   openCopy: (pool: HarborPool, copy: PierCopy) => void;
@@ -209,6 +220,8 @@ type Store = {
   back: () => void;
   setStyle: (style: PierStyle) => void;
   setGoal: (goal: PierGoal) => void;
+  /** A width by hand; null gives the width back to the style. */
+  setHalf: (half: number | null) => void;
   setTyped: (text: string) => void;
   loadStates: (owner: string) => Promise<void>;
   loadCandles: (mint: string) => Promise<void>;
@@ -244,15 +257,16 @@ export const usePier = create<Store>((set, get) => {
     if (!states || states.add !== 'on') return null;
     const costs = st.costs?.pool === pier.pool.address ? st.costs.value : null;
     const goal = pierGoal(pier, st.goal);
-    const choice = pierChoice(pier, st.style, st.typed, holdings, owner, states.ceilingUsd, costs, goal);
+    const choice = pierChoice(pier, st.style, st.typed, holdings, owner, states.ceilingUsd, costs, goal, st.half);
     if (!choice.key || !choice.split) return null;
-    return { key: choice.key, body: pierZapBody(pier, owner, choice.lamports!, st.style, goal) };
+    return { key: choice.key, body: pierZapBody(pier, owner, choice.lamports!, st.style, goal, st.half) };
   };
 
   return {
     pool: null,
     style: DEFAULT_STYLE,
     goal: null,
+    half: null,
     copy: null,
     typed: START_TEXT,
     boat: null,
@@ -266,11 +280,13 @@ export const usePier = create<Store>((set, get) => {
     notice: null,
     rest: null,
     candles: {},
+    days: {},
 
     openPier: (pool) => {
       if (PIER_BUSY.has(get().phase)) return;
       ticket += 1;
-      set({ pool, copy: null, boat: null, target: { kind: 'add' }, reviewed: null, phase: 'idle', outcome: null, notice: null, rest: null, ...(get().costs?.pool === pool.address ? {} : { costs: null }) });
+      // A width by hand is a count of this pool's bins: another pool starts from the style's.
+      set({ pool, copy: null, boat: null, target: { kind: 'add' }, reviewed: null, phase: 'idle', outcome: null, notice: null, rest: null, ...(get().pool?.address === pool.address ? {} : { half: null }), ...(get().costs?.pool === pool.address ? {} : { costs: null }) });
       const pier = pierOf(pool);
       if (pier) {
         void get().loadCandles(pier.sol.mint);
@@ -280,7 +296,7 @@ export const usePier = create<Store>((set, get) => {
     openCopy: (pool, copy) => {
       if (PIER_BUSY.has(get().phase) || !pierOf(pool)) return;
       ticket += 1;
-      set({ pool, copy, style: copy.style, goal: 'even', boat: null, target: { kind: 'add' }, reviewed: null, phase: 'idle', outcome: null, notice: null, rest: null, ...(get().costs?.pool === pool.address ? {} : { costs: null }) });
+      set({ pool, copy, style: copy.style, goal: 'even', half: null, boat: null, target: { kind: 'add' }, reviewed: null, phase: 'idle', outcome: null, notice: null, rest: null, ...(get().costs?.pool === pool.address ? {} : { costs: null }) });
     },
     openBoat: (position) => {
       if (PIER_BUSY.has(get().phase)) return;
@@ -291,19 +307,27 @@ export const usePier = create<Store>((set, get) => {
       if (PIER_LOCKED.has(get().phase)) return;
       ticket += 1;
       useEarn.getState().setBusy(false);
-      set({ pool: null, copy: null, boat: null, target: null, reviewed: null, phase: 'idle', outcome: null, notice: null, rest: null });
+      set({ pool: null, copy: null, half: null, boat: null, target: null, reviewed: null, phase: 'idle', outcome: null, notice: null, rest: null });
     },
     setStyle: (style) => {
       // A copy is its recipe: the style is the strategy's own.
       if (PIER_BUSY.has(get().phase) || get().copy) return;
       ticket += 1;
-      set({ style, reviewed: null, phase: 'idle', notice: null });
+      set({ style, half: null, reviewed: null, phase: 'idle', notice: null });
     },
     setGoal: (goal) => {
       // A copy is its recipe: a strategy's position was spread evenly.
       if (PIER_BUSY.has(get().phase) || get().copy) return;
       ticket += 1;
       set({ goal, reviewed: null, phase: 'idle', notice: null });
+    },
+    setHalf: (half) => {
+      // A copy is its recipe: the width is the strategy's own.
+      if (PIER_BUSY.has(get().phase) || get().copy) return;
+      if (half !== null && !isPierHalf(half)) return;
+      if (half === get().half) return;
+      ticket += 1;
+      set({ half, reviewed: null, phase: 'idle', notice: null });
     },
     setTyped: (text) => {
       if (PIER_BUSY.has(get().phase)) return;
@@ -321,7 +345,8 @@ export const usePier = create<Store>((set, get) => {
       set({ candles: { ...get().candles, [mint]: { status: 'loading' } } });
       const answer = await pierEnv().engine.candles(mint);
       const closes = answer.ok ? closesOf(answer.value) : null;
-      set({ candles: { ...get().candles, [mint]: closes && closes.size ? { status: 'ready', value: closes, at: pierEnv().now() } : { status: 'error' } } });
+      const day = answer.ok ? dayRangeOf(answer.value) : null;
+      set({ candles: { ...get().candles, [mint]: closes && closes.size ? { status: 'ready', value: closes, at: pierEnv().now() } : { status: 'error' } }, days: { ...get().days, [mint]: day } });
     },
 
     prepare: async (connection, target, holdings) => {
@@ -391,7 +416,10 @@ export const usePier = create<Store>((set, get) => {
         e.after(connection.address);
         const pool = get().pool;
         // A Zap's position exists only once its last transaction landed: a part of it is no copy.
-        if (target.kind === 'add' && pool && (outcome.kind === 'done' || !isZapBody(reviewed.body))) e.report({ owner: connection.address, position: reviewed.review.position, pool: pool.address, style: get().style });
+        // The style of what was signed, read from the signed request itself: a width set by hand is told as the style it
+        // is exactly, and one that is none of the three is no copy of any.
+        const landedStyle = reviewed.body.action === 'zap_in' ? styleOfHalf(reviewed.body.request.half) : get().style;
+        if (target.kind === 'add' && pool && landedStyle && (outcome.kind === 'done' || !isZapBody(reviewed.body))) e.report({ owner: connection.address, position: reviewed.review.position, pool: pool.address, style: landedStyle });
       }
     },
 
@@ -459,7 +487,7 @@ export const usePier = create<Store>((set, get) => {
       ticket += 1;
       // A partly landed add already opened a position: a new Review of the whole amount could open a second one.
       if (st.outcome?.kind === 'partial' || st.outcome?.kind === 'done' || st.target?.kind !== 'add') {
-        set({ pool: null, copy: null, boat: null, target: null, reviewed: null, phase: 'idle', outcome: null, notice: null, rest: null });
+        set({ pool: null, copy: null, half: null, boat: null, target: null, reviewed: null, phase: 'idle', outcome: null, notice: null, rest: null });
         return;
       }
       set({ phase: 'idle', outcome: null, reviewed: null, notice: null });

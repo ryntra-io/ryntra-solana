@@ -1,0 +1,964 @@
+/* «Everything in Solana» on the Portfolio: a wallet by its address, the total with its parts, the three
+   actions, the groups. The blocks are the kit's (`terminal/ui/**`) — its panels, tables, buttons and figures carry the
+   form; what stands here is only where they stand. One form: a block has no radius, what is pressed has the kit's
+   `--r-ctl`, a logo and a dot are circles. No cut corner of its own. */
+
+/* ── the head: the name, whose wallet, the money actions ─────────────── */
+
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 16px;
+  min-height: 44px;
+}
+
+.grow {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.whose {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.whoseAddress {
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: var(--type-body);
+  font-variant-numeric: tabular-nums;
+  color: var(--ice);
+  white-space: nowrap;
+}
+
+.money {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+
+.phoneOnly {
+  display: none;
+}
+
+.emptyPanel {
+  max-width: 720px;
+}
+
+/* ── a wallet by its address ──────────────────────────────────────────── */
+
+.hero {
+  min-width: 0;
+}
+
+.heroRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px 16px;
+}
+
+.heroLine {
+  flex: 1 1 280px;
+  min-width: 0;
+}
+
+.lookup {
+  display: flex;
+  flex: 2 1 320px;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  max-width: 720px;
+}
+
+.lookupRow {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+  min-width: 0;
+}
+
+/* The kit's field (`Search`), as wide as its place. */
+.lookupRow > label {
+  flex: 1 1 0;
+  width: auto;
+  min-width: 0;
+}
+
+.lookup[data-bad] .lookupRow > label {
+  border-color: var(--flare);
+}
+
+.lookupRow > button {
+  flex: none;
+}
+
+.lookupBad {
+  margin: 0;
+  font-size: var(--type-small);
+  color: var(--flare);
+}
+
+.or {
+  flex: none;
+  font-size: var(--type-body);
+  color: var(--soft);
+}
+
+.heroAct {
+  flex: none;
+}
+
+/* The address field in the head, once a wallet is on screen: the same field, as wide as its place. */
+.lookupSmall {
+  flex: 0 1 340px;
+}
+
+/* ── the total ────────────────────────────────────────────────────────── */
+
+.total {
+  min-width: 0;
+}
+
+.totalRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px 32px;
+}
+
+.totalMain {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.kickRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 28px;
+}
+
+.totalFigs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 16px;
+}
+
+.big {
+  overflow-wrap: anywhere;
+}
+
+.totalSol {
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: var(--type-lead);
+  font-variant-numeric: tabular-nums;
+  color: var(--soft);
+  white-space: nowrap;
+}
+
+.totalSide {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.bar {
+  display: flex;
+  gap: 2px;
+  height: 10px;
+}
+
+.bar i {
+  display: block;
+  flex-basis: 0;
+  min-width: 4px;
+}
+
+.bar i[data-part='pools'],
+.dot[data-part='pools'] {
+  background: var(--violet);
+}
+
+.bar i[data-part='staking'],
+.dot[data-part='staking'] {
+  background: var(--lilac);
+}
+
+.bar i[data-part='lending'],
+.dot[data-part='lending'] {
+  background: var(--warm);
+}
+
+.bar i[data-part='coins'],
+.dot[data-part='coins'] {
+  background: var(--ice);
+}
+
+.bar i[data-part='agents'],
+.dot[data-part='agents'] {
+  background: var(--soft);
+}
+
+.bar i[data-part='none'],
+.dot[data-part='none'] {
+  background: var(--line);
+}
+
+.parts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 28px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.part {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  font-size: var(--type-body);
+  color: var(--soft);
+  white-space: nowrap;
+}
+
+.part b {
+  font-family: var(--display);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--ice);
+}
+
+.dot {
+  display: block;
+  width: 8px;
+  height: 8px;
+  flex: none;
+}
+
+.notAll {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin: 0;
+  font-size: var(--type-body);
+  color: var(--ice);
+}
+
+/* ── the three actions ────────────────────────────────────────────────── */
+
+.actions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  min-width: 0;
+}
+
+.action {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+  padding: 14px 18px;
+  border-left: 1px solid var(--line);
+}
+
+.action:first-child {
+  border-left: 0;
+}
+
+.actionBadge {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  color: var(--lilac);
+  background: var(--well);
+  border: 1px solid var(--line);
+}
+
+.actionWords {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.actionWords b {
+  font-family: var(--display);
+  font-weight: 800;
+  font-stretch: 125%;
+  font-size: var(--type-base);
+  color: var(--ice);
+}
+
+.actionWords span {
+  font-size: var(--type-small);
+  line-height: 1.3;
+  color: var(--soft);
+}
+
+.actionEnd {
+  display: flex;
+  flex: none;
+  align-items: center;
+}
+
+/* The phone's bar of actions: in the thumb's reach, over the tabs. */
+.thumb {
+  display: none;
+}
+
+/* ── the side column: the private balance that is coming, the recent activity ── */
+
+.side {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+/* A panel borrowed from another screen («Recent activity» of the Swap screen) takes the side column's whole width here. */
+.side > div > * {
+  max-width: none;
+  align-self: stretch;
+}
+
+.private {
+  min-width: 0;
+}
+
+.privateHead {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.privateWords {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+
+.privateChips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.privateHide {
+  min-height: 44px;
+}
+
+/* ── a group ──────────────────────────────────────────────────────────── */
+
+.groups {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+.group {
+  min-width: 0;
+}
+
+.groupHead {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 52px;
+  padding: 0 8px 0 18px;
+}
+
+.groupName {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 10px;
+  min-width: 0;
+  margin: 0;
+  font-family: var(--display);
+  font-weight: 800;
+  font-stretch: 125%;
+  font-size: var(--type-lead);
+  color: var(--ice);
+}
+
+.groupCount {
+  font-size: var(--type-body);
+  font-weight: 700;
+  color: var(--soft);
+}
+
+.groupSum {
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: var(--type-base);
+  font-variant-numeric: tabular-nums;
+  color: var(--ice);
+  white-space: nowrap;
+}
+
+.foldBtn {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  color: var(--soft);
+  background: transparent;
+  border: 0;
+}
+
+.foldBtn:hover {
+  color: var(--ice);
+}
+
+.foldBtn:focus-visible {
+  outline: 2px solid var(--lilac);
+  outline-offset: -2px;
+}
+
+.foldBtn svg {
+  transition: transform 0.16s;
+}
+
+.foldBtn[aria-expanded='true'] svg {
+  transform: rotate(180deg);
+}
+
+.groupBody {
+  border-top: 1px solid var(--line);
+}
+
+.groupNote {
+  padding: 0 18px 14px;
+}
+
+/* ── a row's cells on a desk ──────────────────────────────────────────── */
+
+.nameCell {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.nameCell > a {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  color: inherit;
+}
+
+.pair {
+  display: flex;
+  flex: none;
+}
+
+.pair > * + * {
+  margin-left: -9px;
+  box-shadow: 0 0 0 2px var(--panel);
+}
+
+.words {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.name {
+  font-family: var(--display);
+  font-weight: 800;
+  font-stretch: 125%;
+  font-size: var(--type-body);
+  color: var(--ice);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sub {
+  font-size: var(--type-small);
+  color: var(--soft);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sub[data-tone='warn'] {
+  color: var(--amber);
+}
+
+.rangeCell {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 10px;
+  min-width: 0;
+}
+
+.rangeMark {
+  font-size: var(--type-small);
+  font-variant-numeric: tabular-nums;
+  color: var(--soft);
+  white-space: nowrap;
+}
+
+.plain {
+  white-space: nowrap;
+}
+
+.rowActs {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+/* A row's own controls stand over the row's link: a tap on «Buy» buys, it does not open the coin. */
+.rowActs > * {
+  position: relative;
+  z-index: 1;
+}
+
+.whyLine {
+  font-size: var(--type-small);
+  line-height: 1.35;
+  color: var(--soft);
+  white-space: normal;
+  text-align: right;
+}
+
+/* A coin better left alone: its row stands out by a warm wash, its mark says the word. */
+.marked {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+/* The row itself, where the browser can tell which row holds a marked coin. */
+.groupBody [role='row']:has(.marked) {
+  background: color-mix(in srgb, var(--amber) 5%, transparent);
+  box-shadow: inset 2px 0 0 color-mix(in srgb, var(--amber) 70%, transparent);
+}
+
+/* ── rows on a phone ──────────────────────────────────────────────────── */
+
+.rows {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0 16px 4px;
+  list-style: none;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 64px;
+  padding: 10px 0;
+  text-align: left;
+  color: var(--ice);
+  border: 0;
+  border-top: 1px solid var(--line);
+  background: transparent;
+}
+
+.rows > li:first-child > .row {
+  border-top: 0;
+}
+
+.row:focus-visible {
+  outline: 2px solid var(--lilac);
+  outline-offset: -2px;
+}
+
+.row[data-marked] {
+  margin: 0 -16px;
+  padding: 10px 16px 10px 14px;
+  width: calc(100% + 32px);
+  background: color-mix(in srgb, var(--amber) 5%, transparent);
+  border-left: 2px solid color-mix(in srgb, var(--amber) 70%, transparent);
+}
+
+.rowName {
+  font-family: var(--display);
+  font-weight: 800;
+  font-stretch: 125%;
+  font-size: var(--type-base);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rowSide {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  font-variant-numeric: tabular-nums;
+}
+
+.rowValue {
+  font-size: var(--type-base);
+  font-weight: 700;
+}
+
+.rowMove {
+  font-size: var(--type-small);
+  font-weight: 700;
+  color: var(--soft);
+}
+
+.rowMove[data-tone='up'] {
+  color: var(--mint);
+}
+
+.rowMove[data-tone='down'] {
+  color: var(--flare);
+}
+
+.rowFoot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 0 0 12px;
+}
+
+.rowMark {
+  padding: 0 0 12px;
+}
+
+.rowFoot .whyLine {
+  flex: 1 1 100%;
+  text-align: left;
+}
+
+/* ── bones: the screen's own form before its figures ──────────────────── */
+
+.bone {
+  display: block;
+  height: 14px;
+  background: linear-gradient(90deg, rgba(153, 69, 255, 0.07), rgba(153, 69, 255, 0.16), rgba(153, 69, 255, 0.07));
+  background-size: 200% 100%;
+}
+
+[aria-busy='true'] .bone {
+  animation: glide 1.6s linear infinite;
+}
+
+.boneBig {
+  width: 240px;
+  height: 40px;
+}
+
+.boneRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 60px;
+  padding: 0 18px;
+  border-top: 1px solid var(--line);
+}
+
+.boneRow:first-child {
+  border-top: 0;
+}
+
+.boneDisc {
+  width: 32px;
+  height: 32px;
+  flex: none;
+  background: rgba(153, 69, 255, 0.12);
+}
+
+.boneFill {
+  flex: 1 1 0;
+}
+
+.blank {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  padding: 18px;
+}
+
+.blankLine {
+  flex: 1 1 220px;
+  margin: 0;
+  font-size: var(--type-base);
+  color: var(--ice);
+}
+
+/* ── the exit's panel ─────────────────────────────────────────────────── */
+
+.panelHead {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.panelHead > h2 {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.headGlyph {
+  color: var(--lilac);
+}
+
+.exitFigure {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.exitLine {
+  margin: 0;
+  font-size: var(--type-body);
+  line-height: 1.4;
+  color: var(--ice);
+}
+
+.exitLists {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  max-height: 46vh;
+  overflow-y: auto;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.exitGroup {
+  display: flex;
+  flex-direction: column;
+  padding: 10px 0 4px;
+  border-top: 1px solid var(--line);
+}
+
+.exitGroup:first-child {
+  border-top: 0;
+}
+
+.exitRows {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.exitRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 52px;
+  padding: 6px 0;
+}
+
+.exitRow[data-off] .name,
+.exitRow[data-off] .exitValue {
+  color: var(--soft);
+}
+
+.exitValue {
+  flex: none;
+  font-size: var(--type-body);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--ice);
+}
+
+.exitWhy {
+  font-size: var(--type-small);
+  line-height: 1.35;
+  color: var(--soft);
+  white-space: normal;
+}
+
+.exitStatus {
+  margin: 0;
+  font-size: var(--type-body);
+  color: var(--ice);
+}
+
+.exitStatus[data-tone='warn'] {
+  color: var(--amber);
+}
+
+.exitDone {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+@keyframes glide {
+  from {
+    background-position: 200% 0;
+  }
+
+  to {
+    background-position: -200% 0;
+  }
+}
+
+/* ── a phone ──────────────────────────────────────────────────────────── */
+
+@media (max-width: 767px) {
+  .deskOnly {
+    display: none;
+  }
+
+  .phoneOnly {
+    display: block;
+  }
+
+  .head {
+    gap: 8px 12px;
+  }
+
+  .lookupSmall {
+    flex: 1 1 100%;
+    order: 3;
+  }
+
+  /* One column, one line: a wrapping column would size its line by the longest words and spill past the panel. */
+  .heroRow {
+    flex-direction: column;
+    flex-wrap: nowrap;
+    align-items: stretch;
+  }
+
+  /* The private balance says only its name and «Soon» on a phone: nothing in it can be pressed yet. */
+  .privateChips,
+  .privateHide {
+    display: none;
+  }
+
+  /* In a column a basis is a height: the line and the field take only what they hold. */
+  .heroLine {
+    flex: 0 0 auto;
+  }
+
+  .heroRow > .lookup {
+    flex: 0 0 auto;
+  }
+
+  .or {
+    align-self: center;
+  }
+
+  .totalSide {
+    align-items: flex-start;
+  }
+
+  .parts {
+    gap: 8px 20px;
+  }
+
+  .actions {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .action {
+    padding: 12px 16px;
+    border-left: 0;
+    border-top: 1px solid var(--line);
+  }
+
+  .action:first-child {
+    border-top: 0;
+  }
+
+  /* The actions themselves stand in the thumb's bar; the tiles above say what each gives. */
+  .actionEnd[data-thumb] {
+    display: none;
+  }
+
+  .thumb {
+    position: sticky;
+    bottom: calc(var(--tabbar) + env(safe-area-inset-bottom));
+    z-index: 3;
+    display: flex;
+    gap: 8px;
+    margin: 0 calc(-1 * var(--bleed, 16px));
+    padding: 8px var(--bleed, 16px);
+    border-top: 1px solid var(--line);
+    background: var(--ink-deep);
+  }
+
+  .thumb > button {
+    flex: 1 1 0;
+    min-width: 0;
+    min-height: 48px;
+    padding-inline: 8px;
+    white-space: nowrap;
+  }
+
+  .groupHead {
+    gap: 8px;
+    padding: 0 4px 0 16px;
+  }
+
+  .groupName {
+    font-size: var(--type-base);
+    white-space: nowrap;
+  }
+
+  /* A row's line is read whole on a phone: it wraps rather than ends in dots. */
+  .row .sub {
+    white-space: normal;
+  }
+
+  /* The list scrolls inside the sheet, so the one action stays in the thumb's reach. */
+  .exitLists {
+    max-height: 34dvh;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [aria-busy='true'] .bone {
+    animation: none;
+  }
+
+  .foldBtn svg {
+    transition: none;
+  }
+}

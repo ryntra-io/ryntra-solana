@@ -3,7 +3,7 @@
 
 
 /** The contract this build of the package was generated from. */
-export const CONTRACT_VERSION = "1.90.0";
+export const CONTRACT_VERSION = "1.100.0";
 export const CONTRACT_MAJOR = 1;
 
 /** The header a client names its contract major in; a major the server does not serve is refused UNSUPPORTED_API. */
@@ -130,6 +130,39 @@ export const ERRORS = {
   INTENT_KEY_INVALID: { status: 403, retryable: false },
   INTENT_SENT: { status: 409, retryable: false },
   INTENT_SIGNATURE_INVALID: { status: 422, retryable: false },
+  PRO_LIMIT_NO_MARKET: { status: 404, retryable: false },
+  PRO_LIMIT_REFUSED: { status: 422, retryable: false },
+  PRO_LIMIT_BALANCE_LOW: { status: 422, retryable: false },
+  PRO_LIMIT_CAP: { status: 403, retryable: false },
+  PRO_LIMIT_NOTHING_TO_DO: { status: 409, retryable: false },
+  PRO_LIMIT_REVIEW_EXPIRED: { status: 410, retryable: false },
+  PRO_LIMIT_SIGNED_OTHER_BYTES: { status: 422, retryable: false },
+  PRO_LIMIT_SUBMIT_FAILED: { status: 422, retryable: false },
+  EARN_PRO_STOPPED: { status: 403, retryable: false },
+  EARN_PRO_NOT_A_PIER: { status: 404, retryable: false },
+  EARN_PRO_PIER_NOT_OPEN: { status: 409, retryable: false },
+  EARN_PRO_AMOUNT_LOW: { status: 422, retryable: false },
+  EARN_PRO_AMOUNT_HIGH: { status: 422, retryable: false },
+  EARN_PRO_CARE_CLOSED: { status: 404, retryable: false },
+  EARN_PRO_BALANCE_LOW: { status: 422, retryable: false },
+  EARN_PRO_NOTHING_TO_DO: { status: 409, retryable: false },
+  EARN_PRO_REFUSED: { status: 422, retryable: false },
+  EARN_PRO_TICKET_INVALID: { status: 400, retryable: false },
+  EARN_PRO_TICKET_EXPIRED: { status: 410, retryable: false },
+  EARN_PRO_SIGNED_MISMATCH: { status: 422, retryable: false },
+  EARN_PRO_NOT_SIGNED: { status: 422, retryable: false },
+  EARN_PRO_SIMULATION_FAILED: { status: 422, retryable: false },
+  WALLET_CLEAN_NOTHING_TO_DO: { status: 409, retryable: false },
+  WALLET_CLEAN_TICKET_INVALID: { status: 400, retryable: false },
+  WALLET_CLEAN_TICKET_EXPIRED: { status: 410, retryable: false },
+  WALLET_CLEAN_SIGNED_MISMATCH: { status: 422, retryable: false },
+  WALLET_CLEAN_NOT_SIGNED: { status: 422, retryable: false },
+  WALLET_CLEAN_SIMULATION_FAILED: { status: 422, retryable: false },
+  PORTFOLIO_EXIT_NOTHING_TO_DO: { status: 409, retryable: false },
+  PORTFOLIO_EXIT_TICKET_INVALID: { status: 400, retryable: false },
+  PORTFOLIO_EXIT_TICKET_EXPIRED: { status: 410, retryable: false },
+  PORTFOLIO_EXIT_SIGNED_MISMATCH: { status: 422, retryable: false },
+  PORTFOLIO_EXIT_NOT_SIGNED: { status: 422, retryable: false },
 } as const;
 
 export type ApiErrorCode = keyof typeof ERRORS;
@@ -210,6 +243,28 @@ export const OPERATIONS = {
     paged: false,
     parameters: [],
   },
+  getEarnPoolBins: {
+    operationId: "getEarnPoolBins",
+    path: "/api/v1/earn/pools/bins",
+    tag: "Earn",
+    response: "EarnBinsResponse",
+    paged: false,
+    parameters: [
+      { name: "pool", in: "query", required: true },
+      { name: "half", in: "query", required: false },
+    ],
+  },
+  getEarnProPoolBins: {
+    operationId: "getEarnProPoolBins",
+    path: "/api/v1/earn/pro/bins",
+    tag: "Earn",
+    response: "EarnBinsResponse",
+    paged: false,
+    parameters: [
+      { name: "pool", in: "query", required: true },
+      { name: "half", in: "query", required: false },
+    ],
+  },
   getIntent: {
     operationId: "getIntent",
     path: "/api/v1/intents/{id}",
@@ -218,6 +273,27 @@ export const OPERATIONS = {
     paged: false,
     parameters: [
       { name: "id", in: "path", required: true },
+    ],
+  },
+  getLadderMarket: {
+    operationId: "getLadderMarket",
+    path: "/api/v1/ladders/market",
+    tag: "Ladders",
+    response: "LadderMarketResponse",
+    paged: false,
+    parameters: [
+      { name: "mint", in: "query", required: true },
+    ],
+  },
+  getLadderOrders: {
+    operationId: "getLadderOrders",
+    path: "/api/v1/ladders/orders",
+    tag: "Ladders",
+    response: "LadderOrdersResponse",
+    paged: false,
+    parameters: [
+      { name: "owner", in: "query", required: true },
+      { name: "mint", in: "query", required: false },
     ],
   },
   getLaunch: {
@@ -410,6 +486,16 @@ export const OPERATIONS = {
     response: "LaunchMarketsResponse",
     paged: false,
     parameters: [],
+  },
+  getLaunchPool: {
+    operationId: "getLaunchPool",
+    path: "/api/v1/launch/dlmm-pro/{mint}",
+    tag: "Launch",
+    response: "LaunchPoolView",
+    paged: false,
+    parameters: [
+      { name: "mint", in: "path", required: true },
+    ],
   },
   getLaunchPresets: {
     operationId: "getLaunchPresets",
@@ -611,6 +697,40 @@ export const OPERATIONS = {
     paged: false,
     parameters: [],
   },
+  listEarnPools: {
+    operationId: "listEarnPools",
+    path: "/api/v1/earn/pools",
+    tag: "Earn",
+    response: "EarnPoolsResponse",
+    paged: false,
+    parameters: [],
+  },
+  listEarnProPiers: {
+    operationId: "listEarnProPiers",
+    path: "/api/v1/earn/pro/piers",
+    tag: "Earn",
+    response: "EarnProPiersResponse",
+    paged: false,
+    parameters: [],
+  },
+  listEarnProPositions: {
+    operationId: "listEarnProPositions",
+    path: "/api/v1/earn/pro/positions",
+    tag: "Earn",
+    response: "EarnProPositionsResponse",
+    paged: false,
+    parameters: [
+      { name: "owner", in: "query", required: true },
+    ],
+  },
+  listLaunchPools: {
+    operationId: "listLaunchPools",
+    path: "/api/v1/launch/dlmm-pro",
+    tag: "Launch",
+    response: "LaunchPoolListResponse",
+    paged: false,
+    parameters: [],
+  },
   listMarketEvents: {
     operationId: "listMarketEvents",
     path: "/api/v1/events",
@@ -636,6 +756,18 @@ export const OPERATIONS = {
       { name: "limit", in: "query", required: false },
     ],
   },
+  readMarketDepth: {
+    operationId: "readMarketDepth",
+    path: "/api/v1/market/depth",
+    tag: "Markets",
+    response: "MarketDepthResponse",
+    paged: false,
+    parameters: [
+      { name: "list", in: "query", required: false },
+      { name: "window", in: "query", required: false },
+      { name: "mints", in: "query", required: false },
+    ],
+  },
   readPaymentPage: {
     operationId: "readPaymentPage",
     path: "/api/pay/{id}",
@@ -644,6 +776,29 @@ export const OPERATIONS = {
     paged: false,
     parameters: [
       { name: "id", in: "path", required: true },
+    ],
+  },
+  readPortfolio: {
+    operationId: "readPortfolio",
+    path: "/api/v1/portfolio",
+    tag: "Portfolio",
+    response: "PortfolioResponse",
+    paged: false,
+    parameters: [
+      { name: "owner", in: "query", required: true },
+      { name: "refresh", in: "query", required: false },
+    ],
+  },
+  readPortfolioExit: {
+    operationId: "readPortfolioExit",
+    path: "/api/v1/portfolio/exit",
+    tag: "Portfolio",
+    response: "PortfolioExitOverviewResponse",
+    paged: false,
+    parameters: [
+      { name: "owner", in: "query", required: true },
+      { name: "mode", in: "query", required: false },
+      { name: "target", in: "query", required: false },
     ],
   },
   readPredictionBook: {
@@ -722,6 +877,26 @@ export const OPERATIONS = {
     parameters: [
       { name: "code", in: "query", required: false },
       { name: "address", in: "query", required: false },
+    ],
+  },
+  readWalletClean: {
+    operationId: "readWalletClean",
+    path: "/api/v1/wallet/clean",
+    tag: "Wallet",
+    response: "WalletCleanReadResponse",
+    paged: false,
+    parameters: [
+      { name: "owner", in: "query", required: true },
+    ],
+  },
+  readWalletCleanBack: {
+    operationId: "readWalletCleanBack",
+    path: "/api/v1/wallet/clean/back",
+    tag: "Wallet",
+    response: "WalletCleanBackResponse",
+    paged: false,
+    parameters: [
+      { name: "owner", in: "query", required: true },
     ],
   },
   reviewLaunchClaim: {

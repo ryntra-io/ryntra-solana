@@ -22,6 +22,8 @@ import { useDollar } from '@/city/lib/earn/dollar-store';
 import { earnWords } from '@/city/lib/earn/words';
 import { AUTOPILOT } from '@/city/lib/autopilot/words';
 import { readInstruction } from '@/city/lib/instruct/read';
+import { reachText } from '@/city/lib/trade/pro-ladder';
+import { readLadderAsk } from '@/city/lib/trade/pro-read';
 import { funnelSay } from '@/city/lib/crew/funnel-say';
 import { hireFit, readHire, type Role } from '@/city/lib/crew/read';
 import { crewGatesNow } from '@/city/lib/crew/hire';
@@ -38,6 +40,7 @@ import { EarnGlyph, MoneyGlyph } from '../deck/glyphs';
 import { CloseGlyph, LaunchGlyph } from '../hud/glyphs';
 import { LearnGlyph } from '../learn/glyphs';
 import { LEARN_WORDS } from '../learn/words';
+import { LADDER } from '../trade/pro-words';
 import s from './command.module.css';
 import { COMMAND } from './words';
 
@@ -97,8 +100,10 @@ function Palette() {
     // The money autopilot on its word: money given and spread over places — one plan — before either.
     const pilot = gates.pilot ? readPilotAsk(text, book) : null;
     const saver = !pilot && gates.dollar ? readDollarAsk(text) : null;
-    const ask = !pilot && !saver && (gates.agentTrade || gates.agentLaunch) ? readAsk(text, book) : null;
-    const agent = pilot ? fit({ kind: 'pilot', ask: pilot }, gates) : saver ? fit({ kind: 'dollar', ask: saver }, gates) : ask ? fit({ kind: 'autopilot', ask }, gates) : null;
+    // «Buy BONK cheaper», «sell half at 2x»: a ladder in the coin's window — before the agent's strategies, which read «cheaper» as a dip.
+    const ladder = !pilot && !saver && gates.ladder ? readLadderAsk(text, book, context) : null;
+    const ask = !pilot && !saver && !ladder && (gates.agentTrade || gates.agentLaunch) ? readAsk(text, book, context.pools === true) : null;
+    const agent = pilot ? fit({ kind: 'pilot', ask: pilot }, gates) : saver ? fit({ kind: 'dollar', ask: saver }, gates) : ladder ? fit({ kind: 'ladder', ask: ladder }, gates) : ask ? fit({ kind: 'autopilot', ask }, gates) : null;
     const instruction = !agent && gates.instruct ? readInstruction(text, book, context) : null;
     // A job for an agent: «trade for me», «доглядай мій пул» — the agent's card, never a question for Ryntra.
     const job = !agent && !instruction ? readHire(text) : null;
@@ -328,6 +333,11 @@ function faceOf(command: Command, w: Words, agent: (typeof INSTRUCT)['en']): { i
         fill: command.ask.amount ? digits(`${command.ask.amount} ${command.ask.asset}`) : command.ask.asset,
         where: r !== null ? digits(`${rateText(r)} · ${d.dollar.provider}`) : d.dollar.provider,
       };
+    }
+    case 'ladder': {
+      const lw = wordsNow(LADDER);
+      const { ask } = command;
+      return { icon: <CoinIcon coin={ask.coin} />, label: `${ask.action === 'buy' ? lw.buyCheaper : lw.sellHigher} · $${ask.coin.symbol}`, fill: ask.farBps !== null ? digits(reachText(ask.farBps, ask.action)) : null, where: agent.agent };
     }
     case 'pilot': {
       const p = wordsNow(PILOT);

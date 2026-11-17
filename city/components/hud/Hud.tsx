@@ -12,6 +12,7 @@ import { useHarbor } from '@/city/lib/districts/harbor/store';
 import { useHudPanels } from '@/city/lib/city/windows';
 import { useHall } from '@/city/lib/launch/hall-store';
 import { isNamed, towerFigure, type District, type Tower } from '@/city/lib/market/types';
+import { isPoolLaunch } from '@/city/lib/launch/pool';
 import { useFilming } from '@/city/lib/moments/MomentsLayer';
 import { cancelFilming, useMoments } from '@/city/lib/moments/stage';
 import { usePages } from '@/city/lib/pages/store';
@@ -55,6 +56,7 @@ import { dateText, digits, useWords, type TextKey } from '@/city/lib/i18n/dict';
 import { useLang, type Lang } from '@/city/lib/i18n/lang';
 import { retellLaunchMoment } from '@/city/lib/launch/words';
 import { useAgentReport } from '@/city/lib/autopilot/report-client';
+import { cityHome } from '@/terminal/shell/home';
 import s from './hud.module.css';
 
 type HudText = TextKey<typeof HUD>;
@@ -126,8 +128,13 @@ export function Hud({ onPlay, onSound }: { onPlay: Play; onSound: (on: boolean) 
   }, [selectedId, launch.showing, closeMenu]);
 
   // The logo: back to the city's overview from anywhere — every panel shut, the camera on the skyline, the address `/`.
+  // Once the terminal is the home page the city stands at `/city`, and the logo is the way back to the terminal.
   const home = useCallback(() => {
     closeMenu();
+    if (cityHome() !== '/') {
+      location.assign('/');
+      return;
+    }
     goHome();
   }, [closeMenu]);
 
@@ -261,9 +268,11 @@ export function goHome() {
   // Without Play's switch there is no way back by it: home is the City (decision 86).
   if (!PLAY_OPEN) useLayer.getState().set('city');
   useCity.getState().home();
-  if (typeof window !== 'undefined' && `${location.pathname}${location.search}${location.hash}` !== '/') {
-    // The same page under its home address: `/c/<mint>` and the rest become `/`, without loading anything again.
-    history.replaceState(history.state, '', '/');
+  const home = cityHome();
+  if (typeof window !== 'undefined' && `${location.pathname}${location.search}${location.hash}` !== home) {
+    // The same page under its home address: `/c/<mint>` and the rest become the city's home (`/`, or `/city` once the
+    // terminal is the home page), without loading anything again.
+    history.replaceState(history.state, '', home);
   }
 }
 
@@ -393,7 +402,8 @@ function PoolCard() {
   const layout = useCity((st) => st.layout);
   const select = useCity((st) => st.select);
   const placed = useMemo(() => layout.towers.find((t) => t.tower.id === selectedId) ?? null, [layout, selectedId]);
-  if (!placed || isNamed(placed.tower)) return null;
+  // A launch into a pool has its own window (`TradeLayer`), never the unverified pool's card.
+  if (!placed || isNamed(placed.tower) || isPoolLaunch(placed.tower.id)) return null;
   return <UnverifiedCard tower={placed.tower} onClose={() => select(null)} />;
 }
 

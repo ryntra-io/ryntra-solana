@@ -1,7 +1,8 @@
 import { digits, num } from '../i18n/dict.ts';
 import type { Lang } from '../i18n/langs.ts';
 import { cardDateText, moneyText, shareText } from './berth-words.ts';
-import type { AgentCard, CardTag, CreatorCard, RoundTrip, ShareCard } from './cards.ts';
+import { plainFigure } from '../i18n/figures.ts';
+import type { AgentCard, CardTag, CreatorCard, FilledCard, RoundTrip, ShareCard } from './cards.ts';
 import { SHARE_CARD } from './words.ts';
 
 /**
@@ -30,7 +31,30 @@ export type CardFace = Readonly<{
 
 export function cardFace(card: ShareCard, lang: Lang): CardFace {
   if (card.kind === 'agent') return agentFace(card, lang);
+  if (card.kind === 'filled') return filledFace(card, lang);
   return card.kind === 'pnl' ? roundFace(card, lang) : creatorFace(card, lang);
+}
+
+/** The price a ladder filled at, as the card writes it: four figures that mean something, never rounded up into a better price. */
+export function filledPriceText(card: Pick<FilledCard, 'price' | 'pair'>, lang: Lang): string {
+  return `${digits(plainFigure(card.price, { places: 6, significant: 4 }), lang)} ${card.pair.symbol}`;
+}
+
+/** «Order filled»: the ticker big, the exact price under it, how much of the ladder filled and the bonus in the quiet line. */
+function filledFace(card: FilledCard, lang: Lang): CardFace {
+  const w = SHARE_CARD[lang];
+  /* A bonus too small to write as money is left off the card: «+<0.01» says nothing. */
+  const money = card.bonusRaw ? moneyText(card.bonusRaw, card.pair, lang) : null;
+  const bonus = money && !money.startsWith('<') ? w.filledBonus(money) : null;
+  return {
+    kicker: [card.action === 'buy' ? w.filledBought : w.filledSold],
+    tone: 'mint',
+    hero: `$${card.coin.symbol}`,
+    unit: card.blended ? w.filledAvg(filledPriceText(card, lang)) : w.filledAt(filledPriceText(card, lang)),
+    line: [w.filledPrices(card.touched, card.prices), moneyText(card.pairRaw, card.pair, lang), bonus].filter(Boolean).join(' · '),
+    tag: tagText(card.tag, lang),
+    frame: 'live',
+  };
 }
 
 /** The agent's card: its multiple big, the gain under it, what went in and what it is worth now in the quiet line. */
@@ -96,7 +120,11 @@ export function roundKicker(card: Pick<RoundTrip, 'bought' | 'sold'>, lang: Lang
 export function postText(card: ShareCard, lang: Lang): string {
   const w = SHARE_CARD[lang];
   const words =
-    card.kind === 'agent'
+    card.kind === 'filled'
+      ? card.blended
+        ? w.postFilledMany(card.coin.symbol, card.touched, filledPriceText(card, lang))
+        : (card.action === 'buy' ? w.postFilledBuy : w.postFilledSell)(card.coin.symbol, filledPriceText(card, lang))
+      : card.kind === 'agent'
       ? card.span
         ? (card.span === 'today' ? w.postAgentToday : w.postAgentAway)(agentSummary(card, lang), card.coin.symbol)
         : w.postAgent(multipleText(card.multiple, lang), card.coin.symbol)

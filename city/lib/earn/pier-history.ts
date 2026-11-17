@@ -22,6 +22,22 @@ export const HISTORY_MIN_BARS = 42;
 
 export type PricePoint = Readonly<{ t: number; p: number }>;
 
+/** A day's bars of the history's timeframe: six four-hour bars, the one still open among them. */
+const DAY_BARS_SECONDS = 20 * 3_600;
+
+/**
+ * The lowest and the highest a coin traded at over the last 24 hours, wicks included, from one answer of
+ * `/api/spot/candles` (how far a pair's price walked in the day gone). Null with fewer than two bars of it.
+ */
+export function dayRangeOf(body: unknown): Readonly<{ low: number; high: number }> | null {
+  const candles = candlesOf(body && typeof body === 'object' ? (body as { candles?: unknown }).candles : null);
+  const last = candles.at(-1);
+  if (!last) return null;
+  const day = candles.filter((c) => Number(c.time) >= Number(last.time) - DAY_BARS_SECONDS);
+  if (day.length < 2) return null;
+  return { low: Math.min(...day.map((c) => c.low)), high: Math.max(...day.map((c) => c.high)) };
+}
+
 /** Closes by bar time, from one answer of `/api/spot/candles`; empty when the answer is not one. */
 export function closesOf(body: unknown): Map<number, number> {
   const candles = candlesOf(body && typeof body === 'object' ? (body as { candles?: unknown }).candles : null);

@@ -1,0 +1,997 @@
+/* The terminal's kit: every part a screen is built from. One look for everyone:
+   straight panels with a violet edge, `--r-ctl` on what a person presses, a circle for a coin's logo and the switch, the
+   cut corner on the one panel a screen acts in and on its amber button. Ordinary case, Geist for the words and Hubot
+   Sans for the numbers. Amber is the action and the menu's place — a chosen tab, filter or row is quiet. The variables
+   live on the terminal's root (terminal/styles); the corners are held by terminal/styles/form.test.mjs. */
+
+/* ── words ─────────────────────────────────────────────────────────────── */
+
+.title {
+  font-family: var(--ui);
+  font-weight: 650;
+  font-size: var(--type-title);
+  letter-spacing: -0.01em;
+  line-height: 1.15;
+}
+
+.kick {
+  font-size: var(--type-small);
+  font-weight: 500;
+  color: var(--dim);
+}
+
+.fig {
+  font-family: var(--display);
+  font-weight: 700;
+  font-stretch: 105%;
+  font-size: var(--type-figure);
+  letter-spacing: -0.02em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.figXl {
+  font-size: 44px;
+}
+
+.figM {
+  font-size: var(--type-title-l);
+}
+
+.figS {
+  font-size: var(--type-lead);
+}
+
+.unit {
+  margin-left: 0.3em;
+  font-family: var(--display);
+  font-weight: 700;
+  font-stretch: 105%;
+  color: var(--amber);
+  font-size: 0.75em;
+}
+
+.up {
+  color: var(--mint);
+}
+
+.down {
+  color: var(--flare);
+}
+
+.num {
+  font-variant-numeric: tabular-nums;
+}
+
+.dimText {
+  color: var(--dim);
+}
+
+/* ── glass: a panel — straight dark glass with a thin violet edge. One language of the edge: a panel in the page has
+   its edge and no shadow; a shadow belongs only to what floats over the page (a menu, the «i», a sheet). ── */
+
+.glass {
+  position: relative;
+  min-width: 0;
+  background: var(--glass);
+  border: 1px solid var(--pane-edge);
+  border-radius: 0;
+}
+
+.glass > * {
+  position: relative;
+}
+
+/* The one panel a screen acts in — its ticket or its form: a warm edge, a warm breath from above, and the brand's cut
+   corner, the edge running along the cut. The shape is a layer under the panel's parts, so the panel itself clips
+   nothing: a menu or an «i» that opens out of it stays whole. */
+.hi {
+  background: none;
+  border-color: transparent;
+  box-shadow: none;
+}
+
+.hi::before {
+  content: '';
+  /* A place that is the glass itself — the phone's sheet — switches the layer off (`--hi-layer: none`). */
+  display: var(--hi-layer, block);
+  position: absolute;
+  inset: -1px;
+  pointer-events: none;
+  border: 1px solid var(--act-edge);
+  border-top-color: rgba(255, 210, 140, 0.42);
+  background:
+    linear-gradient(to bottom right, transparent calc(50% - 1.3px), var(--act-edge) calc(50% - 1.3px)) right bottom / var(--cut) var(--cut) no-repeat border-box,
+    radial-gradient(120% 90px at 50% 0, rgba(255, 178, 63, 0.14), rgba(255, 178, 63, 0) 100%) border-box,
+    linear-gradient(180deg, rgba(34, 27, 56, 0.8), rgba(15, 12, 27, 0.9)) border-box;
+  clip-path: polygon(0 0, 100% 0, 100% calc(100% - var(--cut)), calc(100% - var(--cut)) 100%, 0 100%);
+}
+
+.soft {
+  background: rgba(255, 255, 255, 0.02);
+  border-color: var(--line);
+  box-shadow: none;
+}
+
+.pad {
+  padding: 16px;
+}
+
+.padL {
+  padding: 24px;
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── the one amber action, and the quiet ones ──────────────────────────── */
+
+.act {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  height: 54px;
+  padding: 0 24px;
+  font-family: var(--ui);
+  font-weight: 700;
+  font-size: 16px;
+  line-height: 1.15;
+  text-align: center;
+  /* Amber is the screen's one action. Where a screen already has it — the home page's «Say» — a second action's place
+     sets these three and the button stands quiet there, in its own shape. */
+  color: var(--act-ink, var(--on-amber));
+  background: var(--act-ground, linear-gradient(180deg, var(--amber-hi), var(--amber)));
+  border-radius: var(--r-ctl);
+  clip-path: polygon(0 0, 100% 0, 100% calc(100% - var(--cut-s)), calc(100% - var(--cut-s)) 100%, 0 100%);
+  box-shadow: var(--act-light, inset 0 1px 0 rgba(255, 255, 255, 0.5));
+  transition: filter 0.15s;
+}
+
+.act:hover {
+  filter: brightness(1.05);
+}
+
+/* The cut takes a ring drawn outside the button: its focus stands inside it. */
+.act:focus-visible {
+  outline: 2px solid var(--act-ink, var(--on-amber));
+  outline-offset: -5px;
+}
+
+.act:disabled {
+  cursor: default;
+  filter: saturate(0.4) brightness(0.7);
+}
+
+.act[aria-busy='true'] {
+  animation: breathe 1.2s ease-in-out infinite;
+}
+
+.actM {
+  height: 46px;
+  font-size: var(--type-base);
+}
+
+.auto {
+  width: auto;
+}
+
+@keyframes breathe {
+  50% {
+    filter: brightness(0.85);
+  }
+}
+
+.quiet {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 46px;
+  padding: 0 16px;
+  font-size: var(--type-body);
+  font-weight: 600;
+  color: var(--ice);
+  border: 1px solid var(--glass-edge);
+  border-radius: var(--r-ctl);
+  background: rgba(255, 255, 255, 0.035);
+  white-space: nowrap;
+  transition: background-color 0.15s, border-color 0.15s;
+}
+
+.quiet:hover {
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(238, 241, 255, 0.16);
+}
+
+.quiet:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
+.quietS {
+  height: 36px;
+  padding: 0 12px;
+  font-size: var(--type-small);
+}
+
+.wide {
+  width: 100%;
+}
+
+/* ── the «i»: details behind one quiet control ─────────────────────────── */
+
+.infoWrap {
+  position: relative;
+  display: inline-flex;
+  flex: none;
+}
+
+.info {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  color: var(--soft);
+  border: 1px solid var(--glass-edge);
+  border-radius: var(--r-ctl);
+}
+
+.info:hover,
+.info[aria-expanded='true'] {
+  color: var(--ice);
+  background: rgba(255, 255, 255, 0.07);
+}
+
+/* The «i» with its name beside it. */
+.infoWord {
+  gap: 6px;
+  width: auto;
+  height: 32px;
+  padding: 0 10px 0 8px;
+  font-size: var(--type-small);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* Under a finger the small «i» answers on a 44 px place. */
+@media (pointer: coarse) {
+  .info::after {
+    content: '';
+    position: absolute;
+    inset: -8px;
+  }
+}
+
+.infoPop {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 8px);
+  z-index: 30;
+  width: min(300px, calc(100vw - 48px));
+  padding: 14px 16px;
+  font-size: var(--type-small);
+  font-weight: 500;
+  line-height: 1.45;
+  color: var(--ice);
+  background: var(--panel-up);
+  border: 1px solid var(--glass-edge);
+  border-radius: 0;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.5);
+}
+
+/* ── tabs and the two-way choice ───────────────────────────────────────── */
+
+/* A tab is a word with a line under the chosen one: no frame, no well. */
+.tabs {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.tab {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 8px;
+  height: 38px;
+  padding: 0 14px;
+  font-size: var(--type-body);
+  font-weight: 600;
+  color: var(--dim);
+  white-space: nowrap;
+  transition: color 0.15s, box-shadow 0.15s;
+}
+
+.tab:hover {
+  color: var(--ice);
+}
+
+.tab[aria-selected='true'] {
+  color: var(--ice);
+  box-shadow: inset 0 -2px 0 var(--ice);
+}
+
+.tabCount {
+  font-family: var(--display);
+  font-weight: 600;
+  color: var(--dim);
+  font-variant-numeric: tabular-nums;
+}
+
+.tabsFill {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+}
+
+.tabsFill .tab {
+  justify-content: center;
+  padding: 0 8px;
+}
+
+/* Kept for the screens that ask for tabs without a well: every row of tabs is one now. */
+.tabsBare {
+  gap: 4px;
+}
+
+/* The two-way choice: one pressed thing of two halves — its corners are the control's, the halves meet square. */
+.seg {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--line);
+  border-radius: var(--r-ctl);
+}
+
+.segItem {
+  height: 42px;
+  font-size: var(--type-base);
+  font-weight: 650;
+  color: var(--dim);
+  transition: color 0.15s, background-color 0.15s;
+}
+
+.segItem:hover {
+  color: var(--ice);
+}
+
+/* The choice clips its halves: a half shows its focus inside itself. */
+.segItem:focus-visible {
+  outline-offset: -2px;
+}
+
+.segItem[aria-checked='true'] {
+  color: var(--ice);
+  background: var(--chosen);
+}
+
+.segItem[data-tone='buy'][aria-checked='true'] {
+  color: var(--mint);
+  background: rgba(20, 241, 149, 0.14);
+  box-shadow: inset 0 -2px 0 var(--mint);
+}
+
+.segItem[data-tone='sell'][aria-checked='true'] {
+  color: var(--flare);
+  background: rgba(255, 75, 58, 0.14);
+  box-shadow: inset 0 -2px 0 var(--flare);
+}
+
+/* ── the amount field ──────────────────────────────────────────────────── */
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px;
+  background: rgba(0, 0, 0, 0.32);
+  border: 1px solid var(--line);
+  border-radius: var(--r-ctl);
+  transition: border-color 0.15s;
+}
+
+.field:focus-within {
+  border-color: var(--chosen-edge);
+}
+
+.fieldHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.fieldAside {
+  font-size: var(--type-caption);
+  color: var(--dim);
+  font-variant-numeric: tabular-nums;
+}
+
+.fieldRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.amount {
+  flex: 1 1 0;
+  width: 100%;
+  font-family: var(--display);
+  font-weight: 700;
+  font-stretch: 105%;
+  letter-spacing: -0.02em;
+  font-size: var(--type-figure);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+/* The field around it shows the focus (`.field:focus-within`): the number draws no second ring. */
+.amount:focus-visible {
+  outline: none;
+}
+
+.amount::placeholder {
+  color: rgba(152, 153, 166, 0.55);
+}
+
+.pill {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 12px 0 6px;
+  border: 1px solid var(--glass-edge);
+  border-radius: var(--r-ctl);
+  background: rgba(255, 255, 255, 0.05);
+  font-weight: 650;
+  font-size: var(--type-body);
+  white-space: nowrap;
+}
+
+.shares {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.shares button {
+  height: 40px;
+  font-size: var(--type-body);
+  font-weight: 600;
+  color: var(--soft);
+  border: 1px solid var(--glass-edge);
+  border-radius: var(--r-ctl);
+  background: rgba(238, 241, 255, 0.02);
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.shares button:hover {
+  color: var(--ice);
+}
+
+.shares button[aria-pressed='true'] {
+  color: var(--ice);
+  border-color: var(--chosen-edge);
+  background: var(--chosen);
+}
+
+/* ── chips, switches, the slider ───────────────────────────────────────── */
+
+/* A chip is a label, not a thing to press: square. */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 10px;
+  font-size: var(--type-caption);
+  font-weight: 600;
+  color: var(--soft);
+  border: 1px solid var(--glass-edge);
+  border-radius: 0;
+  background: rgba(255, 255, 255, 0.03);
+  white-space: nowrap;
+}
+
+.chipOk {
+  color: var(--mint);
+  border-color: rgba(20, 241, 149, 0.3);
+  background: rgba(20, 241, 149, 0.07);
+}
+
+.chipWarn {
+  color: var(--amber);
+  border-color: rgba(255, 178, 63, 0.35);
+  background: rgba(255, 178, 63, 0.07);
+}
+
+.chipDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+  flex: none;
+}
+
+.switchRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 44px;
+  font-size: var(--type-body);
+  font-weight: 600;
+}
+
+/* The switch — the one round control: its track is the only `--r-round` of the terminal. */
+.switch {
+  position: relative;
+  width: 42px;
+  height: 24px;
+  border-radius: var(--r-round);
+  background: rgba(238, 241, 255, 0.16);
+  flex: none;
+  transition: background-color 0.15s;
+}
+
+.switch::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--ice);
+  transition: left 0.15s, background-color 0.15s;
+}
+
+/* On is the brand's violet with a white knob: amber stays the action's. */
+.switch[aria-checked='true'] {
+  background: rgba(153, 69, 255, 0.6);
+}
+
+.switch[aria-checked='true']::after {
+  left: 21px;
+  background: var(--ice);
+}
+
+/* Under a finger the switch answers on a 44 px place. */
+@media (pointer: coarse) {
+  .switch::before {
+    content: '';
+    position: absolute;
+    inset: -10px -1px;
+  }
+}
+
+.slider {
+  -webkit-appearance: none;
+  appearance: none;
+  display: block;
+  width: 100%;
+  height: 24px;
+  background: transparent;
+  cursor: pointer;
+}
+
+.slider::-webkit-slider-runnable-track {
+  height: 2px;
+  background: linear-gradient(90deg, var(--lilac) 0 var(--fill, 0%), rgba(238, 241, 255, 0.14) var(--fill, 0%) 100%);
+}
+
+.slider::-moz-range-track {
+  height: 2px;
+  background: linear-gradient(90deg, var(--lilac) 0 var(--fill, 0%), rgba(238, 241, 255, 0.14) var(--fill, 0%) 100%);
+}
+
+.slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  margin-top: -7px;
+  border-radius: 50%;
+  background: var(--lilac);
+  box-shadow: 0 0 0 5px rgba(201, 162, 255, 0.18);
+}
+
+.slider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--lilac);
+  box-shadow: 0 0 0 5px rgba(201, 162, 255, 0.18);
+}
+
+.slider:focus-visible {
+  outline: none;
+}
+
+.slider:focus-visible::-webkit-slider-thumb {
+  box-shadow: 0 0 0 5px rgba(201, 162, 255, 0.45);
+}
+
+/* ── «Columns»: which set a table shows — a quiet two-way choice on the table's own bar ── */
+
+.cols {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  height: 38px;
+  overflow: hidden;
+  border: 1px solid var(--glass-edge);
+  border-radius: var(--r-ctl);
+  background: var(--well);
+}
+
+.colsName {
+  padding: 0 4px 0 12px;
+  font-size: var(--type-small);
+  font-weight: 600;
+  color: var(--dim);
+  white-space: nowrap;
+}
+
+.colsItem {
+  height: 100%;
+  padding: 0 11px;
+  font-size: var(--type-body);
+  font-weight: 600;
+  color: var(--dim);
+  white-space: nowrap;
+  transition: color 0.15s, background-color 0.15s;
+}
+
+.colsItem:hover {
+  color: var(--ice);
+}
+
+.colsItem[aria-checked='true'] {
+  color: var(--ice);
+  background: var(--chosen);
+}
+
+/* ── the sentence for the agent ────────────────────────────────────────── */
+
+.sayline {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  height: 44px;
+  padding: 0 14px;
+  font-size: var(--type-body);
+  font-weight: 500;
+  text-align: left;
+  color: var(--ice);
+  border: 1px solid var(--glass-edge);
+  border-radius: var(--r-ctl);
+  background: rgba(255, 255, 255, 0.03);
+  transition: border-color 0.15s, background-color 0.15s;
+}
+
+.sayline:hover {
+  border-color: var(--chosen-edge);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.sayline > span {
+  flex: 1 1 0;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sayline > svg {
+  color: var(--amber);
+  flex: none;
+}
+
+.saylineTall {
+  height: 48px;
+  font-size: var(--type-base);
+}
+
+/* ── coins, tiles, tables, rows ────────────────────────────────────────── */
+
+.logo {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  flex: none;
+  object-fit: cover;
+  background: var(--panel-up);
+}
+
+.logoS {
+  width: 22px;
+  height: 22px;
+}
+
+.logoL {
+  width: 44px;
+  height: 44px;
+}
+
+.logoXl {
+  width: 56px;
+  height: 56px;
+}
+
+.logoMark {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--display);
+  font-weight: 800;
+  font-stretch: 125%;
+  font-size: 13px;
+  color: var(--lilac);
+  border: 1px solid var(--edge-soft);
+}
+
+.sym {
+  font-family: var(--ui);
+  font-weight: 700;
+  font-size: var(--type-base);
+}
+
+.subline {
+  font-size: var(--type-small);
+  color: var(--dim);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tile {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px 16px;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid var(--line);
+  border-radius: 0;
+  min-width: 0;
+}
+
+.scrollX {
+  overflow-x: auto;
+}
+
+.tbl {
+  display: flex;
+  flex-direction: column;
+}
+
+.th,
+.tr {
+  display: grid;
+  grid-template-columns: var(--cols);
+  align-items: center;
+  column-gap: 12px;
+  padding: 0 14px;
+}
+
+.th {
+  height: 42px;
+  font-size: var(--type-caption);
+  font-weight: 600;
+  color: var(--dim);
+}
+
+.tr {
+  position: relative;
+  min-height: 52px;
+  border-top: 1px solid var(--line);
+  font-size: var(--type-body);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  transition: background-color 0.12s;
+}
+
+.tr:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+/* The row in front: a lighter ground and a pale line at its start. */
+.tr[aria-current='true'] {
+  background: rgba(255, 255, 255, 0.06);
+  box-shadow: inset 2px 0 0 var(--soft);
+}
+
+/* A row's link sits in its first cell; its shade covers the whole row, so a tap anywhere on the row opens it. */
+.rowLink::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+}
+
+.rowLink:focus-visible {
+  outline: none;
+}
+
+.rowLink:focus-visible::after {
+  outline: 2px solid var(--lilac);
+  outline-offset: -2px;
+}
+
+.end {
+  text-align: right;
+  justify-content: flex-end;
+}
+
+.sorted {
+  color: var(--ice);
+}
+
+/* The column the rows are sorted by, as the approved design marks it. */
+.th .sorted::after {
+  content: ' ↓';
+}
+
+.cellCoin {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.cellCoinWords {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.listRow {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 56px;
+  border-top: 1px solid var(--line);
+}
+
+.listRow:first-child {
+  border-top: 0;
+}
+
+.listMain {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.listSide {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.listChange {
+  font-size: var(--type-caption);
+  font-weight: 700;
+}
+
+/* ── the search field ──────────────────────────────────────────────────── */
+
+.search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 44px;
+  padding: 0 14px;
+  width: 220px;
+  max-width: 100%;
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid var(--glass-edge);
+  border-radius: var(--r-ctl);
+  color: var(--dim);
+}
+
+.search:focus-within {
+  border-color: var(--chosen-edge);
+}
+
+.search input {
+  flex: 1 1 0;
+  font-size: var(--type-small);
+  color: var(--ice);
+}
+
+.search input::placeholder {
+  color: var(--dim);
+  opacity: 1;
+}
+
+/* 16 px: a phone's browser zooms into a smaller field on focus. */
+@media (max-width: 767px) {
+  .search input {
+    font-size: 16px;
+  }
+}
+
+/* ── the icon in a part ────────────────────────────────────────────────── */
+
+.icon {
+  width: 20px;
+  height: 20px;
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.iconS {
+  width: 16px;
+  height: 16px;
+}
+
+.iconL {
+  width: 24px;
+  height: 24px;
+}
+
+/* ── a phone: the same form, a panel from edge to edge; the cut stays on the action and the agent's tab ── */
+
+@media (max-width: 767px) {
+  /* A panel that stands straight on the page, the width of its screen, says so (`Panel edge`): on a phone it runs
+     through the body's side gutter (`--bleed`, the frame's) to the screen's edges and drops its side edges. Every
+     other panel — a card in a row, a part of a sheet — keeps its column and its whole frame. */
+  .edge {
+    margin-inline: calc(-1 * var(--bleed, 0px));
+    border-inline-width: calc(1px - min(1px, var(--bleed, 0px)));
+  }
+
+  /* Its words keep the page's own column: the wide padding of a desk gives way to the gutter. */
+  .edge.padL {
+    padding-inline: 16px;
+  }
+
+  /* A finger's row: 44 px on what is pressed, and the tabs close enough for four of them to stand on a phone. */
+  .tab {
+    height: 44px;
+    padding: 0 10px;
+  }
+
+  .segItem,
+  .pill,
+  .shares button {
+    height: 44px;
+  }
+
+  .edge.hi::before {
+    inset: -1px calc(min(1px, var(--bleed, 0px)) - 1px);
+    border-inline-width: calc(1px - min(1px, var(--bleed, 0px)));
+  }
+
+  .hi::before {
+    background:
+      radial-gradient(120% 90px at 50% 0, rgba(255, 178, 63, 0.14), rgba(255, 178, 63, 0) 100%) border-box,
+      linear-gradient(180deg, rgba(34, 27, 56, 0.8), rgba(15, 12, 27, 0.9)) border-box;
+    clip-path: none;
+  }
+}

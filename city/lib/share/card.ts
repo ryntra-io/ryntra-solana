@@ -1,4 +1,5 @@
 import { SHARE_SCENE } from '../art/frames.ts';
+import { terminalOpen } from '../../../terminal/shell/flag.ts';
 import { CARD_WORDS } from './words.ts';
 
 /**
@@ -9,6 +10,17 @@ import { CARD_WORDS } from './words.ts';
  */
 
 export const CITY_CARD_SIZE = { width: 1200, height: 630 } as const;
+
+/**
+ * The terminal's frame: a shot of the live Market, 1200×630, taken on a stand by
+ * `scripts/terminal/share-scene.mjs`. Once the terminal is the home page the site's card and a coin's card stand on it.
+ */
+export const TERMINAL_SHARE_SCENE = Object.freeze({ src: '/terminal/share-scene.jpg', width: 1200, height: 630 });
+
+/** The frame every card of the site stands on: the terminal's once it is the home page, the city's until then. */
+export function shareScene(): Readonly<{ src: string; width: number; height: number }> {
+  return terminalOpen() ? TERMINAL_SHARE_SCENE : SHARE_SCENE;
+}
 
 /** Bump when the card's drawing (`card.server.tsx`) changes and neither its words nor its frame do. */
 export const CITY_CARD_REVISION = '2026-11-05';
@@ -29,5 +41,5 @@ function fnv1a(input: string): string {
  */
 export function cityCardVersion(): string {
   const words = Object.values(CARD_WORDS).flatMap((half) => Object.values(half));
-  return fnv1a([CITY_CARD_REVISION, SHARE_SCENE.src, ...words].join('|'));
+  return fnv1a([CITY_CARD_REVISION, shareScene().src, ...words].join('|'));
 }

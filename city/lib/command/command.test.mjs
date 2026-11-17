@@ -369,6 +369,9 @@ const REVIEWED = new Set([
   "follow", "setSendAsset", "setTo", "setAmount", "setWay",
   // the launch sheet, the chart, the city, Ryntra's panel, the side panels
   "openSheet", "setDraft", "closeSheet", "open", "close", "select", "show", "hide", "ask", "closePanel",
+  // the launch sheet's pool door: the time and the pair a sentence said are written into the sheet — the person reviews and signs there;
+  // what the line reads against — the coin on screen — is a read of the city's own stores
+  "setChoice", "subjectNow",
   // the doors, the words and the line's own state
   "openTrade", "openCoin", "openChart", "openMint", "openMoney", "openEarn", "openLaunch", "askRyntra",
   // the agent's card and «My instructions»: they open and show; the person signs in the card
@@ -383,6 +386,8 @@ const REVIEWED = new Set([
   "openLearn",
   // a job for an agent: that agent's card or the crew in «Bots» — they open; the person signs in the card
   "openCrew",
+  // «buy cheaper», «sell higher»: the coin's window with the ladder's panel filled in — it opens and fills; the person signs there
+  "openLadder",
   "fillPay", "fillAmount", "fillShare", "fillPrice", "fillSend", "gatesNow",
   "buy", "sell", "order", "chart", "share", "launchAs",
   "getState", "setState", "subscribe",

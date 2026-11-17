@@ -1,0 +1,341 @@
+/* The coin's screen: how the kit's parts stand on it. Colours and type are the terminal's tokens; the measures are the
+   approved design's (docs/terminal/design/2026-11-16/Coin.dc.html, PhoneCoin.dc.html). */
+
+/* ── the head: the coin, its price, the day's move ─────────────────────── */
+
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+  min-width: 0;
+}
+
+.iconBtn {
+  position: relative;
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  color: var(--dim);
+  border: 1px solid var(--glass-edge);
+  border-radius: var(--r-ctl);
+  background: rgba(255, 255, 255, 0.035);
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.iconBtn:hover {
+  color: var(--ice);
+  border-color: var(--chosen-edge);
+}
+
+.iconBtn[aria-pressed='true'] {
+  color: var(--ice);
+  border-color: var(--chosen-edge);
+  background: var(--chosen);
+}
+
+.iconBtn[aria-pressed='true'] svg {
+  fill: currentColor;
+}
+
+.names {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.nameRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* The coin's ticker and price stand larger in the head than a screen's title: the approved design's own measures. */
+.head .sym {
+  font-size: 26px;
+  text-transform: none;
+}
+
+.name {
+  font-size: var(--type-small);
+  color: var(--dim);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.quote {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin-left: 12px;
+}
+
+.head .price {
+  font-size: 36px;
+}
+
+.move {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.change {
+  font-size: 16px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.change[data-tone='up'] {
+  color: var(--mint);
+}
+
+.change[data-tone='down'] {
+  color: var(--flare);
+}
+
+.window {
+  font-size: var(--type-caption);
+  color: var(--dim);
+}
+
+.grow {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.anchor {
+  position: relative;
+  display: inline-flex;
+  flex: none;
+}
+
+.copied {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 20;
+  padding: 8px 12px;
+  font-size: var(--type-small);
+  font-weight: 700;
+  white-space: nowrap;
+  color: var(--ice);
+  background: var(--panel-up);
+  border: 1px solid var(--glass-edge);
+}
+
+/* ── the screen's two columns ──────────────────────────────────────────── */
+
+.grid {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.main {
+  display: flex;
+  flex: 999 1 520px;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+.aside {
+  display: flex;
+  flex: 1 1 328px;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 360px;
+  min-width: 0;
+}
+
+.chart,
+.under {
+  min-width: 0;
+}
+
+/* The chart's place while its engine loads: the panel's own height, so nothing jumps when it arrives. */
+.chartWait {
+  height: 456px;
+  background: var(--panel);
+  border: 1px solid var(--glass-edge);
+}
+
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+/* A desk: the coin's four facts in one row under the chart. */
+.factsRow {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 8px;
+}
+
+.tile {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  padding: 14px 16px;
+  background: var(--well);
+  border: 1px solid var(--line);
+}
+
+/* ── under the chart ───────────────────────────────────────────────────── */
+
+.underHead {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px 4px;
+}
+
+.underLine {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  min-height: 54px;
+  padding: 8px 18px 14px;
+  font-size: var(--type-body);
+  font-weight: 600;
+  color: var(--dim);
+}
+
+.underNote {
+  padding: 4px 18px 8px;
+  font-size: var(--type-small);
+  font-weight: 600;
+  color: var(--lilac);
+}
+
+.underNote[data-tone='warn'] {
+  color: var(--amber);
+}
+
+.underNote[data-tone='error'] {
+  color: var(--flare);
+}
+
+/* A row's own controls stand over the row. */
+.act {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+/* ── a coin the engine could not name ──────────────────────────────────── */
+
+.lost {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 24px 0;
+}
+
+@media (max-width: 767px) {
+  .head {
+    flex-wrap: nowrap;
+    gap: 10px;
+    min-height: 56px;
+  }
+
+  .head .logo {
+    width: 36px;
+    height: 36px;
+  }
+
+  .names {
+    flex: 1 1 0;
+    gap: 2px;
+  }
+
+  .head .sym {
+    font-size: 16px;
+  }
+
+  .name {
+    font-size: var(--type-caption);
+  }
+
+  /* A verified coin's chip steps aside on a phone, as the approved design draws its head; «Not verified» stays. */
+  .vetted,
+  .deskOnly,
+  .grow,
+  .anchor,
+  .window {
+    display: none;
+  }
+
+  .quote {
+    flex: none;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 2px;
+    margin-left: 0;
+  }
+
+  .head .price {
+    font-size: var(--type-title-l);
+  }
+
+  .change {
+    font-size: var(--type-caption);
+  }
+
+  /* One column, in the phone's order: the chart, the ticket under it, then the person's own and the coin's facts. */
+  .grid {
+    flex-direction: column;
+    flex-wrap: nowrap;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .main,
+  .aside {
+    display: contents;
+  }
+
+  .chart {
+    order: 1;
+  }
+
+  .ticket {
+    order: 2;
+  }
+
+  .under {
+    order: 3;
+  }
+
+  .facts {
+    order: 4;
+  }
+
+  .chartWait {
+    height: 312px;
+  }
+}
+
+/* The four tiles of direction A: under the chart on a desk; on a phone after the ticket, before the person's own. */
+.tilesPlace {
+  min-width: 0;
+}
+
+@media (max-width: 767px) {
+  .tilesPlace {
+    order: 3;
+  }
+}

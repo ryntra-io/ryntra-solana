@@ -9,6 +9,8 @@ import { appHostRedirects, appHostRewrites, atBothAddresses, ON_APP_HOST, siteHo
 import { OLD_PREFIXES, oldAddressRedirects, shadowedByOldAddresses } from "./city/lib/open/old-addresses.ts";
 import { awaitingSources } from "./city/lib/open/site-map.ts";
 import { oldChapterRedirects, shadowedByChapters, throughChapters } from "./city/lib/docs/old-chapters.ts";
+import { takenByTerminal } from "./terminal/shell/shelves.ts";
+import { asTerminalHome, terminalHomeRedirects, terminalHomeRewrites } from "./terminal/shell/home.ts";
 
 /* The landing is a page again — English at `/`, Ukrainian at `/uk`. What stays of it is the language map of the
    home page:
@@ -46,8 +48,18 @@ export const LANDING_REDIRECTS = [
 /* The old interface is closed: every address of the cabinet, of its Solana workspace, of
    Mission Control and of the aliases that led into them opens the district or window of the city that does the same
    work, for good, in one hop — the table and its reasons are `city/lib/open/old-addresses.ts` and
-   `docs/city/OLD-ADDRESSES.md`. On app.ryntra.io the cabinet's `/solana/…` addresses lead to the city on ryntra.io. */
-export const OLD_ADDRESS_REDIRECTS = oldAddressRedirects({ condition: ON_APP_HOST[0]!, origin: SITE_ORIGIN });
+   `docs/city/OLD-ADDRESSES.md`. On app.ryntra.io the cabinet's `/solana/…` addresses lead to the city on ryntra.io.
+   A shelf of the terminal that is on takes its own short address back (`/swap`, `/earn` …, `terminal/shell/shelves.ts`);
+   with the terminal's switch closed, or no shelf ready, every row stands as it is. With the switch open the terminal is
+   the home page (`terminal/shell/home.ts`): every row leads to the terminal's section that does the same
+   work, the city's own window where it has none, and the city itself stands at `/city`. */
+export const OLD_ADDRESS_REDIRECTS = asTerminalHome(
+  oldAddressRedirects({ condition: ON_APP_HOST[0]!, origin: SITE_ORIGIN }).filter((row) => !takenByTerminal(row)),
+);
+
+/* The terminal's own rows while it is the home page: `/market` → `/`, a coin's `/c/<mint>` → its screen, `/launches` →
+   Launch. None with the switch closed. */
+export const TERMINAL_HOME_REDIRECTS = terminalHomeRedirects();
 
 /* The Vercel hosts that answer beside ryntra.io — the project's default
    domain, the team alias and every preview deployment. They stay reachable
@@ -419,6 +431,7 @@ const nextConfig: NextConfig = {
          ryntra.io. Right after the landing's language map, ahead of every other row. Only the host's own rows: the old
          product shell `/predict` on the other hosts is an old address now, and the city's table leads it to the Oracle. */
       ...predictHostRedirects().filter((row) => row.has),
+      ...TERMINAL_HOME_REDIRECTS,
       /* The old interface and the short addresses, ahead of every row that still names one of their pages. The rows below that answer under one of its prefixes, or at an address it answers as it is
          (`/status`, `/home`), are never reached, so they are left out: what is left leads to the city in one hop. */
       ...OLD_ADDRESS_REDIRECTS,
@@ -442,7 +455,8 @@ const nextConfig: NextConfig = {
      their `/app/…` routes. Every rule names that host. */
   async rewrites() {
     return {
-      beforeFiles: [...appHostRewrites()],
+      /* With the terminal open, `/` is the Market's page; the address stays `/`. */
+      beforeFiles: [...appHostRewrites(), ...terminalHomeRewrites()],
       /* «Ryntra from A to Z»: a static page in public/learn/, built by scripts/learn/build.mjs. */
       afterFiles: [
         { source: "/learn", destination: "/learn/index.html" },

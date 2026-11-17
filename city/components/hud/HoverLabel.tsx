@@ -3,6 +3,7 @@
 import { useLayoutEffect, useMemo, useRef } from 'react';
 import { useCity } from '@/city/lib/city/store';
 import { launchTowerIn, useLaunch } from '@/city/lib/launch/district';
+import { usePool } from '@/city/lib/launch/pool';
 import { isNamed } from '@/city/lib/market/types';
 import { moduleForKind } from '@/city/lib/quarter/modules';
 import { useQuarter } from '@/city/lib/quarter/store';
@@ -45,6 +46,9 @@ export function HoverLabel() {
       const words: Words = { title: sym(launch), name: launch.name, figure: cap ? w.capOf(money(cap)) : w.launchedOnRyntra, move: null };
       return { words, tower: null };
     }
+    /* A launch into a pool is said by its own name — its creator named it, and Ryntra keeps its record. */
+    const pooled = usePool.getState().launches.find((entry) => entry.mint === tower.id);
+    if (pooled) return { words: { title: `$${pooled.symbol}`, name: pooled.name, figure: null, move: null }, tower: null };
     if (!isNamed(tower)) {
       // Unverified pools stand without a name (the city never promotes a coin nobody vetted).
       const words: Words = { title: w.newPool, name: w.unverified, figure: tower.liquidity > 0 ? w.liquidityOf(money(tower.liquidity)) : null, move: null };

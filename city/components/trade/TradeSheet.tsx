@@ -28,9 +28,12 @@ import { AgentSell } from '../autopilot/AgentSell';
 import { BeaconAction } from '../beacon/BeaconAction';
 import { FuturesAction } from '../exchange/FuturesAction';
 import { LaunchTowerBody } from '../launch/LaunchTowerBody';
+import { PoolTowerBody } from '../launch/PoolTowerBody';
+import { usePool } from '@/city/lib/launch/pool';
 import { AmountPart } from './Amount';
 import { CoinFacts, CoinPrice, ShareTower } from './CoinFacts';
 import { CoinPicker, type PickerKind } from './CoinPicker';
+import { LadderPanel } from './LadderPanel';
 import { SpotTicket } from './SpotTicket';
 import { DockGet } from './DockGet';
 import { useHoldingsWatch, useWalletName, WalletLine, WalletPicker } from './WalletParts';
@@ -60,11 +63,14 @@ export function TradeSheet() {
   const live = useCity((st) => (tower ? (st.snapshot.towers.find((t) => t.id === tower.mint) ?? null) : null));
   const towers = useCity((st) => st.layout.towers);
   const rank = live ? towerRank(towers, live.id) : 0;
+  /* A tower launched straight into a pool — its window is the launch's own: the countdown, the fee, the check. */
+  const pooled = usePool((st) => (tower ? st.launches.some((launch) => launch.mint === tower.mint) : false));
   if (!tower) return null;
   return (
     <div className={`${s.sheet} ${s.framed}`} role="group" aria-label={w.tradeOf(ticker(tower.symbol))} data-trade-view={swap ? 'swap' : 'spot'}>
       {/* The frame's head says «Swap» or «Spot» and closes it; Spot names its coin here, with Share and the beacon. */}
-      {!swap && (
+      {/* A launch into a pool opens in the compact window and still names its coin: the window is the coin's own. */}
+      {(!swap || pooled) && (
         <div className={s.head}>
           <TokenIcon tower={tower} />
           <div className={s.title}>
@@ -75,8 +81,8 @@ export function TradeSheet() {
         </div>
       )}
       {/* Where the person's agent holds this coin, she sells a share of it right here. */}
-      <AgentSell mint={tower.mint} symbol={ticker(tower.symbol)} />
-      {phase === 'done' ? <DonePanel /> : phase === 'failed' ? <FailedPanel /> : phase === 'unknown' ? <UnknownPanel /> : <TradeBody tower={tower} coin={live} rank={rank} />}
+      {!pooled && <AgentSell mint={tower.mint} symbol={ticker(tower.symbol)} />}
+      {pooled ? <PoolTowerBody key={tower.mint} mint={tower.mint} /> : phase === 'done' ? <DonePanel /> : phase === 'failed' ? <FailedPanel /> : phase === 'unknown' ? <UnknownPanel /> : <TradeBody tower={tower} coin={live} rank={rank} />}
     </div>
   );
 }
@@ -257,6 +263,7 @@ function TradeBody({ tower, coin, rank }: { tower: TowerRef; coin: Tower | null;
           )}
         </>
       )}
+      <LadderPanel tower={tower} />
       {coinFoot}
       </div>
     </div>

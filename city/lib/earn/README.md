@@ -119,6 +119,44 @@ The Harbor inside the window (spec E2). A **pier** is a Meteora DLMM pool of SOL
 an add only where the Harbor admits the wallet, only on a SOL pier, only under the ceiling, and the ticket dropped if
 the Review's coins are not the ones priced. The relay and the chain's word are the engine's own routes.
 
+## The Pro piers — Meteora DLMM Pro
+
+Under the SOL piers, in the same tab: the pools of Meteora DLMM Pro — SOL against USDC or a staked SOL of the Saver —
+read from the chain by the engine (`lib/earn-pro/`, `/api/v1/earn/pro/**`, contract 1.92.0; DLMM Pro has no Data API).
+To a person a Pro pier is a pier like any other: the same three widths, the same three goals, an amount in
+SOL, one action. What is new stands behind it.
+
+- **One position of the whole shape.** The goal and the width become one NFT: «Even» is one range, «Near price» and
+  «Catch moves» up to seven. The pool itself swaps the part of the SOL the other coin needs, first, and the opening is
+  built for the price that swap ends at — two transactions, one approval.
+- **The band of the price**, one line before the signature: how far the price may move while the transactions travel.
+  Outside it nothing is deposited and the coins stay in the wallet. It is the same band for an opening, «take and put
+  back» and leaving. «Even» is sized by the program at the price it lands at: with the price where it was, next to
+  nothing stays out, and a move inside the band leaves part of one coin. The two shapes of several ranges are sized
+  for the whole band and may leave about a fifth in the wallet — the card says how much before the signature.
+- **Income in two lines** on a boat: the fees (in SOL at the pool's price), and the pool's own reward in its coin.
+- **Take and put back** — the fees collected and deposited again, one transaction. **Take** — the fees and the
+  reward. **Leave** — all the liquidity out with them. An empty boat gives its deposit back.
+- **The agent looks after it.** One switch on the boat, the stop as three chips (none · −10% · −25%), one approval: the
+  program's own delegate with three rights — collect the fees, collect the reward, take the liquidity out — each paid
+  by the program only to the owner's wallet, whoever signs. The agent
+  collects what is worth its network fee and leaves at the stop; it does not move the range. Taken back with one more
+  approval. What it may do and why it cannot do more stands behind «Details».
+- **One line before the signature**: the pool's fee on the swap · the band · out of range stops earning. Its «i» holds
+  the band in full, the range, the swap, Ryntra's fee (0), the position's deposit and that it comes back, the network.
+
+| | Where | What |
+| --- | --- | --- |
+| Window's switch | `NEXT_PUBLIC_RYNTRA_CITY_EARN_PRO=open` (exactly) | Closed, nothing of it is asked or drawn. |
+| Server's switch | `RYNTRA_EARN_PRO` = `devnet` · `mainnet` | Closed by default; every route answers `CAPABILITY_UNAVAILABLE`. `mainnet` opens nothing until the venue's `DLMM_PRO_EARN_ON_MAINNET` is set in code. |
+| Devnet coin | `RYNTRA_EARN_PRO_DEVNET_COIN=<mint>:<symbol>` | The stand's test coin beside devnet's SOL and USDC. |
+| Agent | `RYNTRA_AGENT_CARE` on the same network, and the budget agent's key | Where it is closed the piers work and offer no agent. |
+| Bounds | 0.05 to 10 SOL an opening | The engine's own (`lib/earn-pro/actions.server.ts`). |
+| Stop | `RYNTRA_EARN_PRO_STOP` set to anything | New money and a new care stop at once; taking out and taking back stay open. |
+
+Screens for review: `node city/lib/earn/pro-shots.mjs [out] [baseUrl]` with the three window switches open on a dev
+stand (`docs/shots/city-249/`); every route answers from a fixture shaped like the contract, with the rehearsal's numbers.
+
 ## Like the Captain
 
 Spec E8: copy a strategy with a proven record. A **strategy** is one of the city's own pier recipes — a SOL pier and a
@@ -303,6 +341,7 @@ screen. All of it is closed with `NEXT_PUBLIC_RYNTRA_CITY_EARN`. Loan health wai
 | `stock-pier-venue.ts`, `stock-pier-door.ts`, `stock-pier.server.ts` | The pool's build in front of the engine's DAMM v2 adapter; the city's door in front of the engine's Review; the verified list and the Review's wiring on the server. |
 | `stock-pier-engine.ts`, `stock-pier-store.ts` | The Stock Pier's line to the server and its state and flow. |
 | `stock-pier-shots.mjs`, `stock-pier-fixtures.mjs`, `stock-pier-devnet.mjs` | The screens for review (`docs/shots/city-98/`), their fixtures, the devnet pass. |
+| `pro.ts`, `pro-engine.ts`, `pro-store.ts`, `pro-shots.mjs` | The Pro piers: their figures and choice; their line to `/api/v1/earn/pro`; their state and flow; their screens (`docs/shots/city-249/`). The cards are `components/earn/ProPiers.tsx`. |
 | `shots.mjs` | The screens for review (`docs/shots/city-92/`): `node city/lib/earn/shots.mjs [out] [baseUrl]` with `NEXT_PUBLIC_RYNTRA_CITY_EARN=open npm run dev`; `LANG_EARN=en` for English. |
 
 The window's contents are `city/components/earn/` (`EarnLayer` is mounted once in `CityApp`).

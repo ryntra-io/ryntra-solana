@@ -33,6 +33,27 @@ export const STYLE_RISK: Readonly<Record<PierStyle, 1 | 2 | 3>> = { calm: 1, bal
 export const DEFAULT_STYLE: PierStyle = 'balanced';
 
 /**
+ * A width of the person's own: bins on each side of the price, within what one position holds; null — the
+ * style's own. The engine's add takes any width up to the widest style's, so a hand-set one is the same request.
+ */
+export const MIN_HALF = 1;
+export const MAX_HALF = STYLE_HALF.calm;
+
+export function isPierHalf(value: unknown): value is number {
+  return typeof value === 'number' && Number.isInteger(value) && value >= MIN_HALF && value <= MAX_HALF;
+}
+
+/** The width in force: the person's own where one is set, else the style's. */
+export function pierHalf(style: PierStyle, half: number | null = null): number {
+  return half !== null && isPierHalf(half) ? half : STYLE_HALF[style];
+}
+
+/** The style a width is, or null when it is none of the three. */
+export function styleOfHalf(half: number): PierStyle | null {
+  return PIER_STYLES.find((style) => STYLE_HALF[style] === half) ?? null;
+}
+
+/**
  * What the money is for: the person says the goal, the engine spreads the money over the style's bins in the
  * matching shape. Even — the same in every bin; Near price — more by the price, for a pair that moves little; Catch
  * moves — more at the edges, for a pair that swings.
@@ -213,10 +234,10 @@ export type PierRestBody = Readonly<{
   request: Readonly<{ pool: string; owner: string; otherBefore: string }>;
 }>;
 
-/** A Zap of this much SOL into a new position of the style around the price: the engine counts the bins from the active bin. */
-export function pierZapBody(pier: Pier, owner: string, lamports: bigint, style: PierStyle, goal: PierGoal = 'even'): PierZapBody {
+/** A Zap of this much SOL into a new position of the style — or of the person's own width — around the price: the engine counts the bins from the active bin. */
+export function pierZapBody(pier: Pier, owner: string, lamports: bigint, style: PierStyle, goal: PierGoal = 'even', own: number | null = null): PierZapBody {
   const shape = GOAL_SHAPE[goal];
-  return { action: 'zap_in', venue: 'meteora-dlmm', request: { pool: pier.pool.address, owner, amountIn: lamports.toString(), half: STYLE_HALF[style], ...(shape === 'spot' ? {} : { shape }), slippageBps: PIER_SLIPPAGE_BPS } };
+  return { action: 'zap_in', venue: 'meteora-dlmm', request: { pool: pier.pool.address, owner, amountIn: lamports.toString(), half: pierHalf(style, own), ...(shape === 'spot' ? {} : { shape }), slippageBps: PIER_SLIPPAGE_BPS } };
 }
 
 /** «Take the rest» of a Zap that landed in part: what the wallet held of the other coin before stays untouched. */

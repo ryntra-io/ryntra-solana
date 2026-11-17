@@ -1,0 +1,378 @@
+/* The Portfolio's panels that came before «Everything in Solana» and still stand under it: the
+   ticket's head on a coin, «Receive», the phone's sheet, the wallet's clean and the risk mark. The screen itself —
+   the total, the three actions, the groups — is `all.module.css`. */
+
+.grow {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.glyph {
+  width: 18px;
+  height: 18px;
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* The private balance's hidden amount: five dots (as the approved design draws them). */
+.dots {
+  display: flex;
+  gap: 6px;
+}
+
+.dots i {
+  display: block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--soft);
+}
+
+.rowMain {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+/* ── the panel the screen acts in ────────────────────────────────────── */
+.coinHead {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.coinHeadWrap {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.coinWords {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.coinSym {
+  font-family: var(--display);
+  font-weight: 800;
+  font-stretch: 125%;
+  font-size: var(--type-action);
+}
+
+.coinName {
+  font-size: var(--type-caption);
+  color: var(--dim);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.coinPrice {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.coinChange {
+  font-size: var(--type-caption);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.coinChange[data-tone='up'] {
+  color: var(--mint);
+}
+
+.coinChange[data-tone='down'] {
+  color: var(--flare);
+}
+
+.close {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  color: var(--lilac);
+  border: 1px solid var(--glass-edge);
+  border-radius: var(--r-ctl);
+}
+
+.close:hover {
+  color: var(--ice);
+  background: rgba(153, 69, 255, 0.18);
+}
+
+.panelHead {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.headGlyph {
+  width: 22px;
+  height: 22px;
+  color: var(--lilac);
+}
+
+.panelTitle.panelTitle {
+  flex: 1 1 0;
+  min-width: 0;
+  font-size: var(--type-action);
+}
+
+.qr {
+  display: flex;
+  justify-content: center;
+}
+
+.qr img,
+.qrBone {
+  display: block;
+  width: 160px;
+  height: 160px;
+}
+
+.qrBone {
+  background: rgba(255, 231, 194, 0.12);
+}
+
+.address {
+  margin: 0;
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: var(--type-base);
+  line-height: 1.5;
+  text-align: center;
+  word-spacing: 0.2em;
+  overflow-wrap: anywhere;
+  color: var(--ice);
+}
+
+.receiveChips {
+  display: flex;
+  justify-content: center;
+}
+
+.receiveLine {
+  margin: 0;
+  font-size: var(--type-small);
+  line-height: 1.45;
+  text-align: center;
+  color: var(--ice);
+}
+
+.scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: rgba(6, 5, 12, 0.72);
+  animation: fade 0.16s ease-out;
+}
+
+.sheet {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  /* The sheet is the glass: a panel in it keeps to the sheet (terminal/ui: `.edge`). */
+  --bleed: 0px;
+  z-index: 41;
+  display: flex;
+  flex-direction: column;
+  max-height: 90dvh;
+  overflow-y: auto;
+  padding: 8px 8px calc(8px + env(safe-area-inset-bottom));
+  /* Its own solid ground: whatever the panel inside is made of, nothing of the screen shows through a sheet. */
+  background: var(--ink);
+  border-top: 1px solid var(--edge-soft);
+  animation: up 0.2s ease-out;
+}
+
+.sheet.sheet > * {
+  flex: none;
+  align-self: stretch;
+  width: 100%;
+  max-width: none;
+}
+
+.cleanLine {
+  margin: 0;
+  font-size: var(--type-small);
+  color: var(--dim);
+}
+
+.cleanFigure,
+.cleanDone {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.cleanLists {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 340px;
+  margin: 0 -4px;
+  padding: 0 4px;
+  overflow-y: auto;
+}
+
+.cleanGroup {
+  display: flex;
+  flex-direction: column;
+}
+
+.cleanGroupHead {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  color: var(--ice);
+  text-align: left;
+}
+
+.cleanCount {
+  font-size: var(--type-small);
+  font-weight: 700;
+  color: var(--lilac);
+}
+
+.cleanChevron {
+  color: var(--dim);
+  transition: transform 160ms ease;
+}
+
+.cleanChevronOpen {
+  transform: rotate(180deg);
+}
+
+.cleanRows {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cleanRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 6px 0;
+  border-top: 1px solid var(--line);
+}
+
+.cleanSym {
+  font-weight: 700;
+  font-size: var(--type-base);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cleanValue {
+  flex: none;
+  font-size: var(--type-small);
+  font-variant-numeric: tabular-nums;
+  color: var(--dim);
+}
+
+.cleanFee {
+  margin: 0;
+  font-size: var(--type-small);
+  color: var(--ice);
+}
+
+.cleanSkip {
+  color: var(--amber);
+}
+
+.cleanStatus {
+  margin: 0;
+  font-size: var(--type-small);
+  color: var(--lilac);
+}
+
+.cleanStatus[data-tone='warn'] {
+  color: var(--amber);
+}
+
+.riskMark {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  min-width: 0;
+}
+
+.riskWide .riskWhy {
+  max-width: none;
+}
+
+.riskChip {
+  display: inline-flex;
+  align-self: flex-start;
+  align-items: center;
+  gap: 4px;
+  min-height: 22px;
+  padding: 0 6px;
+  font-size: var(--type-small);
+  font-weight: 700;
+  color: var(--amber);
+  white-space: nowrap;
+  border-radius: var(--r-ctl);
+  border: 1px solid rgba(255, 178, 63, 0.45);
+  background: rgba(255, 178, 63, 0.08);
+}
+
+.riskChip:hover {
+  background: rgba(255, 178, 63, 0.16);
+}
+
+.riskChip:focus-visible {
+  outline: 2px solid var(--amber);
+  outline-offset: 2px;
+}
+
+.riskWhy {
+  display: block;
+  max-width: 280px;
+  font-size: var(--type-small);
+  line-height: 1.35;
+  color: var(--ice);
+  white-space: normal;
+  text-align: left;
+}
+
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes up {
+  from {
+    transform: translateY(16px);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scrim,
+  .sheet {
+    animation: none;
+  }
+}

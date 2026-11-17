@@ -7,6 +7,7 @@ import { useEarnData } from '@/city/lib/earn/store';
 import { DOLLAR_OPEN } from '@/city/lib/earn/dollar-gate';
 import { useDollar } from '@/city/lib/earn/dollar-store';
 import { usePier } from '@/city/lib/earn/pier-store';
+import { useProPier } from '@/city/lib/earn/pro-store';
 import { useStockPier } from '@/city/lib/earn/stock-pier-store';
 import { earnWords } from '@/city/lib/earn/words';
 import { useLang } from '@/city/lib/i18n/lang';
@@ -44,7 +45,9 @@ export default function EarnWindow() {
   const wallet = useMoneyStore((st) => st.wallet);
   const mine = useMine(owner);
   // A pier or a boat open on the Piers stands alone, like a product of the Shelf: its own figures, no headline above.
-  const docked = usePier((st) => (st.pool !== null && st.copy === null) || st.boat !== null);
+  const classicDocked = usePier((st) => (st.pool !== null && st.copy === null) || st.boat !== null);
+  const proDocked = useProPier((st) => st.pier !== null || st.boat !== null);
+  const docked = classicDocked || proDocked;
   // Earn's own words — Shelf, Pier, Boats, Saver, Captain — behind one quiet «i» beside the tabs.
   const [terms, setTerms] = useState(false);
 

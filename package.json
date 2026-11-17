@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Ryntra — your AI agent on Solana: it launches coins and trades for you, and the whole market is a living 3D city. The web app, the city and the Android app.",
+  "description": "Ryntra — a trading terminal for Solana with your own AI agent: it launches coins and trades for you inside a budget the chain holds. The web app, the terminal, the 3D city and the Android app.",
   "engines": {
     "node": ">=22 <25"
   },

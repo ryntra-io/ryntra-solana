@@ -1321,6 +1321,116 @@
  * cancel are the person's and the creator's steps. The fields are frozen under a SHA-256 digest every step names; an
  * intent is used once, expires unclaimed at its deadline, and Ryntra never signs for the person. Served where the
  * deployment says RYNTRA_INTENTS; elsewhere CAPABILITY_UNAVAILABLE. A client that does not show it needs no release.
+ *
+ * **1.92.0 — earning on Meteora DLMM Pro.** Additive: five routes under
+ * `/api/v1/earn/pro`. `GET …/piers` — the pools of SOL against a coin Earn knows, read from the chain (DLMM Pro has no
+ * Data API): price, fee now, depth in SOL, the reward's emission. `GET …/positions?owner=` — a wallet's positions at
+ * them: worth, the fees to take (first line of income), the pool's reward (second line), whether it earns now, whether
+ * an agent looks after it. `POST …/review` — the unsigned transactions of one action (`open` from a goal and a width,
+ * paid in SOL alone; `compound`; `collect`; `leave`; `close`; `care_on`; `care_off`) with what each does in numbers and
+ * a ticket; `POST …/submit` — the same messages back, signed by the wallet, sent once each and in order; `POST
+ * …/status` — the chain's word on signatures a relay sent. Ryntra adds no fee; nothing is signed for the person; an
+ * agent's care is the program's own delegate with three rights — collect the fees, collect the reward, take the
+ * liquidity out — each paid by the program only into the owner's accounts. Served where the deployment says
+ * `RYNTRA_EARN_PRO`; elsewhere CAPABILITY_UNAVAILABLE. New error
+ * codes: `EARN_PRO_STOPPED`, `EARN_PRO_NOT_A_PIER`, `EARN_PRO_PIER_NOT_OPEN`, `EARN_PRO_AMOUNT_LOW`,
+ * `EARN_PRO_AMOUNT_HIGH`, `EARN_PRO_CARE_CLOSED`, `EARN_PRO_BALANCE_LOW`, `EARN_PRO_NOTHING_TO_DO`, `EARN_PRO_REFUSED`,
+ * `EARN_PRO_TICKET_INVALID`, `EARN_PRO_TICKET_EXPIRED`, `EARN_PRO_SIGNED_MISMATCH`, `EARN_PRO_NOT_SIGNED`,
+ * `EARN_PRO_SIMULATION_FAILED`. A client that does not show it needs no release.
+ *
+ * **1.93.0 — a launch straight into a pool (line «Лаунч у місті», 2026-11-16; 1.92.0 is earning).** Additive: a second launch
+ * format beside the one on the curve, on Meteora DLMM Pro. `POST /api/v1/launch/dlmm-pro/build` builds the step a
+ * launch waits for — `COIN` (the honest Token-2022 mint, the whole supply with its creator), `POOL` (the pair's pool:
+ * a fee that starts at half a purchase and falls with the market cap, taken only in SOL or USDC; trading opens at a
+ * named time, and only the creator may put liquidity in before it), `SUPPLY` (the whole supply above the first price as
+ * liquidity locked for ever — the creator's position, and Ryntra's, which the creator opens and hands over: the fees of
+ * that liquidity are divided 40 : 60 by the pool's own program) — as unsigned transactions the creator's wallet signs;
+ * `POST /api/v1/launch/dlmm-pro/submit` sends a signed step once and says which step is next. Each step is built from
+ * the chain as the step before left it, so a launch left half-way is taken up by its creator where the chain shows it.
+ * `GET /api/v1/launch/dlmm-pro/{mint}` reads a launch as its tower shows it: the opening time, the fee now and the fee
+ * it really settles at (the pool's own number), the price, the honest-launch check from the chain and the launch's own
+ * transactions; `GET /api/v1/launch/dlmm-pro` lists them. Ryntra signs nothing and holds no key of the launch but the
+ * fresh ones it seals until the creator has signed. Closed on mainnet: `LAUNCH_PAUSED`. No new
+ * error code. A client that does not show it needs no release.
+ *
+ * **1.94.0 — cleaning a wallet (the terminal's Portfolio, 2026-11-16).** Additive: four routes under
+ * `/api/v1/wallet/clean`. `GET …?owner=` — what a clean of the wallet would take: small coins (a price, worth up to
+ * five dollars) swapped into SOL, empty token accounts closed for their rent, litter (no price, or a coin that cannot
+ * move) burnt and its account closed, wrapped SOL unwrapped — and the risk marks of every coin held, any value: not
+ * verified by Jupiter, mint or freeze rights still on, a permanent delegate, thin liquidity, a low organic score, a
+ * Token-2022 transfer fee or transfer hook. A marked coin is never picked by default. `GET …/back?owner=` — «≈ … SOL to
+ * get back» from the chain alone. `POST …/review` — the unsigned transactions of one clean (closes, then up to six
+ * swaps on the swap engine's own route and fee, then one close of the accounts the swaps emptied), what it gives back
+ * and the fee in one summary, and a sealed ticket; Token-2022 transfer fees held in an account are harvested to their
+ * mint before it closes. `POST …/submit` — the same transactions signed by the wallet in one approval, each sent once:
+ * a swap on Jupiter's managed lane through its `/execute`, the rest through the deployment's RPC. Ryntra's fee is the
+ * swap's; closing an account is free. Builds only where the deployment says `RYNTRA_WALLET_CLEAN=open` and swapping is
+ * open; elsewhere CAPABILITY_UNAVAILABLE. New error codes: `WALLET_CLEAN_NOTHING_TO_DO`, `WALLET_CLEAN_TICKET_INVALID`,
+ * `WALLET_CLEAN_TICKET_EXPIRED`, `WALLET_CLEAN_SIGNED_MISMATCH`, `WALLET_CLEAN_NOT_SIGNED`,
+ * `WALLET_CLEAN_SIMULATION_FAILED`. A client that does not show it needs no release.
+ *
+ * **1.96.0 — the pools to choose from.** Additive: one
+ * public read, `GET /api/v1/earn/pools` — Meteora DLMM and DAMM v2 pools from the engine's catalogue (from $10K in the
+ * pool, none blacklisted, each coin's verified flag as read), each with what it holds, a day's volume and fees, the
+ * day's fees over what it holds, the base fee and the fee now, DLMM's price step, its age and its page at the venue;
+ * and Jupiter Lend's markets with their rates now and what is supplied to them. Every figure is the venue's own; none
+ * is a promised return. Read-only; kept a minute at the edge. No new error code. A client that does not show it needs
+ * no release.
+ * **1.97.0 — the Market's depth (the terminal's Market, 2026-11-17).** Additive: `GET /api/v1/market/depth` —
+ * one list of the Market (`list`: trending · fresh · gainers · losers · traded · stocks) over a window (`window`: 5m ·
+ * 1h · 6h · 24h), or the coins a person starred (`list=saved&mints=…`, up to 50), with every figure of each coin as
+ * Jupiter's Token API v2 measures it: price, market cap, liquidity, holders, organic score, verified, a stock or not, when
+ * its first pool opened, the mint and freeze rights (`on` · `off` · null), the top ten holders' share, and per window the
+ * move, the volume, the buys, the sells and the traders. A figure Jupiter did not send is null, never a zero; only a
+ * verified coin carries its logo. Read with the engine's own Jupiter key, each path at most once in 45 seconds per
+ * instance; public, the edge keeps an answer for 30 seconds. No new error code. A client that does not show it needs no
+ * release.
+ *
+ * **1.98.0 — everything in Solana (the terminal's «Портфель», 2026-11-17; 1.95.0, once held for it, stays unused).** Additive: one route.
+ * `GET /api/v1/portfolio?owner=` — what a wallet holds across Solana, outside Ryntra too, in one model: the wallet's
+ * coins and liquid staking tokens (Helius DAS where the node is Helius, else the token accounts), native stake accounts
+ * it withdraws or stakes, Meteora DLMM and DAMM v2 positions whoever opened them, DLMM Pro where earning on it is served
+ * on mainnet, Jupiter Lend deposits, Kamino obligations of the main market, and — apart, as a projection that is never
+ * the truth of a figure — what Jupiter Portfolio (beta) shows of the platforms the engine does not read itself. Each
+ * position names its protocol and kind, its worth in dollars and in SOL at the prices read now, what it earned where the
+ * protocol shows it, its coins in raw units, the accounts an exit acts on (program, pool, position, NFT, market) and
+ * whether one step takes it out — and if not, why (`exit.reason`). A source that does not answer leaves its last good
+ * read marked `stale`, or one row marked `unread`; it never fails the answer. `refresh=1` reads again (not sooner than
+ * five seconds after the last read). Public data of a public address; no new error code. A client that does not show
+ * it needs no release.
+ *
+ * **1.99.0 — a pool's liquidity by price.** Additive:
+ * two public reads in one shape. `GET /api/v1/earn/pools/bins?pool=&half=` — a Meteora DLMM pool's bins around its
+ * active bin (`half` each side, 40 when not named, 70 at most), each with its price and what lies on it of the two
+ * coins in base units; what a new position's accounts cost — its own account, which comes back when it is closed, and a
+ * shared ledger of bins nobody opened yet, which stays with the pool — with the ledgers around the price and whether
+ * each is open; and where Jupiter prices the pair, with how far the pool's price stands from it, per cent.
+ * `GET /api/v1/earn/pro/bins?pool=&half=` — the same for a Meteora DLMM Pro pool: the steps of its tick spacing around
+ * the price, each with what the liquidity in range holds there (limit orders resting on a tick are not part of it);
+ * `rent` is null — its Review states it. Read from the chain through the venues' own SDKs; nothing is built, signed or
+ * moved. Kept twenty seconds. No new error code: an address that is no pool is `VALIDATION_ERROR` on DLMM and
+ * `EARN_PRO_NOT_A_PIER` on DLMM Pro, which answers `CAPABILITY_UNAVAILABLE` wherever earning on it is not served. A
+ * client that does not show it needs no release.
+ *
+ * **1.100.0 — leaving everything in one approval.**
+ * Additive: three routes under `/api/v1/portfolio/exit`. `GET …?owner=&mode=&target=` — what one approval would do, from
+ * the portfolio alone: `mode=exit` — every position one step takes out is left (a pool's liquidity out with its fees and
+ * rewards and the position closed, a Jupiter Lend deposit taken back, an inactive stake withdrawn, a liquid staking
+ * token swapped; an active stake is deactivated and says from which epoch its SOL is free) and what came out is swapped
+ * into `target` — `SOL`, `USDC` or `SPLIT`, half of each; `mode=collect` — only the pools' fees, nothing leaves and
+ * nothing is swapped. Each step is picked or not (a wallet's plain coin only when named), and what no step takes out is
+ * listed with the portfolio's reason. `POST …/review` builds it: each unit by the engine's own builder for that action,
+ * behind that engine's own gate; every transaction read from its bytes — the wallet pays and signs, money moves only
+ * through the venue and back into the wallet's own accounts — and run against the chain where it stands on it; a swap of
+ * what a position brings is a sweep through Meteora's Zap Out over Jupiter's route, bounded on chain by the balance read
+ * at the Review, a cap and a floor held to a reference price, and SOL that arrives is a fixed swap the relay sends only
+ * while that SOL is in the wallet; the summary (what arrives, the rent back, Ryntra's fee —
+ * the swap's own, no new one — what is skipped and why) and a ticket. `POST …/submit` relays the wallet's signed bytes
+ * held to that ticket, once each, in waves: what stands alone first, then the swaps of what arrived. Builds only where
+ * the deployment says `RYNTRA_PORTFOLIO_EXIT=open`; elsewhere CAPABILITY_UNAVAILABLE, and the overview says
+ * `canExit: false`. New error codes: `PORTFOLIO_EXIT_NOTHING_TO_DO`, `PORTFOLIO_EXIT_TICKET_INVALID`,
+ * `PORTFOLIO_EXIT_TICKET_EXPIRED`, `PORTFOLIO_EXIT_SIGNED_MISMATCH`, `PORTFOLIO_EXIT_NOT_SIGNED`. A client that does
+ * not show it needs no release.
  */
 
 import {
@@ -1451,10 +1561,26 @@ import {
   SIGNATURE as INTENT_SIGNATURE,
 } from "../../intents/model.ts";
 import { EVENT_FINALITY, EVENT_FLAGS, EVENT_KINDS, EVENT_SOURCES, EVENT_UNSTATED, EVENT_VENUES, EVENTS_MAX, SUSPICION_REASONS } from "../../events/market-events.ts";
+import { RISK_REASONS as WALLET_CLEAN_RISKS } from "../../wallet-clean/rules.ts";
+import { STEP_KINDS as WALLET_CLEAN_STEPS } from "../../wallet-clean/steps.ts";
 import { WARD_CHECKS, WARD_HOLDERS, WARD_INPUTS, WARD_LEVELS, WARD_NETWORKS, WARD_REASON_CODES, WARD_VERDICTS, type WardReasonCode } from "../../ward/codes.ts";
+import {
+  EXIT_HOWS,
+  EXIT_REASONS,
+  PORTFOLIO_KINDS,
+  PORTFOLIO_ORIGINS,
+  PORTFOLIO_PROTOCOLS,
+  PORTFOLIO_SOURCES,
+  PORTFOLIO_STATES,
+  SOURCE_REASONS,
+  SOURCE_STATES,
+  TOKEN_ROLES,
+} from "../../portfolio/model.ts";
+import { EXIT_ACTIONS, EXIT_MODES, EXIT_TARGETS } from "../../portfolio/exit/model.ts";
+import { EXIT_RELAY_STATES, EXIT_SKIP_REASONS, EXIT_STEP_KINDS } from "../../portfolio/exit/steps.ts";
 
 export const API_MAJOR = 1;
-export const API_CONTRACT_VERSION = "1.90.0";
+export const API_CONTRACT_VERSION = "1.100.0";
 export const API_HEADER = "X-Ryntra-API";
 export const API_VERSION_HEADER = "X-Ryntra-API-Version";
 export const NETWORK = "solana:mainnet";
@@ -1690,6 +1816,73 @@ export const ERROR_CODES = [
   "INTENT_SENT",
   /** 1.90.0: the signed bytes are not signed by the wallet that pays for them, or that wallet is not the claiming one. */
   "INTENT_SIGNATURE_INVALID",
+  /** 1.91.0: the coin has no pool a ladder can rest in. */
+  "PRO_LIMIT_NO_MARKET",
+  /** 1.91.0: the pool or the program refuses the ladder as asked; the message says why. Nothing was built. */
+  "PRO_LIMIT_REFUSED",
+  /** 1.91.0: the wallet does not hold what the ladder rests, its rent and its fee together. */
+  "PRO_LIMIT_BALANCE_LOW",
+  /** 1.91.0: the ladder is above the most one ladder may rest, or one of its prices holds less than the agent collects. */
+  "PRO_LIMIT_CAP",
+  /** 1.91.0: nothing of the order has filled yet, or everything is taken already. */
+  "PRO_LIMIT_NOTHING_TO_DO",
+  /** 1.91.0: the Review is older than its transactions: review again. */
+  "PRO_LIMIT_REVIEW_EXPIRED",
+  /** 1.91.0: the signed bytes are not the ones the Review showed, or a signature is missing. Nothing was sent. */
+  "PRO_LIMIT_SIGNED_OTHER_BYTES",
+  /** 1.91.0: the network refused the transaction before it was sent. Nothing moved. */
+  "PRO_LIMIT_SUBMIT_FAILED",
+  /* 1.92.0 — earning on DLMM Pro */
+  /** New money is stopped by the operator: nothing is opened, added or given to an agent. Taking out stays open. */
+  "EARN_PRO_STOPPED",
+  /** No DLMM Pro pool of SOL against a coin Earn knows lives at the address. */
+  "EARN_PRO_NOT_A_PIER",
+  /** The pool takes no deposit now: before its opening, or paused by Meteora's operator. */
+  "EARN_PRO_PIER_NOT_OPEN",
+  /** Under the least one opening takes (0.05 SOL), or too little to stand on both sides of the price. */
+  "EARN_PRO_AMOUNT_LOW",
+  /** Over the most one opening takes (10 SOL). */
+  "EARN_PRO_AMOUNT_HIGH",
+  /** No agent looks after positions on this deployment. */
+  "EARN_PRO_CARE_CLOSED",
+  /** The wallet does not hold what the action takes with its fees and rent; `message` says how much. */
+  "EARN_PRO_BALANCE_LOW",
+  /** There is nothing to do: no fee yet, no reward yet, no range that can take what was earned, nothing to take out. */
+  "EARN_PRO_NOTHING_TO_DO",
+  /** The venue refused the build; `message` says why. Nothing was built. */
+  "EARN_PRO_REFUSED",
+  /** The Review's ticket is not one this server sealed. */
+  "EARN_PRO_TICKET_INVALID",
+  /** The Review is older than its transactions: review again. */
+  "EARN_PRO_TICKET_EXPIRED",
+  /** The signed bytes are not the ones the Review built. Nothing was sent. */
+  "EARN_PRO_SIGNED_MISMATCH",
+  /** A signature is missing or does not verify. Nothing was sent. */
+  "EARN_PRO_NOT_SIGNED",
+  /** The network refused the first transaction before it was sent. Nothing moved. */
+  "EARN_PRO_SIMULATION_FAILED",
+  /** 1.94.0: the wallet has nothing a clean takes: no small coin, no empty account, nothing picked. */
+  "WALLET_CLEAN_NOTHING_TO_DO",
+  /** 1.94.0: the clean's ticket is not one this server sealed. */
+  "WALLET_CLEAN_TICKET_INVALID",
+  /** 1.94.0: the clean's Review is older than its transactions: review again. */
+  "WALLET_CLEAN_TICKET_EXPIRED",
+  /** 1.94.0: the signed bytes are not the ones the Review built. Nothing was sent. */
+  "WALLET_CLEAN_SIGNED_MISMATCH",
+  /** 1.94.0: the wallet's signature is missing or does not verify. Nothing was sent. */
+  "WALLET_CLEAN_NOT_SIGNED",
+  /** 1.94.0: the network refused a closing transaction while it was built. Nothing was built. */
+  "WALLET_CLEAN_SIMULATION_FAILED",
+  /** 1.100.0: nothing in the wallet leaves in one step now, or nothing picked could be built. */
+  "PORTFOLIO_EXIT_NOTHING_TO_DO",
+  /** 1.100.0: the exit's ticket is not one this server sealed. */
+  "PORTFOLIO_EXIT_TICKET_INVALID",
+  /** 1.100.0: the exit's Review is older than its transactions: review again. */
+  "PORTFOLIO_EXIT_TICKET_EXPIRED",
+  /** 1.100.0: the signed bytes are not the ones the Review built. Nothing was sent. */
+  "PORTFOLIO_EXIT_SIGNED_MISMATCH",
+  /** 1.100.0: the wallet's signature is missing or does not verify. Nothing was sent. */
+  "PORTFOLIO_EXIT_NOT_SIGNED",
 ] as const;
 export type ApiErrorCode = (typeof ERROR_CODES)[number];
 
@@ -1849,6 +2042,39 @@ export const ERROR_STATUS: Readonly<Record<ApiErrorCode, number>> = {
   INTENT_KEY_INVALID: 403,
   INTENT_SENT: 409,
   INTENT_SIGNATURE_INVALID: 422,
+  PRO_LIMIT_NO_MARKET: 404,
+  PRO_LIMIT_REFUSED: 422,
+  PRO_LIMIT_BALANCE_LOW: 422,
+  PRO_LIMIT_CAP: 403,
+  PRO_LIMIT_NOTHING_TO_DO: 409,
+  PRO_LIMIT_REVIEW_EXPIRED: 410,
+  PRO_LIMIT_SIGNED_OTHER_BYTES: 422,
+  PRO_LIMIT_SUBMIT_FAILED: 422,
+  EARN_PRO_STOPPED: 403,
+  EARN_PRO_NOT_A_PIER: 404,
+  EARN_PRO_PIER_NOT_OPEN: 409,
+  EARN_PRO_AMOUNT_LOW: 422,
+  EARN_PRO_AMOUNT_HIGH: 422,
+  EARN_PRO_CARE_CLOSED: 404,
+  EARN_PRO_BALANCE_LOW: 422,
+  EARN_PRO_NOTHING_TO_DO: 409,
+  EARN_PRO_REFUSED: 422,
+  EARN_PRO_TICKET_INVALID: 400,
+  EARN_PRO_TICKET_EXPIRED: 410,
+  EARN_PRO_SIGNED_MISMATCH: 422,
+  EARN_PRO_NOT_SIGNED: 422,
+  EARN_PRO_SIMULATION_FAILED: 422,
+  WALLET_CLEAN_NOTHING_TO_DO: 409,
+  WALLET_CLEAN_TICKET_INVALID: 400,
+  WALLET_CLEAN_TICKET_EXPIRED: 410,
+  WALLET_CLEAN_SIGNED_MISMATCH: 422,
+  WALLET_CLEAN_NOT_SIGNED: 422,
+  WALLET_CLEAN_SIMULATION_FAILED: 422,
+  PORTFOLIO_EXIT_NOTHING_TO_DO: 409,
+  PORTFOLIO_EXIT_TICKET_INVALID: 400,
+  PORTFOLIO_EXIT_TICKET_EXPIRED: 410,
+  PORTFOLIO_EXIT_SIGNED_MISMATCH: 422,
+  PORTFOLIO_EXIT_NOT_SIGNED: 422,
 };
 
 /* ------------------------------------------------------------ capabilities */
@@ -12768,6 +12994,145 @@ export const LaunchEarlyAccessSubmitResponseSchema = z
   .strict();
 export type LaunchEarlyAccessSubmitResponse = z.infer<typeof LaunchEarlyAccessSubmitResponseSchema>;
 
+/* ------------------------------------------------------------ a launch straight into a pool */
+
+/** The steps of a launch on DLMM Pro, in the order their creator signs them. */
+export const LAUNCH_POOL_STAGES = ["COIN", "POOL", "SUPPLY"] as const;
+const LaunchPoolStage = z.enum(LAUNCH_POOL_STAGES);
+const LaunchPoolPair = z.enum(["SOL", "USDC"]);
+const LaunchPoolNetwork = z.enum(["solana:devnet", "solana:mainnet"]);
+const LaunchPoolSplit = z.object({ creatorBps: z.number().int().min(0).max(10_000), ryntraBps: z.number().int().min(0).max(10_000) }).strict();
+/** The creator's take-profit ladder as it is told before signing: its share of the supply, its coins, and the prices it sells at — multiples of the first price. */
+const LaunchPoolLadderShape = {
+  shareBps: z.number().int().min(0).max(10_000),
+  amountRaw: EaRaw,
+  nearMultiple: z.number().positive(),
+  farMultiple: z.number().positive(),
+  rungs: z.number().int().positive(),
+} as const;
+const LaunchPoolLadder = z.object(LaunchPoolLadderShape).strict();
+
+/**
+ * 1.93.0: a new launch names its stored details (`metadataUri`), its pair (SOL when absent), — optionally — when
+ * trading opens, unix seconds (a quarter of an hour from now when absent), and whether the creator's take-profit
+ * ladder rests a twentieth of the supply before the opening (`ladder`, none when absent). A launch already begun names
+ * its coin (`mint`) alone: the build is then the step the chain shows is next.
+ */
+export const LaunchPoolBuildRequestSchema = z
+  .object({ creator: EaAddress, metadataUri: z.string().url().max(512).optional(), pair: LaunchPoolPair.optional(), opensAt: z.number().int().positive().nullable().optional(), ladder: z.boolean().optional(), mint: EaAddress.optional() })
+  .strict()
+  .refine((body) => (body.mint === undefined) !== (body.metadataUri === undefined), { message: "name the coin of a launch already begun, or the details of a new one — not both" })
+  .refine((body) => body.mint === undefined || body.ladder === undefined, { message: "a launch already begun keeps the ladder it was begun with" });
+export type LaunchPoolBuildRequest = z.infer<typeof LaunchPoolBuildRequestSchema>;
+
+export const LaunchPoolBuildResponseSchema = z
+  .object({
+    buildId: EaBuildId,
+    network: LaunchPoolNetwork,
+    stage: LaunchPoolStage,
+    /** The step's transactions — the creator's wallet signs them in one go; sent in this order, each after the one before lands. */
+    unsignedWireBase64: z.array(z.string().min(1)).min(1).max(4),
+    mint: EaAddress,
+    pool: EaAddress,
+    pair: LaunchPoolPair,
+    /** Unix seconds: trading opens to everyone. */
+    opensAt: z.number().int().positive(),
+    /** This step's own cost as its build tells it: the network's fees, and the rent that stays on chain. */
+    feeLamports: z.number().int().min(0),
+    rentLamports: z.number().int().min(0),
+    /** What is left to pay of the whole launch from this step on: this step's own numbers and the reckoning of the steps after it. */
+    remainingLamports: EaRaw,
+    /** The fee against snipers: where it starts, where it really settles once the pool is built (`null` before), what was asked, and the multiple of the first price it settles at. */
+    fee: z.object({ startBps: z.number().min(0), endBps: z.number().min(0).nullable(), askedEndBps: z.number().min(0), priceMultiple: z.number().positive() }).strict(),
+    split: LaunchPoolSplit.nullable(),
+    /** The creator's take-profit ladder; `null` — the launch has none. */
+    ladder: LaunchPoolLadder.nullable(),
+    expiresAt: z.string(),
+    signableMs: z.number().int().min(0),
+  })
+  .strict();
+export type LaunchPoolBuildResponse = z.infer<typeof LaunchPoolBuildResponseSchema>;
+
+export const LaunchPoolSubmitRequestSchema = z.object({ buildId: EaBuildId, creator: EaAddress, signedWireBase64: z.array(EaWire).min(1).max(4) }).strict();
+export type LaunchPoolSubmitRequest = z.infer<typeof LaunchPoolSubmitRequestSchema>;
+
+export const LaunchPoolSubmitResponseSchema = z
+  .object({
+    mint: EaAddress,
+    pool: EaAddress,
+    stage: LaunchPoolStage,
+    /** CONFIRMED — the step is on chain; PENDING — sent and not answered for in time, the next build settles it from the chain; FAILED — a transaction of the step did not land. */
+    state: z.enum(["CONFIRMED", "PENDING", "FAILED"]),
+    signatures: z.array(z.string()),
+    reason: z.string().nullable(),
+    /** The step the launch waits for now; `null` — it is on chain whole. */
+    next: LaunchPoolStage.nullable(),
+    opensAt: z.number().int().positive(),
+  })
+  .strict();
+export type LaunchPoolSubmitResponse = z.infer<typeof LaunchPoolSubmitResponseSchema>;
+
+export const LaunchPoolViewSchema = z
+  .object({
+    network: LaunchPoolNetwork,
+    mint: EaAddress,
+    pool: EaAddress,
+    creator: EaAddress,
+    name: z.string(),
+    symbol: z.string(),
+    metadataUri: z.string(),
+    pair: LaunchPoolPair,
+    opensAt: z.number().int().positive(),
+    /** BUILDING — a step still waits for its creator; COUNTDOWN — on chain whole, trading not open yet; OPEN — trading. */
+    phase: z.enum(["BUILDING", "COUNTDOWN", "OPEN"]),
+    next: LaunchPoolStage.nullable(),
+    /** Basis points: where the fee starts, where it really settles, and what a purchase would pay now — `null` where the pool was not read. */
+    fee: z.object({ startBps: z.number().min(0), endBps: z.number().min(0).nullable(), nowBps: z.number().min(0).nullable() }).strict(),
+    /** The pair's coin per coin: the first price and the price now; `null` — not read. */
+    price: z.object({ start: z.number().min(0).nullable(), now: z.number().min(0).nullable() }).strict(),
+    split: LaunchPoolSplit.nullable(),
+    /**
+     * The creator's take-profit ladder: what was told, what still rests on sale (`leftRaw`), and its state — WAITING,
+     * the supply's step has not placed it yet; RESTING, every price unfilled; SELLING, a price has filled; CLOSED, its
+     * owner took it down once trading was open; `null` — not read. `null` — the launch has none.
+     */
+    ladder: z.object({ ...LaunchPoolLadderShape, leftRaw: EaRaw.nullable(), state: z.enum(["WAITING", "RESTING", "SELLING", "CLOSED"]).nullable() }).strict().nullable(),
+    /** The honest-launch check, from the chain: `true`, `false` with `problems`, or `null` — not on chain whole yet, or not read: nothing is said either way. */
+    honest: z.boolean().nullable(),
+    problems: z.array(z.string()),
+    /** The launch's own transactions, by step. */
+    receipt: z.object({ COIN: z.array(z.string()), POOL: z.array(z.string()), SUPPLY: z.array(z.string()) }).strict(),
+    costLamports: EaRaw,
+    /** Unix seconds the view was read at — the chain's clock where the pool was read. */
+    at: z.number().int().positive(),
+  })
+  .strict();
+export type LaunchPoolView = z.infer<typeof LaunchPoolViewSchema>;
+
+export const LaunchPoolListResponseSchema = z
+  .object({
+    network: LaunchPoolNetwork,
+    launches: z.array(
+      z
+        .object({
+          mint: EaAddress,
+          pool: EaAddress,
+          creator: EaAddress,
+          name: z.string(),
+          symbol: z.string(),
+          metadataUri: z.string(),
+          pair: LaunchPoolPair,
+          opensAt: z.number().int().positive(),
+          /** By the launch's own record and the clock: BUILDING — a step is not confirmed; else COUNTDOWN or OPEN. */
+          phase: z.enum(["BUILDING", "COUNTDOWN", "OPEN"]),
+          createdAt: z.string(),
+        })
+        .strict(),
+    ),
+  })
+  .strict();
+export type LaunchPoolListResponse = z.infer<typeof LaunchPoolListResponseSchema>;
+
 export const LaunchEarlyAccessDepositBuildRequestSchema = z.object({ wallet: EaAddress, amountRaw: EaRaw }).strict();
 export type LaunchEarlyAccessDepositBuildRequest = z.infer<typeof LaunchEarlyAccessDepositBuildRequestSchema>;
 
@@ -15394,3 +15759,776 @@ export type IntentMarkRequest = z.infer<typeof IntentMarkRequestSchema>;
 /** 1.90.0: `POST /api/v1/intents/{id}/receipt` — the claiming wallet's transaction signature (the marked one), which ends the intent. */
 export const IntentReceiptRequestSchema = IntentStepRequestSchema.extend({ signature: z.string().regex(INTENT_SIGNATURE) }).strict();
 export type IntentReceiptRequest = z.infer<typeof IntentReceiptRequestSchema>;
+
+/* ------------------------------------------------------------ ladders */
+
+/**
+ * 1.91.0: «buy cheaper», «sell higher» — a ladder of limit orders that rests in a coin's Meteora DLMM Pro pool. A
+ * person names a coin, a side and how far from the price; the engine answers with up to 25 prices, each filled at its
+ * own exact price, and the maker's share of the pool's fee as one number. Every transaction is built unsigned for the
+ * person's wallet, which pays and signs; a Review comes with a ticket, and the relay sends only the bytes that Review
+ * showed. Ryntra's part is the order's referral — a fifth of the maker's bonus — told before the signature; it is
+ * never taken where it would hold a collect up. A person may let Ryntra's agent collect what filled: the program lets
+ * that agent do nothing else, and pays what it collects only into the holder's own accounts.
+ *
+ * Served where the deployment says `RYNTRA_PRO_LIMITS` — `devnet`, or `mainnet` once the operator opens it; elsewhere
+ * every route answers `CAPABILITY_UNAVAILABLE`.
+ */
+export const LADDER_NETWORKS = ["devnet", "mainnet"] as const;
+export const LADDER_ACTIONS = ["place", "collect", "close", "delegate"] as const;
+export const LADDER_ORDER_STATES = ["resting", "filling", "filled", "taken"] as const;
+export const LADDER_RELAY_STATES = ["LANDED", "FAILED", "UNKNOWN", "NOT_SENT"] as const;
+const LadderRaw = z.string().regex(/^(0|[1-9][0-9]{0,19})$/);
+const LadderSignedRaw = z.string().regex(/^-?(0|[1-9][0-9]{0,19})$/);
+const LadderWire = z.string().min(80).max(4_096).regex(/^[A-Za-z0-9+/]+=*$/);
+const LadderBps = z.number().finite().min(0);
+const LadderPrice = z.number().finite().min(0);
+
+/** What a person asks for. Distances are basis points of the coin's price, always positive: for a buy how much cheaper, for a sell how much dearer. */
+export const LadderIntentSchema = z
+  .object({
+    action: z.enum(["buy", "sell"]),
+    /** The farthest price: 1 to 9 900 for a buy, 1 to 990 000 for a sell. */
+    farBps: z.number().int().min(1).max(990_000),
+    /** The nearest price; absent — as near as the pool allows. */
+    nearBps: z.number().int().min(1).max(990_000).optional(),
+    /** How many prices, 1 to 25; absent — as many as fit. One — a single order at the farthest price. */
+    rungs: z.number().int().min(1).max(25).optional(),
+    /** Evenly, or more the farther from the price; absent — evenly. */
+    spread: z.enum(["even", "further"]).optional(),
+    /** Of the coin the order rests in, in its smallest unit: what a buy spends, what a sell sells. */
+    amountRaw: LadderRaw.refine((value) => value !== "0"),
+  })
+  .strict();
+export type LadderIntent = z.infer<typeof LadderIntentSchema>;
+
+export const LadderMarketSchema = z
+  .object({
+    network: z.enum(LADDER_NETWORKS),
+    pool: Address,
+    coin: z.object({ mint: Address, decimals: z.number().int().min(0).max(18) }).strict(),
+    quote: z.object({ mint: Address, symbol: z.string().min(1).max(12), decimals: z.number().int().min(0).max(18) }).strict(),
+    /** The coin's price in the quote coin, whole tokens. */
+    price: LadderPrice,
+    /** The maker's share of what fills, basis points, at the pool's fee now: the person's part, and Ryntra's fifth of the maker's half. */
+    bonus: z.object({ feeBps: LadderBps, ownerBps: LadderBps, referralBps: LadderBps }).strict(),
+    /** How far a ladder may reach on this pool: a slider's ends. */
+    reach: z.object({ buyBps: z.number().int().min(0), sellBps: z.number().int().min(0) }).strict(),
+    /** Whether the pool takes new orders now. */
+    placing: z.boolean(),
+    /** The wallet a person may let collect their orders; null — nobody is offered. */
+    collector: Address.nullable(),
+    /** The most one ladder may rest, in the quote coin (null — no cap), and the least one price holds where the collector is named. */
+    cap: z.object({ maxRaw: LadderRaw.nullable(), minRungRaw: LadderRaw }).strict(),
+  })
+  .strict();
+
+/** `GET /api/v1/ladders/market?mint=` (1.91.0). `market` is null where the coin has no pool a ladder can rest in. */
+export const LadderMarketResponseSchema = z.object({ market: LadderMarketSchema.nullable() }).strict();
+export type LadderMarketResponse = z.infer<typeof LadderMarketResponseSchema>;
+
+/** `POST /api/v1/ladders/quote` (1.91.0): the coin and what is asked. Nothing is built. */
+export const LadderQuoteRequestSchema = z.object({ mint: Address, intent: LadderIntentSchema }).strict();
+export type LadderQuoteRequest = z.infer<typeof LadderQuoteRequestSchema>;
+
+export const LadderQuoteSchema = z
+  .object({
+    market: LadderMarketSchema,
+    action: z.enum(["buy", "sell"]),
+    restsIn: Address,
+    paysIn: Address,
+    /** Nearest the price first: how far, the coin's price there, what rests and what it pays once filled — at that price exactly. */
+    rungs: z.array(z.object({ awayBps: z.number().int(), price: LadderPrice, amountRaw: LadderRaw, paysRaw: LadderRaw }).strict()).min(1).max(25),
+    amountRaw: LadderRaw,
+    paysRaw: LadderRaw,
+    averagePrice: LadderPrice,
+    nearBps: z.number().int(),
+    farBps: z.number().int(),
+    /** How far the price may move before the ladder lands; outside it the network refuses the ladder and nothing moves. */
+    corridorBps: z.number().int().min(0).nullable(),
+    /** The bonus at the pool's fee now; `referral` — Ryntra's wallet named on the order, null — nobody. `feeIn` — the coin it is paid in. */
+    bonus: z.object({ feeBps: LadderBps, ownerBps: LadderBps, referralBps: LadderBps, referral: Address.nullable(), feeIn: Address }).strict(),
+  })
+  .strict();
+export type LadderQuoteResponse = z.infer<typeof LadderQuoteSchema>;
+
+/**
+ * `POST /api/v1/ladders/review` (1.91.0): one action's unsigned transactions and the ticket the relay holds them to.
+ * `place` — a ladder for a coin, `agent` asking that Ryntra's agent may collect it; `collect` — take what filled (the
+ * order is closed where nothing would be left resting); `close` — cancel: everything back with the order's rent;
+ * `delegate` — let the agent collect an order, or take that back.
+ */
+export const LadderReviewRequestSchema = z.discriminatedUnion("action", [
+  z.object({ action: z.literal("place"), owner: Address, mint: Address, intent: LadderIntentSchema, agent: z.boolean() }).strict(),
+  z.object({ action: z.literal("collect"), owner: Address, pool: Address, nftMint: Address }).strict(),
+  z.object({ action: z.literal("close"), owner: Address, pool: Address, nftMint: Address }).strict(),
+  z.object({ action: z.literal("delegate"), owner: Address, pool: Address, nftMint: Address, agent: z.boolean() }).strict(),
+]);
+export type LadderReviewRequest = z.infer<typeof LadderReviewRequestSchema>;
+
+export const LadderReviewResponseSchema = z
+  .object({
+    action: z.enum(LADDER_ACTIONS),
+    network: z.enum(LADDER_NETWORKS),
+    /** Unsigned, base64, in the order they are signed and sent; the wallet signs them in one approval. */
+    transactions: z.array(LadderWire).min(1).max(4),
+    ticket: z.string().min(16).max(8_192),
+    /** Milliseconds since the epoch: sign before it. */
+    expiresAt: z.number().int().positive(),
+    /** The order's NFT: its id from here on. */
+    nftMint: Address,
+    networkFeeLamports: LadderRaw,
+    /** Rent the order holds while it rests and returns when it is closed; negative — rent that comes back now. */
+    rentLamports: LadderSignedRaw,
+    /** Rent of the person's own token accounts the Review opens: it stays in those accounts. */
+    accountsLamports: LadderRaw,
+    /** Placing: the ladder as it was built. */
+    quote: LadderQuoteSchema.nullable(),
+    /** Whether the agent may collect the order after this. */
+    agent: z.boolean(),
+    /** Taking and cancelling: what reaches the wallet, per coin, after Ryntra's part and the coins' own transfer fees. */
+    receives: z.object({ xRaw: LadderRaw, yRaw: LadderRaw, x: Address, y: Address }).strict().nullable(),
+    /** Ryntra's part of the bonus this collect pays, in its coin; null — none. */
+    referral: z.object({ mint: Address, raw: LadderRaw }).strict().nullable(),
+  })
+  .strict();
+export type LadderReviewResponse = z.infer<typeof LadderReviewResponseSchema>;
+
+/** `POST /api/v1/ladders/submit` (1.91.0): the Review's ticket and its transactions, signed by the wallet, in order. */
+export const LadderSubmitRequestSchema = z.object({ ticket: z.string().min(16).max(8_192), signed: z.array(LadderWire).min(1).max(4) }).strict();
+export type LadderSubmitRequest = z.infer<typeof LadderSubmitRequestSchema>;
+
+export const LadderSubmitResponseSchema = z
+  .object({
+    action: z.enum(LADDER_ACTIONS),
+    nftMint: Address,
+    results: z.array(z.object({ signature: z.string().min(64).max(96), state: z.enum(LADDER_RELAY_STATES) }).strict()).min(1).max(4),
+    /** Every transaction landed. */
+    settled: z.boolean(),
+  })
+  .strict();
+export type LadderSubmitResponse = z.infer<typeof LadderSubmitResponseSchema>;
+
+export const LadderOrderSchema = z
+  .object({
+    nftMint: Address,
+    pool: Address,
+    coin: z.object({ mint: Address, decimals: z.number().int().min(0).max(18) }).strict(),
+    quote: z.object({ mint: Address, decimals: z.number().int().min(0).max(18) }).strict(),
+    /** What the person is doing with the coin; null once every price was taken — the order only holds its rent. */
+    action: z.enum(["buy", "sell"]).nullable(),
+    state: z.enum(LADDER_ORDER_STATES),
+    prices: z.number().int().min(0).max(25),
+    filledPrices: z.number().int().min(0).max(25),
+    restsIn: Address.nullable(),
+    paysIn: Address.nullable(),
+    restsRaw: LadderRaw,
+    filledRaw: LadderRaw,
+    proceedsRaw: LadderRaw,
+    lowPrice: LadderPrice.nullable(),
+    highPrice: LadderPrice.nullable(),
+    /** The price of what filled: what was paid over what was sold. */
+    filledPrice: LadderPrice.nullable(),
+    bonus: z.object({ mint: Address.nullable(), ownerRaw: LadderRaw, referralRaw: LadderRaw }).strict(),
+    /** Whether the agent is let in on it; `agentReady` — and the person's accounts of both coins stand, so it can collect now; `agentOffered` — the agent would collect it at all (placed here, each price worth its fee). */
+    agent: z.boolean(),
+    agentReady: z.boolean(),
+    agentOffered: z.boolean(),
+    /** Prices left that filled in part: with any, `filledPrice` is a blend of prices. */
+    partialPrices: z.number().int().min(0).max(25),
+  })
+  .strict();
+
+/** `GET /api/v1/ladders/orders?owner=&mint=` (1.91.0): the wallet's ladders, read from the chain; `mint` narrows them to one coin. */
+export const LadderOrdersResponseSchema = z.object({ owner: Address, orders: z.array(LadderOrderSchema).max(12) }).strict();
+export type LadderOrdersResponse = z.infer<typeof LadderOrdersResponseSchema>;
+/* ------------------------------------------------------------ 1.92.0 — earning on Meteora DLMM Pro */
+
+const EarnProRaw = z.string().regex(/^\d{1,20}$/);
+const EarnProCoinSchema = z.object({ mint: Address, symbol: z.string().min(1).max(10), decimals: z.number().int().min(0).max(18) }).strict();
+const EarnProAmountsSchema = z.object({ xRaw: EarnProRaw, yRaw: EarnProRaw, lamports: EarnProRaw }).strict();
+const EarnProNetwork = z.enum(["devnet", "mainnet"]);
+const EarnProWire = z.string().min(80).max(4_096).regex(/^[A-Za-z0-9+/]+=*$/);
+const EarnProSignature = z.string().regex(/^[1-9A-HJ-NP-Za-km-z]{64,88}$/);
+
+export const EARN_PRO_GOALS = ["even", "near", "edges"] as const;
+export const EARN_PRO_STYLES = ["calm", "balanced", "dense"] as const;
+export const EARN_PRO_STOP_PCTS = [0, 10, 25] as const;
+
+/**
+ * 1.92.0: a pier — a DLMM Pro pool of SOL against a coin Earn knows, as the chain holds it now. `price` is token Y per
+ * token X in whole coins; `feeBps` what a swap pays now; `depthLamports` the pool's two reserves in SOL at its own
+ * price (null where a reserve did not read); a reward says its coin, what is emitted a day and whether it runs.
+ */
+export const EarnProPierSchema = z
+  .object({
+    address: Address,
+    x: EarnProCoinSchema,
+    y: EarnProCoinSchema,
+    solIsX: z.boolean(),
+    price: z.number().positive(),
+    feeBps: z.number().min(0),
+    tickSpacing: z.number().int().min(1),
+    tickId: z.number().int(),
+    depthLamports: EarnProRaw.nullable(),
+    rewards: z.array(z.object({ index: z.number().int().min(0).max(1), mint: Address, symbol: z.string().min(1).max(10).nullable(), perDayRaw: EarnProRaw, running: z.boolean(), endsAt: z.number().int().min(0) }).strict()).max(2),
+    takesDeposits: z.boolean(),
+  })
+  .strict();
+export type EarnProPier = z.infer<typeof EarnProPierSchema>;
+
+/** 1.92.0: `GET /api/v1/earn/pro/piers` — the piers, deepest first; `care` says whether an agent looks after positions here. */
+export const EarnProPiersResponseSchema = z.object({ network: EarnProNetwork, piers: z.array(EarnProPierSchema).max(200), at: Iso, care: z.boolean() }).strict();
+export type EarnProPiersResponse = z.infer<typeof EarnProPiersResponseSchema>;
+
+/**
+ * 1.92.0: a wallet's position at a pier. `fees` is the first line of income — what a collect pays now; `rewards` the
+ * second — what the position's books already show of the pool's reward (the least a collect pays). `cared` — an agent
+ * is approved on it with a care's three rights; `care` — what that care was told and did, where there is one.
+ */
+export const EarnProPositionSchema = z
+  .object({
+    nftMint: Address,
+    pool: Address,
+    inRange: z.boolean(),
+    ranges: z.number().int().min(1).max(45),
+    lowerPrice: z.number().positive(),
+    upperPrice: z.number().positive(),
+    worth: EarnProAmountsSchema,
+    fees: EarnProAmountsSchema,
+    rewards: z.array(z.object({ index: z.number().int().min(0).max(1), mint: Address, symbol: z.string().min(1).max(10).nullable(), accruedRaw: EarnProRaw, running: z.boolean() }).strict()).max(2),
+    empty: z.boolean(),
+    cared: z.boolean(),
+    care: z.object({ status: z.enum(["working", "stopped"]), stoppedBy: z.enum(["stop", "owner", "gone"]).nullable(), stopBelow: z.number().positive().nullable(), claimedInY: z.number().min(0), lastAt: Iso.nullable() }).strict().nullable(),
+  })
+  .strict();
+export type EarnProPosition = z.infer<typeof EarnProPositionSchema>;
+
+/** 1.92.0: `GET /api/v1/earn/pro/positions?owner=` — the wallet's positions at the network's piers. */
+export const EarnProPositionsResponseSchema = z.object({ network: EarnProNetwork, owner: Address, positions: z.array(EarnProPositionSchema).max(24), care: z.boolean() }).strict();
+export type EarnProPositionsResponse = z.infer<typeof EarnProPositionsResponseSchema>;
+
+/**
+ * 1.92.0: `POST /api/v1/earn/pro/review` — one action of the wallet's. `open` names a goal, a width and SOL in
+ * lamports (0.05 to 10 SOL); `care_on` the stop, percent under the price now (0 — none); the rest the position.
+ */
+export const EarnProReviewRequestSchema = z.discriminatedUnion("action", [
+  z.object({ action: z.literal("open"), owner: Address, pool: Address, goal: z.enum(EARN_PRO_GOALS), style: z.enum(EARN_PRO_STYLES), lamports: EarnProRaw }).strict(),
+  z.object({ action: z.enum(["compound", "collect", "leave", "close", "care_off"]), owner: Address, pool: Address, nftMint: Address }).strict(),
+  z.object({ action: z.literal("care_on"), owner: Address, pool: Address, nftMint: Address, stopPct: z.union([z.literal(0), z.literal(10), z.literal(25)]) }).strict(),
+]);
+export type EarnProReviewRequest = z.infer<typeof EarnProReviewRequestSchema>;
+
+const EarnProRewardLeast = z.object({ mint: Address, symbol: z.string().min(1).max(10).nullable(), leastRaw: EarnProRaw }).strict();
+
+/**
+ * 1.92.0: what a Review's transactions do, in numbers. For `open`: what goes in at the price the opening is built for
+ * and what may stay in the wallet; `bandBps` — the band of the price, either way, outside which nothing lands; the
+ * range as prices; the swap sent first and the pool's own fee on it; the network's fee; `depositLamports` — the rent the
+ * position keeps until it is closed. For `leave`: `expected` at the price now and `minimum` at the band's worse end.
+ */
+export const EarnProSummarySchema = z.discriminatedUnion("action", [
+  z
+    .object({
+      action: z.literal("open"),
+      goesIn: EarnProAmountsSchema,
+      staysLamports: EarnProRaw,
+      bandBps: z.number().int().min(1).max(500),
+      lowerPrice: z.number().positive(),
+      upperPrice: z.number().positive(),
+      ranges: z.number().int().min(1).max(45),
+      swap: z.object({ lamports: EarnProRaw, feeBps: z.number().min(0), referral: z.boolean() }).strict(),
+      networkLamports: z.number().int().min(0),
+      depositLamports: z.number().int().min(0),
+      position: Address,
+      nftMint: Address,
+    })
+    .strict(),
+  z.object({ action: z.literal("compound"), collected: EarnProAmountsSchema, bandBps: z.number().int().min(0).max(500), networkLamports: z.number().int().min(0) }).strict(),
+  z.object({ action: z.literal("collect"), fees: EarnProAmountsSchema.nullable(), rewards: z.array(EarnProRewardLeast).max(2), networkLamports: z.number().int().min(0), depositLamports: z.number().int().min(0) }).strict(),
+  z.object({ action: z.literal("leave"), expected: EarnProAmountsSchema, minimum: EarnProAmountsSchema, bandBps: z.number().int().min(0).max(500), fees: EarnProAmountsSchema.nullable(), rewards: z.array(EarnProRewardLeast).max(2), networkLamports: z.number().int().min(0) }).strict(),
+  z.object({ action: z.literal("close"), networkLamports: z.number().int().min(0) }).strict(),
+  /* The stop watches `stopCoin` counted in `stopUnit`: SOL in dollars on a dollar pier, the staked SOL in SOL on a staked one. */
+  z.object({ action: z.literal("care_on"), agent: Address, rights: z.array(z.string().min(1).max(32)).min(1).max(5), stopBelow: z.number().positive().nullable(), stopCoin: z.string().min(1).max(10), stopUnit: z.string().min(1).max(10), networkLamports: z.number().int().min(0) }).strict(),
+  z.object({ action: z.literal("care_off"), networkLamports: z.number().int().min(0) }).strict(),
+]);
+export type EarnProSummary = z.infer<typeof EarnProSummarySchema>;
+
+/** 1.92.0: the answer to a Review — the unsigned transactions in the order they are signed and sent, the ticket that seals them, and when it ends. */
+export const EarnProReviewResponseSchema = z
+  .object({
+    network: EarnProNetwork,
+    action: z.enum(["open", "compound", "care_on", "collect", "leave", "close", "care_off"]),
+    ticket: z.string().min(40).max(8_192),
+    transactions: z.array(EarnProWire).min(1).max(6),
+    expiresAt: Iso,
+    summary: EarnProSummarySchema,
+  })
+  .strict();
+export type EarnProReviewResponse = z.infer<typeof EarnProReviewResponseSchema>;
+
+/** 1.92.0: `POST /api/v1/earn/pro/submit` — the Review's ticket and its transactions, signed by the wallet, in the same order. */
+export const EarnProSubmitRequestSchema = z.object({ ticket: z.string().min(40).max(8_192), signed: z.array(EarnProWire).min(1).max(6) }).strict();
+export type EarnProSubmitRequest = z.infer<typeof EarnProSubmitRequestSchema>;
+
+const EarnProRelayResult = z.object({ signature: EarnProSignature, state: z.enum(["LANDED", "FAILED", "UNKNOWN", "NOT_SENT"]), reason: z.string().max(240).nullable() }).strict();
+
+/** 1.92.0: the relay's answer — each transaction's signature and where it stands; `settled` when every one landed. */
+export const EarnProSubmitResponseSchema = z.object({ action: z.enum(["open", "compound", "care_on", "collect", "leave", "close", "care_off"]), nftMint: Address, results: z.array(EarnProRelayResult).min(1).max(6), settled: z.boolean() }).strict();
+export type EarnProSubmitResponse = z.infer<typeof EarnProSubmitResponseSchema>;
+
+/** 1.92.0: `POST /api/v1/earn/pro/status` — signatures a relay sent, for an answer lost on the way back. */
+export const EarnProStatusRequestSchema = z.object({ signatures: z.array(EarnProSignature).min(1).max(6) }).strict();
+export type EarnProStatusRequest = z.infer<typeof EarnProStatusRequestSchema>;
+
+export const EarnProStatusResponseSchema = z.object({ states: z.array(z.object({ state: z.enum(["LANDED", "FAILED", "UNKNOWN"]), reason: z.string().max(240).nullable() }).strict()).min(1).max(6) }).strict();
+export type EarnProStatusResponse = z.infer<typeof EarnProStatusResponseSchema>;
+/* ------------------------------------------------------------ 1.94.0 — cleaning a wallet */
+
+const CleanRaw = z.string().regex(/^\d{1,20}$/);
+const CleanWire = z.string().min(64).max(4_096);
+const CleanSignature = z.string().regex(/^[1-9A-HJ-NP-Za-km-z]{64,90}$/);
+const CleanRisk = z.enum(WALLET_CLEAN_RISKS);
+
+/** 1.94.0: one account a clean may take — a small coin swapped into SOL, an empty account, litter burnt, wrapped SOL. */
+export const WalletCleanItemSchema = z
+  .object({
+    account: Address,
+    mint: Address,
+    program: Address,
+    kind: z.enum(["small", "empty", "litter", "wrapped"]),
+    symbol: z.string().min(1).max(24),
+    name: z.string().max(80).nullable(),
+    icon: z.string().max(200).nullable(),
+    amountRaw: CleanRaw,
+    decimals: z.number().int().min(0).max(18),
+    /** What the coin is worth now, dollars, at the engine's price; null — no price. */
+    valueUsd: z.number().min(0).nullable(),
+    /** What closing the account returns, lamports: its rent, and for wrapped SOL the SOL itself. */
+    lamports: z.number().int().min(0),
+    /** Why the coin is better not touched; a marked coin enters a clean only when the person picks it. */
+    risk: z.array(CleanRisk).max(8),
+    picked: z.boolean(),
+  })
+  .strict();
+export type WalletCleanItem = z.infer<typeof WalletCleanItemSchema>;
+
+/** 1.94.0: `GET /api/v1/wallet/clean?owner=` — what a clean of the wallet would take, and the risk marks of every coin it holds. */
+export const WalletCleanReadResponseSchema = z
+  .object({
+    owner: Address,
+    items: z.array(WalletCleanItemSchema).max(300),
+    /** Every coin held with a risk mark, any value: the Portfolio marks them. */
+    risky: z.array(z.object({ mint: Address, risk: z.array(CleanRisk).min(1).max(8) }).strict()).max(300),
+    /** What closing the picked accounts returns, lamports. */
+    backLamports: z.number().int().min(0),
+    /** The picked small coins, dollars, before the swap's fee and price. */
+    smallUsd: z.number().min(0),
+    solUsd: z.number().positive().nullable(),
+    /** The market answered; false — only empty accounts and wrapped SOL are listed. */
+    priced: z.boolean(),
+    /** This deployment builds a clean; false — the read only. */
+    canClean: z.boolean(),
+    at: Iso,
+  })
+  .strict();
+export type WalletCleanReadResponse = z.infer<typeof WalletCleanReadResponseSchema>;
+
+/** 1.94.0: `GET /api/v1/wallet/clean/back?owner=` — «≈ … SOL to get back» from the chain alone: empty accounts and wrapped SOL. */
+export const WalletCleanBackResponseSchema = z.object({ owner: Address, lamports: z.number().int().min(0), accounts: z.number().int().min(0), at: Iso }).strict();
+export type WalletCleanBackResponse = z.infer<typeof WalletCleanBackResponseSchema>;
+
+/** 1.94.0: `POST /api/v1/wallet/clean/review` — the wallet, and the accounts the person put in (`add`, marked coins) or took out (`drop`). */
+export const WalletCleanReviewRequestSchema = z.object({ owner: Address, add: z.array(Address).max(100).optional(), drop: z.array(Address).max(300).optional() }).strict();
+export type WalletCleanReviewRequest = z.infer<typeof WalletCleanReviewRequestSchema>;
+
+/** 1.94.0: a swap the clean could not carry, and why: Jupiter has no route for it, it is too small, Jupiter refused, swapping is paused. */
+export const WALLET_CLEAN_SKIPS = ["NO_ROUTE", "TOO_SMALL", "REFUSED", "PAUSED"] as const;
+
+export const WalletCleanSummarySchema = z
+  .object({
+    /** What the wallet gets back in all, lamports: the rent of every account closed and the swaps' SOL at their quotes. */
+    receiveLamports: CleanRaw,
+    rentLamports: CleanRaw,
+    swapLamports: CleanRaw,
+    swaps: z.number().int().min(0),
+    closes: z.number().int().min(0),
+    burns: z.number().int().min(0),
+    /** Ryntra's fee on the swaps, basis points — the swap engine's own; null — no swap. Closing an account is free. */
+    feeBps: z.number().int().min(0).max(10_000).nullable(),
+    skipped: z.array(z.object({ mint: Address, symbol: z.string().min(1).max(24), reason: z.enum(WALLET_CLEAN_SKIPS) }).strict()).max(50),
+    /** Accounts left for the next clean: more than one approval carries. */
+    left: z.number().int().min(0),
+  })
+  .strict();
+export type WalletCleanSummary = z.infer<typeof WalletCleanSummarySchema>;
+
+/** 1.94.0: the unsigned transactions of one clean, in the order the wallet signs them and the relay sends them, and the ticket that seals them. */
+export const WalletCleanReviewResponseSchema = z
+  .object({
+    owner: Address,
+    ticket: z.string().min(40).max(16_384),
+    transactions: z.array(CleanWire).min(1).max(10),
+    kinds: z.array(z.enum(WALLET_CLEAN_STEPS)).min(1).max(10),
+    expiresAt: Iso,
+    summary: WalletCleanSummarySchema,
+  })
+  .strict();
+export type WalletCleanReviewResponse = z.infer<typeof WalletCleanReviewResponseSchema>;
+
+/** 1.94.0: `POST /api/v1/wallet/clean/submit` — the ticket and the transactions, signed by the wallet, in the same order. */
+export const WalletCleanSubmitRequestSchema = z.object({ ticket: z.string().min(40).max(16_384), signed: z.array(CleanWire).min(1).max(10) }).strict();
+export type WalletCleanSubmitRequest = z.infer<typeof WalletCleanSubmitRequestSchema>;
+
+/** 1.94.0: each transaction's signature and where it stands; `settled` when every one landed. */
+export const WalletCleanSubmitResponseSchema = z
+  .object({
+    results: z
+      .array(z.object({ kind: z.enum(WALLET_CLEAN_STEPS), signature: CleanSignature, state: z.enum(["LANDED", "FAILED", "UNKNOWN", "NOT_SENT"]), reason: z.string().max(240).nullable() }).strict())
+      .min(1)
+      .max(10),
+    settled: z.boolean(),
+  })
+  .strict();
+export type WalletCleanSubmitResponse = z.infer<typeof WalletCleanSubmitResponseSchema>;
+
+/* ------------------------------------------------------------ 1.96.0 — the pools to choose from */
+
+/** 1.96.0: one coin of a pool, with the venue's verified flag as read. */
+export const EarnPoolCoinSchema = z.object({ mint: Address, symbol: z.string().min(1).max(32), verified: z.boolean() }).strict();
+
+/** 1.96.0: one Meteora pool of the chooser; every figure is the venue's own, `feeTvl24hPct` a fact of the day gone. */
+export const EarnPoolSchema = z
+  .object({
+    kind: z.enum(["dlmm", "damm-v2"]),
+    address: Address,
+    x: EarnPoolCoinSchema,
+    y: EarnPoolCoinSchema,
+    tvlUsd: z.number().nonnegative(),
+    volume24hUsd: z.number().nonnegative().nullable(),
+    fees24hUsd: z.number().nonnegative().nullable(),
+    feeTvl24hPct: z.number().nonnegative().nullable(),
+    baseFeePct: z.number().nonnegative().nullable(),
+    feePct: z.number().nonnegative().nullable(),
+    binStepBps: z.number().int().positive().nullable(),
+    createdAt: Iso.nullable(),
+    page: z.string().url().max(200),
+  })
+  .strict();
+export type EarnPool = z.infer<typeof EarnPoolSchema>;
+
+/** 1.96.0: one Jupiter Lend market's rate now, per cent a year, and what is supplied to it in dollars. */
+export const EarnLendRateSchema = z.object({ mint: Address, symbol: z.string().min(1).max(32), ratePct: z.number().nonnegative(), suppliedUsd: z.number().nonnegative().nullable() }).strict();
+
+/** 1.96.0: `GET /api/v1/earn/pools`. */
+export const EarnPoolsResponseSchema = z
+  .object({
+    pools: z.array(EarnPoolSchema).max(240),
+    lend: z.array(EarnLendRateSchema).max(64),
+    at: Iso.nullable(),
+    sources: z.object({ dlmm: z.boolean(), dammV2: z.boolean(), lend: z.boolean() }).strict(),
+  })
+  .strict();
+export type EarnPoolsResponse = z.infer<typeof EarnPoolsResponseSchema>;
+
+/* ------------------------------------------------------------ 1.99.0 — a pool's liquidity by price */
+
+const BinUnits = z.string().regex(/^\d{1,40}$/);
+
+/** 1.99.0: one step of a pool's price — a DLMM bin, or a step of DLMM Pro's tick spacing — with what lies on it, base units. */
+export const EarnBinSchema = z
+  .object({
+    offset: z.number().int().min(-70).max(70),
+    id: z.number().int(),
+    price: z.number().positive(),
+    x: BinUnits,
+    y: BinUnits,
+  })
+  .strict();
+
+/** 1.99.0: one of a DLMM pool's shared ledgers of bins, by the ids it holds, and whether it is open on chain. */
+export const EarnBinLedgerSchema = z.object({ lower: z.number().int(), upper: z.number().int(), open: z.boolean() }).strict();
+
+/** 1.99.0: `GET /api/v1/earn/pools/bins` and `GET /api/v1/earn/pro/bins` — a pool's liquidity around its price. */
+export const EarnBinsResponseSchema = z
+  .object({
+    venue: z.enum(["dlmm", "pro"]),
+    pool: Address,
+    x: z.object({ mint: Address, decimals: z.number().int().min(0).max(18) }).strict(),
+    y: z.object({ mint: Address, decimals: z.number().int().min(0).max(18) }).strict(),
+    stepBps: z.number().positive(),
+    activeId: z.number().int(),
+    price: z.number().positive(),
+    bins: z.array(EarnBinSchema).min(1).max(141),
+    market: z.object({ price: z.number().positive().nullable(), gapPct: z.number().finite().nullable() }).strict(),
+    rent: z
+      .object({ positionLamports: BinUnits, ledgerLamports: BinUnits, ledgers: z.array(EarnBinLedgerSchema).max(8) })
+      .strict()
+      .nullable(),
+    at: Iso,
+  })
+  .strict();
+export type EarnBinsResponse = z.infer<typeof EarnBinsResponseSchema>;
+/* ------------------------------------------------------------ 1.97.0: the Market's depth */
+
+const DepthNumber = z.number().finite().nullable();
+const DepthCount = z.number().int().min(0).nullable();
+const DepthRight = z.enum(["on", "off"]).nullable();
+
+/** 1.97.0: one window of a coin's trading, as Jupiter measures it; null — not measured. */
+export const MarketDepthStatsSchema = z.object({ change: DepthNumber, volume: DepthNumber, buys: DepthCount, sells: DepthCount, traders: DepthCount }).strict();
+
+/** 1.97.0: one coin of a Market list, every figure Jupiter's Token API v2's. */
+export const MarketDepthCoinSchema = z
+  .object({
+    id: Address,
+    symbol: z.string().min(1).max(24),
+    name: z.string().min(1).max(64),
+    /** Only a verified coin's logo; a coin nobody vetted is drawn by its letter. */
+    icon: z.string().url().max(400).nullable(),
+    price: z.number().positive().nullable(),
+    mcap: DepthNumber,
+    liquidity: DepthNumber,
+    holders: DepthCount,
+    organic: DepthNumber,
+    verified: z.boolean(),
+    stock: z.boolean(),
+    bornAt: Iso.nullable(),
+    mint: DepthRight,
+    freeze: DepthRight,
+    topHolders: DepthNumber,
+    stats: z.object({ "5m": MarketDepthStatsSchema.nullable(), "1h": MarketDepthStatsSchema.nullable(), "6h": MarketDepthStatsSchema.nullable(), "24h": MarketDepthStatsSchema.nullable() }).strict(),
+  })
+  .strict();
+export type MarketDepthCoin = z.infer<typeof MarketDepthCoinSchema>;
+
+/** 1.97.0: `GET /api/v1/market/depth?list=&window=` — one list over one window, or the coins a person starred. */
+export const MarketDepthResponseSchema = z
+  .object({
+    list: z.enum(["trending", "fresh", "gainers", "losers", "traded", "stocks", "saved"]),
+    window: z.enum(["5m", "1h", "6h", "24h"]),
+    coins: z.array(MarketDepthCoinSchema).max(50),
+    readAt: Iso,
+  })
+  .strict();
+export type MarketDepthResponse = z.infer<typeof MarketDepthResponseSchema>;
+
+/* ------------------------------------------------------------ 1.98.0 — everything in Solana */
+
+const PortfolioRaw = z.string().regex(/^\d{1,40}$/);
+const PortfolioFigure = z.number().finite();
+
+/** 1.98.0: a coin of a position — held, supplied, borrowed, a market's share, a fee or a reward to collect. `amountRaw` and `decimals` are null where the source stated a worth but not an amount. */
+export const PortfolioTokenSchema = z
+  .object({
+    mint: Address,
+    symbol: z.string().min(1).max(32).nullable(),
+    decimals: z.number().int().min(0).max(18).nullable(),
+    amountRaw: PortfolioRaw.nullable(),
+    usd: PortfolioFigure.nullable(),
+    role: z.enum(TOKEN_ROLES),
+  })
+  .strict();
+export type PortfolioToken = z.infer<typeof PortfolioTokenSchema>;
+
+/** 1.98.0: whether one step takes all of a position out (`oneStep`), how (`how`), what stops it (`reason`), the part that leaves now (`partBps`) and from when the rest may (`untilEpoch`, `untilTime`). */
+export const PortfolioExitSchema = z
+  .object({
+    oneStep: z.boolean(),
+    how: z.enum(EXIT_HOWS),
+    reason: z.enum(EXIT_REASONS).nullable(),
+    partBps: z.number().int().min(0).max(10_000),
+    untilEpoch: z.number().int().min(0).nullable(),
+    untilTime: Iso.nullable(),
+  })
+  .strict();
+
+/** 1.98.0: the accounts an exit acts on; each is null where the protocol has none. */
+export const PortfolioRefsSchema = z
+  .object({ program: Address.nullable(), pool: Address.nullable(), position: Address.nullable(), nftMint: Address.nullable(), market: Address.nullable(), account: Address.nullable() })
+  .strict();
+
+const PortfolioWorth = z.object({ usd: PortfolioFigure.nullable(), sol: PortfolioFigure.nullable() }).strict();
+
+/**
+ * 1.98.0: one position. `value` — what an exit would give now (a pool's liquidity with its fees and rewards to collect,
+ * a deposit with its interest; a borrow negative); `earned` — the part of it that is earnings, where the protocol shows
+ * it. `origin`: `chain`, `provider` (the protocol's own API), `projection` (Jupiter Portfolio — never the truth of a
+ * figure; its exit is `PROJECTION`). `state`: `read`, `stale` (the source's last good read), `unread` (a row that says
+ * a source did not answer).
+ */
+export const PortfolioPositionSchema = z
+  .object({
+    id: z.string().min(3).max(160),
+    protocol: z.enum(PORTFOLIO_PROTOCOLS),
+    platform: z.string().min(1).max(64).nullable(),
+    kind: z.enum(PORTFOLIO_KINDS),
+    state: z.enum(PORTFOLIO_STATES),
+    origin: z.enum(PORTFOLIO_ORIGINS),
+    label: z.string().min(1).max(80).nullable(),
+    value: PortfolioWorth,
+    earned: PortfolioWorth.nullable(),
+    tokens: z.array(PortfolioTokenSchema).max(24),
+    inRange: z.boolean().nullable(),
+    exit: PortfolioExitSchema,
+    refs: PortfolioRefsSchema,
+    readAt: Iso.nullable(),
+  })
+  .strict();
+export type PortfolioPositionWire = z.infer<typeof PortfolioPositionSchema>;
+
+/** 1.98.0: how each source answered: `read`, `stale`, `unread` or `off` (not served on this deployment: `NO_KEY`, `CLOSED`). */
+export const PortfolioSourceSchema = z
+  .object({ source: z.enum(PORTFOLIO_SOURCES), state: z.enum(SOURCE_STATES), reason: z.enum(SOURCE_REASONS).nullable(), readAt: Iso.nullable(), positions: z.number().int().min(0) })
+  .strict();
+
+/**
+ * 1.98.0: `GET /api/v1/portfolio?owner=` — the wallet's positions across Solana, biggest first. `totals` sums the rows
+ * read now or kept; `complete` — every source answered and every row has a price; `projectedUsd` — the projection's
+ * rows, apart. `solUsd` — the SOL price the SOL figures are counted at.
+ */
+export const PortfolioResponseSchema = z
+  .object({
+    network: z.literal(NETWORK),
+    owner: Address,
+    at: Iso,
+    solUsd: z.number().positive().nullable(),
+    totals: z.object({ usd: PortfolioFigure, sol: PortfolioFigure.nullable(), earnedUsd: PortfolioFigure, projectedUsd: PortfolioFigure, complete: z.boolean() }).strict(),
+    positions: z.array(PortfolioPositionSchema).max(500),
+    sources: z.array(PortfolioSourceSchema).max(PORTFOLIO_SOURCES.length),
+  })
+  .strict();
+export type PortfolioResponse = z.infer<typeof PortfolioResponseSchema>;
+
+/* ------------------------------------------------------------ 1.100.0 — leaving everything in one approval */
+
+const ExitRaw = z.string().regex(/^\d{1,40}$/);
+const ExitWire = z.string().min(64).max(4_096);
+const ExitSignature = z.string().regex(/^[1-9A-HJ-NP-Za-km-z]{64,90}$/);
+const ExitPositionId = z.string().min(3).max(160);
+const ExitTicket = z.string().min(40).max(32_768);
+
+/**
+ * 1.100.0: one step of an approval — a position left (`leave`: whole, or `partBps` of it), its fees collected
+ * (`collect`), a coin of the wallet swapped (`swap`), an active stake deactivated (`deactivate`: nothing comes back now,
+ * its SOL is free from `untilEpoch`). `picked` — in the approval by default; a wallet's plain coin is in only when
+ * named. `usd` — what the step brings at the prices read now.
+ */
+export const PortfolioExitItemSchema = z
+  .object({
+    id: ExitPositionId,
+    protocol: z.enum(PORTFOLIO_PROTOCOLS),
+    kind: z.enum(PORTFOLIO_KINDS),
+    label: z.string().min(1).max(80).nullable(),
+    action: z.enum(EXIT_ACTIONS),
+    picked: z.boolean(),
+    partBps: z.number().int().min(0).max(10_000),
+    usd: PortfolioFigure.nullable(),
+    untilEpoch: z.number().int().min(0).nullable(),
+  })
+  .strict();
+export type PortfolioExitItem = z.infer<typeof PortfolioExitItemSchema>;
+
+/** 1.100.0: a position one step does not take out, and why — the portfolio's own reason, with the epoch or time it may leave from where one decides it. */
+export const PortfolioExitHeldSchema = z
+  .object({
+    id: ExitPositionId,
+    protocol: z.enum(PORTFOLIO_PROTOCOLS),
+    kind: z.enum(PORTFOLIO_KINDS),
+    label: z.string().min(1).max(80).nullable(),
+    reason: z.enum(EXIT_REASONS),
+    usd: PortfolioFigure.nullable(),
+    untilEpoch: z.number().int().min(0).nullable(),
+    untilTime: Iso.nullable(),
+  })
+  .strict();
+export type PortfolioExitHeld = z.infer<typeof PortfolioExitHeldSchema>;
+
+/**
+ * 1.100.0: `GET /api/v1/portfolio/exit?owner=&mode=&target=` — what one approval would do, from the portfolio alone.
+ * `estimate` — «≈» of what the picked steps bring, before fees and slippage: dollars, lamports of SOL, base units of
+ * USDC; nulls where a price did not read. `canExit` — whether this deployment builds the approval. `complete` — every
+ * source of the portfolio answered.
+ */
+export const PortfolioExitOverviewResponseSchema = z
+  .object({
+    network: z.literal(NETWORK),
+    owner: Address,
+    mode: z.enum(EXIT_MODES),
+    target: z.enum(EXIT_TARGETS),
+    canExit: z.boolean(),
+    items: z.array(PortfolioExitItemSchema).max(300),
+    held: z.array(PortfolioExitHeldSchema).max(300),
+    estimate: z.object({ usd: PortfolioFigure.nullable(), lamports: ExitRaw.nullable(), usdcRaw: ExitRaw.nullable() }).strict(),
+    solUsd: z.number().positive().nullable(),
+    complete: z.boolean(),
+    at: Iso,
+  })
+  .strict();
+export type PortfolioExitOverviewResponse = z.infer<typeof PortfolioExitOverviewResponseSchema>;
+
+/** 1.100.0: `POST /api/v1/portfolio/exit/review` — the wallet, the mode, the target (SOL when not said), and the positions the person left on (`positions`, their ids in the portfolio): what is listed is in the approval, what is not is out; absent — the overview's own `picked`. */
+export const PortfolioExitReviewRequestSchema = z
+  .object({ owner: Address, mode: z.enum(EXIT_MODES), target: z.enum(EXIT_TARGETS).optional(), positions: z.array(ExitPositionId).max(300).optional() })
+  .strict();
+export type PortfolioExitReviewRequest = z.infer<typeof PortfolioExitReviewRequestSchema>;
+
+/**
+ * 1.100.0: what one approval does, before the signature. `receive` — «≈» of what arrives in the target's coins;
+ * `rentLamports` — the rent of the accounts it closes, back as SOL; `feeBps` — Ryntra's fee on the swaps, the swap's
+ * own (null — nothing is swapped, or no fee; leaving a pool or a market carries none). `done` — what it does, position by
+ * position; `later` — stakes deactivated now, free from `untilEpoch`; `skipped` — picked and not in it, with why;
+ * `others` — coins that arrive and stay as they are (`reason` null when only collecting); `held` — what no step takes out.
+ */
+export const PortfolioExitSummarySchema = z
+  .object({
+    receive: z.object({ lamports: ExitRaw, usdcRaw: ExitRaw }).strict(),
+    rentLamports: ExitRaw,
+    feeBps: z.number().int().min(0).max(10_000).nullable(),
+    transactions: z.number().int().min(1).max(16),
+    done: z.array(z.object({ id: ExitPositionId, action: z.enum(EXIT_ACTIONS), partBps: z.number().int().min(0).max(10_000) }).strict()).max(16),
+    later: z.array(z.object({ id: ExitPositionId, untilEpoch: z.number().int().min(0).nullable() }).strict()).max(16),
+    skipped: z.array(z.object({ id: ExitPositionId, reason: z.enum(EXIT_SKIP_REASONS) }).strict()).max(100),
+    others: z.array(z.object({ mint: Address, decimals: z.number().int().min(0).max(18), amountRaw: ExitRaw, reason: z.enum(EXIT_SKIP_REASONS).nullable() }).strict()).max(50),
+    held: z.array(PortfolioExitHeldSchema).max(300),
+  })
+  .strict();
+export type PortfolioExitSummary = z.infer<typeof PortfolioExitSummarySchema>;
+
+/**
+ * 1.100.0: the unsigned transactions of one approval, in the order the wallet signs them at once and the relay sends
+ * them, with what each is (`kinds`) and the position — or, for a sweep, the mint — it acts on (`refs`); the ticket that
+ * seals them; `signableMs` — how long from arriving they may still be signed.
+ */
+export const PortfolioExitReviewResponseSchema = z
+  .object({
+    network: z.literal(NETWORK),
+    owner: Address,
+    mode: z.enum(EXIT_MODES),
+    target: z.enum(EXIT_TARGETS),
+    ticket: ExitTicket,
+    transactions: z.array(ExitWire).min(1).max(16),
+    kinds: z.array(z.enum(EXIT_STEP_KINDS)).min(1).max(16),
+    refs: z.array(z.string().min(1).max(160)).min(1).max(16),
+    expiresAt: Iso,
+    signableMs: z.number().int().min(0),
+    summary: PortfolioExitSummarySchema,
+  })
+  .strict();
+export type PortfolioExitReviewResponse = z.infer<typeof PortfolioExitReviewResponseSchema>;
+
+/** 1.100.0: `POST /api/v1/portfolio/exit/submit` — the ticket and the transactions, signed by the wallet, in the same order. */
+export const PortfolioExitSubmitRequestSchema = z.object({ ticket: ExitTicket, signed: z.array(ExitWire).min(1).max(16) }).strict();
+export type PortfolioExitSubmitRequest = z.infer<typeof PortfolioExitSubmitRequestSchema>;
+
+/** 1.100.0: each transaction's signature and where it stands — `NOT_SENT` with its reason when what it stands on did not land; `settled` when every one landed. */
+export const PortfolioExitSubmitResponseSchema = z
+  .object({
+    results: z
+      .array(z.object({ kind: z.enum(EXIT_STEP_KINDS), ref: z.string().min(1).max(160), signature: ExitSignature, state: z.enum(EXIT_RELAY_STATES), reason: z.string().max(240).nullable() }).strict())
+      .min(1)
+      .max(16),
+    settled: z.boolean(),
+  })
+  .strict();
+export type PortfolioExitSubmitResponse = z.infer<typeof PortfolioExitSubmitResponseSchema>;

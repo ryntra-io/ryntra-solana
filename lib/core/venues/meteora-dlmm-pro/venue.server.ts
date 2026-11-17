@@ -14,14 +14,16 @@
  * | rewards | `./rewards.server.ts` | set a slot up; fund an emission; collect |
  * | events | `./events.server.ts` | a transaction's events, from its inner instructions |
  * | holdings | `./owned.server.ts` | a wallet's positions and orders; a pool's |
+ * | liquidity by price | `./bins.server.ts` | the steps of the tick spacing around the price, each with what lies on it |
+ * | earning | `./goals.ts`, `./earn.server.ts` | a position from a goal, paid in one coin or two; its income in two lines; an agent's care |
  * | arithmetic | `./fee.ts`, `./activation.ts`, `./orders.ts`, `./ticks.ts` | pure: the fee now, who may act when, how much of an order filled |
  *
  * **Every build is unsigned bytes for the person's wallet**, version 0, with its compute budget (`./tx.server.ts`). The
  * wallet is the fee payer; the only other signature a build can need is a fresh key's — the mint of a new position's
  * or order's NFT — which the caller makes and holds. No key of Ryntra's signs anything here, and the venue holds none.
  *
- * **Closed to people** (`./gate.ts`): no route, no window and no agent tool stands on this venue yet. The live Launch
- * on DBC does not load it and is not changed by it.
+ * **Closed to people on mainnet** (`./gate.ts`): the surfaces that stand on this venue — the ladders, a launch straight into a pool and earning with an agent's care — are each shut there by their own gate. The live Launch on DBC does
+ * not load the venue and is not changed by it.
  *
  * `referralOwner` is the address Ryntra's referral token accounts belong to on the network — the same owner as on DBC
  * (`lib/launch/config.server.ts`). A swap carries the referral only where the owner's account in the swap's fee coin
@@ -33,6 +35,8 @@
 import type { Connection } from "@solana/web3.js";
 
 import type { Address } from "../../contracts.ts";
+import { createDlmmProBins } from "./bins.server.ts";
+import { createDlmmProEarn } from "./earn.server.ts";
 import { createDlmmProEvents } from "./events.server.ts";
 import { createDlmmProLimitOrders } from "./limit-orders.server.ts";
 import { createDlmmProHoldings } from "./owned.server.ts";
@@ -44,16 +48,21 @@ import { createDlmmProSwap } from "./swap.server.ts";
 
 export function createDlmmProVenue(args: Readonly<{ connection: Connection; referralOwner: Address | null }>) {
   const context: DlmmProContext = { connection: args.connection, client: dlmmProClientOf(args.connection), referralOwner: args.referralOwner };
+  const pools = createDlmmProPools(context);
+  const swap = createDlmmProSwap(context);
+  const positions = createDlmmProPositions(context);
   return {
     venue: "meteora-dlmm-pro" as const,
     program: context.client.program.programId.toBase58(),
-    pools: createDlmmProPools(context),
-    swap: createDlmmProSwap(context),
+    pools,
+    swap,
     orders: createDlmmProLimitOrders(context),
-    positions: createDlmmProPositions(context),
+    positions,
+    earn: createDlmmProEarn(context, { pools, swap, positions }),
     rewards: createDlmmProRewards(context),
     events: createDlmmProEvents(context),
     holdings: createDlmmProHoldings(context),
+    bins: createDlmmProBins(context),
   };
 }
 

@@ -1,37 +1,35 @@
 import { useAgent } from '../agent/store.ts';
-import { AUTOPILOT_NET } from '../autopilot/flag.ts';
 import { useAutopilot } from '../autopilot/store.ts';
-import { MANDATE_NET } from '../bots/mandate.ts';
 import { useAssistant } from '../assistant/store.ts';
 import { useTowerChart } from '../chart/store.ts';
 import { useCity } from '../city/store.ts';
 import { openCoin as openCoinByMint, openTower, openTradeCard } from '../coin/open.ts';
-import { HARBOR_OPEN } from '../districts/harbor/flag.ts';
 import { useHarbor } from '../districts/harbor/store.ts';
 import { EARN_OPEN } from '../earn/flag.ts';
-import { DOLLAR_OPEN } from '../earn/dollar-gate.ts';
 import { useDollar } from '../earn/dollar-store.ts';
 import { PILOT_OPEN, usePilot } from '../pilot/store.ts';
 import { solPrice } from '../scouts/view.ts';
 import { openEarn } from '../earn/open.ts';
-import { ONE_SENTENCE_OPEN } from '../instruct/flag.ts';
 import { useInstruct } from '../instruct/store.ts';
 import { useExchange } from '../exchange/store.ts';
-import { launchOpenHere, launchTowerIn, useLaunch } from '../launch/district.ts';
+import { launchOpenHere, launchTowerIn, poolDoorHere, useLaunch } from '../launch/district.ts';
+import { poolChoiceOf, usePool } from '../launch/pool.ts';
 import { openLearn } from '../learn/store.ts';
 import { hire } from '../crew/hire.ts';
 import { langNow } from '../i18n/lang.ts';
 import type { Tower } from '../market/types.ts';
 import { NATIVE_ID } from '../money/assets.ts';
-import { MONEY_OPEN } from '../money/flag.ts';
 import { openMoney, useMoney } from '../money/open.ts';
-import { SPOT_OPEN, TRADE_OPEN } from '../trade/gates.ts';
+import { TRADE_OPEN } from '../trade/gates.ts';
+import { LADDER_OPEN, askLadder } from '../trade/pro-store.ts';
+import { readLadderAsk, type LadderAsk } from '../trade/pro-read.ts';
 import { pairKey, useSpot } from '../trade/spot-store.ts';
 import { BUSY, useTrade } from '../trade/store.ts';
 import { payAssetFor } from '../trade/tiles.ts';
 import { useWallet } from '../trade/wallet.ts';
 import { useWindows } from '../window/store.ts';
 import { aboutSubject, agentCoins, bookOf, isBase, type Book, type Coin, type Context, type Gates } from './parse.ts';
+import { switchGates } from './switches.ts';
 
 export { agentCoins };
 import type { Doors } from './run.ts';
@@ -231,13 +229,15 @@ export const cityDoors: Doors = {
     useHarbor.getState().show();
   },
 
-  openLaunch: ({ symbol, name }) => {
+  openLaunch: ({ symbol, name, pool }) => {
     nextCommand();
     const launch = useLaunch.getState();
     // A launch on its way keeps its sheet exactly as it is.
     const underWay = launch.phase !== null && launch.phase.step !== 'done' && launch.phase.step !== 'failed';
     launch.openSheet();
     if (underWay || useLaunch.getState().step !== 'form') return;
+    // «… в пул о 20:00» turns the pool's door on with the time and the pair said — shown in the review, where its door is open.
+    if (pool && poolDoorHere()) usePool.getState().setChoice(poolChoiceOf(pool, new Date()));
     const draft = { ...(symbol ? { symbol } : {}), ...(name ? { name } : {}) };
     if (Object.keys(draft).length) useLaunch.getState().setDraft(draft);
   },
@@ -282,6 +282,12 @@ export const cityDoors: Doors = {
     hire(role, bookNow(), langNow() === 'uk' ? 'uk' : 'en', { pilot: (ask) => cityDoors.openPilot(ask) });
   },
 
+  /* «Buy cheaper», «sell higher»: the coin's window on its Spot face, and the ladder's panel filled in from the sentence. It fills and opens; the person reads the ladder there and signs in their wallet. */
+  openLadder: (ask) => {
+    askLadder(ask);
+    cityDoors.openTrade(ask.coin, ask.action, 'spot', 'market');
+  },
+
   askRyntra: (question) => {
     nextCommand();
     const tower = subjectTower();
@@ -299,21 +305,24 @@ export function bookNow(): Book {
   return bookOf(useCity.getState().snapshot.towers);
 }
 
-/** What this deployment opens, as the menu reads it. */
+/**
+ * A ladder said to Ryntra — «buy BONK cheaper», «sell half at 2x» — read with the city's coins and the coin
+ * on screen; null where ladders are shut here or the words are not one. Ryntra's panel asks this door, never the
+ * trade window's code.
+ */
+export function ladderAskOf(text: string): LadderAsk | null {
+  return gatesNow().ladder ? readLadderAsk(text, bookNow(), contextNow()) : null;
+}
+
+/** What this deployment opens, as the menu reads it: the plain switches (`switches.ts`) and what the city's stores decide. */
 export function gatesNow(): Gates {
+  const switches = switchGates();
   return {
-    trade: TRADE_OPEN,
-    spot: SPOT_OPEN,
-    money: MONEY_OPEN,
-    earn: EARN_OPEN || HARBOR_OPEN,
+    ...switches,
     launch: launchOpenHere(useLaunch.getState()),
-    // The agent's instructions trade through the trade window's engines: shut with them.
-    instruct: ONE_SENTENCE_OPEN && TRADE_OPEN,
-    // The agent on its word: trading rides on the mandate's devnet switch, launches on the launch district's.
-    agentTrade: AUTOPILOT_NET !== null && MANDATE_NET !== null,
-    agentLaunch: AUTOPILOT_NET !== null,
-    dollar: EARN_OPEN && DOLLAR_OPEN,
     pilot: PILOT_OPEN,
+    // Ladders ride on the trade window: shut with it.
+    ladder: LADDER_OPEN && TRADE_OPEN,
   };
 }
 
@@ -342,8 +351,13 @@ export function withCoinOnScreen<A extends Readonly<{ kind: string }>>(ask: A): 
   return subject && subject.tower && !isBase(subject) ? { ...ask, coin: subject } : ask;
 }
 
-/** The coin on screen: the window in front if it is about one, else the tower picked. «buy 50» means this coin. */
+/** What the line reads against now: the coin on screen, and whether the pool's door is open. */
 export function contextNow(): Context {
+  return { ...subjectNow(), pools: poolDoorHere() };
+}
+
+/** The coin on screen: the window in front if it is about one, else the tower picked. «buy 50» means this coin. */
+function subjectNow(): Context {
   const front = useWindows.getState().layout.windows.at(-1)?.id ?? null;
   const trade = useTrade.getState();
   if (front && (front === 'swap' || front === 'spot') && trade.open && trade.tower) return { subject: coinOf(trade.tower) };

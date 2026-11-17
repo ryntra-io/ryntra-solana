@@ -20,6 +20,7 @@ import { HallSigns } from '../launch/HallSigns';
 import { NightSpot } from '../launch/NightSpot';
 import { LaunchCrowns } from '../launch/LaunchCrowns';
 import { LaunchHalos } from '../launch/LaunchHalos';
+import { PoolBeacons } from '../launch/PoolBeacons';
 import { HoverPick } from '../hud/HoverPick';
 import { Selected } from './Selected';
 import { BeaconTowers } from '../beacon/BeaconTowers';
@@ -81,6 +82,7 @@ export function CityScene() {
         <NightSpot />
         <LaunchCrowns />
         <LaunchHalos />
+        <PoolBeacons />
         <RunWorld />
         {process.env.NODE_ENV !== 'production' && <LookScene />}
       </group>

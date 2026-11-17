@@ -1,0 +1,18 @@
+[
+ {
+  "reserve": "7BWj5zG1BVG78dcuLCw6tEKia3FY3VKZq7EN9cY3tJQD",
+  "liquidityToken": "USDC",
+  "liquidityTokenMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+  "maxLtv": "0.8",
+  "supplyApy": "0.0431",
+  "borrowApy": "0.061"
+ },
+ {
+  "reserve": "7mZ7oeb8mDvWrD63TvgzPFa9daJs7ByBgE2yRXMozBET",
+  "liquidityToken": "SOL",
+  "liquidityTokenMint": "So11111111111111111111111111111111111111112",
+  "maxLtv": "0.74",
+  "supplyApy": "0.052",
+  "borrowApy": "0.071"
+ }
+]

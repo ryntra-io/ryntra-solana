@@ -105,12 +105,16 @@ export const DLMM_PRO_UNITS = Object.freeze({
   /* An opening writes each new tick into its tick array: its cost follows the distinct ticks of its ranges — two a range where they nest — and the arrays they fall in. */
   openPosition: Object.freeze({ base: 130_000, perTick: 3_500, perArray: 12_000 }),
   addLiquidity: Object.freeze({ base: 40_000, perRange: 6_500 }),
+  /* A deposit the program sizes itself at the price it lands at: it works the liquidity out on chain. */
+  addLiquidityAtLanding: Object.freeze({ base: 75_000 }),
   removeLiquidity: Object.freeze({ base: 50_000, perRange: 6_500 }),
   claimFee: Object.freeze({ base: 45_000, perRange: 2_500 }),
   compound: Object.freeze({ base: 80_000, perRange: 2_500 }),
   lockPermanent: Object.freeze({ base: 15_000, perRange: 600 }),
   closePosition: Object.freeze({ base: 40_000, perRange: 2_500 }),
   delegate: 20_000,
+  /* Handing a position's NFT over: the receiver's account, the transfer, the giver's account closed — 23 thousand used in the rehearsal of 14.11. */
+  handOver: 45_000,
   openLimitOrder: Object.freeze({ base: 125_000, perTick: 6_000 }),
   cancelLimitOrder: Object.freeze({ base: 40_000, perTick: 5_000 }),
   closeLimitOrder: Object.freeze({ base: 35_000, perTick: 3_000 }),

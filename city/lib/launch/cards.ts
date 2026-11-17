@@ -282,7 +282,72 @@ export function agentCard(input: Readonly<{ coin: CoinFace; trades: number; spen
   };
 }
 
-export type ShareCard = CreatorCard | RoundTrip | AgentCard;
+/* ---------------------------------------------------------------- the filled order's card */
+
+/**
+ * «Order filled»: prices of a person's ladder that filled, each at its own exact price. Every figure is the
+ * order's own, read from the chain by the engine: what filled, counted in the coin it is priced in, the price it
+ * filled at, and the maker's bonus that came with it. A card is made only once a price filled whole and its price was
+ * read — a resting order has nothing to share.
+ */
+export type FilledCard = Readonly<{
+  kind: 'filled';
+  coin: CoinFace;
+  pair: Readonly<{ symbol: string; decimals: number; dollar: boolean }>;
+  action: 'buy' | 'sell';
+  /** Prices filled whole, of the prices the ladder still held. */
+  filledPrices: number;
+  prices: number;
+  /** What filled, in the pair coin: what a buy spent, what a sale was paid. */
+  pairRaw: string;
+  /** The price it filled at, the pair coin per coin — a number to show; `blended` — an average over more than one price. */
+  price: number;
+  blended: boolean;
+  /** Prices that filled, whole or in part: what the average is over. */
+  touched: number;
+  /** The maker's bonus the person keeps, in the pair coin; null when it is paid in the coin itself, or is nothing. */
+  bonusRaw: string | null;
+  tag: CardTag;
+}>;
+
+export type FilledOrder = Readonly<{
+  action: 'buy' | 'sell' | null;
+  prices: number;
+  filledPrices: number;
+  filledRaw: string;
+  proceedsRaw: string;
+  filledPrice: number | null;
+  /** Prices that filled in part: their fills are in the average too. */
+  partialPrices?: number;
+  quote: Readonly<{ mint: string; decimals: number }>;
+  bonus: Readonly<{ mint: string | null; ownerRaw: string }>;
+}>;
+
+/** The filled order's card, or null while nothing of it filled whole or its price was not read. */
+export function filledCard(input: Readonly<{ coin: CoinFace; pairSymbol: string; order: FilledOrder; tag: CardTag }>): FilledCard | null {
+  const { order } = input;
+  if (order.action === null || order.filledPrices < 1 || order.filledPrice === null || !(order.filledPrice > 0)) return null;
+  /* A buy rests the pair coin and is paid the coin; a sale the other way round. */
+  const pairRaw = BigInt(order.action === 'buy' ? order.filledRaw : order.proceedsRaw);
+  if (pairRaw <= 0n) return null;
+  const bonus = order.bonus.mint === order.quote.mint ? BigInt(order.bonus.ownerRaw) : 0n;
+  return {
+    kind: 'filled',
+    coin: input.coin,
+    pair: { symbol: input.pairSymbol, decimals: order.quote.decimals, dollar: input.pairSymbol === 'USDC' },
+    action: order.action,
+    filledPrices: order.filledPrices,
+    prices: Math.max(order.prices, order.filledPrices + (order.partialPrices ?? 0)),
+    pairRaw: pairRaw.toString(),
+    price: order.filledPrice,
+    blended: order.filledPrices + (order.partialPrices ?? 0) > 1,
+    touched: order.filledPrices + (order.partialPrices ?? 0),
+    bonusRaw: bonus > 0n ? bonus.toString() : null,
+    tag: input.tag,
+  };
+}
+
+export type ShareCard = CreatorCard | RoundTrip | AgentCard | FilledCard;
 
 /** The ticker as the cards write it: no leading «$», capitals. */
 export function tickerOf(symbol: string): string {

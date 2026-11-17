@@ -1,0 +1,26 @@
+{
+  "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA": [
+    {
+      "pubkey": "33w1PyANFmgmc4VmK1CpGg6AGLPZKFtiMUG2o6bQxECG",
+      "account": { "data": { "parsed": { "info": { "mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v", "owner": "6mch5rCLBtZ9DCnM2mx18Ud1XXhXAip7otw9LkrTXwTD", "state": "initialized", "tokenAmount": { "amount": "125500000", "decimals": 6, "uiAmountString": "125.5" } }, "type": "account" }, "program": "spl-token", "space": 165 } }
+    },
+    {
+      "pubkey": "FuNWHfNvVaVf9afknxcCp2tCRQuDgfL2ptSypdLh3MDv",
+      "account": { "data": { "parsed": { "info": { "mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v", "owner": "6mch5rCLBtZ9DCnM2mx18Ud1XXhXAip7otw9LkrTXwTD", "state": "initialized", "tokenAmount": { "amount": "500000", "decimals": 6, "uiAmountString": "0.5" } }, "type": "account" }, "program": "spl-token", "space": 165 } }
+    },
+    {
+      "pubkey": "4B9pzCvfFJFZEYThFM8zPnNz6iUCTCukj2cUvaEtLJN2",
+      "account": { "data": { "parsed": { "info": { "mint": "J1toso1uCk3RLmjorhTtrVwY9HJ7X8V9yYac6Y7kGCPn", "owner": "6mch5rCLBtZ9DCnM2mx18Ud1XXhXAip7otw9LkrTXwTD", "state": "frozen", "tokenAmount": { "amount": "7", "decimals": 9, "uiAmountString": "0.000000007" } }, "type": "account" }, "program": "spl-token", "space": 165 } }
+    },
+    {
+      "pubkey": "5Esu2AZmNhLxcBqPGMEPWL3ppM1UhRZLgyvi4G6LwVw",
+      "account": { "data": { "parsed": { "info": { "mint": "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263", "owner": "6mch5rCLBtZ9DCnM2mx18Ud1XXhXAip7otw9LkrTXwTD", "state": "initialized", "tokenAmount": { "amount": "0", "decimals": 5, "uiAmountString": "0" } }, "type": "account" }, "program": "spl-token", "space": 165 } }
+    }
+  ],
+  "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb": [
+    {
+      "pubkey": "4e2pvH9nqStwmK5fiPB8gygkbEMpkdDSASksLzjfbgMk",
+      "account": { "data": { "parsed": { "info": { "mint": "FWhtSf4vXhRXDDhdk2QwtYeGLXqu5jMCrXNU11iMZ42d", "owner": "6mch5rCLBtZ9DCnM2mx18Ud1XXhXAip7otw9LkrTXwTD", "state": "initialized", "tokenAmount": { "amount": "1", "decimals": 0, "uiAmountString": "1" } }, "type": "account" }, "program": "spl-token-2022", "space": 170 } }
+    }
+  ]
+}

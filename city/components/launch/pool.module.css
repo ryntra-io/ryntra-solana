@@ -1,0 +1,185 @@
+/* A launch into a pool, in its tower's window: one big figure — the countdown, then the price — over two
+   facts and one quiet line. The palette, the cut corners and the type scale are the city's own (city/styles). */
+
+.hero {
+  display: grid;
+  gap: 6px;
+  padding: 16px 14px 15px;
+  margin-top: 4px;
+  background: linear-gradient(180deg, rgba(255, 178, 63, 0.1), rgba(238, 241, 255, 0.03));
+  clip-path: polygon(var(--cut) 0, 100% 0, 100% calc(100% - var(--cut)), calc(100% - var(--cut)) 100%, 0 100%, 0 var(--cut));
+}
+
+.heroOpen {
+  background: linear-gradient(180deg, rgba(20, 241, 149, 0.1), rgba(238, 241, 255, 0.03));
+}
+
+.heroLabel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--type-micro);
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--amber);
+  box-shadow: 0 0 10px var(--amber);
+  animation: poolPulse 1.6s ease-in-out infinite;
+}
+
+.heroOpen .dot {
+  background: var(--mint);
+  box-shadow: 0 0 10px var(--mint);
+}
+
+.heroFigure {
+  font-size: 44px;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  color: var(--warm);
+}
+
+.heroTime {
+  font-size: var(--type-small);
+  color: var(--text-dim);
+}
+
+/* The shield: how much of the fee against snipers is left, as a bar that melts with the price. */
+.shield {
+  position: relative;
+  height: 4px;
+  margin-top: 8px;
+  background: rgba(238, 241, 255, 0.08);
+  overflow: hidden;
+}
+
+.shield i {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: linear-gradient(90deg, var(--violet), var(--amber));
+  transition: width 0.6s ease;
+}
+
+.honest {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-top: 12px;
+  padding: 11px 10px 11px 12px;
+  font-size: var(--type-small);
+  color: var(--ice);
+  background: rgba(238, 241, 255, 0.04);
+}
+
+.honest > span:first-child {
+  flex: 1;
+  min-width: 0;
+}
+
+.mark {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  color: var(--mint);
+}
+
+.markOff {
+  color: var(--flare);
+}
+
+.more {
+  flex: none;
+  min-height: 32px;
+  padding: 0 10px;
+  font: inherit;
+  font-size: var(--type-caption);
+  font-weight: 700;
+  color: var(--text-dim);
+  background: none;
+  border: 1px solid rgba(238, 241, 255, 0.16);
+  cursor: pointer;
+}
+
+.more:hover,
+.more[aria-expanded='true'] {
+  color: var(--ice);
+  border-color: var(--glass-edge);
+}
+
+.details {
+  display: grid;
+  gap: 10px;
+  margin: 10px 0 0;
+  padding: 12px;
+  font-size: var(--type-small);
+  color: var(--text-dim);
+  background: rgba(238, 241, 255, 0.03);
+}
+
+.details dt {
+  font-size: var(--type-micro);
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.details dd {
+  margin: 4px 0 0;
+  color: var(--ice);
+}
+
+.details a {
+  color: var(--amber);
+  text-decoration: none;
+  font-variant-numeric: tabular-nums;
+}
+
+.details a:hover {
+  text-decoration: underline;
+}
+
+.receipt {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+}
+
+.resume {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.resumeLine {
+  font-size: var(--type-small);
+  color: var(--text-dim);
+}
+
+@keyframes poolPulse {
+  50% {
+    opacity: 0.35;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dot {
+    animation: none;
+  }
+
+  .shield i {
+    transition: none;
+  }
+}
+
+@media (max-width: 520px) {
+  .heroFigure {
+    font-size: 40px;
+  }
+}

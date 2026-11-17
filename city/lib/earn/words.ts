@@ -197,6 +197,59 @@ export type Words = Readonly<{
     problem: Readonly<Record<'format' | 'min' | 'ceiling' | 'sol', (figure: string) => string>>;
     failures: Readonly<Record<'PIER_CLOSED' | 'PIER_STOPPED' | 'PIER_CEILING' | 'PIER_UNPRICED' | 'PIER_PAIR' | 'PIER_VENUE' | 'ZAP_PRICE' | 'ZAP_UNPRICED' | 'ZAP_NO_ROUTE' | 'NOTHING_TO_WITHDRAW', string>>;
   }>;
+  /** The piers of Meteora DLMM Pro: one position of a whole shape, a reward as the second line, an agent's care by one approval. */
+  pro: Readonly<{
+    piers: string;
+    boats: string;
+    mark: string;
+    reward: (figure: string, symbol: string) => string;
+    goesIn: (text: string) => string;
+    stays: (sol: string) => string;
+    poolFee: (pct: string) => string;
+    band: (pct: string) => string;
+    bandLong: string;
+    swapFirst: string;
+    referral: string;
+    onePosition: (ranges: number) => string;
+    deposit: string;
+    depositBack: string;
+    fineOpen: string;
+    holds: string;
+    fees: string;
+    rewards: string;
+    rewards24h: string;
+    atLeast: string;
+    running: string;
+    outOfRange: string;
+    compound: string;
+    collect: string;
+    leave: string;
+    close: string;
+    youGet: string;
+    least: string;
+    care: string;
+    careLine: string;
+    carePaused: string;
+    venueName: string;
+    careOn: string;
+    careOff: string;
+    cared: string;
+    stop: string;
+    stops: Readonly<Record<0 | 10 | 25, string>>;
+    stopAt: (coin: string, price: string, unit: string) => string;
+    careFine: string;
+    careToday: (figure: string, symbol: string) => string;
+    stopped: Readonly<Record<'stop' | 'owner' | 'gone', string>>;
+    wrapped: string;
+    done: Readonly<Record<'open' | 'compound' | 'collect' | 'leave' | 'close' | 'care_on' | 'care_off', string>>;
+    doneLine: Readonly<Record<'open' | 'compound' | 'collect' | 'leave' | 'close' | 'care_on' | 'care_off', string>>;
+    partialOpen: (symbol: string) => string;
+    partial: string;
+    fresh: string;
+    fine: string;
+    problem: Readonly<Record<'format' | 'min' | 'max' | 'sol', (figure: string) => string>>;
+    failures: Readonly<Record<string, string>> & Readonly<{ UNAVAILABLE: string }>;
+  }>;
   captain: Readonly<{
     strategies: string;
     vsHold: string;
@@ -466,6 +519,91 @@ const EN: Words = {
       ZAP_UNPRICED: 'No market price to check the swap against right now.',
       ZAP_NO_ROUTE: 'No swap for this amount right now. Try a little later.',
       NOTHING_TO_WITHDRAW: 'Nothing of it is left in your wallet.',
+    },
+  },
+  pro: {
+    piers: 'Pro piers',
+    boats: 'Your Pro boats',
+    mark: 'Pro',
+    reward: (figure, symbol) => `Reward ${figure} ${symbol} a day`,
+    goesIn: (text) => `≈ ${text} go in`,
+    stays: (sol) => `≈ ${sol} SOL stays in your wallet`,
+    poolFee: (pct) => `Pool fee ${pct} on the swap`,
+    band: (pct) => `Price band ±${pct}%`,
+    bandLong: 'The price band: while your transactions travel, the price may move this far either way. If it moves further, nothing is deposited and your coins stay in your wallet.',
+    swapFirst: 'Swapped first, in this pool',
+    referral: 'Ryntra adds no fee. The pool pays Ryntra a referral out of its own share.',
+    onePosition: (ranges) => (ranges > 1 ? `One position · ${ranges} ranges` : 'One position · one range'),
+    deposit: 'Position deposit',
+    depositBack: 'back when you close it',
+    fineOpen: 'Part of your SOL is swapped for the other coin in this pool, then both go in — two transactions, one approval. Your wallet signs; you can leave any time.',
+    holds: 'Holds',
+    fees: 'Fees',
+    rewards: 'Rewards',
+    rewards24h: 'Rewards 24H',
+    atLeast: 'at least',
+    running: 'running',
+    outOfRange: 'Out of range — it earns again when the price returns.',
+    compound: 'Take and put back',
+    collect: 'Take',
+    leave: 'Leave',
+    close: 'Take the deposit back',
+    youGet: 'You get',
+    least: 'at least',
+    care: 'Agent looks after it',
+    careLine: 'Takes fees and rewards to your wallet · leaves at your stop',
+    carePaused: 'Paused: the stop is not kept now · take it back any time',
+    venueName: 'Meteora DLMM Pro',
+    careOn: 'Give to the agent',
+    careOff: 'Take back',
+    cared: 'Agent on',
+    stop: 'Stop',
+    stops: { 0: 'No stop', 10: '−10%', 25: '−25%' },
+    stopAt: (coin, price, unit) => `Leaves when ${coin} is below ${price} ${unit}`,
+    careFine: 'One approval. The agent may only collect the fees and rewards and take the liquidity out — and the pool’s program pays all of it to your own wallet, whoever signs. It cannot add, lock, move or close your position, and it does not move the range. Take it back any time.',
+    careToday: (figure, symbol) => `Brought ${figure} ${symbol} today`,
+    stopped: { stop: 'Left at your stop — everything is in your wallet.', owner: 'You took it back.', gone: 'The position is no longer in this wallet.' },
+    wrapped: 'SOL the agent takes out arrives wrapped and unwraps with your next action in SOL.',
+    done: { open: 'Moored', compound: 'Put back', collect: 'Taken', leave: 'Out', close: 'Closed', care_on: 'The agent is on it', care_off: 'Taken back' },
+    doneLine: {
+      open: 'Your boat is at the pier. It earns while the price stays in range.',
+      compound: 'What it earned works in the position now.',
+      collect: 'It is in your wallet.',
+      leave: 'Everything is in your wallet. Close the empty position to take its deposit back.',
+      close: 'The deposit is back in your wallet.',
+      care_on: 'It takes what the position earns to your wallet and leaves at your stop.',
+      care_off: 'The agent can do nothing with this position now.',
+    },
+    partialOpen: (symbol) => `The swap went through, the position did not open. Your SOL and ${symbol} are in your wallet.`,
+    partial: 'Part of it landed. See your boats.',
+    fresh: 'Prices moved — the figures are fresh. Check them and confirm again.',
+    fine: 'Fees accrue in both coins and are said here in SOL at the pool’s price. Out of range you keep your coins and stop earning until the price returns. Ryntra holds no keys and adds no fee.',
+    problem: {
+      format: () => 'Type an amount of SOL.',
+      min: (figure) => `At least ${figure} SOL.`,
+      max: (figure) => `Up to ${figure} SOL for now.`,
+      sol: () => 'Not enough SOL, with the deposit for the position.',
+    },
+    failures: {
+      UNAVAILABLE: 'The network did not answer. Nothing was sent — try again.',
+      VALIDATION_ERROR: 'Something on the card is off. Nothing was sent — try again.',
+      STOPPED: 'New deposits are paused right now. Taking out still works.',
+      NOT_A_PIER: 'This pier is not open from here.',
+      PIER_NOT_OPEN: 'The pier takes no deposit right now.',
+      AMOUNT_LOW: 'Too little for a position on both sides of the price.',
+      AMOUNT_HIGH: 'More than a pier takes in one go for now.',
+      CARE_CLOSED: 'No agent looks after positions here yet.',
+      BALANCE_LOW: 'Not enough in the wallet, with the fees and the deposit.',
+      NOTHING_TO_DO: 'Nothing to take yet.',
+      REFUSED: 'The pool refused it. Nothing was sent.',
+      TICKET_INVALID: 'The figures are stale. Review again.',
+      SIGNED_MISMATCH: 'The wallet signed something else. Nothing was sent.',
+      NOT_SIGNED: 'A signature is missing. Nothing was sent.',
+      SIMULATION_FAILED: 'The price moved out of the band. Nothing was sent — try again.',
+      WALLET_REFUSED: 'Not signed. Nothing was sent.',
+      WALLET_MISMATCH: 'Another wallet is connected.',
+      CAPABILITY_UNAVAILABLE: 'Pro piers are not open here yet.',
+      RATE_LIMITED: 'Too many requests. Try in a minute.',
     },
   },
   captain: {
@@ -816,6 +954,91 @@ const UK: Words = {
       ZAP_UNPRICED: 'Зараз немає ринкової ціни, щоб звірити обмін.',
       ZAP_NO_ROUTE: 'Зараз немає обміну на цю суму. Спробуй трохи пізніше.',
       NOTHING_TO_WITHDRAW: 'У гаманці нічого з цього не лишилось.',
+    },
+  },
+  pro: {
+    piers: 'Причали Pro',
+    boats: 'Твої човни Pro',
+    mark: 'Pro',
+    reward: (figure, symbol) => `Нагорода ${figure} ${symbol} на день`,
+    goesIn: (text) => `≈ ${text} у позицію`,
+    stays: (sol) => `≈ ${sol} SOL лишиться в гаманці`,
+    poolFee: (pct) => `Комісія пулу ${pct} на обмін`,
+    band: (pct) => `Смуга ціни ±${pct}%`,
+    bandLong: 'Смуга ціни: поки транзакції в дорозі, ціна може зрушити на стільки в будь-який бік. Зрушить далі — нічого не покладеться, монети лишаться в гаманці.',
+    swapFirst: 'Спершу обмін, у цьому ж пулі',
+    referral: 'Ryntra комісії не додає. Пул платить Ryntra реферальну частку зі своєї.',
+    onePosition: (ranges) => (ranges > 1 ? `Одна позиція · ${ranges} діапазонів` : 'Одна позиція · один діапазон'),
+    deposit: 'Депозит позиції',
+    depositBack: 'повернеться, коли закриєш',
+    fineOpen: 'Частина твоїх SOL обмінюється на другу монету в цьому ж пулі, і обидві йдуть у позицію — дві транзакції, одне схвалення. Підписує твій гаманець; вийти можна будь-коли.',
+    holds: 'У позиції',
+    fees: 'Комісії',
+    rewards: 'Нагороди',
+    rewards24h: 'Нагороди 24 год',
+    atLeast: 'щонайменше',
+    running: 'ідуть',
+    outOfRange: 'Поза діапазоном — зароблятиме знову, коли ціна повернеться.',
+    compound: 'Забрати й докласти',
+    collect: 'Забрати',
+    leave: 'Вийти',
+    close: 'Забрати депозит',
+    youGet: 'Отримаєш',
+    least: 'щонайменше',
+    care: 'Агент доглядає',
+    careLine: 'Забирає комісії й нагороди тобі в гаманець · виходить за стопом',
+    carePaused: 'На паузі: стоп зараз не тримається · забрати можна будь-коли',
+    venueName: 'Meteora DLMM Pro',
+    careOn: 'Дати агентові',
+    careOff: 'Забрати назад',
+    cared: 'Агент доглядає',
+    stop: 'Стоп',
+    stops: { 0: 'Без стопа', 10: '−10%', 25: '−25%' },
+    stopAt: (coin, price, unit) => `Вийде, коли ${coin} нижче ${price} ${unit}`,
+    careFine: 'Одне схвалення. Агент може лише забирати комісії й нагороди та виводити ліквідність — і програма пулу платить усе це у твій гаманець, хто б не підписав. Докласти, замкнути, перенести чи закрити позицію він не може, діапазон не перекладає. Забрати назад можна будь-коли.',
+    careToday: (figure, symbol) => `Сьогодні приніс ${figure} ${symbol}`,
+    stopped: { stop: 'Вийшов за твоїм стопом — усе у твоєму гаманці.', owner: 'Ти забрав догляд назад.', gone: 'Позиції в цьому гаманці вже немає.' },
+    wrapped: 'SOL, які виводить агент, приходять загорнутими й розгортаються з твоєю наступною дією в SOL.',
+    done: { open: 'Пришвартовано', compound: 'Докладено', collect: 'Забрано', leave: 'Виведено', close: 'Закрито', care_on: 'Агент доглядає', care_off: 'Забрано назад' },
+    doneLine: {
+      open: 'Твій човен біля причалу. Заробляє, поки ціна в діапазоні.',
+      compound: 'Зароблене тепер працює в позиції.',
+      collect: 'Воно у твоєму гаманці.',
+      leave: 'Усе у твоєму гаманці. Закрий порожню позицію, щоб забрати її депозит.',
+      close: 'Депозит повернувся у твій гаманець.',
+      care_on: 'Він забирає зароблене у твій гаманець і виходить за твоїм стопом.',
+      care_off: 'Агент більше нічого не може зробити з цією позицією.',
+    },
+    partialOpen: (symbol) => `Обмін пройшов, позиція не відкрилась. Твої SOL і ${symbol} у гаманці.`,
+    partial: 'Лягла лише частина. Глянь свої човни.',
+    fresh: 'Ціни зрушили — цифри оновлено. Перевір і підтвердь ще раз.',
+    fine: 'Комісії набігають в обох монетах; тут вони в SOL за ціною пулу. Поза діапазоном монети лишаються твоїми, а заробіток стоїть, доки ціна не повернеться. Ryntra не тримає ключів і комісії не додає.',
+    problem: {
+      format: () => 'Введи суму в SOL.',
+      min: (figure) => `Щонайменше ${figure} SOL.`,
+      max: (figure) => `Поки що до ${figure} SOL.`,
+      sol: () => 'Бракує SOL — з депозитом позиції.',
+    },
+    failures: {
+      UNAVAILABLE: 'Мережа не відповіла. Нічого не надіслано — спробуй ще раз.',
+      VALIDATION_ERROR: 'Щось на картці не так. Нічого не надіслано — спробуй ще раз.',
+      STOPPED: 'Нові вклади зараз на паузі. Забирати можна.',
+      NOT_A_PIER: 'Цей причал звідси не відкривається.',
+      PIER_NOT_OPEN: 'Причал зараз не приймає вкладів.',
+      AMOUNT_LOW: 'Замало для позиції по обидва боки ціни.',
+      AMOUNT_HIGH: 'Більше, ніж причал поки бере за раз.',
+      CARE_CLOSED: 'Агент тут поки не доглядає позиції.',
+      BALANCE_LOW: 'У гаманці бракує — з комісіями й депозитом.',
+      NOTHING_TO_DO: 'Забирати ще нічого.',
+      REFUSED: 'Пул відмовив. Нічого не надіслано.',
+      TICKET_INVALID: 'Цифри застаріли. Онови.',
+      SIGNED_MISMATCH: 'Гаманець підписав інше. Нічого не надіслано.',
+      NOT_SIGNED: 'Бракує підпису. Нічого не надіслано.',
+      SIMULATION_FAILED: 'Ціна вийшла зі смуги. Нічого не надіслано — спробуй ще раз.',
+      WALLET_REFUSED: 'Не підписано. Нічого не надіслано.',
+      WALLET_MISMATCH: 'Під’єднано інший гаманець.',
+      CAPABILITY_UNAVAILABLE: 'Причали Pro тут ще не відкрито.',
+      RATE_LIMITED: 'Забагато запитів. Спробуй за хвилину.',
     },
   },
   captain: {

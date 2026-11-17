@@ -37,6 +37,7 @@ import {
   WHITELISTED_QUOTE_MINTS,
   decodePoolExtensionsFromData,
   deriveLaunchPool,
+  derivePool,
   deriveTokenBadge,
   encodePoolExtensions,
   findNftAccount,
@@ -50,6 +51,7 @@ import {
   openActivationParameters,
   readClock,
   tickArraysForTickIds,
+  tickIdFromSqrtPrice,
   tickIndexFromId,
   timeBasedActivationParameters,
   timeSchedulerBaseFeeParameters,
@@ -68,7 +70,7 @@ import type { Address } from "../../contracts.ts";
 import { activationRulesOf, activationStateOf, type ActionGate, type ActivationAction, type ActivationRules } from "./activation.ts";
 import { FEE_SHARES, basePeriodOf, decodeBaseFee, feeBpsOf, sqrtPriceOfPeriod, totalFeeNumerator, variableFeeCeiling, variableFeeNow, type BaseFeeMode as BaseFeeModeName, type BaseFeeSchedule } from "./fee.ts";
 import { DLMM_PRO_ACCESS_REGISTRY, DLMM_PRO_PROGRAM, DlmmProRefusal, accountDiscriminator, refusing } from "./sdk.server.ts";
-import { MAX_TICK_ID, MAX_TICK_SPACING, MIN_TICK_ID, priceOfSqrtX64 } from "./ticks.ts";
+import { MAX_TICK_ID, MAX_TICK_SPACING, MIN_TICK_ID, alignTickDown, priceOfSqrtX64, sqrtPriceX64OfPrice } from "./ticks.ts";
 import { DLMM_PRO_UNITS, keyOf, seal, type DlmmProBuild, type DlmmProRent, type SealOptions } from "./tx.server.ts";
 
 export type DlmmProContext = Readonly<{
@@ -252,8 +254,8 @@ export async function transferFeeMintOf(connection: Pick<Connection, "getAccount
 export const TOKEN_ACCOUNT_BYTES = 165;
 /** 1 — initialized, 2 — frozen. */
 export const TOKEN_ACCOUNT_STATE_OFFSET = 108;
-const TOKEN_ACCOUNT_DELEGATE_OFFSET = 72;
-const TOKEN_ACCOUNT_DELEGATED_AMOUNT_OFFSET = 121;
+export const TOKEN_ACCOUNT_DELEGATE_OFFSET = 72;
+export const TOKEN_ACCOUNT_DELEGATED_AMOUNT_OFFSET = 121;
 /**
  * Whether a token account can be paid `mint` now: owned by `program`, of that coin, initialized and not frozen. What
  * is merely *at* an address — lamports someone sent there, an account of another coin, a frozen one — cannot, and a
@@ -827,6 +829,20 @@ export type LaunchPoolRequest = Readonly<{
   opening?: OpeningRequest | null;
 }>;
 
+/**
+ * A pool made from a partner's dynamic config: the same terms as a launch pool, at the config's own address
+ * for the pair. The config belongs to the wallet Meteora gave it to (`authority`), and that wallet signs every pool made
+ * from it — so the build names it as a signer beside the payer, and whoever holds its key signs once. The protocol
+ * keeps a tenth of what liquidity earns here, not a launch pool's fifth, and the config's partner has its share of it.
+ */
+export type ConfigPoolRequest = LaunchPoolRequest &
+  Readonly<{
+    /** The dynamic config's address. */
+    config: Address;
+    /** The wallet the config belongs to: it signs the pool's creation. */
+    authority: Address;
+  }>;
+
 export type LaunchPoolBuild = DlmmProBuild &
   Readonly<{
     pool: Address;
@@ -848,6 +864,8 @@ export type LaunchPoolBuild = DlmmProBuild &
       endFeeBps: number;
       askedEndFeeBps: number;
       settles: Readonly<{ afterSeconds: number; atPriceMultiple: number | null }> | null;
+      /** The most the volatility fee adds on top, basis points, as the pool will read it; zero with it switched off. */
+      dynamicCeilingBps: number;
     }>;
   }>;
 
@@ -966,7 +984,32 @@ export function createDlmmProPools(context: DlmmProContext) {
   }
 
   /** A launch pool of a pair: the caller's fee schedule, the fee's coin and the opening rules — unsigned, for the wallet. */
-  async function buildLaunchPool(request: LaunchPoolRequest, options: SealOptions = {}): Promise<LaunchPoolBuild> {
+  function buildLaunchPool(request: LaunchPoolRequest, options: SealOptions = {}): Promise<LaunchPoolBuild> {
+    return buildPool(request, null, options);
+  }
+
+  /**
+   * A pool of a pair from a partner's dynamic config — unsigned: the wallet pays and signs, and the config's own wallet
+   * signs beside it (`cosigners` names it). The config is read first: one that is not this program's dynamic config, or
+   * that belongs to another wallet than the one named, is refused here.
+   */
+  async function buildConfigPool(request: ConfigPoolRequest, options: SealOptions = {}): Promise<LaunchPoolBuild> {
+    const config = keyOf(request.config, "The config");
+    const authority = keyOf(request.authority, "The config's wallet");
+    const held = await refusing(async () => {
+      const info = await connection.getAccountInfo(config, "confirmed");
+      if (!info || !info.owner.equals(programId)) throw new DlmmProRefusal("BAD_INPUT", `No dynamic config of DLMM Pro at ${config.toBase58()}.`);
+      try {
+        return await client.state.fetchDynamicConfig(config);
+      } catch {
+        throw new DlmmProRefusal("BAD_INPUT", `No dynamic config of DLMM Pro at ${config.toBase58()}.`);
+      }
+    });
+    if (!held.poolCreatorAuthority.equals(authority)) throw new DlmmProRefusal("BAD_INPUT", "The dynamic config belongs to another wallet than the one named.");
+    return buildPool(request, { config, authority }, options);
+  }
+
+  async function buildPool(request: LaunchPoolRequest, from: Readonly<{ config: PublicKey; authority: PublicKey }> | null, options: SealOptions): Promise<LaunchPoolBuild> {
     const wallet = keyOf(request.wallet, "The wallet");
     const creator = request.creator ? keyOf(request.creator, "The creator") : wallet;
     const tokenX = keyOf(request.tokenX, "The coin");
@@ -983,22 +1026,24 @@ export function createDlmmProPools(context: DlmmProContext) {
     if (request.collectFee === "tokenY" && !WHITELISTED_QUOTE_MINTS.some((mint) => mint.equals(tokenY))) throw new DlmmProRefusal("BAD_INPUT", "A pool that collects its fee only in token Y pairs with wrapped SOL or USDC.");
 
     return refusing(async () => {
-      const pool = deriveLaunchPool(tokenX, tokenY, programId);
+      const pool = from ? derivePool(from.config, tokenX, tokenY, programId) : deriveLaunchPool(tokenX, tokenY, programId);
       const [existing, mints, clock] = await Promise.all([connection.getAccountInfo(pool, "confirmed"), connection.getMultipleAccountsInfo([tokenX, tokenY], "confirmed"), clockOf(context)]);
       /* The program's own account at that address is the pair's pool. Lamports anyone sent there are not: the program makes its pool at a funded address. */
-      if (existing && existing.owner.equals(programId)) throw new DlmmProRefusal("POOL_EXISTS", "This pair already has its launch pool; a pair has one for ever.");
+      if (existing && existing.owner.equals(programId)) throw new DlmmProRefusal("POOL_EXISTS", from ? "This pair already has its pool from this config; a config has one for a pair." : "This pair already has its launch pool; a pair has one for ever.");
       const [mintX, mintY] = mints;
       if (!mintX || !mintY) throw new DlmmProRefusal("BAD_INPUT", "A coin of the pair does not exist.");
       /* A coin the program takes only with Meteora's badge: the badge where it has one, a refusal here where it has not. */
       const [badgeX, badgeY] = await Promise.all([tokenBadgeFor(connection, tokenX, mintX, "pool"), tokenBadgeFor(connection, tokenY, mintY, "pool")]);
 
-      /* The program takes the payer's balances of both coins as its proof: nothing is moved, neither may be zero. Wrapped SOL the build tops up itself. */
-      const held = await connection.getMultipleAccountsInfo([getAssociatedTokenAddressSync(tokenX, wallet, true, mintX.owner), getAssociatedTokenAddressSync(tokenY, wallet, true, mintY.owner)], "confirmed");
-      [tokenX, tokenY].forEach((mint, index) => {
-        if (mint.equals(NATIVE_MINT)) return;
-        const account = held[index];
-        if (!account || account.data.length < 72 || Buffer.from(account.data).readBigUInt64LE(64) === 0n) throw new DlmmProRefusal("BALANCE_LOW", `The wallet holds none of ${mint.toBase58()}; a launch pool's creator holds both coins.`);
-      });
+      /* A launch pool: the program takes the payer's balances of both coins as its proof — nothing is moved, neither may be zero. Wrapped SOL the build tops up itself. A config's pool asks no proof: its config's wallet signs instead. */
+      if (!from) {
+        const held = await connection.getMultipleAccountsInfo([getAssociatedTokenAddressSync(tokenX, wallet, true, mintX.owner), getAssociatedTokenAddressSync(tokenY, wallet, true, mintY.owner)], "confirmed");
+        [tokenX, tokenY].forEach((mint, index) => {
+          if (mint.equals(NATIVE_MINT)) return;
+          const account = held[index];
+          if (!account || account.data.length < 72 || Buffer.from(account.data).readBigUInt64LE(64) === 0n) throw new DlmmProRefusal("BALANCE_LOW", `The wallet holds none of ${mint.toBase58()}; a launch pool's creator holds both coins.`);
+        });
+      }
 
       const fee = baseFeeParametersOf(request.baseFee);
       const opening = request.opening ?? null;
@@ -1019,12 +1064,14 @@ export function createDlmmProPools(context: DlmmProContext) {
           activations: [openActivationParameters(), timeBasedActivationParameters({ swapPoint: new BN(points.swap), addLiquidityPoint: new BN(points.deposits), removeLiquidityPoint: new BN(points.withdrawals) })],
         };
       }
+      /* The volatility fee is sized from the fee the schedule settles at — as its steps make it, in whole basis points — as Meteora's own launches are: at most a fifth of it. */
+      const dynamic = request.dynamicFee === false ? null : getDynamicFeeParams(Math.max(1, Math.floor(fee.endBps)), request.tickSpacing);
       const extensions = encodePoolExtensions([...(request.liquidityMining ? [PoolExtension.LiquidityMining] : []), ...(opening ? [PoolExtension.ActivationAccess] : [])]);
       const parameters: InitializePoolWithDynamicParameters = {
         poolFees: {
           baseFeeParameter: fee.parameters,
           /* The volatility fee is sized from the fee the schedule settles at — as its steps make it, in whole basis points — as Meteora's own launches are: at most a fifth of it. */
-          dynamicFeeParameter: request.dynamicFee === false ? null : getDynamicFeeParams(Math.max(1, Math.floor(fee.endBps)), request.tickSpacing),
+          dynamicFeeParameter: dynamic,
         },
         tickSpacing: request.tickSpacing,
         collectFeeMode: request.collectFee === "tokenY" ? CollectFeeMode.OnlyY : CollectFeeMode.OutputToken,
@@ -1035,13 +1082,15 @@ export function createDlmmProPools(context: DlmmProContext) {
         poolActivation,
       };
       const sdk = await clientPastDust(context, [wallet], [{ mint: tokenX, program: mintX.owner }, { mint: tokenY, program: mintY.owner }]);
-      const built = await sdk.pool.initializeLaunchPool({ tokenXMint: tokenX, tokenYMint: tokenY, creator, payer: wallet, parameters, tokenXProgram: mintX.owner, tokenYProgram: mintY.owner, ...(badgeX ? { tokenBadgeX: badgeX } : {}), ...(badgeY ? { tokenBadgeY: badgeY } : {}) });
-      const sealed = await seal({ connection, wallet, instructions: built.tx.instructions, units: DLMM_PRO_UNITS.createLaunchPool + 2 * DLMM_PRO_UNITS.tokenAccount, options });
+      const terms = { tokenXMint: tokenX, tokenYMint: tokenY, creator, payer: wallet, parameters, tokenXProgram: mintX.owner, tokenYProgram: mintY.owner, ...(badgeX ? { tokenBadgeX: badgeX } : {}), ...(badgeY ? { tokenBadgeY: badgeY } : {}) };
+      const built = from ? await sdk.pool.initializePoolWithDynamicConfig({ ...terms, config: from.config, poolCreatorAuthority: from.authority }) : await sdk.pool.initializeLaunchPool(terms);
+      /* The config's own wallet signs the pool it lets be made: the one signer beside the payer, named to the caller as a cosigner. */
+      const sealed = await seal({ connection, wallet, instructions: built.tx.instructions, units: DLMM_PRO_UNITS.createLaunchPool + 2 * DLMM_PRO_UNITS.tokenAccount, fresh: from && !from.authority.equals(wallet) ? [from.authority] : [], options });
       /* What the payer must hold: the fee, and the rent of the pool with the tails it is created with, its oracle, its two vaults, the bitmap's extension where the first price needs one, and any token account the build opens. */
       const sizes = DLMM_PRO_ACCOUNT_BYTES;
       const vault = (program: PublicKey) => (program.equals(TOKEN_2022_PROGRAM_ID) ? sizes.tokenAccount2022 : sizes.tokenAccount);
       /* Against SOL the SDK wraps one lamport where the payer holds no wrapped SOL — the balance the program takes as its proof — and unwraps it at the end. */
-      const proofs = [tokenX, tokenY].filter((mint) => mint.equals(NATIVE_MINT)).map((mint) => ({ mint, program: TOKEN_PROGRAM_ID, amount: 1n }));
+      const proofs = from ? [] : [tokenX, tokenY].filter((mint) => mint.equals(NATIVE_MINT)).map((mint) => ({ mint, program: TOKEN_PROGRAM_ID, amount: 1n }));
       const cost = await assertAffords(connection, wallet, proofs, {
         fee: BigInt(sealed.feeLamports),
         instructions: built.tx.instructions,
@@ -1061,12 +1110,43 @@ export function createDlmmProPools(context: DlmmProContext) {
         reserveX: built.reserveX.toBase58(),
         reserveY: built.reserveY.toBase58(),
         bitmapExtension: built.tickArrayBitmapExtension?.toBase58() ?? null,
-        parameters: { activationPoint: activationPoint ? activationPoint.toNumber() : null, extensions, endFeeBps: fee.endBps, askedEndFeeBps: fee.askedEndBps, settles: fee.settles },
+        parameters: {
+          activationPoint: activationPoint ? activationPoint.toNumber() : null,
+          extensions,
+          endFeeBps: fee.endBps,
+          askedEndFeeBps: fee.askedEndBps,
+          settles: fee.settles,
+          dynamicCeilingBps: dynamic ? feeBpsOf(variableFeeCeiling({ initialized: true, maxVolatilityAccumulator: Number(dynamic.maxVolatilityAccumulator), variableFeeControl: Number(dynamic.variableFeeControl), filterPeriod: Number(dynamic.filterPeriod), decayPeriod: Number(dynamic.decayPeriod), reductionFactor: Number(dynamic.reductionFactor) })) : 0,
+        },
       };
     });
   }
 
-  return { read, list, launchPoolAddress, buildLaunchPool };
+  /**
+   * The tick a pool of this spacing starts on for a price a person names — token Y per token X in whole tokens, a plain
+   * decimal string: the price's own tick as the program reads it, aligned down to the spacing.
+   */
+  function tickOfPrice(price: string, decimalsX: number, decimalsY: number, tickSpacing: number): number {
+    let sqrtPrice: bigint;
+    try {
+      sqrtPrice = sqrtPriceX64OfPrice(price, decimalsX, decimalsY);
+    } catch (error) {
+      throw new DlmmProRefusal("BAD_INPUT", error instanceof Error ? error.message : "The price is not a number.");
+    }
+    return alignTickDown(tickIdFromSqrtPrice(new BN(sqrtPrice.toString())), tickSpacing);
+  }
+
+  /** The tick a square-root price stands on — a pool's first price, as its account keeps it. */
+  function tickOfSqrtPrice(sqrtPriceX64: string): number {
+    return tickIdFromSqrtPrice(new BN(sqrtPriceX64));
+  }
+
+  /** Where the pool of a pair from a dynamic config lives — whichever coin is named first. */
+  function configPoolAddress(config: Address, mintA: Address, mintB: Address): Address {
+    return derivePool(keyOf(config, "The config"), keyOf(mintA, "The coin"), keyOf(mintB, "The pair's coin"), programId).toBase58();
+  }
+
+  return { read, list, launchPoolAddress, configPoolAddress, tickOfPrice, tickOfSqrtPrice, buildLaunchPool, buildConfigPool };
 }
 
 export type DlmmProPools = ReturnType<typeof createDlmmProPools>;

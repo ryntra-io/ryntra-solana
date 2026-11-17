@@ -65,7 +65,7 @@ import {
   type Pool,
   type PositionArray,
 } from "@meteora-ag/dlmm-pro-sdk";
-import { TOKEN_2022_PROGRAM_ID, createApproveInstruction, createRevokeInstruction, getAssociatedTokenAddressSync, type Mint } from "@solana/spl-token";
+import { ASSOCIATED_TOKEN_PROGRAM_ID, TOKEN_2022_PROGRAM_ID, createApproveInstruction, createAssociatedTokenAccountIdempotentInstruction, createCloseAccountInstruction, createRevokeInstruction, createTransferCheckedInstruction, getAssociatedTokenAddressSync, type Mint } from "@solana/spl-token";
 import { PublicKey, type TransactionInstruction } from "@solana/web3.js";
 import BN from "bn.js";
 
@@ -156,9 +156,35 @@ export type OpenPositionRequest = Readonly<{
    * closed — and a position locked for ever is never closed — so fewer ranges is a coarser shape for less rent.
    */
   maxRanges?: number;
+  /**
+   * Hand the position over to this wallet as the last step: the NFT goes to the wallet's own account of it,
+   * and with it the position, its fees and everything it may ever do. Before a pool opens only its early depositor may
+   * open a position, and only in its own name — so a position meant for another is opened, funded and locked by the
+   * depositor and handed over. Absent — the position stays the wallet's.
+   */
+  handOverTo?: Address;
+  /**
+   * What lands before this opening does, in the same approval of the wallet — a swap in this very pool, sent first
+   * (`./earn.server.ts`). The opening is then built for the pool as that swap leaves it: its shape and its deposit
+   * stand at `sqrtPriceX64` and `tickId`, the price the swap's quote ends at, and the band of the price is around
+   * that. `spends…` is what the swap takes out of the wallet ahead of the deposit and `brings…` the least it pays in,
+   * so the wallet is held to what it has now, less the one, plus the other; `lamports` is what the swap itself costs —
+   * its fee and the rent it leaves. A trade that lands between the two moves the price like any other: inside the
+   * band the deposit lands, outside it the chain refuses it and the coins stay in the wallet.
+   */
+  ahead?: Readonly<{ sqrtPriceX64: string; tickId: number; spendsXRaw: string; spendsYRaw: string; bringsXRaw: string; bringsYRaw: string; lamports: number }>;
+  /**
+   * How the deposit is sized. `band` (the default) — here, once: the liquidity both budgets afford at both ends of
+   * the band, so it lands anywhere in it and leaves out what the price it lands at did not ask for. `landing` — by the
+   * program, at the price the deposit lands at: the most both budgets afford there, so next to nothing is left out —
+   * for a position of one range only (the program's `add_liquidity_imbalance` fills one slot). The band then only
+   * says where the deposit may land at all; `deposit` tells what it takes at the price it was built for, and its
+   * `maximum…` are the budgets themselves.
+   */
+  sizing?: "band" | "landing";
 }>;
 
-export type OpenRole = "OPEN" | "WIDEN" | "DEPOSIT" | "LOCK";
+export type OpenRole = "OPEN" | "WIDEN" | "DEPOSIT" | "LOCK" | "HANDOVER";
 
 export type OpenPositionBuild = DlmmProRent &
   Readonly<{
@@ -171,7 +197,16 @@ export type OpenPositionBuild = DlmmProRent &
   packed: readonly (DlmmProTx & Readonly<{ roles: readonly OpenRole[] }>)[];
   position: Address;
   nftMint: Address;
+  /** The NFT's account while the opening wallet holds it; after a hand-over it is closed, and the NFT is in `handedTo.nftAccount`. */
   nftAccount: Address;
+  /** Who the position is handed over to as its last step, and the account its NFT then lives in; null — nobody. */
+  handedTo: Readonly<{ owner: Address; nftAccount: Address }> | null;
+  /**
+   * The tick arrays the opening makes — those its ranges stand in that were not on chain when it was built — each a
+   * head in its rent. Two openings built at one moment on the same ticks both count them, and only the first to land
+   * pays: a caller that sends the two in order takes them off the second.
+   */
+  newTickArrays: number;
   shape: ShapeView;
   deposit: DepositView;
 }>;
@@ -290,12 +325,53 @@ export function createDlmmProPositions(context: DlmmProContext) {
   /** What an amount of a coin is once its own transfer fee is taken: what arrives. */
   const arrives = (amount: BN, mint: Mint | null, epoch: bigint) => big(calculateTransferFeeExcludedAmount(mint, epoch, amount).amount);
 
+  /**
+   * The token program's own hand-over of a position's NFT: the receiver's account of it is made where it is not there,
+   * the NFT moves, and the giver's emptied account is closed — its rent comes back to the giver and all but pays for the
+   * receiver's. A position's NFT has no rule against a transfer: its mint carries a metadata pointer, its metadata and
+   * a close authority, nothing more.
+   */
+  const handOverInstructions = (nftMint: PublicKey, from: PublicKey, to: PublicKey): TransactionInstruction[] => {
+    const source = findNftAccount(nftMint, from);
+    const target = findNftAccount(nftMint, to);
+    return [
+      createAssociatedTokenAccountIdempotentInstruction(from, target, to, nftMint, TOKEN_2022_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID),
+      createTransferCheckedInstruction(source, nftMint, target, from, 1, 0, [], TOKEN_2022_PROGRAM_ID),
+      createCloseAccountInstruction(source, from, from, [], TOKEN_2022_PROGRAM_ID),
+    ];
+  };
+  /** The receiver of a hand-over as a key: a wallet other than the giver, never the NFT's own mint. */
+  const receiverOf = (address: Address, giver: PublicKey, nftMint: PublicKey) => {
+    const to = keyOf(address, "The receiver");
+    if (to.equals(giver)) throw new DlmmProRefusal("BAD_INPUT", "The position is already this wallet's: there is nobody to hand it over to.");
+    if (to.equals(nftMint) || to.equals(PublicKey.default)) throw new DlmmProRefusal("BAD_INPUT", "The receiver is not a wallet.");
+    return to;
+  };
+
   const worthOf = (pool: Pool, slot: DecodedPosition, liquidity: BN) =>
     /* A negative liquidity asks for the amounts a withdrawal pays: rounded down. */
     getAmountsFromLiquidity({ tickCurrentId: pool.tickCurrentId, tickLowerId: slot.tickLowerId, tickUpperId: slot.tickUpperId, currentSqrtPrice: pool.sqrtPrice, liquidity: liquidity.neg() });
   /** The same at another price: what a withdrawal that lands there pays. */
   const worthAt = (sqrtPrice: bigint, slot: DecodedPosition, liquidity: BN) =>
     getAmountsFromLiquidity({ tickCurrentId: tickIdFromSqrtPrice(bn(sqrtPrice)), tickLowerId: slot.tickLowerId, tickUpperId: slot.tickUpperId, currentSqrtPrice: bn(sqrtPrice), liquidity: liquidity.neg() });
+
+  /** What a swap sent ahead of an opening leaves behind, as numbers: refused unless every one of them is a number it can be. */
+  const aheadOf = (ahead: NonNullable<OpenPositionRequest["ahead"]>) => {
+    if (typeof ahead.sqrtPriceX64 !== "string" || !/^\d{1,40}$/.test(ahead.sqrtPriceX64)) throw new DlmmProRefusal("BAD_INPUT", "The price the swap ends at is not a square-root price.");
+    const sqrtPrice = BigInt(ahead.sqrtPriceX64);
+    if (sqrtPrice < big(MIN_SQRT_PRICE) || sqrtPrice > big(MAX_SQRT_PRICE)) throw new DlmmProRefusal("BAD_INPUT", "The price the swap ends at is outside the program's own limits.");
+    if (!Number.isInteger(ahead.tickId) || tickIdFromSqrtPrice(bn(sqrtPrice)) !== ahead.tickId) throw new DlmmProRefusal("BAD_INPUT", "The tick the swap ends at is not the tick of the price it ends at.");
+    if (!Number.isSafeInteger(ahead.lamports) || ahead.lamports < 0) throw new DlmmProRefusal("BAD_INPUT", "What the swap costs is a whole number of lamports.");
+    return {
+      sqrtPrice,
+      tickId: ahead.tickId,
+      spendsX: rawOf(ahead.spendsXRaw, "What the swap takes of token X"),
+      spendsY: rawOf(ahead.spendsYRaw, "What the swap takes of token Y"),
+      bringsX: rawOf(ahead.bringsXRaw, "What the swap brings of token X"),
+      bringsY: rawOf(ahead.bringsYRaw, "What the swap brings of token Y"),
+      lamports: ahead.lamports,
+    };
+  };
 
   /** A position: its slots, what they are worth, what they have earned. */
   async function read(request: Readonly<{ pool: Address; nftMint: Address }>): Promise<PositionView> {
@@ -351,6 +427,33 @@ export function createDlmmProPositions(context: DlmmProContext) {
     });
   }
 
+  /**
+   * What a position's whole liquidity — unlocked, locked and vesting — is worth at a price the caller names, per coin,
+   * rounded down as a withdrawal is. A slot's liquidity does not change when the pool trades, so at the pool's first
+   * price this is what the position was given, whatever has been bought since (a launch's supply, read back
+   * after trading began).
+   */
+  async function worthAtPrice(request: Readonly<{ pool: Address; nftMint: Address; sqrtPriceX64: string }>): Promise<Readonly<{ xRaw: string; yRaw: string }>> {
+    return refusing(async () => {
+      const poolKey = keyOf(request.pool, "The pool");
+      const nftMint = keyOf(request.nftMint, "The position's NFT");
+      if (!/^\d{1,40}$/.test(request.sqrtPriceX64)) throw new DlmmProRefusal("BAD_INPUT", "The price is not a square-root price.");
+      const sqrtPrice = BigInt(request.sqrtPriceX64);
+      if (sqrtPrice < big(MIN_SQRT_PRICE) || sqrtPrice > big(MAX_SQRT_PRICE)) throw new DlmmProRefusal("BAD_INPUT", "The price is outside the program's range.");
+      const state = await loaded(poolKey, nftMint);
+      let x = 0n;
+      let y = 0n;
+      for (const slot of state.slots) {
+        const total = positionTotalLiquidity(slot);
+        if (total.isZero()) continue;
+        const worth = worthAt(sqrtPrice, slot, total);
+        x += big(worth.amountX);
+        y += big(worth.amountY);
+      }
+      return { xRaw: x.toString(), yRaw: y.toString() };
+    });
+  }
+
   /** A position opened from a shape and funded — unsigned steps; the wallet signs each, the fresh NFT mint the first. */
   async function open(request: OpenPositionRequest, options: SealOptions = {}): Promise<OpenPositionBuild> {
     return refusing(async () => {
@@ -362,14 +465,23 @@ export function createDlmmProPositions(context: DlmmProContext) {
       if (amountX === 0n && amountY === 0n) throw new DlmmProRefusal("AMOUNT_ZERO", "Both amounts are zero.");
       const lockBps = request.lockBps === undefined ? null : bpsOf(request.lockBps, "The share to lock", 1, 10_000);
       const slippageBps = bpsOf(request.slippageBps, "The band of the price", 0, MAX_DEPOSIT_SLIPPAGE_BPS);
+      const handOverTo = request.handOverTo === undefined ? null : receiverOf(request.handOverTo, wallet, nftMint);
       const { model, pool, clock } = await modelWith(context, poolKey, wallet.toBase58());
       assertOpen(model, "addLiquidity");
       if (request.maxRanges !== undefined && (!Number.isInteger(request.maxRanges) || request.maxRanges < 1 || request.maxRanges > MAX_POSITION_RANGES)) throw new DlmmProRefusal("BAD_INPUT", `A position holds 1 to ${MAX_POSITION_RANGES} ranges.`);
+      /* The price the opening is built for: the pool's own, or the one a swap sent ahead of it leaves the pool at. */
+      const ahead = request.ahead ? aheadOf(request.ahead) : null;
+      const priced: Pool = ahead ? { ...pool, sqrtPrice: bn(ahead.sqrtPrice), tickCurrentId: ahead.tickId } : pool;
       /* A position is built from a shape's ranges alone: an even shape of any width is one range. */
-      const shape = shapeOf(request.shape, pool, request.maxRanges ?? MAX_POSITION_RANGES, "ranges");
+      const shape = shapeOf(request.shape, priced, request.maxRanges ?? MAX_POSITION_RANGES, "ranges");
       const ranges = shape.ranges;
       const [mintX, mintY] = await Promise.all([transferFeeMintOf(connection, pool.tokenXMint), transferFeeMintOf(connection, pool.tokenYMint)]);
-      const size = sized({ ranges, pool, amountX, amountY, slippageBps, mintX, mintY, epoch: clock.epoch });
+      const atLanding = request.sizing === "landing";
+      if (request.sizing !== undefined && request.sizing !== "band" && !atLanding) throw new DlmmProRefusal("BAD_INPUT", "A deposit is sized for its band, or at the price it lands at.");
+      if (atLanding && ranges.length !== 1) throw new DlmmProRefusal("BAD_INPUT", "Only a position of one range is sized at the price it lands at.");
+      /* Sized at landing, the build still tells what the deposit takes at the price it was built for; its caps are the budgets. */
+      const told = sized({ ranges, pool: priced, amountX, amountY, slippageBps: atLanding ? 0 : slippageBps, mintX, mintY, epoch: clock.epoch });
+      const size = atLanding ? { ...told, maximumX: amountX, maximumY: amountY, view: { ...told.view, maximumXRaw: amountX.toString(), maximumYRaw: amountY.toString() } } : told;
       const groups = splitRangesForGrowth(ranges, pool.tickSpacing, model.extensions.liquidityMining);
       /*
        * No layout version is named for a position these very steps open: the program's check guards a build against a
@@ -389,17 +501,28 @@ export function createDlmmProPositions(context: DlmmProContext) {
       const sdk = await clientPastDust(context, [wallet], coinsOf(pool));
       /* Ranges beyond the pool's own bitmap of tick arrays, on a pool with no extension yet: the deposit makes it first. */
       const extension = await bitmapExtensionFor(client, poolKey, pool, ranges.flatMap((range) => [range.tickLowerId, range.tickUpperId]), wallet);
-      const deposited = await sdk.position.addLiquidityByWeight({ pool: poolKey, nftMint, owner: wallet, signer: wallet, tokenXMint: pool.tokenXMint, tokenYMint: pool.tokenYMint, tickRanges, parameters, ...(extension.extension ? { tickArrayBitmapExtension: extension.extension } : {}) });
+      const depositAccounts = { pool: poolKey, nftMint, owner: wallet, signer: wallet, tokenXMint: pool.tokenXMint, tokenYMint: pool.tokenYMint, tickRanges, ...(extension.extension ? { tickArrayBitmapExtension: extension.extension } : {}) };
+      const landingBand = bandOf(big(priced.sqrtPrice), slippageBps);
+      const deposited = atLanding
+        ? await sdk.position.addLiquidityImbalance({
+            ...depositAccounts,
+            /* A coin with a budget of nothing is not offered: the program takes that only where the range needs none of it at the price it lands at. */
+            parameters: { maxAmountX: amountX > 0n ? bn(amountX) : null, maxAmountY: amountY > 0n ? bn(amountY) : null, slippage: { sqrtPriceSlippage: { minSqrtPrice: bn(landingBand.low), maxSqrtPrice: bn(landingBand.high) }, minLiquidity: null }, expectedLayoutVersion: null, index: 0 },
+          })
+        : await sdk.position.addLiquidityByWeight({ ...depositAccounts, parameters });
       parts.push({
         role: "DEPOSIT",
         instructions: [...extension.make, ...deposited.tx.instructions],
-        units: unitsOf(DLMM_PRO_UNITS.addLiquidity.base, DLMM_PRO_UNITS.addLiquidity.perRange, ranges.length, 2 * DLMM_PRO_UNITS.tokenAccount + extension.units),
+        units: unitsOf(atLanding ? DLMM_PRO_UNITS.addLiquidityAtLanding.base : DLMM_PRO_UNITS.addLiquidity.base, DLMM_PRO_UNITS.addLiquidity.perRange, ranges.length, 2 * DLMM_PRO_UNITS.tokenAccount + extension.units),
         fresh: [],
       });
       if (lockBps !== null) {
         const lockedTx = await client.position.lockPermanentPosition({ pool: poolKey, nftMint, owner: wallet, bps: lockBps });
         parts.push({ role: "LOCK", instructions: lockedTx.tx.instructions, units: unitsOf(DLMM_PRO_UNITS.lockPermanent.base, DLMM_PRO_UNITS.lockPermanent.perRange, ranges.length), fresh: [] });
       }
+      /* The hand-over goes last: what was deposited and locked is the receiver's from the moment the NFT moves. */
+      const handOver = handOverTo ? handOverInstructions(nftMint, wallet, handOverTo) : [];
+      if (handOverTo) parts.push({ role: "HANDOVER", instructions: handOver, units: DLMM_PRO_UNITS.handOver, fresh: [] });
 
       const blockhash = options.blockhash ?? (await connection.getLatestBlockhash("confirmed"));
       /* Each step keeps its own ceiling: a caller's single `units` is not the limit of several program calls. */
@@ -417,10 +540,16 @@ export function createDlmmProPositions(context: DlmmProContext) {
       const cost = await assertAffords(
         connection,
         wallet,
-        coinsOf(pool).map((coin, index) => ({ ...coin, amount: index === 0 ? size.maximumX : size.maximumY })),
+        /* With a swap sent ahead: what the wallet has now must cover the deposit and what the swap takes, less the least the swap pays in. */
+        coinsOf(pool).map((coin, index) => {
+          const most = index === 0 ? size.maximumX : size.maximumY;
+          const before = ahead ? most + (index === 0 ? ahead.spendsX : ahead.spendsY) - (index === 0 ? ahead.bringsX : ahead.bringsY) : most;
+          return { ...coin, amount: before > 0n ? before : 0n };
+        }),
         {
-          fee: steps.reduce((sum, step) => sum + BigInt(step.feeLamports), 0n),
-          instructions: deposited.tx.instructions,
+          fee: steps.reduce((sum, step) => sum + BigInt(step.feeLamports), 0n) + BigInt(ahead?.lamports ?? 0),
+          /* The receiver's account of the NFT is one more account the build opens; the giver's closed one returns its rent, which is not counted towards what the wallet must hold. */
+          instructions: [...deposited.tx.instructions, ...handOver.slice(0, 1)],
           accounts: [sizes.nftMint, sizes.nftAccount, sizes.positionHead, ...Array.from({ length: arrays }, () => sizes.tickArrayHead), ...extension.accounts],
           bytes: ranges.length * (withRewards ? sizes.positionSlotWithRewards + 2 * sizes.tickWithRewards : sizes.positionSlot + 2 * sizes.tick),
         },
@@ -432,6 +561,8 @@ export function createDlmmProPositions(context: DlmmProContext) {
         position: opened.position.toBase58(),
         nftMint: nftMint.toBase58(),
         nftAccount: opened.nftAccount.toBase58(),
+        handedTo: handOverTo ? { owner: handOverTo.toBase58(), nftAccount: findNftAccount(nftMint, handOverTo).toBase58() } : null,
+        newTickArrays: arrays,
         shape: shapeViewOf(request.shape.strategy, shape),
         deposit: size.view,
       };
@@ -705,6 +836,30 @@ export function createDlmmProPositions(context: DlmmProContext) {
     });
   }
 
+  /**
+   * Hands a position over to another wallet: its NFT, and with it the position, what it holds, the fees it earns and
+   * everything its holder may do. Only the holder signs; the giver's delegate, if it has one, is not the receiver's —
+   * an approval lives on the giver's account of the NFT, and that account is closed. What is locked for ever stays
+   * locked: a hand-over changes who collects, never what can be taken out. It cannot be undone from here — only the
+   * receiver can hand it back.
+   */
+  async function handOver(request: Readonly<{ pool: Address; nftMint: Address; owner: Address; to: Address }>, options: SealOptions = {}): Promise<DlmmProBuild & Readonly<{ handedTo: Readonly<{ owner: Address; nftAccount: Address }> }>> {
+    return refusing(async () => {
+      const poolKey = keyOf(request.pool, "The pool");
+      const nftMint = keyOf(request.nftMint, "The position's NFT");
+      const owner = keyOf(request.owner, "The owner");
+      const to = receiverOf(request.to, owner, nftMint);
+      /* The NFT of a position of this very pool: a hand-over of anything else is not this venue's to build. */
+      await loaded(poolKey, nftMint);
+      await assertHolds(connection, nftMint, owner, "the position");
+      const instructions = handOverInstructions(nftMint, owner, to);
+      const sealed = await seal({ connection, wallet: owner, instructions, units: DLMM_PRO_UNITS.handOver, options });
+      /* A frozen account of the receiver's would take nothing; one that is there and holds the NFT's coin is paid into as it is. */
+      const cost = await assertAffords(connection, owner, [], { fee: BigInt(sealed.feeLamports), instructions: instructions.slice(0, 1), receives: [findNftAccount(nftMint, to)] });
+      return { ...sealed, ...cost, handedTo: { owner: to.toBase58(), nftAccount: findNftAccount(nftMint, to).toBase58() } };
+    });
+  }
+
   /** Closes an empty position: burns the NFT and returns the rent to the owner (or to `rentReceiver`). */
   async function close(request: Readonly<{ pool: Address; nftMint: Address; owner: Address; rentReceiver?: Address }>, options: SealOptions = {}): Promise<DlmmProBuild> {
     return refusing(async () => {
@@ -722,7 +877,7 @@ export function createDlmmProPositions(context: DlmmProContext) {
     });
   }
 
-  return { read, open, add, remove, collect, compound, lockPermanently, delegate, close, clockOf: () => clockOf(context) };
+  return { read, worthAtPrice, open, add, remove, collect, compound, lockPermanently, delegate, handOver, close, clockOf: () => clockOf(context) };
 }
 
 export type DlmmProPositions = ReturnType<typeof createDlmmProPositions>;

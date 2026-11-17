@@ -248,7 +248,7 @@ export type EarlyAccessCreation = Readonly<{
 }>;
 
 /** The token's transaction: the honest mint and the whole supply in the creator's token account. */
-export function mintInstructions(args: Readonly<{ creator: PublicKey; mint: PublicKey; rules: EarlyAccessRules; name: string; symbol: string; uri: string; rentLamports: number }>): TransactionInstruction[] {
+export function mintInstructions(args: Readonly<{ creator: PublicKey; mint: PublicKey; rules: Pick<EarlyAccessRules, "supply">; name: string; symbol: string; uri: string; rentLamports: number }>): TransactionInstruction[] {
   const { creator, mint } = args;
   const ata = getAssociatedTokenAddressSync(mint, creator, false, TOKEN_2022);
   return [

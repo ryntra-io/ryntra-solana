@@ -165,8 +165,8 @@ function towerNamed(list: readonly Token[], book: Book): Coin | null {
   return named.size === 1 ? [...named.values()][0]! : null;
 }
 
-/** The sentence as an ask of the agent, or null when it is not one. */
-export function readAsk(input: string, book: Book): AgentAsk | null {
+/** The sentence as an ask of the agent, or null when it is not one. `pools` — the pool's door is open: «… в пул» is a launch straight into a pool. */
+export function readAsk(input: string, book: Book, pools = false): AgentAsk | null {
   const said = input.slice(0, COMMAND_MAX).trim();
   if (!said) return null;
   const list = tokens(said);
@@ -199,7 +199,8 @@ export function readAsk(input: string, book: Book): AgentAsk | null {
   if (agent) return null;
   if (has(list, VERBS.launch) || (has(list, VERBS.create) && has(list, COIN_WORD))) {
     // Without a coin word, a «for me» or a name, «launch» alone is the launch sheet's own row.
-    const command = parse(said, book);
+    /* «… в пул о 20:00» — the pool's own words are not the coin's name; the ask keeps the sentence, and the sheet reads them from it. */
+    const command = parse(said, book, { subject: null, pools });
     if (command.kind !== 'launch') return null;
     if (!has(list, COIN_WORD) && !has(list, FOR_ME)) return null;
     // «для мене», «for me» name the person, not the coin.

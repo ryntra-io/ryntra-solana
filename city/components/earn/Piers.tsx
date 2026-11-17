@@ -7,6 +7,7 @@ import { apart } from '@/city/lib/apart';
 import { depthSol, feesSol24h, pierOf, rangeMark, solPiers, solShort, solUsd, type Pier } from '@/city/lib/earn/pier';
 import { PIER_MODE } from '@/city/lib/earn/pier-gate';
 import { usePier } from '@/city/lib/earn/pier-store';
+import { useProPier } from '@/city/lib/earn/pro-store';
 import { useEarnData } from '@/city/lib/earn/store';
 import type { Words } from '@/city/lib/earn/words';
 import type { PierRow } from '@/city/lib/earn/mine';
@@ -15,6 +16,7 @@ import { useWallet } from '@/city/lib/trade/wallet';
 import { Boat, BoatCard } from './Boat';
 import { Coin, Line, Notify } from './bits';
 import { PierCard } from './PierCard';
+import { ProDock, ProPiers, useProDocked } from './ProPiers';
 import s from './earn.module.css';
 
 /** Positions are read again this often while the Piers are on screen. */
@@ -35,6 +37,13 @@ export function Piers({ words, owner, piers: rows }: { words: Words; owner: stri
   const copying = usePier((st) => st.copy !== null);
   const states = usePier((st) => st.states);
   const connection = useWallet((st) => st.connection);
+  // A pier or a boat of Meteora DLMM Pro, opened from the list below, is the tab while it is open.
+  const proDocked = useProDocked();
+
+  // The Pro piers are read on their own: a miss of the list above never hides them.
+  useEffect(() => {
+    void useProPier.getState().loadPiers();
+  }, []);
 
   // Another wallet: what the last one could do is not this one's; what this one may do is asked once the Harbor is
   // not closed in this build.
@@ -59,6 +68,7 @@ export function Piers({ words, owner, piers: rows }: { words: Words; owner: stri
 
   if (pool && pierOf(pool) && !copying) return <PierCard words={words} pier={pierOf(pool)!} />;
   if (boat) return <BoatCard words={words} view={boat} row={rows.find((r) => r.address === boat.address) ?? null} />;
+  if (proDocked) return <ProDock words={words} />;
 
   if (list.status === 'error') {
     return (
@@ -67,6 +77,7 @@ export function Piers({ words, owner, piers: rows }: { words: Words; owner: stri
         <button type="button" className={`${s.display} ${s.secondary}`} onClick={() => void useEarnData.getState().loadPiers()}>
           {words.tryAgain}
         </button>
+        <ProPiers words={words} owner={owner} />
       </section>
     );
   }
@@ -143,6 +154,7 @@ export function Piers({ words, owner, piers: rows }: { words: Words; owner: stri
           );
         })}
       </ul>
+      <ProPiers words={words} owner={owner} />
       <Line label={words.details} line={words.piers.read}>
         <p className={s.fine}>{w.fine}</p>
         {piers[0] && solUsd(piers[0]) !== null ? <p className={s.fine}>SOL ${formatPrice(solUsd(piers[0])!)}</p> : null}

@@ -1,0 +1,887 @@
+/* The Market's depth, in the terminal's one form: straight glass, thin edges, `--r-ctl` on what a
+   person presses, a chosen tab or filter quiet. Colours, type and corners are the terminal's tokens. */
+
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+  --rim: var(--pane-edge);
+}
+
+.grow {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.dim {
+  color: var(--dim);
+}
+
+/* ── lists, star, search ──────────────────────────────────────────────── */
+
+.lists {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.listTabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  min-width: 0;
+}
+
+.listTab {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 42px;
+  padding: 0 12px;
+  color: var(--dim);
+  font: 600 var(--type-base) / 1 var(--ui);
+  white-space: nowrap;
+  transition:
+    color 0.15s,
+    box-shadow 0.15s;
+}
+
+.listTab:hover {
+  color: var(--ice);
+}
+
+.listTab[aria-selected='true'] {
+  color: var(--ice);
+  box-shadow: inset 0 -2px 0 var(--ice);
+}
+
+.count {
+  font: 600 var(--type-small) / 1 var(--display);
+  font-variant-numeric: tabular-nums;
+  color: var(--dim);
+}
+
+.iconBtn {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 42px;
+  height: 42px;
+  border: 1px solid var(--glass-edge);
+  border-radius: var(--r-ctl);
+  background: rgba(255, 255, 255, 0.035);
+  color: var(--ice);
+  transition: border-color 0.15s;
+}
+
+.iconBtn:hover,
+.iconBtn[aria-pressed='true'],
+.iconBtn[aria-expanded='true'] {
+  border-color: var(--chosen-edge);
+  color: var(--ice);
+}
+
+/* The list in front — the saved coins: a lighter ground and a filled star, so it reads at a glance. */
+.iconBtn[aria-pressed='true'] {
+  background: var(--chosen);
+}
+
+.iconBtn[aria-pressed='true'] svg {
+  fill: currentColor;
+}
+
+.searchRow {
+  flex: 1 1 100%;
+}
+
+/* ── filters, windows, quick sum, Pro ─────────────────────────────────── */
+
+.bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.filters,
+.chip,
+.quickPick {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 38px;
+  padding: 0 14px;
+  border: 1px solid var(--glass-edge);
+  border-radius: var(--r-ctl);
+  background: rgba(255, 255, 255, 0.035);
+  color: var(--ice);
+  font: 600 var(--type-body) / 1 var(--ui);
+  white-space: nowrap;
+}
+
+.filters[data-on],
+.filters[aria-expanded='true'] {
+  border-color: var(--chosen-edge);
+  color: var(--ice);
+  background: var(--chosen);
+}
+
+.filters b {
+  font-weight: 700;
+}
+
+.chipWord {
+  color: var(--dim);
+  font-weight: 600;
+}
+
+.chip > svg {
+  width: 12px;
+  height: 12px;
+  color: var(--dim);
+}
+
+.chip:hover > svg {
+  color: var(--ice);
+}
+
+.chip[data-switch] {
+  cursor: pointer;
+}
+
+.windows {
+  display: inline-flex;
+  padding: 0;
+  border: 1px solid var(--glass-edge);
+  border-radius: var(--r-ctl);
+  background: var(--well);
+  overflow: hidden;
+}
+
+.window {
+  height: 36px;
+  padding: 0 13px;
+  color: var(--dim);
+  font: 600 var(--type-body) / 1 var(--ui);
+  white-space: nowrap;
+  transition:
+    background-color 0.15s,
+    color 0.15s;
+}
+
+.window:hover {
+  color: var(--ice);
+}
+
+/* The row of windows clips its parts: one shows its focus inside itself. */
+.window:focus-visible {
+  outline-offset: -2px;
+}
+
+.window[aria-checked='true'] {
+  background: var(--chosen);
+  color: var(--ice);
+}
+
+.quickPick b {
+  color: var(--ice);
+  font-weight: 700;
+}
+
+.quickPick .zap {
+  color: var(--mint);
+}
+
+/* A menu or a panel hanging from its button. */
+.pop {
+  position: relative;
+}
+
+.menu,
+.panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  z-index: 30;
+  border: 1px solid var(--glass-edge);
+  background: var(--panel-up);
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.55);
+}
+
+.menu {
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  min-width: 130px;
+  padding: 6px;
+}
+
+.menuItem {
+  height: 36px;
+  padding: 0 12px;
+  color: var(--ice);
+  text-align: left;
+  font: 600 var(--type-body) / 1 var(--ui);
+}
+
+.menuItem:hover,
+.menuItem[aria-checked='true'] {
+  background: var(--chosen);
+  color: var(--ice);
+}
+
+.panel {
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  width: min(560px, calc(100vw - 32px));
+  padding: 18px;
+}
+
+.panelRow {
+  display: grid;
+  grid-template-columns: 116px 1fr;
+  align-items: center;
+  gap: 12px;
+}
+
+.panelWord {
+  color: var(--dim);
+  font: 600 var(--type-body) / 1.2 var(--ui);
+}
+
+.choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.choice {
+  height: 32px;
+  padding: 0 11px;
+  border: 1px solid var(--glass-edge);
+  border-radius: var(--r-ctl);
+  color: var(--ice);
+  font: 600 var(--type-small) / 1 var(--ui);
+  white-space: nowrap;
+}
+
+.choice[aria-pressed='true'] {
+  border-color: var(--chosen-edge);
+  background: var(--chosen);
+  color: var(--ice);
+}
+
+.panelFoot {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.done {
+  height: 38px;
+  padding: 0 20px;
+  border-radius: var(--r-ctl);
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--ice);
+  font: 700 var(--type-body) / 1 var(--ui);
+  border: 1px solid var(--chosen-edge);
+}
+
+/* ── Pro strip ────────────────────────────────────────────────────────── */
+
+.strip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 22px;
+  padding: 2px 2px 0;
+  font: 600 var(--type-body) / 1 var(--ui);
+  font-variant-numeric: tabular-nums;
+}
+
+.stripCoin {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--ice);
+  white-space: nowrap;
+}
+
+.stripCoin span {
+  color: var(--dim);
+}
+
+.stripCoin span[data-tone='up'] {
+  color: var(--mint);
+}
+
+.stripCoin span[data-tone='down'] {
+  color: var(--flare);
+}
+
+.stripCount {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--dim);
+}
+
+.stripCount b {
+  color: var(--ice);
+}
+
+.stripCount .zap {
+  color: var(--lilac);
+}
+
+/* ── the table and the side ticket ────────────────────────────────────── */
+
+/* The table, beside the ticket's column (`Split`). */
+.table {
+  min-width: 0;
+  border: 1px solid var(--rim);
+  background: var(--glass);
+  overflow: hidden;
+}
+
+/* The ticket's column: the ticket, then the coin's facts. */
+.side {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
+/* One amber action on a screen: on a desk the home page's is «Say», in its first line, so the quick ticket's own
+   button stands quiet beside the table. On a phone the ticket is a sheet over the page, and its action is the sheet's
+   one. */
+@media (min-width: 768px) {
+  .side {
+    --act-ground: linear-gradient(180deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.09));
+    --act-ink: var(--ice);
+    --act-light: inset 0 1px 0 rgba(255, 255, 255, 0.18);
+  }
+}
+
+/* The folded sheet's bar on a phone. */
+.peek {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--ice);
+  font: 600 var(--type-base) / 1 var(--ui);
+}
+
+.peek > span {
+  color: var(--dim);
+  font-variant-numeric: tabular-nums;
+}
+
+.scroll {
+  overflow-x: auto;
+}
+
+.tbl {
+  display: grid;
+  column-gap: 10px;
+}
+
+.th,
+.tr {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: subgrid;
+  align-items: center;
+  padding: 0 16px;
+}
+
+.th {
+  height: 44px;
+  color: var(--dim);
+  font: 600 var(--type-small) / 1 var(--ui);
+  white-space: nowrap;
+}
+
+.tr {
+  position: relative;
+  min-height: 64px;
+  border-top: 1px solid var(--line);
+  color: var(--ice);
+  font: 600 var(--type-base) / 1.2 var(--ui);
+  font-variant-numeric: tabular-nums;
+  transition: background-color 0.12s;
+}
+
+.tr:hover {
+  background: rgba(238, 241, 255, 0.035);
+}
+
+.tr[aria-current='true'] {
+  background: rgba(255, 255, 255, 0.06);
+  box-shadow: inset 2px 0 0 var(--soft);
+}
+
+.cell {
+  min-width: 0;
+  white-space: nowrap;
+}
+
+.cell[data-end] {
+  display: flex;
+  justify-content: flex-end;
+  text-align: right;
+}
+
+.cell[data-tone='up'] {
+  color: var(--mint);
+}
+
+.cell[data-tone='down'] {
+  color: var(--flare);
+}
+
+.sort {
+  display: inline-flex;
+  align-items: center;
+  font: inherit;
+  color: inherit;
+  white-space: nowrap;
+  transition: color 0.15s;
+}
+
+.sort:hover {
+  color: var(--ice);
+}
+
+.sort[aria-pressed='true'] {
+  color: var(--ice);
+}
+
+.sort[data-dir='desc']::after {
+  content: ' ↓';
+  white-space: pre;
+}
+
+.sort[data-dir='asc']::after {
+  content: ' ↑';
+  white-space: pre;
+}
+
+.price {
+  font: 700 var(--type-base) / 1 var(--display);
+  font-variant-numeric: tabular-nums;
+}
+
+.coin {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.coinWords {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.coinSym {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+.sym {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font: 700 var(--type-base) / 1.1 var(--ui);
+}
+
+.check {
+  display: inline-flex;
+  color: var(--mint);
+}
+
+.check svg {
+  width: 13px;
+  height: 13px;
+}
+
+.coinSub {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--dim);
+  font: 500 var(--type-small) / 1.1 var(--ui);
+}
+
+.line {
+  width: 96px;
+  height: 28px;
+  fill: none;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke: var(--dim);
+}
+
+.line[data-tone='up'] {
+  stroke: var(--mint);
+}
+
+.line[data-tone='down'] {
+  stroke: var(--flare);
+}
+
+.rights {
+  display: inline-flex;
+  gap: 4px;
+}
+
+.right {
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  background: rgba(20, 241, 149, 0.12);
+  color: var(--mint);
+  font: 700 var(--type-caption) / 1 var(--ui);
+}
+
+.right[data-on] {
+  background: rgba(255, 75, 58, 0.14);
+  color: var(--flare);
+}
+
+.zap {
+  width: 15px;
+  height: 15px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linejoin: round;
+}
+
+.quick {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-width: 40px;
+  height: 34px;
+  padding: 0 9px;
+  border: 1px solid rgba(20, 241, 149, 0.4);
+  border-radius: var(--r-ctl);
+  background: rgba(20, 241, 149, 0.06);
+  color: var(--mint);
+  font: 700 var(--type-body) / 1 var(--ui);
+  font-variant-numeric: tabular-nums;
+  transition:
+    background-color 0.15s,
+    border-color 0.15s;
+}
+
+.quick:hover {
+  border-color: var(--mint);
+  background: rgba(20, 241, 149, 0.14);
+}
+
+.star {
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--r-ctl);
+  color: rgba(238, 241, 255, 0.3);
+  transition: color 0.15s;
+}
+
+.star:hover {
+  color: var(--ice);
+}
+
+.star[aria-pressed='true'] {
+  color: var(--ice);
+}
+
+.star[aria-pressed='true'] svg {
+  fill: currentColor;
+}
+
+.bs {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 5px;
+}
+
+.buy {
+  color: var(--mint);
+}
+
+.sell {
+  color: var(--flare);
+}
+
+.bsBar {
+  width: 88px;
+  height: 3px;
+  background: linear-gradient(90deg, var(--mint) var(--buy), var(--flare) var(--buy));
+}
+
+.none {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  padding: 22px 18px;
+  border-top: 1px solid var(--line);
+  color: var(--dim);
+  font: 600 var(--type-body) / 1.3 var(--ui);
+}
+
+.noneBtn {
+  height: 36px;
+  padding: 0 16px;
+  border: 1px solid var(--glass-edge);
+  border-radius: var(--r-ctl);
+  color: var(--ice);
+  font: 700 var(--type-body) / 1 var(--ui);
+}
+
+.noneBtn:disabled {
+  opacity: 0.4;
+}
+
+.ticketHead {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.ticketWords {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.ticketSym {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font: 700 var(--type-action) / 1.1 var(--ui);
+}
+
+.ticketPrice {
+  flex: none;
+  color: var(--ice);
+  font: 800 var(--type-headline) / 1 var(--display);
+  font-variant-numeric: tabular-nums;
+}
+
+.ticketPrice[data-long] {
+  font-size: var(--type-lead);
+}
+
+.ticketName {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--dim);
+  font: 500 var(--type-small) / 1.1 var(--ui);
+}
+
+.ticketHead .iconBtn {
+  width: 34px;
+  height: 34px;
+}
+
+.facts {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.fact {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  background: rgba(0, 0, 0, 0.25);
+}
+
+.factWord {
+  color: var(--dim);
+  font: 500 var(--type-small) / 1 var(--ui);
+}
+
+.factValue {
+  font: 700 var(--type-base) / 1 var(--display);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── a phone ──────────────────────────────────────────────────────────── */
+
+.phoneList {
+  display: flex;
+  flex-direction: column;
+}
+
+.phoneRow {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto auto;
+  align-items: center;
+  gap: 10px;
+  min-height: 66px;
+  padding: 8px 14px;
+  border-top: 1px solid var(--line);
+  color: var(--ice);
+}
+
+.phoneRow:first-child {
+  border-top: 0;
+}
+
+.phoneFig {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  font: 600 var(--type-small) / 1 var(--ui);
+  font-variant-numeric: tabular-nums;
+}
+
+.phoneFig span[data-tone='up'] {
+  color: var(--mint);
+}
+
+.phoneFig span[data-tone='down'] {
+  color: var(--flare);
+}
+
+@media (max-width: 767px) {
+  .lists {
+    gap: 8px;
+  }
+
+  .listTabs {
+    flex-wrap: nowrap;
+    order: 3;
+    flex: 1 1 100%;
+    margin: 0 -16px;
+    padding: 0 16px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .listTab {
+    height: 38px;
+    padding: 0 14px;
+  }
+
+  .searchRow {
+    order: 4;
+  }
+
+  .windows {
+    flex: 1 1 auto;
+    justify-content: space-between;
+  }
+
+  .window {
+    padding: 0 10px;
+  }
+
+  .quick {
+    min-width: 40px;
+    height: 40px;
+  }
+
+  .phoneRow .coinSub {
+    font-size: var(--type-caption);
+  }
+
+  .phoneRow .right {
+    width: 20px;
+    height: 20px;
+  }
+
+  .phoneRow {
+    gap: 8px;
+    padding: 8px 12px;
+  }
+}
+
+.marketTitle {
+  margin: 0 8px 0 0;
+  color: var(--ice);
+  font: 700 var(--type-figure) / 1.1 var(--ui);
+  letter-spacing: -0.01em;
+}
+
+/* A row opens its coin: the coin's own link stretches over the whole row; the buttons stand above it. */
+.rowLink {
+  display: block;
+  min-width: 0;
+  color: inherit;
+}
+
+.rowLink::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+
+.rowLink:focus-visible {
+  outline: none;
+}
+
+.rowLink:focus-visible::after {
+  outline: 2px solid var(--lilac);
+  outline-offset: -2px;
+}
+
+.quick,
+.star,
+.right {
+  position: relative;
+  z-index: 2;
+}
+
+/* A phone: the table is the width of its screen — from edge to edge, through the body's gutter; a finger's row on the
+   filters and the windows. */
+@media (max-width: 767px) {
+  .table {
+    margin-inline: calc(-1 * var(--bleed, 0px));
+    border-inline-width: calc(1px - min(1px, var(--bleed, 0px)));
+  }
+
+  .filters,
+  .chip,
+  .quickPick {
+    height: 44px;
+  }
+
+  .window {
+    height: 42px;
+  }
+}
+
+/* Under a finger the star answers on a 44 px place. */
+@media (pointer: coarse) {
+  .star::after {
+    content: '';
+    position: absolute;
+    inset: -8px;
+  }
+}

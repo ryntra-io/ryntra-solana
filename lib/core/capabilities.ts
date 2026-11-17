@@ -220,7 +220,7 @@ export const CAPABILITY_REGISTRY: readonly CapabilityRow[] = Object.freeze([
     attribution: null,
     pipeline: null,
     authority: [],
-    note: "A launch pool of DLMM Pro: no curve and no migration, a fee that falls with the price, an opening time; in the engine, on no route.",
+    note: "A launch straight into a DLMM Pro pool: no curve, a fee that falls with the market cap, an opening time, the supply locked for ever; on its own routes, closed on mainnet.",
   },
   {
     network: "solana",
@@ -237,7 +237,7 @@ export const CAPABILITY_REGISTRY: readonly CapabilityRow[] = Object.freeze([
     attribution: null,
     pipeline: null,
     authority: [],
-    note: "Positions of many ranges from a shape, a permanent lock, a delegate, pool rewards; in the engine, on no route.",
+    note: "Positions of many ranges from a goal, a permanent lock, a delegate, pool rewards, an agent's care by the delegate; earning on devnet only, closed on mainnet until it is opened in code.",
   },
   {
     network: "solana",
@@ -254,7 +254,7 @@ export const CAPABILITY_REGISTRY: readonly CapabilityRow[] = Object.freeze([
     attribution: null,
     pipeline: null,
     authority: [],
-    note: "Limit-order ladders that rest in the pool and earn a share of the fee; in the engine, on no route.",
+    note: "Limit-order ladders that rest in the pool and earn a share of the fee; behind the ladders' own gate (lib/pro-limits/gate.ts), closed on mainnet by a constant of the venue's.",
   },
   {
     network: "solana",

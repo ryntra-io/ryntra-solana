@@ -1,0 +1,265 @@
+/* The coin screen of direction A and its «Pro» panel: macket v2 `A-Coin`, `B-Coin`. Rounded dark glass;
+   colours and type are the terminal's tokens. */
+
+.box {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  height: 100%;
+  min-height: 420px;
+  padding: 16px 18px 18px;
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.grow {
+  flex: 1 1 0;
+}
+
+.periods {
+  display: inline-flex;
+  padding: 0;
+  border: 1px solid rgba(238, 241, 255, 0.08);
+  border-radius: var(--r-ctl);
+  background: var(--well);
+  overflow: hidden;
+}
+
+.period {
+  height: 36px;
+  padding: 0 16px;
+  color: var(--dim);
+  font: 600 var(--type-base) / 1 var(--ui);
+  transition:
+    background-color 0.15s,
+    color 0.15s;
+}
+
+.period:hover {
+  color: var(--ice);
+}
+
+.period:focus-visible {
+  outline-offset: -2px;
+}
+
+.period[aria-checked='true'] {
+  background: rgba(238, 241, 255, 0.09);
+  color: var(--ice);
+}
+
+.plot {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 300px;
+  padding-right: 64px;
+}
+
+.svg {
+  width: 100%;
+  height: 100%;
+  min-height: 300px;
+  color: var(--amber);
+  overflow: visible;
+}
+
+.path {
+  fill: none;
+  stroke: var(--amber);
+  stroke-width: 2.4;
+  stroke-linejoin: round;
+  filter: drop-shadow(0 0 6px rgba(255, 178, 63, 0.45));
+}
+
+.grid {
+  stroke: rgba(238, 241, 255, 0.06);
+  stroke-width: 1;
+}
+
+.dot {
+  position: absolute;
+  right: 64px;
+  width: 12px;
+  height: 12px;
+  margin: -6px -6px 0 0;
+  border-radius: 50%;
+  background: var(--amber);
+  box-shadow: 0 0 0 6px rgba(255, 178, 63, 0.18);
+}
+
+.scale {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  width: 60px;
+  padding: 2px 0;
+  color: var(--dim);
+  text-align: right;
+  font: 500 var(--type-caption) / 1 var(--ui);
+  font-variant-numeric: tabular-nums;
+}
+
+.none {
+  margin: 0;
+  padding: 40px 0;
+  color: var(--dim);
+  text-align: center;
+  font: 600 var(--type-body) / 1.3 var(--ui);
+}
+
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.tile {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px 18px;
+  border: 1px solid rgba(238, 241, 255, 0.09);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.012)), var(--panel);
+}
+
+.tileWord {
+  color: var(--dim);
+  font: 500 var(--type-small) / 1 var(--ui);
+}
+
+.tileValue {
+  color: var(--ice);
+  font: 800 var(--type-title-l) / 1 var(--display);
+  font-variant-numeric: tabular-nums;
+}
+
+.flow {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px 18px;
+  border: 1px solid rgba(238, 241, 255, 0.09);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.012)), var(--panel);
+}
+
+.flowTitle {
+  margin: 0;
+  color: var(--ice);
+  font: 700 var(--type-lead) / 1.2 var(--ui);
+}
+
+.flowTable {
+  display: flex;
+  flex-direction: column;
+}
+
+.flowHead,
+.flowRow {
+  position: relative;
+  display: grid;
+  grid-template-columns: 0.8fr 1fr 1fr 1fr;
+  align-items: center;
+  column-gap: 8px;
+  font-variant-numeric: tabular-nums;
+}
+
+.flowHead {
+  height: 28px;
+  color: var(--dim);
+  font: 600 var(--type-caption) / 1 var(--ui);
+}
+
+.flowHead > span:not(:first-child),
+.flowRow > span:not(:first-child) {
+  text-align: right;
+}
+
+.flowRow {
+  height: 40px;
+  border-top: 1px solid var(--line);
+  color: var(--ice);
+  font: 600 var(--type-body) / 1 var(--ui);
+}
+
+.flowWin {
+  color: var(--dim);
+}
+
+.buy {
+  color: var(--mint);
+}
+
+.sell {
+  color: var(--flare);
+}
+
+.flowBar {
+  position: absolute;
+  right: 0;
+  bottom: 4px;
+  left: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--mint) var(--buy), var(--flare) var(--buy));
+  opacity: 0.55;
+}
+
+.flowFacts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.flowFacts > span {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.flowFacts b {
+  color: var(--ice);
+  font: 700 var(--type-base) / 1.1 var(--display);
+}
+
+.rights {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.rights > span {
+  color: var(--mint);
+  font: 600 var(--type-small) / 1.1 var(--ui);
+}
+
+.rights > span[data-on] {
+  color: var(--flare);
+}
+
+@media (max-width: 767px) {
+  .box {
+    min-height: 300px;
+    padding: 12px;
+  }
+
+  .plot,
+  .svg {
+    min-height: 220px;
+  }
+
+  .period {
+    padding: 0 12px;
+  }
+
+  .tiles {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

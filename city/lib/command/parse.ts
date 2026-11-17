@@ -4,6 +4,8 @@ import type { PilotAsk } from '../pilot/read.ts';
 import type { HireAsk } from '../crew/read.ts';
 import type { Instruction } from '../instruct/types.ts';
 import { learnAsk } from '../learn/ask.ts';
+import { poolAskOf, withoutPoolWords } from '../launch/pool-ask.ts';
+import type { LadderAsk } from '../trade/pro-read.ts';
 import { SOL, USDC } from '../trade/tiles.ts';
 
 /**
@@ -44,7 +46,8 @@ export type Command =
   | Readonly<{ kind: 'mint'; mint: string }>
   | Readonly<{ kind: 'money'; place: MoneyPlace; send: Readonly<{ to: string | null; amount: string | null; asset: Coin | null }> | null }>
   | Readonly<{ kind: 'earn' }>
-  | Readonly<{ kind: 'launch'; symbol: string | null; name: string | null }>
+  /** `pool` — the sentence as it was said, when it asks for a launch straight into a pool: the sheet reads the time and the pair from it. */
+  | Readonly<{ kind: 'launch'; symbol: string | null; name: string | null; pool?: string }>
   /** The agent's card: a regular purchase, a limit or a stop read from the sentence — the person signs there. */
   | Readonly<{ kind: 'instruct'; instruction: Instruction }>
   /** What the agent set from sentences, with their state and «Cancel». */
@@ -57,6 +60,8 @@ export type Command =
   | Readonly<{ kind: 'pilot'; ask: PilotAsk }>
   /** A job for an agent: «trade for me», «доглядай мій пул», «запусти бота» — that agent's card, or the crew in «Bots». */
   | Readonly<{ kind: 'hire'; ask: HireAsk }>
+  /** «Buy cheaper», «sell higher» on its word: the coin's window with its ladder filled in; the person signs there. */
+  | Readonly<{ kind: 'ladder'; ask: LadderAsk }>
   /** «Learn»: the guide, on the chapter the sentence names (null — the list of chapters). */
   | Readonly<{ kind: 'learn'; chapter: string | null }>
   /** Everything else: a question for Ryntra, who reads the market and advises — and does nothing else. */
@@ -68,7 +73,12 @@ export type Kind = Command['kind'];
 export type Book = Readonly<{ coins: readonly Coin[] }>;
 
 /** What the person is looking at: the coin of the window in front, or the tower picked — «buy 50» means that one. */
-export type Context = Readonly<{ subject: Coin | null }>;
+/**
+ * What the sentence is read against: the coin on screen, and whether «… в пул» is read as a launch
+ * straight into a pool. Absent or false — it is not, and the line reads every sentence as it always did: the pool's
+ * door is shut.
+ */
+export type Context = Readonly<{ subject: Coin | null; pools?: boolean }>;
 
 /** The longest command read: a sentence, not a document. */
 export const COMMAND_MAX = 140;
@@ -108,6 +118,13 @@ const PAIRS: readonly [RegExp, RegExp, keyof typeof VERBS][] = [
   [/^(pay|payment)$/u, /^link$/u, 'paylink'],
   [/^посиланн\p{L}*$/u, /^(на|для)$/u, 'paylink'],
 ];
+
+/**
+ * «What do I have?», «що в мене є?» — a look at one's own money, not advice asked: the portfolio, before any question
+ * goes to Ryntra. Only the whole sentence: «what do I have to pay?» stays a question.
+ */
+const MINE =
+  /^(?:what\s+do\s+i\s+(?:have|own|hold)|what(?:'s|’s|\s+is)\s+in\s+my\s+wallet|how\s+much\s+do\s+i\s+have|(?:що|скільки)\s+(?:в|у)\s+мене(?:\s+(?:є|грошей|коштів))?|що\s+(?:в|у)\s+моєму\s+гаманці)\s*\??$/iu;
 
 /** A question, whatever it mentions: Ryntra answers it. «Should I buy JUP?» is advice asked, not a trade. */
 const QUESTION =
@@ -339,15 +356,29 @@ function known(token: Token, book: Book): boolean {
   );
 }
 
+/** The command line reads whether a pool was asked for, never when: the sheet reads the time at the moment it opens. */
+const POOL_EPOCH = new Date(0);
+
 /**
  * What the sentence asks for. A question — a question word first, or a «?» at the end — is always Ryntra's to answer;
  * a sentence that names no window, or names one without what it needs (a trade without a coin), is too.
  */
 export function parse(input: string, book: Book, context: Context = { subject: null }): Command {
+  /* «… в пул о 20:00» — where the pool's door is open, its own words are taken out before the coin's name and ticker are read, and kept for the sheet. */
+  const said = input.slice(0, COMMAND_MAX).trim();
+  if (context.pools === true && poolAskOf(said, POOL_EPOCH).asked) {
+    const plain = withoutPoolWords(said);
+    if (plain && !poolAskOf(plain, POOL_EPOCH).asked) {
+      const inner = parse(plain, book, context);
+      if (inner.kind === 'launch') return { ...inner, pool: said };
+    }
+  }
   const text = input.slice(0, COMMAND_MAX).trim();
   const question = text;
   const list = tokens(text);
   if (!list.length) return { kind: 'ask', question };
+  // «What do I have?» is the portfolio, never a question for Ryntra.
+  if (MINE.test(text)) return { kind: 'money', place: 'portfolio', send: null };
   // «How does the agent work?» is the guide's to answer, before any question goes to Ryntra.
   const learn = learnAsk(text);
   if (learn !== undefined) return { kind: 'learn', chapter: learn };
@@ -555,6 +586,8 @@ export type Gates = Readonly<{
   dollar?: boolean;
   /** The money autopilot: its switch over the agent's and the mandate's. */
   pilot?: boolean;
+  /** Ladders in the coin's window: the window's switch, over trading's. */
+  ladder?: boolean;
 }>;
 
 /**
@@ -581,6 +614,8 @@ export function fit(command: Command, gates: Gates): Command | null {
       return gates.dollar === true ? command : null;
     case 'pilot':
       return gates.pilot === true ? command : null;
+    case 'ladder':
+      return gates.ladder === true && gates.trade ? command : null;
     case 'autopilot':
       return (command.ask.kind === 'trade' ? gates.agentTrade === true : gates.agentLaunch === true && gates.launch) ? command : null;
     default:
@@ -630,6 +665,8 @@ export function keyOf(command: Command): string {
       return `dollar:${command.ask.side}:${command.ask.asset}`;
     case 'pilot':
       return 'pilot';
+    case 'ladder':
+      return `ladder:${command.ask.action}:${command.ask.coin.mint}`;
     case 'learn':
       return `learn:${command.chapter ?? ''}`;
     case 'hire':

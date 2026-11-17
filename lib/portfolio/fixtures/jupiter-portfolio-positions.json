@@ -1,0 +1,131 @@
+{
+ "date": 1795305600000,
+ "owner": "6mch5rCLBtZ9DCnM2mx18Ud1XXhXAip7otw9LkrTXwTD",
+ "elements": [
+  {
+   "networkId": "solana",
+   "platformId": "wallet-tokens",
+   "type": "multiple",
+   "label": "Wallet",
+   "value": 588.6,
+   "data": {
+    "assets": [
+     {
+      "type": "token",
+      "networkId": "solana",
+      "value": 125.5,
+      "data": {
+       "address": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+       "amount": 125.5,
+       "price": 1
+      }
+     }
+    ]
+   }
+  },
+  {
+   "networkId": "solana",
+   "platformId": "drift",
+   "type": "borrowlend",
+   "label": "Lending",
+   "value": 210.0,
+   "name": "Drift account",
+   "data": {
+    "ref": "4e2pvH9nqStwmK5fiPB8gygkbEMpkdDSASksLzjfbgMk",
+    "suppliedAssets": [
+     {
+      "type": "token",
+      "networkId": "solana",
+      "value": 250.0,
+      "data": {
+       "address": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+       "amount": 250,
+       "price": 1
+      }
+     }
+    ],
+    "suppliedValue": 250.0,
+    "borrowedAssets": [
+     {
+      "type": "token",
+      "networkId": "solana",
+      "value": 40.0,
+      "data": {
+       "address": "So11111111111111111111111111111111111111112",
+       "amount": 0.28,
+       "price": 142.5
+      }
+     }
+    ],
+    "borrowedValue": 40.0,
+    "rewardAssets": [],
+    "rewardValue": 0,
+    "healthRatio": 0.8,
+    "value": 210.0
+   }
+  },
+  {
+   "networkId": "solana",
+   "platformId": "kamino",
+   "type": "borrowlend",
+   "label": "Lending",
+   "value": 1099.96,
+   "data": {
+    "ref": "DTC2FQPScaJ5Lv1sv5S2fLhQ8Wwc3grow464redr4QYQ",
+    "suppliedAssets": [],
+    "suppliedValue": 1500.0,
+    "borrowedAssets": [],
+    "borrowedValue": 400.04,
+    "value": 1099.96
+   }
+  },
+  {
+   "networkId": "solana",
+   "platformId": "meteora",
+   "type": "liquidity",
+   "label": "LiquidityPool",
+   "value": 12.0,
+   "data": {
+    "liquidities": [
+     {
+      "assets": [],
+      "assetsValue": 12.0,
+      "rewardAssets": [],
+      "rewardAssetsValue": 0,
+      "value": 12.0,
+      "yields": [],
+      "ref": "8dRtxg5xzetRyzYjyWPhcLMAVdyhbPpJo1u1J87Fh9XL"
+     }
+    ]
+   }
+  },
+  {
+   "networkId": "solana",
+   "platformId": "marinade",
+   "type": "multiple",
+   "label": "Staked",
+   "value": 71.25,
+   "data": {
+    "assets": [
+     {
+      "type": "generic",
+      "networkId": "solana",
+      "value": 71.25,
+      "name": "Marinade Native",
+      "data": {
+       "address": "So11111111111111111111111111111111111111112",
+       "amount": 0.5,
+       "price": 142.5
+      }
+     }
+    ]
+   }
+  },
+  {
+   "networkId": "solana",
+   "type": "multiple",
+   "label": "Unknown",
+   "value": 1
+  }
+ ]
+}

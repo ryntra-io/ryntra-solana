@@ -4,12 +4,11 @@ import { join } from 'node:path';
 
 import { ImageResponse } from 'next/og';
 
-import { SHARE_SCENE } from '@/city/lib/art/frames';
 import { BRAND } from '@/city/lib/brand';
 import type { Lang } from '@/city/lib/i18n/langs';
 import { PALETTE } from '@/city/lib/palette';
 import { SITE_ORIGIN } from '@/lib/product/app-address';
-import { CITY_CARD_SIZE } from './card';
+import { CITY_CARD_SIZE, shareScene } from './card';
 import type { Words } from '@/city/lib/i18n/dict';
 import { CARD_WORDS, type CardLine } from './words';
 
@@ -71,9 +70,9 @@ const SCENE_MS = 4_000;
  * is then fetched from the site itself, where `public/` is served. A miss is not kept, so the next card asks again.
  */
 export function sceneUri(): Promise<string | null> {
-  scene ??= readFile(join(process.cwd(), 'public', ...SHARE_SCENE.src.split('/').filter(Boolean)))
+  scene ??= readFile(join(process.cwd(), 'public', ...shareScene().src.split('/').filter(Boolean)))
     .catch(() =>
-      fetch(`${SITE_ORIGIN}${SHARE_SCENE.src}`, { signal: AbortSignal.timeout(SCENE_MS) }).then((r) =>
+      fetch(`${SITE_ORIGIN}${shareScene().src}`, { signal: AbortSignal.timeout(SCENE_MS) }).then((r) =>
         r.ok ? r.arrayBuffer().then((b) => Buffer.from(b)) : Promise.reject(new Error(String(r.status))),
       ),
     )

@@ -34,6 +34,7 @@ export type RefusalKind =
   | 'unexpected'
   | 'shares'
   | 'partial'
+  | 'poolHalf'
   | 'picture'
   | 'pictureUnchecked'
   | 'ticker'
@@ -136,6 +137,9 @@ function read(failure: LaunchFailure, wallet: string | null, w: W): Read {
       return by('unexpected', w.unexpected, 'retry', 'nothingSigned');
     case EARLY_PARTIAL:
       return by('partial', w.partial, 'close', 'partLanded');
+    /* A launch into a pool stopped between its steps — what landed is paid for, the rest waits for «Continue». */
+    case 'POOL_HALF_WAY':
+      return by('poolHalf', w.poolHalf, 'retry', 'partLanded');
     case 'LAUNCH_SHARES_INVALID':
       return by('shares', w.sharesInvalid, 'edit');
     case 'LAUNCH_NAME_BORROWED': {

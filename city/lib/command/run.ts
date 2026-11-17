@@ -3,6 +3,7 @@ import type { DollarAsk } from '../earn/dollar-read.ts';
 import type { PilotAsk } from '../pilot/read.ts';
 import type { Role } from '../crew/read.ts';
 import type { Instruction } from '../instruct/types.ts';
+import type { LadderAsk } from '../trade/pro-read.ts';
 import type { Base, Coin, Command, MoneyPlace, Side, View } from './parse.ts';
 
 /**
@@ -35,7 +36,7 @@ export type Doors = Readonly<{
   fillSend: (fill: Readonly<{ to: string | null; amount: string | null; asset: Coin | null }>) => void;
   openEarn: () => void;
   /** The launch sheet, with the ticker and the name when said; a launch under way is never touched. */
-  openLaunch: (draft: Readonly<{ symbol: string | null; name: string | null }>) => void;
+  openLaunch: (draft: Readonly<{ symbol: string | null; name: string | null; pool?: string }>) => void;
   /** Ryntra's panel, asking the question: advice only. */
   askRyntra: (question: string) => void;
   /** The agent's card with the instruction read: it shows what will be set; the person signs there. */
@@ -52,6 +53,8 @@ export type Doors = Readonly<{
   openPilot: (ask: PilotAsk) => void;
   /** A job for an agent: that agent's own card, or the crew in «Bots» (null); the person signs in the card. */
   openCrew: (role: Role | null) => void;
+  /** «Buy cheaper», «sell higher»: the coin's window with the ladder's panel filled in; the person signs there. */
+  openLadder: (ask: LadderAsk) => void;
 }>;
 
 export type DoorName = keyof Doors;
@@ -78,6 +81,7 @@ export const DOORS: readonly DoorName[] = [
   'openPilot',
   'openLearn',
   'openCrew',
+  'openLadder',
 ];
 
 /** One command through the doors: the window first, then its fields, in the order a person would fill them. */
@@ -114,7 +118,7 @@ export function run(command: Command, doors: Doors): void {
     case 'earn':
       return doors.openEarn();
     case 'launch':
-      return doors.openLaunch({ symbol: command.symbol, name: command.name });
+      return doors.openLaunch({ symbol: command.symbol, name: command.name, ...(command.pool ? { pool: command.pool } : {}) });
     case 'ask':
       return doors.askRyntra(command.question);
     case 'instruct':
@@ -127,6 +131,8 @@ export function run(command: Command, doors: Doors): void {
       return doors.openDollar(command.ask);
     case 'pilot':
       return doors.openPilot(command.ask);
+    case 'ladder':
+      return doors.openLadder(command.ask);
     case 'learn':
       return doors.openLearn(command.chapter);
     case 'hire':

@@ -10,6 +10,9 @@ import type { Liftoff, Phase } from './flow.ts';
 import { cityLaunchOpen, cityPreset, cityPresets, type CityPresetId } from './gate.ts';
 import { createPrep, type Prep, type PrepState } from './prepare.ts';
 import { CITY_EARLY_ACCESS_SWITCH, type EarlyBounds, type EarlyChoice } from './early.ts';
+import type { Pooled } from './flow.ts';
+import { CITY_POOL_SWITCH, httpPoolEngine, poolDoorOpen, usePool, type PoolEngine, type PoolListed } from './pool.ts';
+import { poolTowersKey, withPoolLaunches } from './pool-towers.ts';
 import { earlyFrom, httpEntryEngine, type EntryEngine } from './entry.ts';
 import { CITY_SHARE_SWITCH, type ShareRow } from './share.ts';
 import { cityStartPreset } from './shield.ts';
@@ -133,7 +136,7 @@ export const useLaunch = create<DistrictState>((set) => ({
   choosePreset: (id) => set((state) => ({ preset: cityPresets({ presets: state.presets })[id] ?? state.preset })),
   openSheet: () => {
     useCity.getState().select(null);
-    set((state) => ({ sheet: true, opened: state.opened + 1, entry: null, ...(state.phase?.step === 'done' || state.phase?.step === 'opened' ? { phase: null, step: 'form' as const, draft: EMPTY, shares: [], early: null } : {}) }));
+    set((state) => ({ sheet: true, opened: state.opened + 1, entry: null, ...(state.phase?.step === 'done' || state.phase?.step === 'opened' || state.phase?.step === 'pooled' ? { phase: null, step: 'form' as const, draft: EMPTY, shares: [], early: null } : {}) }));
   },
   closeSheet: () => set((state) => ({ sheet: false, ...(state.phase?.step === 'failed' ? { phase: null } : {}) })),
 }));
@@ -238,6 +241,57 @@ export function launchEntryEngine(): Promise<EntryEngine> {
   return made;
 }
 
+let poolEngine: Promise<PoolEngine> | null = null;
+const loadPoolStub = process.env.NODE_ENV === 'production' ? null : () => import('./pool-stub.ts');
+
+/**
+ * The engine's routes of a launch into a pool: over HTTP, or the stand-in's beside the stub engine. A load
+ * that fails is let go, so the next press asks again.
+ */
+export function launchPoolEngine(): Promise<PoolEngine> {
+  if (poolEngine) return poolEngine;
+  const made = useLaunch.getState().stub && loadPoolStub ? loadPoolStub().then((pool) => pool.stubPoolEngine({ delayMs: 650 * stubPace() })) : Promise.resolve(httpPoolEngine());
+  poolEngine = made;
+  made.catch(() => {
+    if (poolEngine === made) poolEngine = null;
+  });
+  return made;
+}
+
+/** Whether the pool's door is open here: the deployment's switch — or the stand's `&pool=open` — on its network. Shut, nothing of the format is read or drawn. */
+export function poolDoorHere(): boolean {
+  const launch = useLaunch.getState();
+  return poolDoorOpen(launch.network, usePool.getState().switchOpen, launch.stub || undefined);
+}
+
+/** A launch into a pool landed from this browser: its tower stands at once, and the engine's list takes over at its next read. */
+export function poolLanded(pooled: Pooled, creator: string): void {
+  const pool = usePool.getState();
+  const own: PoolListed = { mint: pooled.mint, pool: pooled.pool, creator, name: pooled.name, symbol: pooled.symbol, metadataUri: '', pair: pool.choice?.pair ?? 'SOL', opensAt: pooled.opensAt, phase: 'COUNTDOWN', createdAt: new Date().toISOString() };
+  pool.setLaunches([own, ...pool.launches.filter((launch) => launch.mint !== pooled.mint)]);
+  void readPools();
+}
+
+/** The engine's list of launches into a pool, read into the city; a read that fails keeps what the city has. */
+async function readPools(): Promise<void> {
+  const answer = await (await launchPoolEngine()).list().catch(() => null);
+  if (!answer?.ok) return;
+  /* A launch of this browser the list does not carry yet stays until it does. */
+  const listed = new Set(answer.data.launches.map((launch) => launch.mint));
+  const fresh = usePool.getState().launches.filter((launch) => !listed.has(launch.mint) && Date.now() - Date.parse(launch.createdAt) < 10 * 60_000);
+  usePool.getState().setLaunches([...fresh, ...answer.data.launches]);
+}
+
+/** How often the city asks for the launches into a pool. */
+const POOLS_EVERY_MS = 30_000;
+
+function startPools(): void {
+  void readPools();
+  setInterval(() => {
+    if (typeof document === 'undefined' || document.visibilityState === 'visible') void readPools();
+  }, POOLS_EVERY_MS);
+}
+
 let prep: Prep | null = null;
 
 /**
@@ -276,6 +330,8 @@ async function boot() {
     /* The stand opens early access only when asked (`&early=open`): shut by default there too. */
     const asked = new URLSearchParams(window.location.search);
     useLaunch.setState({ stub: true, earlySwitch: CITY_EARLY_ACCESS_SWITCH || asked.get('early') === 'open', shareSwitch: asked.get('share') !== 'closed' });
+    /* The stand opens the pool format only when asked (`&pool=open`): shut by default there too. */
+    usePool.getState().setSwitch(CITY_POOL_SWITCH || asked.get('pool') === 'open');
     /* The stand-in's trade routes load with it, not on the first tap. */
     void launchTradeEngine().catch(() => undefined);
   }
@@ -293,9 +349,16 @@ async function boot() {
     /* A tower picked in the city closes the sheet; what was typed stays for the next time it opens. */
     if (state.selectedId && state.selectedId !== before.selectedId && (useLaunch.getState().sheet || useLaunch.getState().entry)) useLaunch.setState({ sheet: false, entry: null });
   });
+  usePool.subscribe((state, before) => {
+    if (state.launches !== before.launches || state.views !== before.views) mergeIntoCity();
+  });
   setInterval(playNext, 500);
   /* The launches are read only where the engine serves Launch. */
-  if (await readPresets(source)) startFeed(source);
+  if (await readPresets(source)) {
+    startFeed(source);
+    /* The launches into a pool, only where their door is open — the stand's own word stands in for mainnet's there. */
+    if (poolDoorHere()) startPools();
+  }
 }
 
 /** The engine's presets: true once read; a deployment without Launch says so once, a silent engine is asked again. */
@@ -311,6 +374,18 @@ async function readPresets(source: LaunchEngine): Promise<boolean> {
   }
   useLaunch.setState({ status: 'unavailable' });
   return false;
+}
+
+let presetsRead: Promise<boolean> | null = null;
+
+/**
+ * The engine's presets read into the district once for the page, and nothing else: no feed, no towers laid into the
+ * city, no moments (`startDistrict` reads them and starts those too). The terminal's Launch screen stands on this
+ * store and the city's flows, and draws no city.
+ */
+export function readLaunchPresets(): Promise<boolean> {
+  presetsRead ??= readPresets(launchEngine());
+  return presetsRead;
 }
 
 function startFeed(source: LaunchEngine) {
@@ -343,10 +418,13 @@ function mergeIntoCity() {
   if (!produced.has(current)) base = current;
   if (!base || base.towers.length === 0) return;
   const launches = allLaunches(useLaunch.getState());
-  const key = launchesKey(launches);
+  const pools = usePool.getState();
+  const viewer = useLaunch.getState().connection?.address ?? null;
+  const seconds = Math.floor(Date.now() / 1000);
+  const key = `${launchesKey(launches)}#${poolTowersKey(pools.launches, pools.views, viewer, seconds)}`;
   if (produced.has(current) && key === shownKey) return;
   shownKey = key;
-  const next = withLaunches(base, launches);
+  const next = withPoolLaunches(withLaunches(base, launches), pools.launches, pools.views, viewer, seconds);
   if (next === base) {
     if (current !== base) city.setSnapshot(base);
     return;

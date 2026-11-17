@@ -1,0 +1,297 @@
+/* A position's range in the ticket: its line, the pool's bins with the range over them, the two prices, the
+   width by hand, and the facts before the signature. One form: straight blocks (0), what is pressed takes the kit's own
+   corner (--r-ctl), and nothing else is rounded. Colours and sizes are the terminal's tokens. */
+
+.line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 36px;
+}
+
+.line > span:first-child {
+  flex: 1 1 0;
+  min-width: 0;
+  font-size: var(--type-small);
+  font-weight: 600;
+  color: var(--ice);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.35;
+}
+
+.turn {
+  display: inline-flex;
+  transition: transform 0.15s;
+}
+
+.turn[data-open] {
+  transform: rotate(180deg);
+}
+
+.editor {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px;
+  background: var(--well);
+  border: 1px solid var(--line);
+}
+
+/* ── the bins ──────────────────────────────────────────────────────────── */
+
+.chart {
+  position: relative;
+  height: 132px;
+  border-bottom: 1px solid var(--line);
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.chart[data-live] {
+  cursor: ew-resize;
+  touch-action: pan-y;
+}
+
+.chart[data-state] {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.chart[data-state='reading'] {
+  background: linear-gradient(90deg, transparent, rgba(238, 241, 255, 0.04), transparent);
+}
+
+.bars {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.bar {
+  fill: rgba(201, 162, 255, 0.2);
+}
+
+.bar[data-side='y'] {
+  fill: rgba(20, 241, 149, 0.16);
+}
+
+.bar[data-in] {
+  fill: rgba(201, 162, 255, 0.72);
+}
+
+.bar[data-in][data-side='y'] {
+  fill: rgba(20, 241, 149, 0.6);
+}
+
+.bar[data-active] {
+  fill: var(--ice);
+}
+
+.shape {
+  fill: none;
+  stroke: var(--ice);
+  stroke-width: 1.5;
+  stroke-opacity: 0.55;
+  stroke-dasharray: 3 3;
+  vector-effect: non-scaling-stroke;
+}
+
+.now {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 0;
+  border-left: 1px dashed rgba(238, 241, 255, 0.4);
+  pointer-events: none;
+}
+
+.band {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  background: rgba(238, 241, 255, 0.05);
+  border-left: 1px solid var(--ice);
+  border-right: 1px solid var(--ice);
+  pointer-events: none;
+}
+
+/* An edge of the range, taken by hand: a wide place to catch around a narrow grip. */
+.edge {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 44px;
+  margin-left: -22px;
+  cursor: ew-resize;
+  touch-action: pan-y;
+}
+
+.edge::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 10px;
+  height: 28px;
+  margin: -14px 0 0 -5px;
+  background: var(--ice);
+  border-radius: var(--r-ctl);
+  box-shadow: 0 0 0 4px rgba(238, 241, 255, 0.12);
+}
+
+.edge:focus-visible {
+  outline: none;
+}
+
+.edge:focus-visible::after {
+  box-shadow: 0 0 0 4px rgba(201, 162, 255, 0.55);
+}
+
+/* ── the two prices ────────────────────────────────────────────────────── */
+
+.edges {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.edgeCell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.edgeCell[data-at='mid'] {
+  align-items: center;
+  text-align: center;
+}
+
+.edgeCell[data-at='end'] {
+  align-items: flex-end;
+  text-align: right;
+}
+
+.edgeCell > b {
+  font-family: var(--display);
+  font-size: var(--type-lead);
+  font-weight: 650;
+  color: var(--ice);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.edgeCell > span {
+  font-size: var(--type-caption);
+  color: var(--soft);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* ── the quick widths ──────────────────────────────────────────────────── */
+
+.quickBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.quick {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.chip {
+  height: 36px;
+  font-size: var(--type-small);
+  font-weight: 600;
+  color: var(--ice);
+  border: 1px solid var(--glass-edge);
+  border-radius: var(--r-ctl);
+  background: rgba(255, 255, 255, 0.035);
+  font-variant-numeric: tabular-nums;
+  transition: background-color 0.15s, border-color 0.15s;
+}
+
+.chip:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.chip[aria-pressed='true'] {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(238, 241, 255, 0.3);
+}
+
+.chip:disabled {
+  color: var(--dim);
+  opacity: 0.55;
+  cursor: default;
+}
+
+.cap {
+  margin: 0;
+  font-size: var(--type-caption);
+  line-height: 1.4;
+  color: var(--soft);
+}
+
+/* ── the facts before the signature ────────────────────────────────────── */
+
+.facts {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  border-top: 1px solid var(--line);
+}
+
+.fact {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--line);
+  font-size: var(--type-small);
+  line-height: 1.35;
+}
+
+.fact:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.fact > dt {
+  flex: none;
+  color: var(--soft);
+}
+
+.fact > dd {
+  margin: 0;
+  min-width: 0;
+  text-align: right;
+  font-weight: 600;
+  color: var(--ice);
+  font-variant-numeric: tabular-nums;
+}
+
+/* The goals' names a liquidity provider knows, under the three goals, each under its own. */
+.names {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  gap: 4px;
+  padding: 0 4px;
+  font-size: var(--type-caption);
+  color: var(--soft);
+  text-align: center;
+}
+
+.names > span[data-on] {
+  color: var(--ice);
+}

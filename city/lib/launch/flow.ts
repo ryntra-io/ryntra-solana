@@ -48,17 +48,22 @@ export type Liftoff = Readonly<{
   sharing: Readonly<{ state: 'SHARED' | 'PENDING' | 'FAILED'; shares: readonly FeeShare[] }> | null;
 }>;
 
+/** A launch straight into a pool, on chain whole: its coin, its pool, and when trading opens — unix seconds. */
+export type Pooled = Readonly<{ mint: string; pool: string; name: string; symbol: string; picture: string; network: Network; opensAt: number }>;
+
 /** An early-access launch, set on chain: unix seconds for its two moments. */
 export type Opened = Readonly<{ mint: string; name: string; symbol: string; picture: string; network: Network; state: 'PENDING' | 'OPEN'; opensAt: number; publicAt: number }>;
 
 export type Phase =
   | Readonly<{ step: 'upload' }>
   | Readonly<{ step: 'build' }>
-  | Readonly<{ step: 'sign'; wallet: string; costLamports: string | null; again: boolean; shared?: boolean; early?: boolean }>
-  | Readonly<{ step: 'send' }>
+  | Readonly<{ step: 'sign'; wallet: string; costLamports: string | null; again: boolean; shared?: boolean; early?: boolean; /** The step of a launch into a pool the wallet is asked for, and when its trading opens — said at the prompt, so a moved opening is seen before the signature. */ pool?: Readonly<{ stage: 'COIN' | 'POOL' | 'SUPPLY'; opensAt?: number }> }>
+  | Readonly<{ step: 'send'; pool?: Readonly<{ stage: 'COIN' | 'POOL' | 'SUPPLY' }> }>
   | Readonly<{ step: 'done'; liftoff: Liftoff }>
   /** An early-access launch is set — its people get in at `opensAt`, everyone trades from `publicAt`. */
   | Readonly<{ step: 'opened'; opened: Opened }>
+  /** A launch into a pool is on chain whole — it counts down to its opening. */
+  | Readonly<{ step: 'pooled'; pooled: Pooled }>
   | Readonly<{ step: 'failed'; failure: LaunchFailure }>;
 
 /** The reader of a creation's bytes (`create-check.ts`'s `checkCreation`). */

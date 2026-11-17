@@ -1,0 +1,736 @@
+/* The Agents screen: how the kit's parts are laid out, in the approved design's measures. Colours and sizes are the
+   terminal's variables (terminal/styles); nothing here names a colour of its own. */
+
+.screen {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+}
+
+.headTabs {
+  margin-left: 8px;
+}
+
+.grow {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.today {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.todayFigure {
+  display: flex;
+  align-items: baseline;
+  gap: 0.35em;
+  white-space: nowrap;
+}
+
+.grid {
+  display: flex;
+  flex: 1 1 auto;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.main {
+  display: flex;
+  flex: 999 1 520px;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+.view {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+.view[data-off] {
+  display: none;
+}
+
+.aside {
+  display: flex;
+  flex: 1 1 328px;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 360px;
+  min-width: 0;
+}
+
+/* ── the line a person says ─────────────────────────────────────────────── */
+
+.sayBox {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 10px;
+  height: 58px;
+  padding: 0 9px 0 16px;
+  border-radius: var(--r-ctl);
+  background: var(--well);
+  border: 1px solid var(--glass-edge);
+  transition: border-color 0.15s;
+}
+
+.sayBox:focus-within {
+  border-color: var(--chosen-edge);
+}
+
+.sayBox > svg {
+  color: var(--amber);
+}
+
+.sayInput {
+  flex: 1 1 0;
+  min-width: 0;
+  font-size: var(--type-lead);
+  font-weight: 600;
+  color: var(--ice);
+}
+
+.sayInput::placeholder {
+  color: var(--dim);
+  opacity: 1;
+}
+
+.sayInput:focus-visible {
+  outline: none;
+}
+
+.sayGo {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  color: var(--lilac);
+  border-radius: var(--r-ctl);
+  border: 1px solid var(--glass-edge);
+  background: rgba(238, 241, 255, 0.02);
+}
+
+.sayGo:hover {
+  color: var(--ice);
+}
+
+.says {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 8px;
+}
+
+.answer {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 16px;
+  background: var(--well);
+  border: 1px solid var(--line);
+}
+
+.answerHead {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.answerHead > svg {
+  color: var(--amber);
+}
+
+.answerLine {
+  font-size: var(--type-body);
+  font-weight: 500;
+  line-height: 1.45;
+}
+
+.answerCoins {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.quote {
+  color: var(--dim);
+  font-size: var(--type-small);
+}
+
+/* ── the agents to hire ─────────────────────────────────────────────────── */
+
+.crew {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 16px;
+}
+
+.badge {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  color: var(--lilac);
+  border: 1px solid var(--glass-edge);
+  background: rgba(153, 69, 255, 0.1);
+}
+
+.badge[data-on] {
+  color: var(--ice);
+  background: rgba(153, 69, 255, 0.24);
+}
+
+.glyph {
+  width: 20px;
+  height: 20px;
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.glyphS {
+  width: 16px;
+  height: 16px;
+}
+
+.cardWords {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.cardName {
+  font-size: 16px;
+}
+
+.job {
+  font-size: var(--type-small);
+  color: var(--dim);
+}
+
+/* ── my agents ──────────────────────────────────────────────────────────── */
+
+.mineHead {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 18px 10px;
+}
+
+.mineTitle {
+  flex: 1 1 0;
+  min-width: 0;
+  font-size: var(--type-action);
+}
+
+.who {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.whoWords {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.name {
+  font-family: var(--display);
+  font-weight: 800;
+  font-stretch: 125%;
+  font-size: var(--type-body);
+}
+
+.sub {
+  font-size: var(--type-caption);
+  font-weight: 500;
+  color: var(--dim);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.budget {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.bar {
+  display: block;
+  height: 6px;
+  background: rgba(238, 241, 255, 0.08);
+}
+
+.bar > i {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, var(--violet), var(--lilac));
+}
+
+.cap {
+  font-size: var(--type-caption);
+  font-weight: 500;
+  color: var(--dim);
+  font-variant-numeric: tabular-nums;
+}
+
+.capStrong {
+  font-size: var(--type-caption);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.rowEnd {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.resultCell {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.empty {
+  padding: 4px 18px 20px;
+  font-size: var(--type-body);
+  font-weight: 500;
+  color: var(--dim);
+}
+
+.emptyPhone {
+  padding: 18px 2px 0;
+  font-size: var(--type-body);
+  font-weight: 500;
+  color: var(--dim);
+  text-align: center;
+}
+
+.note {
+  font-size: var(--type-small);
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.note[data-tone='warn'] {
+  color: var(--amber);
+}
+
+.notePad {
+  padding: 0 18px 16px;
+}
+
+/* A phone's card of one agent. */
+.cards {
+  display: none;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.cardHead {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.cardHeadWords {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.cardTitle {
+  font-family: var(--display);
+  font-weight: 800;
+  font-stretch: 125%;
+  font-size: 16px;
+}
+
+.between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.facts {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* ── the new agent ──────────────────────────────────────────────────────── */
+
+.asideHead {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.asideWords {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.asideTitle {
+  font-size: var(--type-action);
+}
+
+.pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.pill {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 8px;
+  height: 36px;
+  padding: 0 10px 0 6px;
+  border-radius: var(--r-ctl);
+  border: 1px solid var(--glass-edge);
+  background: rgba(255, 255, 255, 0.05);
+  font-size: var(--type-small);
+  font-weight: 800;
+  white-space: nowrap;
+  transition: border-color 0.15s;
+}
+
+.pill[aria-checked='false'],
+.pill[data-quiet] {
+  color: var(--dim);
+  border-color: var(--line);
+  background: rgba(238, 241, 255, 0.02);
+}
+
+.pill[aria-checked='false']:hover,
+.pill[data-quiet]:hover {
+  color: var(--ice);
+}
+
+.pill[aria-checked='true'] {
+  border-color: var(--chosen-edge);
+  background: var(--chosen);
+}
+
+.pillAdd {
+  padding: 0 10px;
+  color: var(--lilac);
+}
+
+.coinList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.coinList > label {
+  width: 100%;
+}
+
+.fact {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  padding: 14px 16px;
+  background: var(--well);
+  border: 1px solid var(--line);
+}
+
+.plan {
+  font-size: var(--type-small);
+  font-weight: 600;
+  color: var(--lilac);
+}
+
+.figureCol {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.split {
+  display: flex;
+  height: 6px;
+  gap: 2px;
+}
+
+.seg {
+  display: block;
+  min-width: 2px;
+}
+
+.seg[data-part='trade'],
+.dot[data-part='trade'] {
+  background: var(--amber);
+}
+
+.seg[data-part='save'],
+.dot[data-part='save'] {
+  background: var(--mint);
+}
+
+.seg[data-part='pool'],
+.dot[data-part='pool'] {
+  background: var(--violet);
+}
+
+.seg[data-part='reserve'],
+.dot[data-part='reserve'] {
+  background: rgba(238, 241, 255, 0.34);
+}
+
+.legend {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.legend > li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--type-small);
+  font-weight: 600;
+  list-style: none;
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  flex: none;
+  border-radius: 50%;
+}
+
+.legendName {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.legendFigure {
+  font-variant-numeric: tabular-nums;
+  color: var(--dim);
+}
+
+/* ── a phone ────────────────────────────────────────────────────────────── */
+
+.phoneOnly,
+.phoneDock,
+.back {
+  display: none;
+}
+
+.phoneTitle {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.home {
+  min-width: 0;
+}
+
+.phoneSay {
+  flex-direction: column;
+  gap: 14px;
+}
+
+@media (max-width: 767px) {
+  .screen {
+    gap: 14px;
+  }
+
+  .head,
+  .screen .deskOnly {
+    display: none;
+  }
+
+  .phoneOnly {
+    display: flex;
+  }
+
+  /* A phone has no tabs: its screen is the «Hire» view — the line, the agents at work, the one action. */
+  .view[data-off] {
+    display: flex;
+  }
+
+  .view[data-desk] {
+    display: none;
+  }
+
+  .grid {
+    flex-direction: column;
+    flex-wrap: nowrap;
+    align-items: stretch;
+    gap: 14px;
+  }
+
+  .main {
+    flex: 1 1 auto;
+    gap: 14px;
+  }
+
+  .view {
+    flex: 1 1 auto;
+    gap: 14px;
+  }
+
+  .sayBox {
+    height: 60px;
+    padding: 0 10px 0 16px;
+  }
+
+  .sayGo {
+    width: 44px;
+    height: 44px;
+  }
+
+  /* 16 px and up: a phone's browser zooms into a smaller field on focus. */
+  .says {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .cards {
+    display: flex;
+  }
+
+  .phoneDock {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    justify-content: flex-end;
+    gap: 10px;
+  }
+
+  .aside {
+    display: none;
+    flex: none;
+    max-width: none;
+  }
+
+  .crew {
+    display: none;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  /* The second step on a phone: the agents to hire and the new agent's card, in place of the first screen. */
+  .screen[data-hiring] .aside {
+    display: flex;
+    order: -1;
+  }
+
+  .screen[data-hiring] .crew {
+    display: grid;
+  }
+
+  .screen[data-hiring] .home {
+    display: none;
+  }
+
+  .screen[data-hiring] .back {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+}
+
+/* ── the plain view (docs/terminal/design/2026-11-17/A-Agents) ─────────────────────────────────────── */
+
+.hero {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.lead {
+  margin: 0;
+  font-size: var(--type-body);
+  color: var(--dim);
+}
+
+/* The plain view draws one view: the tabs are Pro's. */
+@media (min-width: 768px) {
+  .head[data-plain] .headTabs {
+    display: none;
+  }
+
+  .head[data-plain] ~ .grid .crew {
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  }
+
+  .head[data-plain] ~ .grid .crew > article {
+    min-height: 210px;
+  }
+
+  .head[data-plain] ~ .grid .cardName {
+    font-size: 22px;
+  }
+
+  .head[data-plain] ~ .grid .job {
+    font-size: var(--type-body);
+  }
+}
+
+/* A card's live fact, at its foot. */
+.crewFact {
+  margin-top: auto;
+  font-size: var(--type-small);
+  font-weight: 600;
+  color: var(--ice);
+  font-variant-numeric: tabular-nums;
+}
+
+.share {
+  padding: 0 10px;
+}
+
+/* The role a person chose: a lighter ground and edge. Quiet — the amber stays on the ticket's action. */
+.crewOn.crewOn {
+  border-color: var(--chosen-edge);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.02)), var(--glass);
+}

@@ -1,0 +1,1044 @@
+/* The terminal's frame: the rail of shelves on the left, the header with the agent's line, the events and the wallet,
+   the screen on the whole window; on a phone a header and five tabs. Measures from the approved design
+   (docs/terminal/design/2026-11-16/ryntra.css: `.app`, `.rail`, `.top`, `.phone`, `.tabbar`). */
+
+.app {
+  display: flex;
+  min-height: 100dvh;
+  /* Violet light from above, a warm one from the right, and the terminal's faint rules on the deepest ground. */
+  background:
+    radial-gradient(1200px 600px at 60% -300px, rgba(153, 69, 255, 0.28), rgba(153, 69, 255, 0) 70%),
+    radial-gradient(600px 400px at 85% 10%, rgba(255, 178, 63, 0.08), rgba(255, 178, 63, 0) 70%),
+    linear-gradient(rgba(255, 255, 255, 0.018) 1px, transparent 1px) 0 0 / 100% 32px,
+    var(--ground);
+}
+
+/* ── the rail: every shelf by its name; a person may fold it to its icons (rail-fold.ts), a narrow desk folds it itself ── */
+
+.rail {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  flex: 0 0 var(--rail);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  height: 100dvh;
+  padding: 22px 14px 16px;
+  border-right: 1px solid var(--line);
+  background: linear-gradient(180deg, rgba(20, 16, 34, 0.9), rgba(10, 8, 18, 0.9));
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 44px;
+  padding: 0 10px;
+  margin-bottom: 14px;
+  flex: none;
+}
+
+.brandWord {
+  font-family: var(--display);
+  font-weight: 900;
+  font-stretch: 125%;
+  font-size: var(--type-lead);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.nav {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 46px;
+  padding: 0 12px;
+  flex: none;
+  width: 100%;
+  color: var(--soft);
+  font-weight: 500;
+  font-size: var(--type-base);
+  text-align: left;
+  transition: color 0.15s, background-color 0.15s;
+}
+
+.nav > svg {
+  color: var(--dim);
+}
+
+.nav:hover,
+.nav[aria-expanded='true'] {
+  color: var(--ice);
+  background: rgba(238, 241, 255, 0.04);
+}
+
+/* The place a person is in — the menu's amber: a warm ground and a lit bar at the rail's edge. */
+.nav[aria-current='page'] {
+  color: var(--ice);
+  background: linear-gradient(90deg, rgba(255, 178, 63, 0.12), transparent 80%);
+}
+
+.nav[aria-current='page']::before {
+  content: '';
+  position: absolute;
+  left: -14px;
+  top: 10px;
+  bottom: 10px;
+  width: 3px;
+  background: var(--amber);
+  box-shadow: 0 0 14px var(--amber);
+}
+
+.nav[aria-current='page'] > svg {
+  color: var(--amber);
+}
+
+.nav:hover:not([aria-current='page']) > svg {
+  color: var(--soft);
+}
+
+.railSep {
+  height: 1px;
+  margin: 10px;
+  background: var(--line);
+  flex: none;
+}
+
+.grow {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.railMore {
+  position: relative;
+}
+
+/* ── the main column and its header ────────────────────────────────────── */
+
+.main {
+  position: relative;
+  flex: 999 1 560px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* The eclipse ring of the mark, as one quiet arc of light behind the header. No city in the working screens. */
+.sky {
+  display: none;
+  position: absolute;
+  right: 150px;
+  top: -440px;
+  width: 600px;
+  height: 600px;
+  border-radius: 50%;
+  border: 12px solid rgba(178, 120, 255, 0.2);
+  filter: blur(9px);
+  pointer-events: none;
+}
+
+.top {
+  position: sticky;
+  top: 0;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: var(--top);
+  padding: 0 28px;
+  transition: background-color 0.2s, box-shadow 0.2s;
+}
+
+.top[data-stuck] {
+  /* No backdrop filter: it would make the header the box of the sign-in sheet fixed inside it. */
+  background: rgba(8, 7, 14, 0.94);
+  box-shadow: 0 1px 0 var(--line);
+}
+
+.spacer {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.phoneMark {
+  display: none;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 44px;
+}
+
+.phoneHead {
+  display: none;
+}
+
+.body {
+  position: relative;
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 0;
+  padding: 8px 28px 28px;
+}
+
+/* ── the agent's line ──────────────────────────────────────────────────── */
+
+.say {
+  position: relative;
+  flex: 1 1 280px;
+  max-width: 620px;
+  min-width: 0;
+}
+
+.sayBox {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 46px;
+  padding: 0 8px 0 16px;
+  /* The agent's line is a field: a warm breath in its ground and the amber spark say whose it is, the edge stays quiet. */
+  background: linear-gradient(90deg, rgba(255, 178, 63, 0.09), rgba(153, 69, 255, 0.08)), rgba(10, 8, 18, 0.85);
+  border: 1px solid rgba(238, 241, 255, 0.16);
+  border-radius: var(--r-ctl);
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.sayBox:focus-within {
+  border-color: rgba(238, 241, 255, 0.42);
+  box-shadow: 0 0 0 3px rgba(201, 162, 255, 0.16);
+}
+
+.sayBox > svg {
+  color: var(--amber);
+}
+
+.sayInput {
+  flex: 1 1 0;
+  min-width: 0;
+  font-size: var(--type-base);
+  font-weight: 400;
+  color: var(--ice);
+}
+
+/* The box shows the focus; the field inside it draws no second ring. */
+.sayInput:focus-visible {
+  outline: none;
+}
+
+.sayInput::placeholder {
+  color: var(--dim);
+  opacity: 1;
+}
+
+.sayInput::-webkit-search-cancel-button {
+  display: none;
+}
+
+.key {
+  flex: none;
+  padding: 5px 9px;
+  font-size: var(--type-caption);
+  font-weight: 600;
+  color: var(--dim);
+  border: 1px solid var(--glass-edge);
+  white-space: nowrap;
+}
+
+.rows {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(100% + 6px);
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px;
+  background: var(--panel-up);
+  border: 1px solid var(--glass-edge);
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.5);
+}
+
+.rows[hidden] {
+  display: none;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 46px;
+  padding: 0 12px;
+  font-size: var(--type-body);
+  font-weight: 600;
+  text-align: left;
+  color: var(--ice);
+  cursor: pointer;
+}
+
+.row > span {
+  flex: 1 1 0;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.row > svg {
+  color: var(--lilac);
+}
+
+.row[aria-selected='true'] {
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.row[aria-selected='true'] > svg {
+  color: var(--amber);
+}
+
+/* The home page has the agent's field in its own first line (`data-terminal='hero'`): the header's steps aside there,
+   so a screen never shows two. Ctrl K goes to the field that is on the screen (AgentLine.tsx). */
+.app:has([data-terminal='hero']) .top .say {
+  display: none;
+}
+
+/* ── the header's buttons: the events, the wallet ──────────────────────── */
+
+.iconBtn {
+  position: relative;
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  color: var(--soft);
+  border: 1px solid var(--glass-edge);
+  border-radius: var(--r-ctl);
+  background: rgba(238, 241, 255, 0.02);
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.iconBtn:hover,
+.iconBtn[aria-expanded='true'] {
+  color: var(--ice);
+  border-color: rgba(238, 241, 255, 0.18);
+}
+
+.pip {
+  position: absolute;
+  top: 10px;
+  right: 11px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--amber);
+}
+
+.anchor {
+  position: relative;
+  flex: none;
+}
+
+.wallet {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 44px;
+  padding: 0 16px 0 14px;
+  font-weight: 600;
+  font-size: var(--type-body);
+  white-space: nowrap;
+  border: 1px solid var(--glass-edge);
+  border-radius: var(--r-ctl);
+  background: rgba(255, 255, 255, 0.035);
+  transition: background-color 0.15s;
+}
+
+.wallet:hover,
+.wallet[aria-expanded='true'] {
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.wallet:disabled {
+  cursor: default;
+}
+
+.walletIcon {
+  display: none;
+}
+
+.live {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--mint);
+  flex: none;
+}
+
+.live[data-wait] {
+  background: var(--amber);
+}
+
+/* ── the panels that open from the frame ───────────────────────────────── */
+
+.pop {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 320px;
+  max-width: calc(100vw - 32px);
+  padding: 16px;
+  background: var(--panel-up);
+  border: 1px solid var(--glass-edge);
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.55);
+  animation: rise 0.16s ease-out;
+}
+
+.popUp {
+  top: auto;
+  bottom: 0;
+  left: calc(100% + 24px);
+  right: auto;
+}
+
+.popHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-weight: 700;
+  font-size: var(--type-body);
+}
+
+.popLine {
+  font-size: var(--type-small);
+  color: var(--dim);
+}
+
+.popError {
+  font-size: var(--type-small);
+  color: #ff8a7d;
+}
+
+.popRow {
+  display: flex;
+  gap: 8px;
+}
+
+.popRow > * {
+  flex: 1 1 0;
+}
+
+.choices {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.choice {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 56px;
+  padding: 8px 14px;
+  font-weight: 600;
+  font-size: var(--type-base);
+  border: 1px solid var(--glass-edge);
+  border-radius: var(--r-ctl);
+  background: rgba(238, 241, 255, 0.03);
+  text-align: left;
+}
+
+.choice:hover {
+  border-color: rgba(238, 241, 255, 0.18);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+/* ── sign-in in one window (v2, kadr A-LoginPhone) ─────────────────────── */
+
+.loginShade {
+  position: fixed;
+  inset: 0;
+  z-index: 29;
+  background: rgba(6, 5, 12, 0.6);
+  animation: fade 0.16s ease-out;
+}
+
+.pop[data-login] {
+  width: 380px;
+  padding: 20px;
+}
+
+.login {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.loginHead {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.loginTitle {
+  font-size: var(--type-headline);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.loginLine {
+  font-size: var(--type-base);
+  color: var(--soft);
+}
+
+.choice[data-first] {
+  border-color: var(--chosen-edge);
+  background: var(--chosen);
+}
+
+.choice > svg:last-child {
+  color: var(--dim);
+}
+
+.choiceWords {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.choiceSub {
+  font-size: var(--type-small);
+  font-weight: 400;
+  color: var(--soft);
+}
+
+.walletLogo,
+.walletDisc {
+  width: 32px;
+  height: 32px;
+  flex: none;
+  border-radius: 50%;
+}
+
+/* Under the wallet's own icon a disc of the brand: an icon with nothing drawn never leaves a hole. */
+.walletLogo {
+  object-fit: cover;
+  background: rgba(153, 69, 255, 0.18);
+}
+
+.walletDisc {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--type-small);
+  font-weight: 700;
+  color: var(--lilac);
+  background: rgba(153, 69, 255, 0.18);
+}
+
+.loginCalm {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: var(--type-small);
+  color: var(--soft);
+}
+
+.loginCalm > svg {
+  color: var(--lilac);
+}
+
+.closeBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  color: var(--dim);
+}
+
+.closeBtn:hover {
+  color: var(--ice);
+}
+
+.events {
+  width: 380px;
+  max-height: min(70dvh, 560px);
+  overflow-y: auto;
+  gap: 4px;
+}
+
+.event {
+  position: relative;
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: 12px;
+  min-height: 56px;
+  padding: 8px 6px;
+  border-top: 1px solid var(--line);
+  text-align: left;
+}
+
+.event:first-of-type {
+  border-top: 0;
+}
+
+.eventLink:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.eventWords {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.eventTitle {
+  font-weight: 700;
+  font-size: var(--type-body);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.eventLine {
+  font-size: var(--type-small);
+  font-weight: 600;
+  color: var(--lilac);
+  font-variant-numeric: tabular-nums;
+}
+
+.event[data-tone='up'] .eventLine,
+.event[data-tone='new'] .eventLine {
+  color: var(--mint);
+}
+
+.event[data-tone='down'] .eventLine {
+  color: var(--flare);
+}
+
+.eventTime {
+  align-self: start;
+  padding-top: 4px;
+  font-size: var(--type-caption);
+  color: var(--dim);
+  white-space: nowrap;
+}
+
+.bones {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 6px;
+}
+
+.bones > span {
+  height: 44px;
+  background: linear-gradient(90deg, rgba(238, 241, 255, 0.03), rgba(238, 241, 255, 0.07), rgba(238, 241, 255, 0.03));
+  background-size: 200% 100%;
+  animation: shimmer 1.4s linear infinite;
+}
+
+.quietLine {
+  padding: 18px 6px;
+  font-size: var(--type-body);
+  font-weight: 600;
+  color: var(--dim);
+}
+
+.door {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 48px;
+  padding: 0 14px;
+  font-weight: 600;
+  font-size: var(--type-body);
+  border: 1px solid var(--glass-edge);
+  border-radius: var(--r-ctl);
+  background: rgba(238, 241, 255, 0.02);
+}
+
+.door:hover {
+  border-color: rgba(238, 241, 255, 0.18);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.door > svg:first-child {
+  color: var(--lilac);
+}
+
+.door > span {
+  flex: 1 1 0;
+}
+
+.door > svg:last-child {
+  color: var(--dim);
+}
+
+/* ── the phone: tabs and the sections sheet ────────────────────────────── */
+
+.tabbar {
+  display: none;
+}
+
+.tab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 5px;
+  height: 58px;
+  font-size: var(--type-micro);
+  font-weight: 600;
+  color: var(--dim);
+}
+
+.tab[aria-current='page'] {
+  color: var(--ice);
+}
+
+.tab[aria-current='page'] > svg {
+  color: var(--amber);
+}
+
+/* The agent's tab: an amber square with the brand's cut corner, standing out of the bar. */
+.gem {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 50px;
+  height: 50px;
+  margin-top: -22px;
+  color: var(--on-amber);
+  background: linear-gradient(180deg, var(--amber-hi), var(--amber));
+  border-radius: var(--r-ctl);
+  clip-path: polygon(0 0, 100% 0, 100% calc(100% - var(--cut-s)), calc(100% - var(--cut-s)) 100%, 0 100%);
+}
+
+.scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: rgba(6, 5, 12, 0.72);
+  animation: fade 0.16s ease-out;
+}
+
+.sheet {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 41;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 88dvh;
+  overflow-y: auto;
+  padding: 28px 16px calc(18px + env(safe-area-inset-bottom));
+  /* A sheet is square, from edge to edge: a line of light along its top and a grip say it lifts. */
+  background: linear-gradient(180deg, rgb(28, 22, 48), rgb(14, 11, 26));
+  border-top: 1px solid rgba(201, 162, 255, 0.34);
+  box-shadow: 0 -30px 60px -10px rgba(0, 0, 0, 0.8);
+  animation: up 0.2s ease-out;
+}
+
+.sheet::before {
+  content: '';
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  width: 40px;
+  height: 4px;
+  margin-left: -20px;
+  background: rgba(238, 241, 255, 0.24);
+}
+
+.sheetHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 36px;
+}
+
+.sheetTitle {
+  font-family: var(--ui);
+  font-weight: 650;
+  font-size: var(--type-title);
+  letter-spacing: -0.01em;
+}
+
+.sheetSep {
+  height: 1px;
+  margin: 4px 0;
+  background: var(--line);
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes up {
+  from {
+    transform: translateY(24px);
+    opacity: 0;
+  }
+}
+
+@keyframes shimmer {
+  to {
+    background-position: -200% 0;
+  }
+}
+
+/* A shelf's name beside its icon; on the narrow rail it is kept for a screen reader only (below). */
+.quietName {
+  min-width: 0;
+}
+
+/* ── the rail folded to its icons ──────────────────────────────────────────
+   A person folds it with the button at its foot — the page's root carries `data-rail='folded'` (rail-fold.ts), set before
+   the first paint; a desk narrower than 1360 px folds it itself. A shelf's name stays for a screen reader and as the
+   icon's hint. The two blocks below are the same rules. */
+
+.railFold > svg {
+  transition: transform 0.15s;
+}
+
+:global(html[data-rail='folded']) .app {
+  --rail: 72px;
+}
+
+:global(html[data-rail='folded']) .app .rail {
+  padding: 18px 10px 16px;
+}
+
+:global(html[data-rail='folded']) .app :is(.brand, .nav) {
+  justify-content: center;
+  padding: 0;
+}
+
+:global(html[data-rail='folded']) .app :is(.brandWord, .quietName) {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+:global(html[data-rail='folded']) .app .nav[aria-current='page']::before {
+  left: -10px;
+}
+
+:global(html[data-rail='folded']) .app .popUp {
+  left: calc(100% + 18px);
+}
+
+:global(html[data-rail='folded']) .app .railFold > svg {
+  transform: scaleX(-1);
+}
+
+@media (min-width: 768px) and (max-width: 1359px) {
+  .app {
+    --rail: 72px;
+  }
+
+  .rail {
+    padding: 18px 10px 16px;
+  }
+
+  .brand,
+  .nav {
+    justify-content: center;
+    padding: 0;
+  }
+
+  .brandWord,
+  .quietName {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .nav[aria-current='page']::before {
+    left: -10px;
+  }
+
+  .popUp {
+    left: calc(100% + 18px);
+  }
+
+  /* Folded by the window, not by the person: nothing to unfold. */
+  .railFold {
+    display: none;
+  }
+}
+
+/* ── a phone ───────────────────────────────────────────────────────────── */
+
+@media (max-width: 767px) {
+  .app {
+    background: radial-gradient(520px 300px at 50% -90px, rgba(153, 69, 255, 0.24), rgba(153, 69, 255, 0) 70%), var(--ground);
+  }
+
+  .rail,
+  .sky,
+  .spacer,
+  .wallet:not([data-connect]),
+  .key {
+    display: none;
+  }
+
+  /* A wallet not yet connected: an icon beside the bell, the list of wallets under it. Connected, it lives in the sheet. */
+  .wallet[data-connect] {
+    justify-content: center;
+    width: 44px;
+    padding: 0;
+    color: var(--ice);
+  }
+
+  .walletIcon {
+    display: block;
+  }
+
+  .walletText {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+
+  .top {
+    height: 64px;
+    padding: 0 16px;
+    gap: 10px;
+    border-bottom: 0;
+  }
+
+  .phoneMark {
+    display: flex;
+  }
+
+  /* Without the agent's line (the home page) the bell and the wallet keep the header's right end. */
+  .app:has([data-terminal='hero']) .spacer {
+    display: block;
+  }
+
+  .say {
+    flex: 1 1 0;
+    max-width: none;
+  }
+
+  /* A screen that names itself in the header has its own line for the agent: the header's steps aside. */
+  .phoneHead:not(:empty) {
+    display: flex;
+    flex: 1 1 0;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+  }
+
+  .phoneHead:not(:empty) ~ .say {
+    display: none;
+  }
+
+  /* 16 px: a phone's browser zooms into a smaller field on focus. */
+  .sayInput {
+    font-size: 16px;
+  }
+
+  .pop[data-login] {
+    position: fixed;
+    top: auto;
+    left: 0;
+    right: 0;
+    bottom: calc(var(--tabbar) + env(safe-area-inset-bottom));
+    width: auto;
+    max-width: none;
+    max-height: calc(100dvh - var(--tabbar) - env(safe-area-inset-bottom) - 80px);
+    overflow-y: auto;
+    padding: 28px 16px 20px;
+    background: linear-gradient(180deg, rgb(28, 22, 48), rgb(14, 11, 26));
+    border: 0;
+    border-top: 1px solid rgba(201, 162, 255, 0.34);
+    box-shadow: 0 -30px 60px -10px rgba(0, 0, 0, 0.8);
+    animation: up 0.2s ease-out;
+  }
+
+  .pop[data-login]::before {
+    content: '';
+    position: absolute;
+    top: 10px;
+    left: 50%;
+    width: 40px;
+    height: 4px;
+    margin-left: -20px;
+    background: rgba(238, 241, 255, 0.24);
+  }
+
+  .events {
+    position: fixed;
+    top: 64px;
+    left: 16px;
+    right: 16px;
+    width: auto;
+    max-width: none;
+  }
+
+  .body {
+    gap: 14px;
+    /* The body's side gutter, by name: a panel that says it is the width of its screen runs through it to the
+       screen's edges (terminal/ui: `.edge`). */
+    --bleed: 16px;
+    /* `--sheet-h`: a screen's side column as a sheet over the page's foot (Split.tsx) — the body keeps room for it. */
+    padding: 4px 16px calc(var(--tabbar) + 16px + env(safe-area-inset-bottom) + var(--sheet-h, 0px));
+  }
+
+  .tabbar {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 10;
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(0, 1fr);
+    align-items: end;
+    height: calc(var(--tabbar) + env(safe-area-inset-bottom));
+    padding: 0 8px calc(10px + env(safe-area-inset-bottom));
+    border-top: 1px solid var(--line);
+    background: rgba(9, 8, 16, 0.92);
+    backdrop-filter: blur(16px);
+  }
+}

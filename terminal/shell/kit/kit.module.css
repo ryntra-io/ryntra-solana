@@ -1,0 +1,213 @@
+/* The kit page: the parts laid out as a screen of the terminal would lay them (the approved design's market screen). */
+
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+}
+
+.headTabs {
+  margin-left: 8px;
+}
+
+.grow {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.tableWrap {
+  min-width: 0;
+}
+
+.listWrap {
+  display: none;
+}
+
+.coinHead {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.coinWords {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.coinSym {
+  font-family: var(--display);
+  font-weight: 800;
+  font-stretch: 125%;
+  font-size: var(--type-action);
+}
+
+.coinName {
+  font-size: var(--type-caption);
+  color: var(--dim);
+}
+
+.coinPrice {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.coinChange {
+  font-size: var(--type-caption);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.coinChange[data-tone='up'] {
+  color: var(--mint);
+}
+
+.coinChange[data-tone='down'] {
+  color: var(--flare);
+}
+
+.searchRow {
+  flex: 1 1 100%;
+}
+
+.between {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.getCol {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.agentHead {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.agentHead > svg {
+  color: var(--amber);
+}
+
+.agentKick {
+  flex: 1 1 0;
+  color: var(--ice);
+}
+
+.parts {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.part {
+  flex: 1 1 320px;
+  min-width: 0;
+}
+
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.sliderHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: var(--type-body);
+  font-weight: 600;
+}
+
+.sliderValue {
+  font-variant-numeric: tabular-nums;
+  color: var(--amber);
+  font-weight: 800;
+}
+
+.buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.iconBtn {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  color: var(--dim);
+  border: 1px solid var(--line);
+  background: rgba(238, 241, 255, 0.02);
+}
+
+.iconBtn:hover,
+.iconBtn[aria-expanded='true'] {
+  color: var(--ice);
+  border-color: var(--edge);
+}
+
+.launchBtn {
+  height: 44px;
+}
+
+/* Last, so it wins over the parts' own display. */
+.phoneOnly {
+  display: none;
+}
+
+@media (max-width: 767px) {
+  .head {
+    gap: 12px;
+  }
+
+  .headTabs {
+    order: 5;
+    flex: 1 1 100%;
+    margin-left: 0;
+  }
+
+  .headTabs > button {
+    height: 44px;
+  }
+
+  .desktopOnly,
+  .tableWrap {
+    display: none;
+  }
+
+  .phoneOnly {
+    display: flex;
+  }
+
+  .listWrap {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  .tiles {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .tiles > :last-child {
+    grid-column: 1 / -1;
+  }
+}

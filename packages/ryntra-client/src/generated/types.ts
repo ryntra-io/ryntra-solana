@@ -389,6 +389,155 @@ export type DevPlanResponse = {
   readonly keyHeader: string;
 };
 
+export type EarnBinsResponse = {
+  readonly venue: "dlmm" | "pro";
+  readonly pool: string;
+  readonly x: {
+    readonly mint: string;
+    readonly decimals: number;
+  };
+  readonly y: {
+    readonly mint: string;
+    readonly decimals: number;
+  };
+  readonly stepBps: number;
+  readonly activeId: number;
+  readonly price: number;
+  readonly bins: readonly ({
+    readonly offset: number;
+    readonly id: number;
+    readonly price: number;
+    readonly x: string;
+    readonly y: string;
+  })[];
+  readonly market: {
+    readonly price: number | null;
+    readonly gapPct: number | null;
+  };
+  readonly rent: {
+    readonly positionLamports: string;
+    readonly ledgerLamports: string;
+    readonly ledgers: readonly ({
+      readonly lower: number;
+      readonly upper: number;
+      readonly open: boolean;
+    })[];
+  } | null;
+  readonly at: string;
+};
+
+export type EarnPoolsResponse = {
+  readonly pools: readonly ({
+    readonly kind: "dlmm" | "damm-v2";
+    readonly address: string;
+    readonly x: {
+      readonly mint: string;
+      readonly symbol: string;
+      readonly verified: boolean;
+    };
+    readonly y: {
+      readonly mint: string;
+      readonly symbol: string;
+      readonly verified: boolean;
+    };
+    readonly tvlUsd: number;
+    readonly volume24hUsd: number | null;
+    readonly fees24hUsd: number | null;
+    readonly feeTvl24hPct: number | null;
+    readonly baseFeePct: number | null;
+    readonly feePct: number | null;
+    readonly binStepBps: number | null;
+    readonly createdAt: string | null;
+    readonly page: string;
+  })[];
+  readonly lend: readonly ({
+    readonly mint: string;
+    readonly symbol: string;
+    readonly ratePct: number;
+    readonly suppliedUsd: number | null;
+  })[];
+  readonly at: string | null;
+  readonly sources: {
+    readonly dlmm: boolean;
+    readonly dammV2: boolean;
+    readonly lend: boolean;
+  };
+};
+
+export type EarnProPiersResponse = {
+  readonly network: "devnet" | "mainnet";
+  readonly piers: readonly ({
+    readonly address: string;
+    readonly x: {
+      readonly mint: string;
+      readonly symbol: string;
+      readonly decimals: number;
+    };
+    readonly y: {
+      readonly mint: string;
+      readonly symbol: string;
+      readonly decimals: number;
+    };
+    readonly solIsX: boolean;
+    readonly price: number;
+    readonly feeBps: number;
+    readonly tickSpacing: number;
+    readonly tickId: number;
+    readonly depthLamports: string | null;
+    readonly rewards: readonly ({
+      readonly index: number;
+      readonly mint: string;
+      readonly symbol: string | null;
+      readonly perDayRaw: string;
+      readonly running: boolean;
+      readonly endsAt: number;
+    })[];
+    readonly takesDeposits: boolean;
+  })[];
+  readonly at: string;
+  readonly care: boolean;
+};
+
+export type EarnProPositionsResponse = {
+  readonly network: "devnet" | "mainnet";
+  readonly owner: string;
+  readonly positions: readonly ({
+    readonly nftMint: string;
+    readonly pool: string;
+    readonly inRange: boolean;
+    readonly ranges: number;
+    readonly lowerPrice: number;
+    readonly upperPrice: number;
+    readonly worth: {
+      readonly xRaw: string;
+      readonly yRaw: string;
+      readonly lamports: string;
+    };
+    readonly fees: {
+      readonly xRaw: string;
+      readonly yRaw: string;
+      readonly lamports: string;
+    };
+    readonly rewards: readonly ({
+      readonly index: number;
+      readonly mint: string;
+      readonly symbol: string | null;
+      readonly accruedRaw: string;
+      readonly running: boolean;
+    })[];
+    readonly empty: boolean;
+    readonly cared: boolean;
+    readonly care: {
+      readonly status: "working" | "stopped";
+      readonly stoppedBy: "stop" | "owner" | "gone" | null;
+      readonly stopBelow: number | null;
+      readonly claimedInY: number;
+      readonly lastAt: string | null;
+    } | null;
+  })[];
+  readonly care: boolean;
+};
+
 export type IntentResponse = {
   readonly intent: {
     readonly id: string;
@@ -428,6 +577,75 @@ export type IntentResponse = {
       readonly qr: string;
     };
   };
+};
+
+export type LadderMarketResponse = {
+  readonly market: {
+    readonly network: "devnet" | "mainnet";
+    readonly pool: string;
+    readonly coin: {
+      readonly mint: string;
+      readonly decimals: number;
+    };
+    readonly quote: {
+      readonly mint: string;
+      readonly symbol: string;
+      readonly decimals: number;
+    };
+    readonly price: number;
+    readonly bonus: {
+      readonly feeBps: number;
+      readonly ownerBps: number;
+      readonly referralBps: number;
+    };
+    readonly reach: {
+      readonly buyBps: number;
+      readonly sellBps: number;
+    };
+    readonly placing: boolean;
+    readonly collector: string | null;
+    readonly cap: {
+      readonly maxRaw: string | null;
+      readonly minRungRaw: string;
+    };
+  } | null;
+};
+
+export type LadderOrdersResponse = {
+  readonly owner: string;
+  readonly orders: readonly ({
+    readonly nftMint: string;
+    readonly pool: string;
+    readonly coin: {
+      readonly mint: string;
+      readonly decimals: number;
+    };
+    readonly quote: {
+      readonly mint: string;
+      readonly decimals: number;
+    };
+    readonly action: "buy" | "sell" | null;
+    readonly state: "resting" | "filling" | "filled" | "taken";
+    readonly prices: number;
+    readonly filledPrices: number;
+    readonly restsIn: string | null;
+    readonly paysIn: string | null;
+    readonly restsRaw: string;
+    readonly filledRaw: string;
+    readonly proceedsRaw: string;
+    readonly lowPrice: number | null;
+    readonly highPrice: number | null;
+    readonly filledPrice: number | null;
+    readonly bonus: {
+      readonly mint: string | null;
+      readonly ownerRaw: string;
+      readonly referralRaw: string;
+    };
+    readonly agent: boolean;
+    readonly agentReady: boolean;
+    readonly agentOffered: boolean;
+    readonly partialPrices: number;
+  })[];
 };
 
 export type LaunchBoostView = {
@@ -1673,6 +1891,67 @@ export type LaunchMarketsResponse = {
   readonly observedAt: string;
 };
 
+export type LaunchPoolListResponse = {
+  readonly network: "solana:devnet" | "solana:mainnet";
+  readonly launches: readonly ({
+    readonly mint: string;
+    readonly pool: string;
+    readonly creator: string;
+    readonly name: string;
+    readonly symbol: string;
+    readonly metadataUri: string;
+    readonly pair: "SOL" | "USDC";
+    readonly opensAt: number;
+    readonly phase: "BUILDING" | "COUNTDOWN" | "OPEN";
+    readonly createdAt: string;
+  })[];
+};
+
+export type LaunchPoolView = {
+  readonly network: "solana:devnet" | "solana:mainnet";
+  readonly mint: string;
+  readonly pool: string;
+  readonly creator: string;
+  readonly name: string;
+  readonly symbol: string;
+  readonly metadataUri: string;
+  readonly pair: "SOL" | "USDC";
+  readonly opensAt: number;
+  readonly phase: "BUILDING" | "COUNTDOWN" | "OPEN";
+  readonly next: "COIN" | "POOL" | "SUPPLY" | null;
+  readonly fee: {
+    readonly startBps: number;
+    readonly endBps: number | null;
+    readonly nowBps: number | null;
+  };
+  readonly price: {
+    readonly start: number | null;
+    readonly now: number | null;
+  };
+  readonly split: {
+    readonly creatorBps: number;
+    readonly ryntraBps: number;
+  } | null;
+  readonly ladder: {
+    readonly shareBps: number;
+    readonly amountRaw: string;
+    readonly nearMultiple: number;
+    readonly farMultiple: number;
+    readonly rungs: number;
+    readonly leftRaw: string | null;
+    readonly state: "WAITING" | "RESTING" | "SELLING" | "CLOSED" | null;
+  } | null;
+  readonly honest: boolean | null;
+  readonly problems: readonly (string)[];
+  readonly receipt: {
+    readonly COIN: readonly (string)[];
+    readonly POOL: readonly (string)[];
+    readonly SUPPLY: readonly (string)[];
+  };
+  readonly costLamports: string;
+  readonly at: number;
+};
+
 export type LaunchPresetsResponse = {
   readonly network: "solana:devnet" | "solana:mainnet";
   readonly presets: readonly ({
@@ -2438,6 +2717,59 @@ export type LaunchWindowsResponse = {
   readonly observedAt: string;
 };
 
+export type MarketDepthResponse = {
+  readonly list: "trending" | "fresh" | "gainers" | "losers" | "traded" | "stocks" | "saved";
+  readonly window: "5m" | "1h" | "6h" | "24h";
+  readonly coins: readonly ({
+    readonly id: string;
+    readonly symbol: string;
+    readonly name: string;
+    readonly icon: string | null;
+    readonly price: number | null;
+    readonly mcap: number | null;
+    readonly liquidity: number | null;
+    readonly holders: number | null;
+    readonly organic: number | null;
+    readonly verified: boolean;
+    readonly stock: boolean;
+    readonly bornAt: string | null;
+    readonly mint: "on" | "off" | null;
+    readonly freeze: "on" | "off" | null;
+    readonly topHolders: number | null;
+    readonly stats: {
+      readonly "5m": {
+        readonly change: number | null;
+        readonly volume: number | null;
+        readonly buys: number | null;
+        readonly sells: number | null;
+        readonly traders: number | null;
+      } | null;
+      readonly "1h": {
+        readonly change: number | null;
+        readonly volume: number | null;
+        readonly buys: number | null;
+        readonly sells: number | null;
+        readonly traders: number | null;
+      } | null;
+      readonly "6h": {
+        readonly change: number | null;
+        readonly volume: number | null;
+        readonly buys: number | null;
+        readonly sells: number | null;
+        readonly traders: number | null;
+      } | null;
+      readonly "24h": {
+        readonly change: number | null;
+        readonly volume: number | null;
+        readonly buys: number | null;
+        readonly sells: number | null;
+        readonly traders: number | null;
+      } | null;
+    };
+  })[];
+  readonly readAt: string;
+};
+
 export type MarketEventsResponse = {
   readonly events: readonly ({
     readonly id: string;
@@ -2650,6 +2982,107 @@ export type PopularCompaniesResponse = {
   })[];
   readonly order: "volume-24h";
   readonly fetchedAt: string;
+};
+
+export type PortfolioExitOverviewResponse = {
+  readonly network: "solana:mainnet";
+  readonly owner: string;
+  readonly mode: "exit" | "collect";
+  readonly target: "SOL" | "USDC" | "SPLIT";
+  readonly canExit: boolean;
+  readonly items: readonly ({
+    readonly id: string;
+    readonly protocol: "wallet" | "native-stake" | "meteora-dlmm" | "meteora-dlmm-pro" | "meteora-damm-v2" | "jupiter-lend" | "kamino" | "other";
+    readonly kind: "coin" | "lst" | "pool" | "stake" | "deposit" | "borrow" | "other";
+    readonly label: string | null;
+    readonly action: "leave" | "collect" | "swap" | "deactivate";
+    readonly picked: boolean;
+    readonly partBps: number;
+    readonly usd: number | null;
+    readonly untilEpoch: number | null;
+  })[];
+  readonly held: readonly ({
+    readonly id: string;
+    readonly protocol: "wallet" | "native-stake" | "meteora-dlmm" | "meteora-dlmm-pro" | "meteora-damm-v2" | "jupiter-lend" | "kamino" | "other";
+    readonly kind: "coin" | "lst" | "pool" | "stake" | "deposit" | "borrow" | "other";
+    readonly label: string | null;
+    readonly reason: "NOT_READ" | "PROJECTION" | "NO_ROUTE" | "LOCKED" | "LIQUIDITY" | "DEBT" | "REPAY" | "STAKE_ACTIVE" | "STAKE_COOLING" | "STAKE_LOCKUP" | "NOT_WITHDRAWER" | "CLOSED_HERE";
+    readonly usd: number | null;
+    readonly untilEpoch: number | null;
+    readonly untilTime: string | null;
+  })[];
+  readonly estimate: {
+    readonly usd: number | null;
+    readonly lamports: string | null;
+    readonly usdcRaw: string | null;
+  };
+  readonly solUsd: number | null;
+  readonly complete: boolean;
+  readonly at: string;
+};
+
+export type PortfolioResponse = {
+  readonly network: "solana:mainnet";
+  readonly owner: string;
+  readonly at: string;
+  readonly solUsd: number | null;
+  readonly totals: {
+    readonly usd: number;
+    readonly sol: number | null;
+    readonly earnedUsd: number;
+    readonly projectedUsd: number;
+    readonly complete: boolean;
+  };
+  readonly positions: readonly ({
+    readonly id: string;
+    readonly protocol: "wallet" | "native-stake" | "meteora-dlmm" | "meteora-dlmm-pro" | "meteora-damm-v2" | "jupiter-lend" | "kamino" | "other";
+    readonly platform: string | null;
+    readonly kind: "coin" | "lst" | "pool" | "stake" | "deposit" | "borrow" | "other";
+    readonly state: "read" | "stale" | "unread";
+    readonly origin: "chain" | "provider" | "projection";
+    readonly label: string | null;
+    readonly value: {
+      readonly usd: number | null;
+      readonly sol: number | null;
+    };
+    readonly earned: {
+      readonly usd: number | null;
+      readonly sol: number | null;
+    } | null;
+    readonly tokens: readonly ({
+      readonly mint: string;
+      readonly symbol: string | null;
+      readonly decimals: number | null;
+      readonly amountRaw: string | null;
+      readonly usd: number | null;
+      readonly role: "held" | "supplied" | "borrowed" | "share" | "fee" | "reward";
+    })[];
+    readonly inRange: boolean | null;
+    readonly exit: {
+      readonly oneStep: boolean;
+      readonly how: "swap" | "pool-withdraw" | "lend-withdraw" | "repay" | "stake-withdraw" | "stake-deactivate" | "none";
+      readonly reason: "NOT_READ" | "PROJECTION" | "NO_ROUTE" | "LOCKED" | "LIQUIDITY" | "DEBT" | "REPAY" | "STAKE_ACTIVE" | "STAKE_COOLING" | "STAKE_LOCKUP" | "NOT_WITHDRAWER" | "CLOSED_HERE" | null;
+      readonly partBps: number;
+      readonly untilEpoch: number | null;
+      readonly untilTime: string | null;
+    };
+    readonly refs: {
+      readonly program: string | null;
+      readonly pool: string | null;
+      readonly position: string | null;
+      readonly nftMint: string | null;
+      readonly market: string | null;
+      readonly account: string | null;
+    };
+    readonly readAt: string | null;
+  })[];
+  readonly sources: readonly ({
+    readonly source: "wallet" | "native-stake" | "meteora-dlmm" | "meteora-damm-v2" | "meteora-dlmm-pro" | "jupiter-lend" | "kamino" | "jupiter-portfolio";
+    readonly state: "read" | "stale" | "unread" | "off";
+    readonly reason: "NO_KEY" | "CLOSED" | "TIMEOUT" | "REFUSED" | "UNREADABLE" | "BUDGET" | null;
+    readonly readAt: string | null;
+    readonly positions: number;
+  })[];
 };
 
 export type PredictionsBookResponse = {
@@ -3664,6 +4097,42 @@ export type TeamRolesResponse = {
   readonly network: "solana:devnet" | "solana:mainnet" | null;
 };
 
+export type WalletCleanBackResponse = {
+  readonly owner: string;
+  readonly lamports: number;
+  readonly accounts: number;
+  readonly at: string;
+};
+
+export type WalletCleanReadResponse = {
+  readonly owner: string;
+  readonly items: readonly ({
+    readonly account: string;
+    readonly mint: string;
+    readonly program: string;
+    readonly kind: "small" | "empty" | "litter" | "wrapped";
+    readonly symbol: string;
+    readonly name: string | null;
+    readonly icon: string | null;
+    readonly amountRaw: string;
+    readonly decimals: number;
+    readonly valueUsd: number | null;
+    readonly lamports: number;
+    readonly risk: readonly ("unverified" | "mint" | "freeze" | "delegate" | "thin" | "score" | "fee" | "hook")[];
+    readonly picked: boolean;
+  })[];
+  readonly risky: readonly ({
+    readonly mint: string;
+    readonly risk: readonly ("unverified" | "mint" | "freeze" | "delegate" | "thin" | "score" | "fee" | "hook")[];
+  })[];
+  readonly backLamports: number;
+  readonly smallUsd: number;
+  readonly solUsd: number | null;
+  readonly priced: boolean;
+  readonly canClean: boolean;
+  readonly at: string;
+};
+
 /** Every read the client serves, as a literal union. */
 export type OperationId =
   | "checkRecipient"
@@ -3672,7 +4141,11 @@ export type OperationId =
   | "getAgentSuggestions"
   | "getCapabilities"
   | "getDeveloperPlan"
+  | "getEarnPoolBins"
+  | "getEarnProPoolBins"
   | "getIntent"
+  | "getLadderMarket"
+  | "getLadderOrders"
   | "getLaunch"
   | "getLaunchBoost"
   | "getLaunchCreator"
@@ -3692,6 +4165,7 @@ export type OperationId =
   | "getLaunchMarketCard"
   | "getLaunchMarketHealth"
   | "getLaunchMarkets"
+  | "getLaunchPool"
   | "getLaunchPresets"
   | "getLaunchQuoteAssets"
   | "getLaunchSplit"
@@ -3712,9 +4186,16 @@ export type OperationId =
   | "getStockQuote"
   | "getTeamLaunchPlan"
   | "getTeamRoles"
+  | "listEarnPools"
+  | "listEarnProPiers"
+  | "listEarnProPositions"
+  | "listLaunchPools"
   | "listMarketEvents"
   | "listSpotMarkets"
+  | "readMarketDepth"
   | "readPaymentPage"
+  | "readPortfolio"
+  | "readPortfolioExit"
   | "readPredictionBook"
   | "readPredictionChart"
   | "readPredictionEvent"
@@ -3723,6 +4204,8 @@ export type OperationId =
   | "readPredictionResearch"
   | "readPredictionsEngine"
   | "readReferral"
+  | "readWalletClean"
+  | "readWalletCleanBack"
   | "reviewLaunchClaim";
 
 /** The reads that page: a cursor in, the next cursor out. */
@@ -3736,7 +4219,11 @@ export type ResponseOf = {
   readonly getAgentSuggestions: AgentSuggestionsResponse;
   readonly getCapabilities: Capabilities;
   readonly getDeveloperPlan: DevPlanResponse;
+  readonly getEarnPoolBins: EarnBinsResponse;
+  readonly getEarnProPoolBins: EarnBinsResponse;
   readonly getIntent: IntentResponse;
+  readonly getLadderMarket: LadderMarketResponse;
+  readonly getLadderOrders: LadderOrdersResponse;
   readonly getLaunch: LaunchTokenResponse;
   readonly getLaunchBoost: LaunchBoostView;
   readonly getLaunchCreator: LaunchCreatorResponse;
@@ -3756,6 +4243,7 @@ export type ResponseOf = {
   readonly getLaunchMarketCard: LaunchMarketCardResponse;
   readonly getLaunchMarketHealth: LaunchMarketHealthResponse;
   readonly getLaunchMarkets: LaunchMarketsResponse;
+  readonly getLaunchPool: LaunchPoolView;
   readonly getLaunchPresets: LaunchPresetsResponse;
   readonly getLaunchQuoteAssets: LaunchQuoteAssetsResponse;
   readonly getLaunchSplit: LaunchSplitView;
@@ -3776,9 +4264,16 @@ export type ResponseOf = {
   readonly getStockQuote: StockQuoteResponse;
   readonly getTeamLaunchPlan: TeamLaunchPlanResponse;
   readonly getTeamRoles: TeamRolesResponse;
+  readonly listEarnPools: EarnPoolsResponse;
+  readonly listEarnProPiers: EarnProPiersResponse;
+  readonly listEarnProPositions: EarnProPositionsResponse;
+  readonly listLaunchPools: LaunchPoolListResponse;
   readonly listMarketEvents: MarketEventsResponse;
   readonly listSpotMarkets: SpotMarketsResponse;
+  readonly readMarketDepth: MarketDepthResponse;
   readonly readPaymentPage: PayPublicResponse;
+  readonly readPortfolio: PortfolioResponse;
+  readonly readPortfolioExit: PortfolioExitOverviewResponse;
   readonly readPredictionBook: PredictionsBookResponse;
   readonly readPredictionChart: PredictionsChartResponse;
   readonly readPredictionEvent: PredictionsEventResponse;
@@ -3787,6 +4282,8 @@ export type ResponseOf = {
   readonly readPredictionResearch: PredictionsResearchResponse;
   readonly readPredictionsEngine: PredictionsEngineResponse;
   readonly readReferral: RewardsReferralGetResponse;
+  readonly readWalletClean: WalletCleanReadResponse;
+  readonly readWalletCleanBack: WalletCleanBackResponse;
   readonly reviewLaunchClaim: LaunchClaimReviewResponse;
 };
 
@@ -3813,8 +4310,23 @@ export type ParamsOf = {
   };
   readonly getCapabilities: Readonly<Record<string, never>>;
   readonly getDeveloperPlan: Readonly<Record<string, never>>;
+  readonly getEarnPoolBins: {
+    readonly pool: string;
+    readonly half?: number;
+  };
+  readonly getEarnProPoolBins: {
+    readonly pool: string;
+    readonly half?: number;
+  };
   readonly getIntent: {
     readonly id: string;
+  };
+  readonly getLadderMarket: {
+    readonly mint: string;
+  };
+  readonly getLadderOrders: {
+    readonly owner: string;
+    readonly mint?: string;
   };
   readonly getLaunch: {
     readonly mint: string;
@@ -3874,6 +4386,9 @@ export type ParamsOf = {
     readonly mint: string;
   };
   readonly getLaunchMarkets: Readonly<Record<string, never>>;
+  readonly getLaunchPool: {
+    readonly mint: string;
+  };
   readonly getLaunchPresets: Readonly<Record<string, never>>;
   readonly getLaunchQuoteAssets: Readonly<Record<string, never>>;
   readonly getLaunchSplit: {
@@ -3934,6 +4449,12 @@ export type ParamsOf = {
     readonly team?: string;
   };
   readonly getTeamRoles: Readonly<Record<string, never>>;
+  readonly listEarnPools: Readonly<Record<string, never>>;
+  readonly listEarnProPiers: Readonly<Record<string, never>>;
+  readonly listEarnProPositions: {
+    readonly owner: string;
+  };
+  readonly listLaunchPools: Readonly<Record<string, never>>;
   readonly listMarketEvents: {
     readonly kinds?: string;
     readonly mint?: string;
@@ -3945,8 +4466,22 @@ export type ParamsOf = {
     readonly mints?: string;
     readonly limit?: number;
   };
+  readonly readMarketDepth: {
+    readonly list?: "trending" | "fresh" | "gainers" | "losers" | "traded" | "stocks" | "saved";
+    readonly window?: "5m" | "1h" | "6h" | "24h";
+    readonly mints?: string;
+  };
   readonly readPaymentPage: {
     readonly id: string;
+  };
+  readonly readPortfolio: {
+    readonly owner: string;
+    readonly refresh?: "1";
+  };
+  readonly readPortfolioExit: {
+    readonly owner: string;
+    readonly mode?: "exit" | "collect";
+    readonly target?: "SOL" | "USDC" | "SPLIT";
   };
   readonly readPredictionBook: {
     readonly depth?: number;
@@ -3969,6 +4504,12 @@ export type ParamsOf = {
   readonly readReferral: {
     readonly code?: string;
     readonly address?: string;
+  };
+  readonly readWalletClean: {
+    readonly owner: string;
+  };
+  readonly readWalletCleanBack: {
+    readonly owner: string;
   };
   readonly reviewLaunchClaim: {
     readonly mint: string;

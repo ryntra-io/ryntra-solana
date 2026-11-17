@@ -2,7 +2,8 @@ import type { MetadataRoute } from "next";
 /* Relative, with the extension, so the SEO tests can read the manifest itself. */
 import { BRAND } from "../city/lib/brand.ts";
 import { PALETTE } from "../city/lib/palette.ts";
-import { CITY_WORDS } from "./seo.ts";
+import { CITY_WORDS, TERMINAL_WORDS } from "./seo.ts";
+import { terminalOpen } from "../terminal/shell/flag.ts";
 
 /**
  * The web app manifest — Ryntra City's. The icons are the city's
@@ -16,7 +17,7 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: BRAND.name,
     short_name: BRAND.name,
-    description: CITY_WORDS.description,
+    description: (terminalOpen() ? TERMINAL_WORDS : CITY_WORDS).description,
     start_url: "/",
     scope: "/",
     display: "standalone",

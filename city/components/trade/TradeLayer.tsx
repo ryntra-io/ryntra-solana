@@ -6,6 +6,7 @@ import { useTowerChart } from '@/city/lib/chart/store';
 import { useCity } from '@/city/lib/city/store';
 import { useExchange } from '@/city/lib/exchange/store';
 import { launchTowerIn, useLaunch } from '@/city/lib/launch/district';
+import { isPoolLaunch, usePool } from '@/city/lib/launch/pool';
 import { useRun } from '@/city/lib/run/store';
 import { SPOT_OPEN, TRADE_OPEN } from '@/city/lib/trade/gates';
 import { useSpot } from '@/city/lib/trade/spot-store';
@@ -59,7 +60,9 @@ export function TradeLayer() {
   const aside = charting || beacon;
   const selectedId = useCity((st) => st.selectedId);
   const towers = useCity((st) => st.layout.towers);
-  const launchTower = useLaunch((st) => launchTowerIn(st, selectedId) !== null);
+  // A tower launched straight into a pool has its own window too, named or not.
+  const poolTower = usePool((st) => st.launches.some((launch) => launch.mint === selectedId));
+  const launchTower = useLaunch((st) => launchTowerIn(st, selectedId) !== null) || poolTower;
   const launchSheet = useLaunch((st) => st.sheet);
   // The id alone: a fresh read of the market brings new tower objects, never a second opening.
   const picked = (launchSheet ? null : windowTower(towers, selectedId, launchTower))?.tower.id ?? null;
@@ -73,6 +76,11 @@ export function TradeLayer() {
     const trade = useTrade.getState();
     const tower = useCity.getState().layout.towers.find((placed) => placed.tower.id === picked)?.tower;
     if (!tower || (trade.open && trade.tower?.mint === picked)) return;
+    // A launch into a pool opens in the compact window — its countdown and its facts, no chart to make room for.
+    if (isPoolLaunch(picked)) {
+      trade.openFor(tower, 'buy', { launch: false, view: 'swap' });
+      return;
+    }
     // A launch's tower trades on its own curve or pool through the Launch engine, never through Jupiter.
     trade.openFor(tower, 'buy', { launch: launchTowerIn(useLaunch.getState(), picked) !== null });
   }, [picked]);
@@ -139,7 +147,7 @@ export function TradeLayer() {
         const trade = useTrade.getState();
         if (!trade.open || !trade.tower || city.selectedId === trade.tower.mint || BUSY.has(trade.phase) || trade.held) return;
         const next = city.selectedId ? city.layout.towers.find((placed) => placed.tower.id === city.selectedId) : null;
-        if (!next || !windowTower([next], next.tower.id, launchTowerIn(useLaunch.getState(), next.tower.id) !== null)) trade.close();
+        if (!next || !windowTower([next], next.tower.id, launchTowerIn(useLaunch.getState(), next.tower.id) !== null || isPoolLaunch(next.tower.id))) trade.close();
       }),
     [],
   );

@@ -1,0 +1,1026 @@
+/* The Swap screen: one card in the middle with its tabs — Swap · Limit · Bridge · Send — and
+   under it the pair's coins, the popular ones, the history and the agent; on a phone the same column at full width.
+   Every colour, face and size is the terminal's own variable (terminal/styles/terminal.module.css). */
+
+.grow {
+  flex: 1 1 0;
+}
+
+/* ── a panel's head: its sign, its name, its «i» ─────────────────────── */
+
+.head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 28px;
+  scroll-margin-top: 90px;
+}
+
+.headTitle.headTitle {
+  flex: 1 1 0;
+  min-width: 0;
+  font-size: var(--type-action);
+}
+
+.headSignLilac {
+  color: var(--lilac);
+}
+
+.glyph {
+  width: 20px;
+  height: 20px;
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.glyphL {
+  width: 24px;
+  height: 24px;
+}
+
+.back {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  color: var(--lilac);
+  border: 1px solid var(--glass-edge);
+  border-radius: var(--r-ctl);
+}
+
+.back:hover {
+  color: var(--ice);
+  background: rgba(153, 69, 255, 0.18);
+}
+
+.back:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
+/* ── the swap ─────────────────────────────────────────────────────────── */
+
+/* The two fields with the flip standing on their seam. */
+.pair {
+  display: flex;
+  flex-direction: column;
+}
+
+/* The square turn — of a swap's two fields and of a bridge's two ends: one control, one look. */
+.flip,
+.turn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  color: var(--lilac);
+  background: var(--panel-up);
+  border-radius: var(--r-ctl);
+  border: 1px solid var(--glass-edge);
+  transition: color 0.15s, background-color 0.15s;
+}
+
+/* The swap's stands on the seam of its two fields. */
+.flip {
+  position: relative;
+  z-index: 1;
+  margin: -12px auto;
+}
+
+.flip:hover,
+.turn:hover {
+  color: var(--ice);
+  background: var(--haze);
+}
+
+.flip:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.flipSign {
+  transform: rotate(90deg);
+}
+
+/* A field that is read, never typed: the kit's field, with a figure where the number would be typed. */
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  border-radius: var(--r-ctl);
+  background: var(--well);
+  border: 1px solid var(--line);
+  transition: border-color 0.15s;
+}
+
+.field:focus-within {
+  border-color: rgba(238, 241, 255, 0.16);
+}
+
+.fieldHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.fieldAside {
+  font-size: var(--type-caption);
+  color: var(--dim);
+  font-variant-numeric: tabular-nums;
+}
+
+.fieldRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 36px;
+}
+
+.got {
+  display: flex;
+  flex: 1 1 0;
+  align-items: center;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.gotFigure.gotFigure {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gotNone.gotNone {
+  color: var(--dim);
+}
+
+.pill {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 8px;
+  height: 36px;
+  padding: 0 10px 0 6px;
+  border-radius: var(--r-ctl);
+  border: 1px solid var(--glass-edge);
+  background: rgba(255, 255, 255, 0.05);
+  font-weight: 800;
+  font-size: var(--type-small);
+  white-space: nowrap;
+}
+
+button.pill:hover {
+  background: rgba(153, 69, 255, 0.2);
+}
+
+/* A typed line — an address — in the field's well. */
+.text {
+  width: 100%;
+  min-width: 0;
+  font-size: var(--type-small);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  text-overflow: ellipsis;
+}
+
+.text::placeholder {
+  color: rgba(152, 153, 166, 0.55);
+}
+
+.text:focus-visible {
+  outline: none;
+}
+
+.shares {
+  min-width: 0;
+}
+
+/* The rate on the left, the fee and its «i» on the right: one line. */
+.terms {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 36px;
+}
+
+.rate {
+  min-width: 0;
+  font-size: var(--type-small);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.termsLine {
+  min-width: 0;
+  font-size: var(--type-caption);
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--dim);
+  font-variant-numeric: tabular-nums;
+}
+
+.explainLines {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* ── a coin to pick: the list in the panel's place ─────────────────────── */
+
+.picker {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 0;
+}
+
+.pickerHead {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.find {
+  flex: 1 1 0;
+  min-width: 0;
+  height: 44px;
+  padding: 0 14px;
+  font-size: var(--type-body);
+  border-radius: var(--r-ctl);
+  background: var(--well);
+  border: 1px solid var(--line);
+}
+
+.find:focus-visible {
+  outline: none;
+  border-color: rgba(238, 241, 255, 0.16);
+}
+
+.find::placeholder {
+  color: rgba(152, 153, 166, 0.7);
+}
+
+.pickList {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 330px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.pickEmpty {
+  padding: 12px 10px;
+  font-size: var(--type-small);
+  color: var(--dim);
+}
+
+/* ── the money panel: the bridge, or a transfer ──────────────────────── */
+
+.money {
+  flex: 1 1 380px;
+  min-width: 0;
+}
+
+.money > .grow {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+/* The two ends of the bridge and the arrow that turns it. */
+.ends {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.end {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.endPill {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  height: 46px;
+  padding: 0 12px 0 8px;
+  font-weight: 800;
+  font-size: var(--type-small);
+  border-radius: var(--r-ctl);
+  border: 1px solid var(--glass-edge);
+  background: rgba(255, 255, 255, 0.05);
+  white-space: nowrap;
+}
+
+button.endPill:hover {
+  background: rgba(153, 69, 255, 0.2);
+}
+
+button.endPill:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.endFixed {
+  justify-content: flex-start;
+}
+
+.endName {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.netMenu.netMenu {
+  left: 0;
+  right: auto;
+  width: 100%;
+}
+
+/* The bridge's stands level with its two ends. */
+.turn {
+  flex: none;
+  align-self: flex-end;
+}
+
+/* An end of the bridge with its name over it: «From», «To». */
+.endSide {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.endSide > .end {
+  flex: none;
+}
+
+.turn:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+/* The address on the other network: where the money is sent from there. */
+.address {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  border-radius: var(--r-ctl);
+  background: var(--well);
+  border: 1px solid var(--glass-edge);
+}
+
+.addressValue {
+  margin: 0;
+  font-family: inherit;
+  font-size: var(--type-base);
+  font-weight: 700;
+  line-height: 1.45;
+  word-break: break-all;
+  font-variant-numeric: tabular-nums;
+}
+
+/* An address to look at twice before it is agreed to. */
+.hold {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 14px;
+  font-size: var(--type-small);
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--amber);
+  background: rgba(255, 178, 63, 0.06);
+  border: 1px solid rgba(255, 178, 63, 0.35);
+}
+
+.hold > button {
+  align-self: flex-start;
+}
+
+/* The panel's own control, quiet, as tall as the approved design's. */
+.moneyGo.moneyGo {
+  height: 54px;
+  font-size: var(--type-body);
+}
+
+/* ── «Recent» ─────────────────────────────────────────────────────────── */
+
+.recent {
+  flex: 1 1 280px;
+  align-self: flex-start;
+  max-width: 340px;
+  min-width: 0;
+}
+
+.recentHead {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 18px 12px;
+}
+
+.recentKick.recentKick {
+  flex: 1 1 0;
+  color: var(--ice);
+}
+
+.recentAll {
+  font-size: var(--type-caption);
+  font-weight: 700;
+  color: var(--lilac);
+}
+
+.recentAll:hover {
+  color: var(--ice);
+}
+
+.recentRows {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.recentRow {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: 12px;
+  min-height: 54px;
+  padding: 0 18px;
+  border-top: 1px solid var(--line);
+  font-size: var(--type-body);
+  font-weight: 600;
+}
+
+.pairLogos {
+  display: flex;
+}
+
+.pairLogos > * + * {
+  margin-left: -9px;
+  box-shadow: 0 0 0 2px var(--panel);
+}
+
+.recentNames {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.recentNames > b {
+  overflow: hidden;
+  font-size: var(--type-small);
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.recentNames > span {
+  font-size: var(--type-caption);
+  color: var(--dim);
+}
+
+.recentNames > span[data-tone='down'] {
+  color: var(--flare);
+}
+
+.recentAmount {
+  font-size: var(--type-small);
+  font-variant-numeric: tabular-nums;
+}
+
+.recentLine {
+  margin: 0;
+  padding: 14px 18px 18px;
+  border-top: 1px solid var(--line);
+  font-size: var(--type-body);
+  line-height: 1.45;
+  color: var(--dim);
+}
+
+.recentBlank {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  padding-bottom: 16px;
+}
+
+.recentBlank > button {
+  margin-left: 18px;
+}
+
+.bones {
+  display: flex;
+  flex-direction: column;
+}
+
+.bones span {
+  height: 54px;
+  border-top: 1px solid var(--line);
+  background: linear-gradient(90deg, transparent, rgba(153, 69, 255, 0.06), transparent);
+  background-size: 200% 100%;
+  animation: glide 1.6s linear infinite;
+}
+
+@keyframes glide {
+  to {
+    background-position: -200% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bones span {
+    animation: none;
+  }
+
+  .flip {
+    transition: none;
+  }
+}
+
+/* A phone: the same blocks one under another, every control a finger's size. */
+@media (max-width: 767px) {
+  .money,
+  .recent {
+    flex: none;
+    max-width: none;
+    align-self: stretch;
+  }
+
+  /* A phone's panel keeps its edge and gives its width to the fields. */
+  .money.money {
+    padding: 16px;
+  }
+
+  .back,
+  .turn {
+    width: 44px;
+    height: 44px;
+  }
+
+  /* The network's whole name beside its mark and its chevron, in half a phone's width. */
+  .endPill {
+    gap: 6px;
+    padding: 0 8px 0 6px;
+  }
+
+  .endName {
+    gap: 6px;
+  }
+
+  .text,
+  .find {
+    font-size: 16px;
+  }
+
+  .money > .grow {
+    display: none;
+  }
+}
+
+/* The wallet's coins for a transfer, under its field. */
+.coinList {
+  margin-top: 8px;
+  padding: 6px;
+  background: var(--panel-up);
+  border: 1px solid var(--glass-edge);
+}
+
+/* ── the v2 layout (docs/terminal/design/2026-11-17/A-Swap · B-Swap) ─────────────────────────────────── */
+
+/* The least the swap brings: its name on the left, the figure on the right. */
+.least {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  font-size: var(--type-body);
+  color: var(--dim);
+}
+
+.least > span:first-child {
+  flex: 1 1 0;
+}
+
+.least > b {
+  font-family: var(--display);
+  font-weight: 700;
+  color: var(--ice);
+  font-variant-numeric: tabular-nums;
+}
+
+.leastImpact {
+  font-size: var(--type-caption);
+  font-weight: 700;
+}
+
+.leastImpact[data-level='notable'],
+.fact > dd[data-level='notable'] {
+  color: var(--amber);
+}
+
+.leastImpact[data-level='high'],
+.fact > dd[data-level='high'] {
+  color: var(--flare);
+}
+
+/* Pro: the terms on rows, in their well. */
+.facts {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 14px 16px;
+  background: var(--well);
+  border: 1px solid var(--line);
+}
+
+.fact {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: var(--type-small);
+}
+
+.fact > dt {
+  color: var(--dim);
+}
+
+.fact > dd {
+  margin: 0;
+  overflow: hidden;
+  font-weight: 700;
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+/* «Recent»: each row's outcome as a pill. */
+.recentRow {
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+}
+
+.outcome {
+  padding: 3px 10px;
+  font-size: var(--type-caption);
+  font-weight: 700;
+  white-space: nowrap;
+  color: var(--lilac);
+  border: 1px solid var(--glass-edge);
+}
+
+.outcome[data-outcome='DONE'] {
+  color: var(--mint);
+  border-color: color-mix(in srgb, var(--mint) 45%, transparent);
+}
+
+.outcome[data-outcome='FAILED'] {
+  color: var(--flare);
+  border-color: color-mix(in srgb, var(--flare) 45%, transparent);
+}
+
+/* «Hand it to the agent»: the ticket's coin as the agent's sentence, one quiet press. */
+.agent {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 16px;
+}
+
+.agentSign {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  color: var(--amber);
+  background: color-mix(in srgb, var(--amber) 12%, transparent);
+}
+
+.agentWords {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  font-size: var(--type-body);
+}
+
+.agentWords > span {
+  color: var(--dim);
+}
+
+.agentGo {
+  flex: none;
+}
+
+@media (max-width: 767px) {
+  .agent {
+    flex-wrap: wrap;
+  }
+
+  .agentGo {
+    width: 100%;
+  }
+
+  /* A phone's row: the pill under the amount's place, the names given the width. */
+  .recentRow {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    row-gap: 4px;
+    padding: 10px 16px;
+  }
+
+  .outcome {
+    grid-column: 3;
+    justify-self: end;
+  }
+}
+
+/* The ticket's place, kept while a money tab is in front. */
+.slot {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
+.slot[hidden] {
+  display: none;
+}
+
+/* ── one card in the middle ──────────────────────────────────────────────
+   The card is the screen's one action panel, its tabs on it; under it the pair's coins, the popular ones, the history
+   and the agent — one column as wide as a form, in the middle of the screen. No chart: that is the coin's own page. */
+
+.stage {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+  max-width: 540px;
+  margin: 24px auto 0;
+}
+
+/* The screen's name for a screen reader: the rail already says it, and the card's first tab says it again. */
+.screenName {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+.card {
+  flex: none;
+  min-width: 0;
+}
+
+/* «Recent» and the agent under the card: as wide as the card. */
+.stage > .recent,
+.stage > .agent {
+  flex: none;
+  align-self: stretch;
+  max-width: none;
+}
+
+/* The card's head: its tabs, and the «i» of the tab in front where it has one. */
+.cardHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 40px;
+}
+
+.cardBody {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
+.cardTabs {
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.cardTabs::-webkit-scrollbar {
+  display: none;
+}
+
+.cardName {
+  font-weight: 700;
+  font-size: var(--type-lead);
+}
+
+/* The pair's two coins: a tile each, a tap away from the coin's page. */
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.tiles[data-count='1'] {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.tile {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: 10px;
+  padding: 12px 14px;
+  color: inherit;
+  text-decoration: none;
+  background: var(--panel);
+  border: 1px solid var(--glass-edge);
+  transition: background-color 0.15s, border-color 0.15s;
+}
+
+.tile:hover {
+  background: var(--panel-up);
+  border-color: var(--edge);
+}
+
+.tile:focus-visible {
+  outline: 2px solid var(--lilac);
+  outline-offset: 2px;
+}
+
+.tileName {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.tileName > b {
+  font-weight: 700;
+}
+
+.tileName > span {
+  overflow: hidden;
+  font-size: var(--type-caption);
+  color: var(--dim);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.tileFigures {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  font-variant-numeric: tabular-nums;
+}
+
+.tileFigures > b {
+  font-weight: 700;
+}
+
+.tileFigures > span {
+  font-size: var(--type-caption);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.tileFigures > span > i {
+  font-style: normal;
+  font-weight: 500;
+  color: var(--dim);
+}
+
+.tileFigures > span[data-tone='up'],
+.popularChange[data-tone='up'] {
+  color: var(--mint);
+}
+
+.tileFigures > span[data-tone='down'],
+.popularChange[data-tone='down'] {
+  color: var(--flare);
+}
+
+/* The tile's way out: a small arrow by the coin's name, to its page. */
+.tileGo {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  margin-left: 4px;
+  color: var(--dim);
+  vertical-align: -1px;
+  transform: rotate(-45deg);
+}
+
+/* The market's popular coins: a row each, a tap putting the coin on the card. */
+.popular {
+  display: flex;
+  flex-direction: column;
+  background: var(--panel);
+  border: 1px solid var(--glass-edge);
+}
+
+.popularHead {
+  margin: 0;
+  padding: 12px 14px 8px;
+  font-size: var(--type-small);
+  font-weight: 700;
+  color: var(--dim);
+}
+
+.popularRows {
+  margin: 0;
+  padding: 0 0 6px;
+  list-style: none;
+}
+
+.popularRow {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto 72px;
+  align-items: center;
+  column-gap: 10px;
+  width: 100%;
+  min-height: 44px;
+  padding: 6px 14px;
+  color: inherit;
+  text-align: left;
+  font-variant-numeric: tabular-nums;
+  transition: background-color 0.15s;
+}
+
+.popularRow:hover {
+  background: var(--panel-up);
+}
+
+.popularRow:focus-visible {
+  outline: 2px solid var(--lilac);
+  outline-offset: -2px;
+}
+
+.popularRow > b {
+  overflow: hidden;
+  font-weight: 700;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.popularPrice {
+  color: var(--ice);
+}
+
+.popularChange {
+  justify-self: end;
+  font-weight: 700;
+}
+
+@media (max-width: 767px) {
+  .stage {
+    max-width: none;
+    margin-top: 0;
+  }
+
+  .card.card {
+    padding: 16px;
+  }
+
+  .tiles {
+    padding: 0 16px;
+  }
+
+  .popular {
+    margin: 0 16px;
+  }
+
+  .turn {
+    width: 44px;
+    height: 44px;
+  }
+}

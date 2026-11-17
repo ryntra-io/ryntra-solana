@@ -4,7 +4,9 @@ Ryntra Launch puts every new token on a Meteora Dynamic Bonding Curve (DBC) conf
 partner, trades it on the curve, graduates it into a DAMM v2 pool whose liquidity is locked for ever, and can then
 add buy-side DLMM liquidity paid from Ryntra's own partner fees. Creator fees can be shared through Meteora's Dynamic
 Fee Sharing, a creator's first purchase can be locked in Met Lock, and an early-access format runs on an Alpha Vault.
-Ryntra City's Earn district (the Harbor) lists Meteora DLMM and DAMM v2 pools and builds deposits into them. The engine
+Earn — a shelf of the terminal, and the Harbor in the city — lists Meteora DLMM and DAMM v2 pools and builds deposits
+into them. Meteora DLMM Pro is a venue of the engine with a launch, limit-order ladders and earning built on it, closed
+to people until each is opened on mainnet ([DLMM Pro](#dlmm-pro)). The engine
 builds every transaction a person makes unsigned, and the person signs it in their own wallet; Ryntra never holds
 people's funds or keys (its executor signs only its own acts, from an allowlist: graduations, its own claims, its own liquidity).
 A person can also hand a DLMM or DAMM v2 position to an agent with one approval: it stays in the person's own Squads smart
@@ -14,24 +16,25 @@ account, and on-chain policies decide what the agent may do.
 
 ```mermaid
 flowchart LR
-  A["Person in Ryntra City<br/>name · ticker · picture"] -->|one signature| B["Meteora DBC<br/>Ryntra's partner config<br/>anti-sniper fee · USDC pair"]
+  A["Person in Ryntra<br/>name · ticker · picture"] -->|one signature| B["Meteora DBC<br/>Ryntra's partner config<br/>anti-sniper fee · USDC pair"]
   B -->|"curve fills to ~$75K"| C["DAMM v2 pool<br/>LP locked for ever<br/>half creator · half partner"]
   C --> D["DLMM ladder<br/>buy-side liquidity<br/>from Ryntra's partner fees"]
   B -.->|"curve fees"| E["Claims<br/>creator: one signature<br/>Ryntra: Squads multisig"]
   C -.->|"locked-LP fees"| E
-  F["Earn · Piers<br/>Meteora DLMM / DAMM v2"] --- G["Person's own position<br/>in their wallet"]
+  F["Earn<br/>Meteora DLMM / DAMM v2"] --- G["Person's own position<br/>in their wallet"]
   %% An empty column: GitHub draws its pan and zoom buttons over a diagram's bottom right corner.
   E ~~~ Z["#8195;#8195;#8195;#8195;"]
   style Z fill:none,stroke:none
 ```
 
-| A person launches in the city | The coin's tower on its curve |
+| Launch: a coin on a Meteora curve | Earn: Meteora pools, the person's own position |
 |---|---|
-| ![The launch sheet in Ryntra City](public/showcase/launch.jpg) | ![A coin's window: curve progress to the DEX, buy and sell — on the devnet stand](public/showcase/coin-on-curve.jpg) |
-| **The Piers in Earn: Meteora pools, the person's own position** | **The city: every coin a tower** |
-| ![Meteora DLMM pools in the Earn window](public/showcase/earn-piers.jpg) | ![Ryntra City](public/showcase/city.jpg) |
+| ![Launch in the terminal: name, ticker, picture, the fee against snipers and the move to a pool at $75K](public/showcase/terminal-launch.jpg) | ![Earn in the terminal: Meteora DLMM pools by fees, a goal for the range, staking](public/showcase/terminal-earn.jpg) |
+| **A coin on its curve, in the city** | **The city: every coin a tower** |
+| ![A coin's window: curve progress to the DEX, buy and sell — on the devnet stand](public/showcase/coin-on-curve.jpg) | ![Ryntra City](public/showcase/city.jpg) |
 
-Pictures from the live site, except the coin's window, which is the devnet stand where a curve is shown filling.
+The terminal's pictures are from the live site, 17 November 2026, with no wallet connected; the coin's window is the
+city's devnet stand, where a curve is shown filling.
 
 ## Meteora in the code
 
@@ -76,7 +79,7 @@ All paths under `lib/core/venues/meteora-dbc/` unless written in full.
 
 ## Earn
 
-The city's Earn district, the Harbor, shows Meteora pools and lets a person put money in. A deposit of both coins adds no
+Earn — the terminal's shelf and the city's Harbor — shows Meteora pools and lets a person put money in. A deposit of both coins adds no
 Ryntra fee; a deposit from one coin through Zap pays Ryntra's swap fee on its Jupiter leg.
 
 | Layer | Files |
@@ -122,24 +125,50 @@ around our signer, with a stranger's key, or after the stop was refused by the c
 
 ## Liquidity shapes
 
-The Studio engine accepts Spot, Curve and Bid-Ask (`LIQUIDITY_SHAPES` in `lib/liquidity/studio/contract.ts`). In the Piers a
+The Studio engine accepts Spot, Curve and Bid-Ask (`LIQUIDITY_SHAPES` in `lib/liquidity/studio/contract.ts`). In Earn a
 person picks a goal, not a shape: Even, Near price or Catch moves. The Zap and the agent's care build it, and the agent
 rebuilds a range in the same shape.
 
 ## DLMM Pro
 
 In progress. Meteora opened the DLMM Pro beta on 12 November 2026 — program `dPro1D5wiqnGMH8vMDG23jh35btTHoWdyqXjqkqxe8n`,
-SDK `@meteora-ag/dlmm-pro-sdk`. It is a program of its own, not a new DLMM shape, so Ryntra is adding it as a venue of
-its own beside DBC, DAMM v2 and DLMM. Since 14 November 2026 the venue is in the engine and has been rehearsed end to
-end on the program's deployed binary. **None of it is open to people yet:** no route, window or agent tool reaches it,
-and the capability registry lists it as `BUILDING`. The live Launch on DBC is unchanged.
+SDK `@meteora-ag/dlmm-pro-sdk`. It is a program of its own, not a new DLMM shape, so Ryntra adds it as a venue of its
+own beside DBC, DAMM v2 and DLMM. The venue is in the engine since 14 November 2026, and three surfaces stand on it
+since 16 November, each behind a gate of its own and rehearsed on the program's deployed binary. **None of it is open to
+people on mainnet yet:** each surface opens on mainnet only by a change of one constant in code, and the capability
+registry lists all of them as `BUILDING`. The live Launch on DBC is unchanged.
 
-| Being built | What it stands on in DLMM Pro |
-|---|---|
-| A launch with no curve and no migration: the coin trades in its final pool from the first second | A launch pool; a market-cap fee schedule that starts high and falls as the price rises; trading that opens at a set time; the launch liquidity locked for ever |
-| Limit orders from one sentence to the agent | Order ladders of up to 25 prices that fill at the tick price and earn a share of the fee |
-| One position the agent looks after | A multi-range position NFT; a delegate claims and withdraws only to the owner's own accounts — the program enforces it |
-| Swaps | Quoted with the SDK's own math, built unsigned and signed in the person's wallet, like every other venue here |
+**A launch straight into a pool.** No curve and no migration: three signatures of the creator's wallet — an honest
+Token-2022 coin; a launch pool whose fee against snipers falls with the market cap from 50 % to about 1 %, priced in SOL
+or USDC, opening at a set time; and the supply, less an optional 5 % set to sell from ×2 to ×10 as a ladder, as
+one-sided positions of 14 ranges locked for ever, split 40 : 60 between the creator's position and Ryntra's.
+- *Stands:* rehearsed; closed on mainnet by a constant in `lib/launch-pool/gate.ts`.
+- *Files:* `lib/launch-pool/`, `lib/core/launch/dlmm-pro.ts`, `app/api/v1/launch/dlmm-pro/`.
+
+**Limit-order ladders.** “Buy lower · sell higher”: up to 25 prices in one order, filled at the tick price and earning
+a share of the fee; relative ticks, so an order is never placed at a price the market has left. An agent with a budget
+can place a ladder and collect what filled, only into the owner's accounts.
+- *Stands:* rehearsed; on devnet by a deployment's switch; closed on mainnet by `DLMM_PRO_LIMITS_MAINNET = false`.
+- *Files:* `lib/pro-limits/`, `app/api/v1/ladders/`.
+
+**Earning and an agent's care.** One position of many ranges from a goal and a width; paying with SOL alone swaps in
+the same pool and opens in one approval; claim and add back in one transaction; pool rewards as a second line. The agent
+looks after it as Meteora's delegate with three rights — fees, rewards, the exit at the stop — and the program pays only
+into the owner's accounts.
+- *Stands:* rehearsed; on devnet by a deployment's switch, its devnet pass not run yet; closed on mainnet by
+  `DLMM_PRO_EARN_ON_MAINNET = false`.
+- *Files:* `lib/earn-pro/`, `app/api/v1/earn/pro/`.
+
+**Swaps.** Quoted with the SDK's own math, built unsigned and signed in the person's wallet, like every other venue
+here.
+- *Stands:* in the engine, on no route. *File:* `lib/core/venues/meteora-dlmm-pro/swap.server.ts`.
+
+The rehearsals of the three surfaces, on the program's binary as deployed, with no write to mainnet: the launch — 33
+steps, 13 refused on purpose, 270 checks, none off; a whole launch with its split took 0.094 SOL and 5 transactions.
+The ladders — 83 transactions landed, 21 refused on purpose, 114 checks, none off; 25 prices in one signature took
+166 084 compute units and 0.030 SOL of rent that comes back. Earning and care — 74 transactions, 31 refused on purpose,
+332 checks, none off. Moving a range by the agent is left out: as a delegate it would add liquidity with its own money. The run records
+of these three rehearsals are kept outside this repository; the earning rehearsal's states ship as a fixture.
 
 Wave, the fourth liquidity preset Meteora announced for DLMM Pro, is not in the SDK yet (0.1.2 has Spot, Curve, BidAsk and
 Custom). Ryntra adds it when it is published and does not imitate a shape that is not.
@@ -196,24 +225,26 @@ with 15 ranges took 0.062 SOL and two. The state that run left is the fixture th
 
 ## How to check it
 
-Node 22.18 or later. Counts measured on 14–15 November 2026.
+Node 22.18 or later. Counts measured on 14–16 November 2026.
 
 ```bash
 npm ci
 
 # 61 pass: presets, receipt, market, exit positions, SDK comparison
 node --test lib/core/venues/meteora-dbc/*.test.mjs
-# 91 pass: fee, opening, orders, ticks, SDK comparison, mainnet pools
+# 135 pass: fee, opening, orders, ladders, ticks, SDK comparison, mainnet pools
 node --test lib/core/venues/meteora-dlmm-pro/*.test.mjs
+# 51 pass: the DLMM Pro launch, ladders and earning, each behind its gate
+node --test lib/launch-pool/*.test.mjs lib/core/launch/dlmm-pro.test.mjs lib/pro-limits/*.test.mjs lib/earn-pro/*.test.mjs
 # 109 pass, Zap and limit orders included
 node --test lib/liquidity/*.test.mjs lib/liquidity/catalog/*.test.mjs lib/liquidity/studio/*.test.mjs
-# 264 pass: launch rules, ladder, budget, early access, transfer fee
+# 277 pass: launch rules, ladder, budget, early access, transfer fee, the DLMM Pro launch
 node --test lib/core/launch/*.test.mjs
 # 296 tests; 3 skip here (they read API examples kept outside)
 node --test lib/launch/*.test.mjs
 # 11 pass: Squads proposal lines are Meteora claims only
 node --test lib/solana/treasury/launch-claims.test.mjs
-# 355 tests; 1 skips here (it reads a document kept outside)
+# 373 tests; 1 skips here (it reads a document kept outside)
 node --test city/lib/launch/*.test.mjs city/lib/districts/harbor/*.test.mjs
 # 12 pass: the agent's decisions, policies and failures
 node --test lib/care/*.test.mjs
@@ -250,7 +281,7 @@ node --test lib/agent-control/external/router.test.mjs
   created as the partner. The executor's cron (`vercel.json`) graduates curves and, where its stops allow, runs the ladder.
 - In the city, Launch runs on mainnet: `CITY_LAUNCH_MAINNET` in `city/lib/launch/gate.ts` is the one value, and the
   deployment switch `NEXT_PUBLIC_RYNTRA_CITY_LAUNCH` closes it without a code change.
-- Earn on Meteora pools is open on mainnet: the Piers in the city's Earn window list Meteora pools, and adding,
+- Earn on Meteora pools is open on mainnet: Earn lists Meteora pools in the terminal and in the city, and adding,
   withdrawing and claiming are open (`NEXT_PUBLIC_RYNTRA_CITY_HARBOR` in `city/lib/districts/harbor/flag.ts`; the
   actions' own gate — closed, one canary wallet up to $5, or open — in `lib/liquidity/studio/gate.ts`).
 - The newer claim path is open on mainnet since 3 November 2026: a creator claims their share of the curve's fees from
@@ -263,6 +294,6 @@ node --test lib/agent-control/external/router.test.mjs
 - The care agent runs behind its own switches (`RYNTRA_AGENT_CARE`, `NEXT_PUBLIC_RYNTRA_AGENT_CARE`); the cron is `/api/cron/agent-care`.
   Its paths are proven on devnet and a mainnet fork; no person has yet handed it a position on mainnet.
 - DBC SDK 1.5.13 is the default; `RYNTRA_DBC_SDK=2` moves every client call to 2.0.0, and removing it rolls back.
-- DLMM Pro is in progress: the venue is in the engine and rehearsed on the program's deployed binary, it has sent
-  nothing to mainnet, and none of it is open to people yet (see [DLMM Pro](#dlmm-pro)). `DLMM_PRO_OPEN_TO_PEOPLE` in
-  `lib/core/venues/meteora-dlmm-pro/gate.ts` is the one value.
+- DLMM Pro is in progress: the venue and its three surfaces are in the engine and rehearsed on the program's deployed
+  binary, they have sent nothing to mainnet, and none of it is open to people yet (see [DLMM Pro](#dlmm-pro)).
+  `lib/core/venues/meteora-dlmm-pro/gate.ts` holds the constants; `lib/launch-pool/` holds the launch's own.

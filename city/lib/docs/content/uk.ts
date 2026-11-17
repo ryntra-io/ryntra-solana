@@ -12,7 +12,7 @@ export const UK: Sections = {
   start: ({ f, say }) => ({
     lead: 'Ryntra — твій AI-агент на Solana, а весь ринок — живе 3D-місто. За кілька хвилин можна підключити гаманець і зробити першу угоду.',
     related: ['city', 'trade', 'money'],
-    action: { label: 'У місто', href: '/' },
+    action: { label: 'У місто', href: '/city' },
     parts: [
       part(
         'what',
@@ -67,7 +67,7 @@ export const UK: Sections = {
   city: ({ say, f }) => ({
     lead: 'Увесь ринок Solana — один силует, який читається з першого погляду. Розмір показує, скільки монета варта, світло — що рухається просто зараз.',
     related: ['trade', 'launch', 'agent'],
-    action: { label: 'У місто', href: '/' },
+    action: { label: 'У місто', href: '/city' },
     parts: [
       part(
         'what',
@@ -494,7 +494,7 @@ export const UK: Sections = {
   guard: () => ({
     lead: 'Перш ніж підписати те, чому не зовсім довіряєш, встав це сюди. Одним рядком прочитаєш, що воно зробить із твоїм гаманцем.',
     related: ['security', 'agent', 'trade'],
-    action: { label: 'У місто', href: '/' },
+    action: { label: 'У місто', href: '/city' },
     parts: [
       part(
         'what',
@@ -656,7 +656,7 @@ export const UK: Sections = {
     return {
       lead: 'Кожна комісія Ryntra в одному місці. Ту, що стосується твоєї угоди, видно до підпису в самій угоді.',
       related: ['trade', 'launch', 'money'],
-      action: { label: 'У місто', href: '/' },
+      action: { label: 'У місто', href: '/city' },
       parts: [
         part('what', WHAT, p('Ryntra заробляє комісію з угод і запусків. Підписки немає, а дивитись і тримати монети нічого не коштує. Витрати мережі, рух ціни й комісії інших команд — не Ryntra; їх показано окремо до підпису.')),
         part(
@@ -725,7 +725,7 @@ export const UK: Sections = {
   security: () => ({
     lead: 'Гроші лишаються у твоєму гаманці, а ключі — у тебе. Ось що Ryntra може й чого не може і за чим стежити маєш ти сам.',
     related: ['guard', 'agent', 'help'],
-    action: { label: 'У місто', href: '/' },
+    action: { label: 'У місто', href: '/city' },
     parts: [
       part(
         'what',

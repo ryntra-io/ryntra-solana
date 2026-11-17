@@ -21,7 +21,7 @@ export type SheetNow = Readonly<{
  * (`LaunchLayer`) asks it without importing the HUD that imports it.
  */
 export function sheetClosable(phase: SheetNow['phase']): boolean {
-  return !phase || phase.step === 'done' || phase.step === 'failed' || phase.step === 'opened';
+  return !phase || phase.step === 'done' || phase.step === 'failed' || phase.step === 'opened' || phase.step === 'pooled';
 }
 
 export function reviewStepOpen(now: SheetNow): boolean {
