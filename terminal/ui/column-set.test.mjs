@@ -28,6 +28,9 @@ test("a table starts with what the person chose; else all on a wide window or af
   assert.equal(startSet(null, 1440, "1"), "all", "who kept «Pro» on loses no density");
   assert.equal(startSet(null, 1440, "0"), "main");
   assert.equal(startSet("everything", 1440, null), "main", "a foreign value is nobody's choice");
+  // A table in a page's action column is as wide on every window: the main set, unless the person chose.
+  assert.equal(startSet(null, 2560, "1", false), "main");
+  assert.equal(startSet("all", 2560, null, false), "all");
   assert.equal(WIDE_PX, 1680);
 });
 
@@ -40,7 +43,7 @@ test("each table remembers under its own key, and the old switch's key is only r
   assert.ok(!/setItem\(OLD_PRO_KEY/.test(hook), "never written again");
   // The server's page draws the main set; after hydration a screen opens straight in the person's own — no first frame
   // in another set on a move between screens.
-  assert.match(hook, /useSyncExternalStore<ColumnSet>\(\s*subscribe,\s*\(\) => read\(table\),\s*\(\) => 'main',\s*\)/);
+  assert.match(hook, /useSyncExternalStore<ColumnSet>\(\s*subscribe,\s*\(\) => read\(table, byWindow\),\s*\(\) => 'main',\s*\)/);
 });
 
 test("«Columns» stands on the Market's and Earn's own bars, and a phone is offered none", () => {
@@ -51,7 +54,7 @@ test("«Columns» stands on the Market's and Earn's own bars, and a phone is off
   assert.match(market, /const sortShown = sort\.key === DEFAULT_SORT\.key \|\| columns\.some\(\(c\) => c\.key === sort\.key\);/);
   assert.match(market, /if \(width && !sortShown\) onSort\(DEFAULT_SORT\);/);
   const earn = read("../earn/EarnScreen.tsx");
-  assert.match(earn, /useColumnSet\('earn'\)/);
+  assert.match(earn, /useColumnSet\('earn', false\)/, "the table in the page's action column starts with the main set");
   assert.match(earn, /narrow \? null : \(\s*<Columns\s+value=\{columnSet\}/);
   assert.match(earn, /if \(next === 'main' && \(sort\.key === 'step' \|\| sort\.key === 'base'\)\) setSort\(START_SORT\);/);
   // The rare filters open with «+ Filters»; while one of them is set they stay open and the control is held.

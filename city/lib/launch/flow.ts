@@ -4,7 +4,7 @@ import { signFreshBytes } from '../../../lib/solana/sign-fresh.ts';
 import type { Answer, LaunchEngine, Network } from './engine.ts';
 import { wordsNow } from '../i18n/dict.ts';
 import { cityLaunchOpen } from './gate.ts';
-import { FIELDS_REFUSED, asReviewed, freshPrebuilt, launchRequest, type Prebuilt } from './prepare.ts';
+import { FIELDS_REFUSED, asReviewed, freshPrebuilt, launchRequest, metadataBody, type About, type Prebuilt } from './prepare.ts';
 import { shareOpen } from './share.ts';
 import { BUILD_AGED, BUILD_UNEXPECTED, CITY_CLOSED, WALLET_REFUSED, type LaunchFailure } from './refusal.ts';
 import { REFUSAL_WORDS } from './words.ts';
@@ -30,7 +30,8 @@ export type Signer = Readonly<{
   sign: (wires: readonly string[], chain: Network) => Promise<Readonly<{ ok: true; signed: readonly string[] }> | Readonly<{ ok: false; reason: string }>>;
 }>;
 
-export type LaunchFields = Readonly<{ name: string; symbol: string; picture: Readonly<{ base64: string; url: string }> }>;
+/** The coin as the creator made it; `about` — its line and links, where the creator wrote them. */
+export type LaunchFields = Readonly<{ name: string; symbol: string; picture: Readonly<{ base64: string; url: string }>; about?: About }>;
 
 export type Liftoff = Readonly<{
   token: string;
@@ -118,7 +119,7 @@ export async function runLaunch(args: Readonly<{
   let ahead = args.stored ? await args.stored : null;
   if (ahead?.ok && (ahead.data.name !== fields.name || ahead.data.symbol !== fields.symbol)) ahead = null;
   if (ahead && !ahead.ok && !FIELDS_REFUSED.has(ahead.code)) ahead = null;
-  const stored = ahead ?? (await engine.metadata({ name: fields.name, symbol: fields.symbol, description: '', website: '', x: '', telegram: '', imageBase64: fields.picture.base64 }));
+  const stored = ahead ?? (await engine.metadata(metadataBody(fields)));
   if (!stored.ok) return fail(stored.code, stored.message);
 
   /* The split as the review showed it, the creator keeping the rest — refused here, before anything is built, where the

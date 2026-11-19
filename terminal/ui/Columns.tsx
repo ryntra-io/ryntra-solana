@@ -13,7 +13,7 @@ function subscribe(listener: () => void): () => void {
   return () => void listeners.delete(listener);
 }
 
-function read(table: string): ColumnSet {
+function read(table: string, byWindow: boolean): ColumnSet {
   const known = chosen.get(table);
   if (known) return known;
   let kept: string | null = null;
@@ -24,19 +24,20 @@ function read(table: string): ColumnSet {
   } catch {
     /* Storage blocked: the window's width decides. */
   }
-  const set = startSet(kept, window.innerWidth, oldPro);
+  const set = startSet(kept, window.innerWidth, oldPro, byWindow);
   chosen.set(table, set);
   return set;
 }
 
 /**
- * The set of columns a table shows, remembered per table (`./column-set.ts`). The server's page draws the main set and
+ * The set of columns a table shows, remembered per table (`./column-set.ts`). `byWindow` false — a table in a page's
+ * action column, as wide on every window — starts with the main set. The server's page draws the main set and
  * hydration follows it; from then on a screen opens straight in the person's own set — no first frame in another.
  */
-export function useColumnSet(table: string): readonly [ColumnSet, (next: ColumnSet) => void] {
+export function useColumnSet(table: string, byWindow = true): readonly [ColumnSet, (next: ColumnSet) => void] {
   const set = useSyncExternalStore<ColumnSet>(
     subscribe,
-    () => read(table),
+    () => read(table, byWindow),
     () => 'main',
   );
   const choose = useCallback(

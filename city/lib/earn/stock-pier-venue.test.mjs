@@ -397,7 +397,7 @@ test("the door prices the pool from the live market, per base token, and lets th
   assert.equal(calls[0].engineBody.venue, "meteora-damm2");
 });
 
-test("the door refuses before the engine: closed, not offered, a dividend in its window, no price, over the ceiling", async () => {
+test("the door refuses before the engine: closed, not offered, a dividend in its window, no price — and no sum of Ryntra's", async () => {
   const closed = doorDeps({ env: {} });
   assert.equal((await reviewStockBuild(doorBody(), closed.deps)).code, "STOCK_PIER_CLOSED");
   const stopped = doorDeps({
@@ -414,8 +414,8 @@ test("the door refuses before the engine: closed, not offered, a dividend in its
   assert.equal(held.status, 409);
   assert.equal(dividend.calls.length, 0);
   assert.equal((await reviewStockBuild(doorBody(), doorDeps({ quoteUsd: async () => null }).deps)).code, "STOCK_PIER_UNPRICED");
-  // $1,000 is the ceiling: 6 SOL is $1,105.
-  assert.equal((await reviewStockBuild(doorBody({ amountB: "6000000000" }), doorDeps().deps)).code, "STOCK_PIER_CEILING");
+  // No sum of Ryntra's on a build: 6 SOL, $1,105, is not refused for its size.
+  assert.notEqual((await reviewStockBuild(doorBody({ amountB: "6000000000" }), doorDeps().deps)).code, "STOCK_PIER_CEILING");
   assert.equal((await reviewStockBuild({ action: "build" }, doorDeps().deps)).code, "BAD_REQUEST");
 });
 

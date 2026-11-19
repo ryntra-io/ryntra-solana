@@ -5,14 +5,6 @@
 
 /* ── the head: the name, whose wallet, the money actions ─────────────── */
 
-.head {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 12px 16px;
-  min-height: 44px;
-}
-
 .grow {
   flex: 1 1 0;
   min-width: 0;
@@ -41,13 +33,8 @@
   gap: 8px;
 }
 
-
 .phoneOnly {
   display: none;
-}
-
-.emptyPanel {
-  max-width: 720px;
 }
 
 /* ── a wallet by its address ──────────────────────────────────────────── */
@@ -74,7 +61,6 @@
   flex-direction: column;
   gap: 6px;
   min-width: 0;
-  max-width: 720px;
 }
 
 .lookupRow {
@@ -850,10 +836,6 @@
     display: block;
   }
 
-  .head {
-    gap: 8px 12px;
-  }
-
   .lookupSmall {
     flex: 1 1 100%;
     order: 3;
@@ -960,5 +942,215 @@
 
   .foldBtn svg {
     transition: none;
+  }
+}
+
+
+/* The dust has its own part in the legend, as it has its own group. */
+.bar i[data-part='dust'],
+.dot[data-part='dust'] {
+  background: color-mix(in srgb, var(--ice) 40%, transparent);
+}
+
+/* No wallet yet: the promise, the legend, one way in. */
+.heroTop {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-width: 0;
+}
+
+.heroBadge {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  color: var(--amber);
+  background: var(--well);
+  border: 1px solid var(--line);
+}
+
+/* The places the menu leads to stand clear of the frame's head. */
+.groups,
+.history {
+  scroll-margin-top: 96px;
+}
+
+/* The coins nobody prices: one quiet line that unfolds them. */
+.moreRow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 48px;
+  padding: 0 18px;
+  font-size: var(--type-body);
+  color: var(--soft);
+  background: transparent;
+  border: 0;
+  border-top: 1px solid var(--line);
+}
+
+.moreRow:hover {
+  color: var(--ice);
+}
+
+.moreRow:focus-visible {
+  outline: 2px solid var(--lilac);
+  outline-offset: -2px;
+}
+
+.moreRow svg {
+  transition: transform 0.16s;
+}
+
+.moreRow[aria-expanded='true'] svg {
+  transform: rotate(180deg);
+}
+
+/* A row's own controls keep their distance from the figure before them. */
+.rowActs {
+  padding-left: 16px;
+}
+
+/* The history: the page's whole width, a borrowed panel as wide as its place. */
+.history {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.history > * {
+  max-width: none;
+  align-self: stretch;
+}
+
+.historyHead {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 52px;
+  padding: 0 8px 0 18px;
+}
+
+.historyLine {
+  margin: 0;
+  padding: 18px;
+  font-size: var(--type-body);
+  color: var(--soft);
+  border-top: 1px solid var(--line);
+}
+
+/* The private balance while it is shut: one quiet line. */
+.privateBadge {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  color: var(--soft);
+}
+
+.privateName {
+  font-size: var(--type-body);
+  font-weight: 700;
+  color: var(--ice);
+  white-space: nowrap;
+}
+
+/* The connected wallet at the head of a phone's page. */
+.walletChip {
+  display: none;
+}
+
+.walletDot {
+  display: block;
+  width: 8px;
+  height: 8px;
+  flex: none;
+  background: var(--amber);
+}
+
+/* A phone's money row, the mark over the word. */
+.moneyRow {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.moneyKey {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 72px;
+  padding: 10px 4px;
+  box-sizing: border-box;
+  font-family: inherit;
+  font-size: var(--type-small);
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--ice);
+  text-decoration: none;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  cursor: pointer;
+}
+
+.moneyKey:focus-visible {
+  outline: 2px solid var(--lilac);
+  outline-offset: -2px;
+}
+
+.moneyKey:disabled {
+  color: var(--soft);
+  cursor: default;
+}
+
+.moneyMark {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  color: var(--lilac);
+}
+
+.moneyKey[data-amber] .moneyMark {
+  color: var(--amber);
+}
+
+@media (max-width: 767px) {
+  .walletChip {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 44px;
+    padding: 0 14px;
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: var(--type-body);
+    color: var(--ice);
+    background: var(--well);
+    border: 1px solid var(--line);
+  }
+
+  .heroTop {
+    gap: 12px;
+  }
+
+  /* The promise beside its mark takes the line's rest and wraps — the stacked row's rule is not its own. */
+  .heroTop > .heroLine {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .heroRow > .heroAct {
+    min-height: 52px;
   }
 }

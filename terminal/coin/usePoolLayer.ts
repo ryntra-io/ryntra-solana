@@ -3,6 +3,7 @@ import { EARN_OPEN } from '../../city/lib/earn/flag.ts';
 import { useEarnData } from '../../city/lib/earn/store.ts';
 import type { Lang } from '../../city/lib/i18n/langs.ts';
 import { useWallet } from '../../city/lib/trade/wallet.ts';
+import type { EarnBinsVenue } from '../../lib/earn-pools/bins.ts';
 import type { EarnPool, EarnPoolsAnswer } from '../../lib/earn-pools/model.ts';
 import { useBins } from '../earn/range/useBins.ts';
 import { priceText } from '../ui/figures.ts';
@@ -22,8 +23,8 @@ const POSITIONS_FRESH_MS = 60_000;
 let poolsKept: Readonly<{ at: number; pools: readonly EarnPool[] }> | null = null;
 let poolsAsked: Promise<readonly EarnPool[]> | null = null;
 
-/** The engine's pools (`/api/v1/earn/pools`), kept two minutes for every chart on the page. */
-function readPools(): Promise<readonly EarnPool[]> {
+/** The engine's pools (`/api/v1/earn/pools`), kept two minutes for every chart on the page (and the desk's liquidity). */
+export function readPools(): Promise<readonly EarnPool[]> {
   if (poolsKept && Date.now() - poolsKept.at < POOLS_FRESH_MS) return Promise.resolve(poolsKept.pools);
   poolsAsked ??= fetch('/api/v1/earn/pools', { headers: { accept: 'application/json' } })
     .then((response) => (response.ok ? (response.json() as Promise<EarnPoolsAnswer>) : null))
@@ -46,7 +47,13 @@ export type PoolLayer = Readonly<{
   setOn: (on: boolean) => void;
 }>;
 
-export function usePoolLayer(mint: string, coinUsd: number | null, lang: Lang): PoolLayer {
+/**
+ * A pool the screen names for the chart instead of the coin's deepest DLMM pool — a pool's own page draws its
+ * own liquidity, a DLMM Pro pool among them. `side` — the coin's side of the pool.
+ */
+export type PoolPin = Readonly<{ venue: EarnBinsVenue; address: string; side: 'x' | 'y' }>;
+
+export function usePoolLayer(mint: string, coinUsd: number | null, lang: Lang, pin: PoolPin | null = null): PoolLayer {
   const [on, setOnState] = useState(true);
   const [pools, setPools] = useState<readonly EarnPool[]>(() => poolsKept?.pools ?? []);
   useEffect(() => {
@@ -73,7 +80,9 @@ export function usePoolLayer(mint: string, coinUsd: number | null, lang: Lang): 
   };
 
   const found = useMemo(() => poolOfCoin(pools, mint), [pools, mint]);
-  const bins = useBins('dlmm', on && found ? found.pool.address : null);
+  const venue: EarnBinsVenue = pin?.venue ?? 'dlmm';
+  const address = pin?.address ?? found?.pool.address ?? null;
+  const bins = useBins(venue, on && address ? address : null);
   const owner = useWallet((st) => st.connection?.address ?? null);
   const positions = useEarnData((st) => st.positions);
   const views = owner && positions?.owner === owner && positions.value.status === 'ready' ? positions.value.value : null;
@@ -95,7 +104,7 @@ export function usePoolLayer(mint: string, coinUsd: number | null, lang: Lang): 
   }, [coinUsd]);
   const priced = coinUsd !== null;
   const answer = bins.status === 'ready' ? bins.value : null;
-  const side = found?.side ?? null;
+  const side = pin?.side ?? found?.side ?? null;
   useEffect(() => {
     const lines = on && answer && side && priced ? depthLines(answer, side, usdNow.current) : [];
     setLayer(mint, 'liquidity', lines.length ? { lines, badge: null } : null);
@@ -115,5 +124,5 @@ export function usePoolLayer(mint: string, coinUsd: number | null, lang: Lang): 
 
   // A position in a pool the list does not carry is still the person's to see: the switch stands for it too.
   const held = views !== null && views.some((view) => hasEdges(view, mint));
-  return { there: found !== null || held, on, setOn };
+  return { there: pin !== null || found !== null || held, on, setOn };
 }

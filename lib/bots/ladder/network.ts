@@ -12,8 +12,8 @@
  * - `RYNTRA_BOTS_LADDER_MAINNET` — mainnet's server switch: `OPEN` opens mainnet's routes; `CLOSING` keeps only taking
  *   back — reading the orders, building and relaying their cancellations — so a person keeps the way to what is theirs
  *   after placing is closed (the rollback); anything else, unset included, closes them all.
- * - `RYNTRA_BOTS_LADDER_MAINNET_MAX_USD` — the most one mainnet ladder may place, dollars: the start is
- *   `LADDER_START_MAX_USD`; the variable may set it from 1 up to `LADDER_MAX_USD_CEILING`, never above.
+ * - No sum of Ryntra's on a ladder: a ladder places
+ *   what the person asks and holds; `RYNTRA_BOTS_LADDER_MAINNET_MAX_USD` is read no more.
  * - `NEXT_PUBLIC_RYNTRA_CITY_LADDER` — the window's: `devnet` or `mainnet` shows that network's «Place»; else practice
  *   only. The window's value opens nothing by itself: a network whose server switch is closed answers 404.
  * - `RYNTRA_BOTS_LADDER_DEVNET_POOLS` — the devnet DLMM pools a ladder may sit in, comma-separated public addresses.
@@ -27,7 +27,6 @@
 
 export const LADDER_ENV = "RYNTRA_BOTS_LADDER";
 export const LADDER_MAINNET_ENV = "RYNTRA_BOTS_LADDER_MAINNET";
-export const LADDER_MAINNET_MAX_USD_ENV = "RYNTRA_BOTS_LADDER_MAINNET_MAX_USD";
 export const LADDER_PUBLIC_ENV = "NEXT_PUBLIC_RYNTRA_CITY_LADDER";
 export const LADDER_POOLS_ENV = "RYNTRA_BOTS_LADDER_DEVNET_POOLS";
 export const LADDER_QUOTES_ENV = "RYNTRA_BOTS_LADDER_DEVNET_QUOTES";
@@ -42,11 +41,6 @@ export const DEVNET_USDC = "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU";
 /** Circle's USDC on mainnet: the one dollar a mainnet ladder is quoted in. */
 export const MAINNET_USDC = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v";
 export const WRAPPED_SOL = "So11111111111111111111111111111111111111112";
-
-/** The start: what one mainnet ladder may place, dollars, until the operator raises it. */
-export const LADDER_START_MAX_USD = 100;
-/** The most the variable may raise it to; above this is a change of code. */
-export const LADDER_MAX_USD_CEILING = 1_000;
 
 const BASE58 = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
 const MAX_LISTED = 8;
@@ -86,14 +80,6 @@ export function ladderQuotes(env: Env, network: LadderNetwork = "devnet"): strin
   return [...new Set([DEVNET_USDC, ...addresses(env[LADDER_QUOTES_ENV])])];
 }
 
-/** The most one mainnet ladder may place, dollars: the start, or the variable's value up to the ceiling. */
-export function ladderMaxUsd(env: Env): number {
-  const raw = env[LADDER_MAINNET_MAX_USD_ENV]?.trim();
-  const value = raw && /^\d+(\.\d+)?$/.test(raw) ? Number(raw) : Number.NaN;
-  if (!(value >= 1)) return LADDER_START_MAX_USD;
-  return Math.min(value, LADDER_MAX_USD_CEILING);
-}
-
 export type LadderGate =
   | Readonly<{
       open: true;
@@ -101,8 +87,8 @@ export type LadderGate =
       /** Devnet's listed pools; null on mainnet, where the pool is found by depth and read on chain. */
       pools: readonly string[] | null;
       quotes: readonly string[];
-      /** The most one ladder may place, dollars; null — no cap (devnet's test money). */
-      maxUsd: number | null;
+      /** The most one ladder may place, dollars: always null — no cap of Ryntra's on either network. */
+      maxUsd: null;
     }>
   | Readonly<{ open: false }>;
 
@@ -112,6 +98,6 @@ export type LadderGate =
  */
 export function ladderGate(env: Env, network: LadderNetwork = "devnet", options: Readonly<{ takeBack?: boolean }> = {}): LadderGate {
   if (!(options.takeBack ? takeBackOpen(env, network) : networkOpen(env, network))) return { open: false };
-  if (network === "mainnet") return { open: true, network, pools: null, quotes: ladderQuotes(env, network), maxUsd: ladderMaxUsd(env) };
+  if (network === "mainnet") return { open: true, network, pools: null, quotes: ladderQuotes(env, network), maxUsd: null };
   return { open: true, network, pools: ladderPools(env), quotes: ladderQuotes(env, network), maxUsd: null };
 }

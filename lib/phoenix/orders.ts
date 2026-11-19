@@ -78,13 +78,12 @@ export function flightBuilderState(builder: string): string {
 /**
  * Who may place orders today, set at runtime like the collateral's gate: `CLOSED` (the default, and any other value)
  * — no screen offers an order and no route builds one; `CANARY` — the one wallet named in `RYNTRA_PHOENIX_CANARY_WALLET`,
- * a new position or an addition of at most `CANARY_MAX_NOTIONAL_USD` of notional: the operator's first live trade;
+ * with no sum of Ryntra's on a position: the operator's first live trade;
  * `OPEN` — everyone. A cut, a close, TP/SL and a cancel take risk away and carry no ceiling. The gate is asked at the
  * Review and again at the relay.
  */
 export const PHOENIX_ORDERS_ENV = "RYNTRA_PHOENIX_ORDERS";
 export const PHOENIX_CANARY_WALLET_ENV = "RYNTRA_PHOENIX_CANARY_WALLET";
-export const CANARY_MAX_NOTIONAL_USD = 20;
 /**
  * Ryntra's builder on Phoenix's Flight — its public address, never a key. Unset (the default): orders go to Phoenix
  * directly and carry no fee of Ryntra's. Set once the operator has registered the builder; the fee is the builder's registered rate as the chain holds it, read at every Review.
@@ -99,7 +98,7 @@ export function admitOrders(owner: string | null, env: Env): OrdersAdmission {
   if (mode === "OPEN") return { ok: true, mode, maxNotionalUsd: null };
   if (mode === "CANARY") {
     const wallet = env[PHOENIX_CANARY_WALLET_ENV]?.trim();
-    if (wallet && owner !== null && owner === wallet) return { ok: true, mode, maxNotionalUsd: CANARY_MAX_NOTIONAL_USD };
+    if (wallet && owner !== null && owner === wallet) return { ok: true, mode, maxNotionalUsd: null };
   }
   return { ok: false, code: "ORDERS_CLOSED" };
 }

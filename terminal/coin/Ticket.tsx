@@ -10,8 +10,8 @@ import { SPOT_OPEN, TRADE_OPEN } from '@/city/lib/trade/gates';
 import type { Market as LadderMarket } from '@/city/lib/trade/pro-ladder';
 import { LADDER_BUSY, useLadder } from '@/city/lib/trade/pro-store';
 import { SPOT_IDLE, useSpot } from '@/city/lib/trade/spot-store';
-import { balanceOf, choiceOf, payKey, reviewNotes, useTrade, type Choice, type CoinRef, type Mode, type Review, type TowerRef } from '@/city/lib/trade/store';
-import { isBase, unitOf, USDC, type PayAsset, type Side } from '@/city/lib/trade/tiles';
+import { balanceOf, choiceOf, reviewNotes, useTrade, type Choice, type CoinRef, type Mode, type Review, type TowerRef } from '@/city/lib/trade/store';
+import { isBase, payAssetFor, unitOf, USDC, type PayAsset, type Side } from '@/city/lib/trade/tiles';
 import { sellLine, sellWords } from '@/city/lib/trade/tower-window';
 import { useWallet, type Holdings } from '@/city/lib/trade/wallet';
 import { useDismiss } from '@/terminal/shell/useDismiss';
@@ -20,6 +20,7 @@ import { setLimitTab, useLadderHere, useLimitTab } from './ladder/here';
 import { LadderTicket } from './ladder/LadderTicket';
 import { LimitStop, SPOT_RESULT } from './LimitStop';
 import { ExplainBox, ExplainButton, LONG_LABEL, Rows, TxLink, bare, connectOrPick } from './parts';
+import { coinLogo, paidRows, payLogo, payRows, quickSums, saleMoney, USDC_LOGO } from './staples';
 import { actionOf, retryShown, type ActionLabel } from './ticket-rules';
 import { useTicket } from './useTicket';
 import { WalletPick } from './WalletPick';
@@ -30,9 +31,6 @@ import s from './ticket.module.css';
 export const TICKET_OPEN = TRADE_OPEN;
 
 const MODES = ['market', 'limit', 'stop'] as const;
-
-/** The most coins of the wallet the «pay with» list offers beside SOL and USDC. */
-const WALLET_COINS = 6;
 
 /**
  * The ticket: buy or sell one coin at the engine's price, in the approved design's look. Everything it shows and does
@@ -52,6 +50,10 @@ const WALLET_COINS = 6;
  * at one price or on a ladder (`ladder/LadderTicket.tsx`), on a desk and on a phone; `usd` is the coin's price the chart
  * shows, so the ladder's lines stand where its prices are.
  *
+ * `desk`: the coin's own trading desk — quick sums under the amount (in SOL, or in dollars paying with USDC or
+ * USDT), the slippage the order allows in
+ * the terms' line, and `foot` (the coin's facts) at the panel's foot, so the ticket stands the column's whole height.
+ *
  * `only`: one order type and no row of them — the Swap screen's own Limit tab, where the screen's tabs are the
  * row. `framed`: false draws the fields into the panel that holds them (the Swap screen's one card), without a panel of
  * the ticket's own. `side`: the side the card opens on for this coin (a sale on the swap stays a sale on its limit).
@@ -68,6 +70,8 @@ export function Ticket({
   lean = false,
   limits = false,
   usd = null,
+  desk = false,
+  foot,
   className,
 }: {
   coin: CoinRef;
@@ -81,6 +85,8 @@ export function Ticket({
   lean?: boolean;
   limits?: boolean;
   usd?: number | null;
+  desk?: boolean;
+  foot?: ReactNode;
   className?: string;
 }) {
   const w = useWords(TICKET);
@@ -95,13 +101,14 @@ export function Ticket({
     <>
       {head}
       {other ? <Chip>{w.openTrade(bare(tower.symbol))}</Chip> : null}
-      {phase === 'done' ? <Done /> : phase === 'failed' ? <Failed /> : phase === 'unknown' ? <Unknown press={press} /> : <Fields tower={tower} modes={modes} only={only} press={press} onTopUp={onTopUp} onOrders={onOrders} ladder={tower.mint === coin.id ? ladder : null} usd={usd} />}
+      {phase === 'done' ? <Done /> : phase === 'failed' ? <Failed /> : phase === 'unknown' ? <Unknown press={press} /> : <Fields tower={tower} modes={modes} only={only} press={press} onTopUp={onTopUp} onOrders={onOrders} ladder={tower.mint === coin.id ? ladder : null} usd={usd} desk={desk} />}
     </>
   );
   if (!framed) return body;
   return (
-    <Panel tone="hi" gap={12} label={w.label} className={cx(lean && s.lean, className)}>
+    <Panel tone="hi" gap={12} label={w.label} className={cx(lean && s.lean, desk && s.desk, className)}>
       {body}
+      {foot ? <div className={s.foot}>{foot}</div> : null}
     </Panel>
   );
 }
@@ -115,6 +122,7 @@ function Fields({
   onOrders,
   ladder,
   usd,
+  desk = false,
 }: {
   tower: TowerRef;
   modes: boolean;
@@ -124,6 +132,7 @@ function Fields({
   onOrders?: () => void;
   ladder: LadderMarket | null;
   usd: number | null;
+  desk?: boolean;
 }) {
   const t = useWords(TRADE);
   const w = useWords(TICKET);
@@ -176,6 +185,28 @@ function Fields({
   useEffect(() => {
     if (!idle) setMenu(false);
   }, [idle]);
+  // A buy turned into a sale — by the switch, «Sell» under the chart, the phone's bar or a sentence — is paid in money: a coin of the wallet picked to pay with gives way to SOL (USDC on the SOL desk), as the paid-in list
+  // offers them; turned back into a buy, the coin comes back while the wallet still holds it. It happens as the side
+  // changes, in the same beat — a price said for the sale is written against the coin it is paid in.
+  useEffect(() => {
+    let left: Readonly<{ coin: PayAsset; money: string }> | null = null;
+    return useTrade.subscribe((card, was) => {
+      if (card.side === was.side || card.phase !== 'idle' || card.held || card.tower?.mint !== tower.mint) return;
+      // Never under a limit's or a stop's signature either.
+      if (!SPOT_IDLE.has(useSpot.getState().phase)) return;
+      const pay = payAssetFor(tower.mint, card.pay, card.other);
+      if (card.side === 'sell') {
+        const money = saleMoney(tower.mint, pay.mint);
+        left = money ? { coin: pay, money: money.mint } : null;
+        if (money) pickPay(money);
+        return;
+      }
+      const back = left;
+      left = null;
+      const held = back ? balanceOf(useWallet.getState().holdings, back.coin.mint) : null;
+      if (back && pay.mint === back.money && held && held.spendableRaw !== '0') pickPay(back.coin);
+    });
+  }, [tower.mint]);
 
   // Market always; Limit where Jupiter's limits are open on this screen or the coin has a ladder pool; Stop with Jupiter's.
   const tabs = MODES.filter((id) => id === 'market' || (id === 'limit' ? spot || ladder !== null : spot));
@@ -215,8 +246,10 @@ function Fields({
   const balance = choice.holding;
   const shares = choice.sizing.chips.map((chip) => ({ id: String(chip.share), label: chip.share === 100 ? w.max : w.share(String(chip.share)) }));
   const lit = choice.sizing.chips.find((chip) => chip.on);
-  // What the amount is written in: the coin paid with when buying (a list of them), the coin itself when selling.
-  const asset = side === 'buy' ? { symbol: bare(unitOf(choice.pay)), icon: iconOf(choice.pay) } : { symbol: coin, icon: tower.icon ? `/api/icon/${tower.mint}` : null };
+  // What the amount is written in: the coin paid with when buying (a list of them), the coin itself when selling — each
+  // with its logo, the coin's own through the engine's route whether or not it is a tower of the market.
+  const asset = side === 'buy' ? { symbol: bare(unitOf(choice.pay)), icon: payLogo(choice.pay) } : { symbol: coin, icon: coinLogo(tower) };
+  const quick = quickSums(choice.pay.mint);
 
   return (
     <>
@@ -246,22 +279,25 @@ function Fields({
                 asset={asset}
                 onAsset={side === 'buy' && idle ? () => setMenu((was) => !was) : undefined}
                 assetLabel={t.payAnother}
+                assetOpen={side === 'buy' && idle ? menu : undefined}
               />
               {menu && side === 'buy' ? <PayMenu tower={tower} choice={choice} holdings={holdings} label={t.payWith} onClose={() => setMenu(false)} /> : null}
             </div>
           </fieldset>
+          {desk && side === 'buy' && quick ? (
+            <fieldset className={cx(s.group, s.shares)} disabled={!typable}>
+              <Shares label={w.quick(asset.symbol)} options={quick.sums.map((sum) => ({ id: sum, label: quick.dollars ? `$${digits(sum)}` : `${digits(sum)} ${asset.symbol}` }))} value={quick.sums.find((sum) => sum === typed) ?? null} onPick={(sum) => setTyped(sum)} />
+            </fieldset>
+          ) : null}
           <fieldset className={cx(s.group, s.shares)} disabled={!typable || choice.sizing.share === null}>
             <Shares label={t.shareOfBalance} options={shares} value={lit ? String(lit.share) : null} onPick={(id) => setShare(Number(id))} />
           </fieldset>
-          {mode === 'market' ? <MarketPart tower={tower} choice={choice} press={press} onTopUp={onTopUp} idle={idle} /> : <LimitStop tower={tower} choice={choice} mode={mode} onOrders={onOrders} onTopUp={onTopUp} />}
+          {mode === 'market' ? <MarketPart tower={tower} choice={choice} press={press} onTopUp={onTopUp} idle={idle} desk={desk} /> : <LimitStop tower={tower} choice={choice} mode={mode} onOrders={onOrders} onTopUp={onTopUp} />}
         </>
       )}
     </>
   );
 }
-
-/** USDC's own logo, kept with the site: the engine's logo proxy serves the market's coins, and USDC is money, not one of them. */
-const USDC_LOGO = '/site/universe/USDC.png';
 
 /** A coin's logo as the trade logic names it: a same-origin picture when it has one; SOL's from the engine, USDC's own. */
 export function iconOf(asset: PayAsset): string | null {
@@ -271,37 +307,53 @@ export function iconOf(asset: PayAsset): string | null {
 }
 
 /**
- * What a buy is paid with: SOL, USDC, and the coins of the wallet — one tap each. The list is the trade card's own
- * (`choice.options`, `pickCoin`).
+ * A pick from the ticket's lists, as the trade card takes it (`pickCoin`: SOL and USDC by their symbol, any other coin
+ * by itself; a buy starts again in the coin picked — ten dollars in USDC or USDT — and a sale keeps its amount).
+ */
+const pickPay = (asset: PayAsset): void => useTrade.getState().pickCoin(asset);
+
+/** One coin of the ticket's lists: its logo (asked at once — the list opened on a tap), its ticker and, known, its balance. */
+function MenuRow({ asset, on, balance, onPick }: { asset: PayAsset; on: boolean; balance: string | null; onPick: () => void }) {
+  const symbol = bare(unitOf(asset));
+  return (
+    <button type="button" role="menuitemradio" aria-checked={on} className={s.menuRow} onClick={onPick}>
+      <CoinLogo src={payLogo(asset)} symbol={symbol} size="s" eager />
+      <span className={s.menuName}>{symbol}</span>
+      {balance !== null ? <span className={s.menuAside}>{digits(balance)}</span> : null}
+    </button>
+  );
+}
+
+/**
+ * What a buy is paid with: SOL, USDC and USDT always, then the coins of the wallet with something to spend —
+ * one tap each, each with its logo and, with a wallet, its balance. A pick is the trade card's own (`setPay`,
+ * `pickCoin`); the price and the route of any of them are the swap engine's.
  */
 function PayMenu({ tower, choice, holdings, label, onClose }: { tower: TowerRef; choice: Choice; holdings: Holdings | null; label: string; onClose: () => void }) {
-  const held = useMemo<PayAsset[]>(() => {
-    if (!holdings) return [];
-    const known = new Set(choice.options.map((asset) => asset.mint));
-    const coins: PayAsset[] = [];
-    for (const [mint, balance] of holdings.tokens) {
-      const name = holdings.names?.get(mint);
-      if (mint === tower.mint || known.has(mint) || !name?.symbol || balance.spendableRaw === '0') continue;
-      coins.push({ mint, symbol: name.symbol, decimals: balance.decimals, name: name.name, verified: name.verified, icon: name.icon });
+  const rows = useMemo<PayAsset[]>(() => {
+    const held: { asset: PayAsset; spendableRaw: string }[] = [];
+    for (const [mint, balance] of holdings?.tokens ?? []) {
+      const name = holdings?.names?.get(mint);
+      if (!name?.symbol) continue;
+      held.push({ asset: { mint, symbol: name.symbol, decimals: balance.decimals, name: name.name, verified: name.verified, icon: name.icon }, spendableRaw: balance.spendableRaw });
     }
-    return coins.slice(0, WALLET_COINS);
-  }, [holdings, choice.options, tower.mint]);
-  const pick = (asset: PayAsset) => {
-    onClose();
-    const card = useTrade.getState();
-    if (isBase(asset) || choice.options.some((option) => option.mint === asset.mint)) card.setPay(payKey(asset));
-    else card.pickCoin(asset);
-  };
+    return payRows({ towerMint: tower.mint, held, picked: choice.pay });
+  }, [holdings, choice.pay, tower.mint]);
   return (
     <div className={s.menu} role="menu" aria-label={label}>
-      {[...choice.options, ...held].map((asset) => {
+      {rows.map((asset) => {
         const balance = balanceOf(holdings, asset.mint);
         return (
-          <button key={asset.mint} type="button" role="menuitemradio" aria-checked={asset.mint === choice.pay.mint} className={s.menuRow} onClick={() => pick(asset)}>
-            <CoinLogo src={iconOf(asset)} symbol={asset.symbol} size="s" />
-            <span className={s.menuName}>{bare(unitOf(asset))}</span>
-            {balance ? <span className={s.menuAside}>{digits(formatUnits(balance.spendableRaw, balance.decimals, 'down'))}</span> : null}
-          </button>
+          <MenuRow
+            key={asset.mint}
+            asset={asset}
+            on={asset.mint === choice.pay.mint}
+            balance={balance ? formatUnits(balance.spendableRaw, balance.decimals, 'down') : null}
+            onPick={() => {
+              onClose();
+              pickPay(asset);
+            }}
+          />
         );
       })}
     </div>
@@ -336,7 +388,7 @@ function NothingToSell({ coin, line, connect }: { coin: string; line: string; co
 }
 
 /** The market ticket: what you get at the engine's price, its terms in one line, and the one amber press. */
-function MarketPart({ tower, choice, press, onTopUp, idle }: { tower: TowerRef; choice: Choice; press: () => Promise<'connect' | 'ok'>; onTopUp?: () => void; idle: boolean }) {
+function MarketPart({ tower, choice, press, onTopUp, idle, desk = false }: { tower: TowerRef; choice: Choice; press: () => Promise<'connect' | 'ok'>; onTopUp?: () => void; idle: boolean; desk?: boolean }) {
   const t = useWords(TRADE);
   const w = useWords(TICKET);
   const side = useTrade((st) => st.side);
@@ -344,6 +396,7 @@ function MarketPart({ tower, choice, press, onTopUp, idle }: { tower: TowerRef; 
   const review = useTrade((st) => st.review);
   const notice = useTrade((st) => st.notice);
   const phase = useTrade((st) => st.phase);
+  const autoBuild = useTrade((st) => st.auto);
   const connection = useWallet((st) => st.connection);
   const connecting = useWallet((st) => Boolean(st.connecting));
   const [picking, setPicking] = useState(false);
@@ -378,6 +431,7 @@ function MarketPart({ tower, choice, press, onTopUp, idle }: { tower: TowerRef; 
   const empty = choice.sizing.max === '0';
   const action = actionOf({
     phase,
+    auto: autoBuild,
     side,
     connected: Boolean(connection),
     connecting,
@@ -420,27 +474,28 @@ function MarketPart({ tower, choice, press, onTopUp, idle }: { tower: TowerRef; 
       <div className={s.getRow}>
         <span className={s.getCol}>
           <Kick>{t.youGet}</Kick>
-          <span className={s.getFigure} aria-live="polite">
-            {choice.problem || (!figures && (failed || !choice.amountRaw)) ? (
-              <Figure value="—" size="m" />
-            ) : figures ? (
-              side === 'buy' ? (
-                <Figure value={digits(figures.get)} unit={getUnit} size="m" />
+          <span className={s.getFigure}>
+            <span className={s.getValue} aria-live="polite">
+              {choice.problem || (!figures && (failed || !choice.amountRaw)) ? (
+                <Figure value="—" size="m" />
+              ) : figures ? (
+                <Figure value={digits(figures.get)} unit={side === 'buy' ? getUnit : undefined} size="m" />
               ) : (
-                <>
-                  <Figure value={digits(figures.get)} size="m" />
-                  <span className={s.anchor} ref={paidBox}>
-                    <Quiet size="s" disabled={!idle} aria-label={w.paidIn(getUnit)} aria-expanded={paidMenu} onClick={() => setPaidMenu((was) => !was)}>
-                      {getUnit}
-                      <Icon name="chevron" size="s" />
-                    </Quiet>
-                    {paidMenu ? <PaidMenu choice={choice} label={t.sellFor} onClose={() => setPaidMenu(false)} /> : null}
-                  </span>
-                </>
-              )
-            ) : (
-              <span className={s.shimmer} role="status" aria-label={t.gettingPrice} />
-            )}
+                <span className={s.shimmer} role="status" aria-label={t.gettingPrice} />
+              )}
+            </span>
+            {/* What a sale is paid in stands whatever the price does: a price that did not come for one coin is left
+                for another without going through Buy. */}
+            {side === 'sell' ? (
+              <span className={s.anchor} ref={paidBox}>
+                <Quiet size="s" className={s.paidPick} disabled={!idle} aria-label={w.paidIn(getUnit)} aria-haspopup="menu" aria-expanded={paidMenu} onClick={() => setPaidMenu((was) => !was)}>
+                  <CoinLogo src={payLogo(choice.pay)} symbol={getUnit} size="s" eager />
+                  {getUnit}
+                  <Icon name="chevron" size="s" />
+                </Quiet>
+                {paidMenu ? <PaidMenu tower={tower} choice={choice} label={t.sellFor} onClose={() => setPaidMenu(false)} /> : null}
+              </span>
+            ) : null}
           </span>
         </span>
         <span className={s.terms}>
@@ -454,6 +509,7 @@ function MarketPart({ tower, choice, press, onTopUp, idle }: { tower: TowerRef; 
                 {figures.fee ? w.fee(figures.fee) : t.noRyntraFee}
                 {off ? <span className={s.off}>{off}</span> : null}
               </span>
+              {desk && figures.slippage ? <span className={s.fee}>{w.slippage(digits(figures.slippage))}</span> : null}
               <ExplainButton label={t.tradeDetails} open={details} controls={detailsId} onToggle={() => setDetails((was) => !was)} />
             </>
           ) : null}
@@ -492,25 +548,22 @@ function MarketPart({ tower, choice, press, onTopUp, idle }: { tower: TowerRef; 
   );
 }
 
-/** What a sale is paid in: SOL or USDC, one tap each. */
-function PaidMenu({ choice, label, onClose }: { choice: Choice; label: string; onClose: () => void }) {
+/** What a sale is paid in: SOL, USDC or USDT, one tap each, each with its logo. */
+function PaidMenu({ tower, choice, label, onClose }: { tower: TowerRef; choice: Choice; label: string; onClose: () => void }) {
+  const rows = useMemo(() => paidRows(tower.mint, choice.pay), [tower.mint, choice.pay]);
   return (
-    <div className={s.menu} role="menu" aria-label={label}>
-      {choice.options.map((asset) => (
-        <button
+    <div className={cx(s.menu, s.menuLeft)} role="menu" aria-label={label}>
+      {rows.map((asset) => (
+        <MenuRow
           key={asset.mint}
-          type="button"
-          role="menuitemradio"
-          aria-checked={asset.mint === choice.pay.mint}
-          className={s.menuRow}
-          onClick={() => {
+          asset={asset}
+          on={asset.mint === choice.pay.mint}
+          balance={null}
+          onPick={() => {
             onClose();
-            useTrade.getState().setPay(payKey(asset));
+            pickPay(asset);
           }}
-        >
-          <CoinLogo src={iconOf(asset)} symbol={asset.symbol} size="s" />
-          <span className={s.menuName}>{bare(unitOf(asset))}</span>
-        </button>
+        />
       ))}
     </div>
   );
@@ -522,10 +575,11 @@ export function Details({ figures, off, review, quoteAt, getUnit }: { figures: F
   const w = useWords(TICKET);
   const risk = review?.order.risk.verdict;
   const route = review ? review.order.order.route.map((hop) => hop.label).join(' → ') : figures.route;
+  // The least you get is said once the exact order stands; before it, no row says «known later».
   const rows: [string, string][] = [
     [t.ryntraFee, figures.fee ? (off ? `${figures.fee} · ${t.friendOff} ${off}` : figures.fee) : t.none],
     [t.route, route || figures.route],
-    [t.youGetAtLeast, review ? `${digits(figures.minimum)} ${getUnit}` : t.setWhenBuilt],
+    ...(review ? [[t.youGetAtLeast, `${digits(figures.minimum)} ${getUnit}`] as [string, string]] : []),
     [t.priceImpact, digits(figures.impact)],
   ];
   if (review) {

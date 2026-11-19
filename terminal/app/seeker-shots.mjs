@@ -187,9 +187,9 @@ for (const lang of LANGS) {
   note(`wallet tap → bridge: ${JSON.stringify(await page.evaluate(() => window.__appLog))}`);
   note(`header after: «${(await page.locator("[data-terminal='wallet']").first().innerText()).replace(/\s+/g, " ")}»`);
 
-  // The sections sheet.
+  // The menu sheet.
   await page.keyboard.press("Escape");
-  await page.locator("[data-terminal='mark']").tap();
+  await page.locator("[data-terminal='menu-button']").tap();
   await page.waitForSelector("[role='dialog'][aria-modal='true']", { timeout: 10_000 }).catch(() => {});
   await page.waitForTimeout(800);
   await shot("10-sheet");

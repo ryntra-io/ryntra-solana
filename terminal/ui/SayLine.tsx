@@ -5,7 +5,7 @@ import { Icon } from './icons';
 import s from './ui.module.css';
 
 /**
- * A sentence for the agent, ready to say in one tap: «Trade BONK with 0.1 SOL a day». A button that says it
+ * A sentence for the agent, ready to say in one tap: «Trade JUP for me every day». A button that says it
  * (`onSay`), or a link to where it is said (`href`). `tall` for a finger's row on a phone.
  */
 export function SayLine({ onSay, href, tall = false, children }: { onSay?: () => void; href?: string; tall?: boolean; children: ReactNode }) {

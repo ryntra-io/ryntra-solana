@@ -1,14 +1,13 @@
-/* The coin's screen: how the kit's parts stand on it. Colours and type are the terminal's tokens; the measures are the
-   approved design's (docs/terminal/design/2026-11-16/Coin.dc.html, PhoneCoin.dc.html). */
+/* The coin's screen (the trading desk on the whole screen; the sample is our desk on rxn.gg): how the kit's
+   parts and the desk's own stand on it. Colours and type are the terminal's tokens; the one corner this sheet writes is
+   the control's 4 px on what is pressed. */
 
-/* ── the head: the coin, its price, the day's move ─────────────────────── */
+/* ── what is pressed: the coin's picker, the quiet square buttons ─────── */
 
-.head {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 16px;
-  min-width: 0;
+.iconBtn,
+.pickBtn,
+.buyBtn {
+  border-radius: var(--r-ctl);
 }
 
 .iconBtn {
@@ -17,16 +16,16 @@
   flex: none;
   align-items: center;
   justify-content: center;
-  width: 44px;
-  height: 44px;
+  width: 36px;
+  height: 36px;
   color: var(--dim);
   border: 1px solid var(--glass-edge);
-  border-radius: var(--r-ctl);
-  background: rgba(255, 255, 255, 0.035);
+  background: var(--chosen);
   transition: color 0.15s, border-color 0.15s;
 }
 
-.iconBtn:hover {
+.iconBtn:hover,
+.iconBtn[data-done] {
   color: var(--ice);
   border-color: var(--chosen-edge);
 }
@@ -34,79 +33,35 @@
 .iconBtn[aria-pressed='true'] {
   color: var(--ice);
   border-color: var(--chosen-edge);
-  background: var(--chosen);
 }
 
 .iconBtn[aria-pressed='true'] svg {
   fill: currentColor;
 }
 
-.names {
+.pickBtn {
   display: flex;
-  flex-direction: column;
-  gap: 4px;
-  min-width: 0;
-}
-
-.nameRow {
-  display: flex;
+  flex: none;
   align-items: center;
-  gap: 10px;
-}
-
-/* The coin's ticker and price stand larger in the head than a screen's title: the approved design's own measures. */
-.head .sym {
-  font-size: 26px;
-  text-transform: none;
-}
-
-.name {
-  font-size: var(--type-small);
-  color: var(--dim);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.quote {
-  display: flex;
-  align-items: baseline;
   gap: 12px;
-  margin-left: 12px;
-}
-
-.head .price {
-  font-size: 36px;
-}
-
-.move {
-  display: flex;
-  align-items: baseline;
-  gap: 12px;
-}
-
-.change {
-  font-size: 16px;
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-}
-
-.change[data-tone='up'] {
-  color: var(--mint);
-}
-
-.change[data-tone='down'] {
-  color: var(--flare);
-}
-
-.window {
-  font-size: var(--type-caption);
-  color: var(--dim);
-}
-
-.grow {
-  flex: 1 1 0;
   min-width: 0;
+  padding: 6px 12px 6px 6px;
+  border: 1px solid var(--glass-edge);
+  text-align: left;
+  transition: border-color 0.15s, background-color 0.15s;
+}
+
+.pickBtn:hover,
+.pickBtn[aria-expanded='true'] {
+  border-color: var(--chosen-edge);
+  background: var(--chosen);
+}
+
+.tools {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 6px;
 }
 
 .anchor {
@@ -129,74 +84,42 @@
   border: 1px solid var(--glass-edge);
 }
 
-/* ── the screen's two columns ──────────────────────────────────────────── */
-
-.grid {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-start;
-  gap: 16px;
-}
-
-.main {
-  display: flex;
-  flex: 999 1 520px;
-  flex-direction: column;
-  gap: 16px;
-  min-width: 0;
-}
-
-.aside {
-  display: flex;
-  flex: 1 1 328px;
-  flex-direction: column;
-  gap: 16px;
-  max-width: 360px;
-  min-width: 0;
-}
-
-.chart,
-.under {
-  min-width: 0;
-}
-
-/* The chart's place while its engine loads: the panel's own height, so nothing jumps when it arrives. */
+/* The chart's place while its engine loads: the pane's own size, so nothing jumps when it arrives. */
 .chartWait {
-  height: 456px;
+  flex: 1 1 auto;
+  min-height: 320px;
   background: var(--panel);
-  border: 1px solid var(--glass-edge);
 }
 
-.tiles {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
-}
+/* ── the desk's ticket column: the ticket the whole height ───────────── */
 
-/* A desk: the coin's four facts in one row under the chart. */
-.factsRow {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 8px;
-}
-
-.tile {
+.ticketCol {
   display: flex;
+  flex: 1 0 auto;
   flex-direction: column;
-  gap: 8px;
-  min-width: 0;
-  padding: 14px 16px;
-  background: var(--well);
-  border: 1px solid var(--line);
+  min-height: 100%;
 }
 
-/* ── under the chart ───────────────────────────────────────────────────── */
+/* ── under the chart: the bottom panel ─────────────────────────────────── */
 
 .underHead {
   display: flex;
+  flex: none;
   align-items: center;
   gap: 12px;
-  padding: 10px 14px 4px;
+  min-height: 42px;
+  padding: 0 40px 0 14px;
+  border-bottom: 1px solid var(--line);
+}
+
+.underBody {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+  overflow: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--haze) transparent;
 }
 
 .underLine {
@@ -245,97 +168,117 @@
   padding: 24px 0;
 }
 
-@media (max-width: 767px) {
-  .head {
-    flex-wrap: nowrap;
-    gap: 10px;
-    min-height: 56px;
-  }
+/* ── the phone ─────────────────────────────────────────────────────────── */
 
-  .head .logo {
-    width: 36px;
-    height: 36px;
-  }
+.phoneChart {
+  display: flex;
+  flex-direction: column;
+  margin: 0 calc(-1 * var(--bleed, 16px));
+  border-block: 1px solid var(--glass-edge);
+  background: var(--glass);
+}
 
-  .names {
-    flex: 1 1 0;
-    gap: 2px;
-  }
+.phoneUnder {
+  display: flex;
+  flex-direction: column;
+  height: 520px;
+  margin: 0 calc(-1 * var(--bleed, 16px));
+  border-block: 1px solid var(--glass-edge);
+  background: var(--glass);
+}
 
-  .head .sym {
-    font-size: 16px;
-  }
+/* Buy and Sell over the tab bar, a thumb's reach: each opens the ticket as a sheet on its side. */
+.buyBar {
+  position: fixed;
+  right: 0;
+  bottom: calc(var(--tabbar) + env(safe-area-inset-bottom));
+  left: 0;
+  z-index: 9;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  padding: 10px 16px;
+  border-top: 1px solid var(--line);
+  background: color-mix(in srgb, var(--ink-deep) 92%, transparent);
+  backdrop-filter: blur(14px);
+}
 
-  .name {
-    font-size: var(--type-caption);
-  }
+.buyBtn {
+  height: 48px;
+  font-size: var(--type-action);
+  font-weight: 800;
+  color: var(--ink-deep);
+}
 
-  /* A verified coin's chip steps aside on a phone, as the approved design draws its head; «Not verified» stays. */
-  .vetted,
-  .deskOnly,
-  .grow,
-  .anchor,
-  .window {
-    display: none;
-  }
+.buyBtn[data-side='buy'] {
+  background: var(--mint);
+}
 
-  .quote {
-    flex: none;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 2px;
-    margin-left: 0;
-  }
+.buyBtn[data-side='sell'] {
+  background: var(--flare);
+  color: var(--ice);
+}
 
-  .head .price {
-    font-size: var(--type-title-l);
-  }
+/* The page keeps room under its last block for the bar. */
+.barRoom {
+  height: 64px;
+}
 
-  .change {
-    font-size: var(--type-caption);
-  }
+.sheetScrim {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  background: color-mix(in srgb, var(--ink-deep) 64%, transparent);
+  animation: fade 0.2s ease-out;
+}
 
-  /* One column, in the phone's order: the chart, the ticket under it, then the person's own and the coin's facts. */
-  .grid {
-    flex-direction: column;
-    flex-wrap: nowrap;
-    align-items: stretch;
-    gap: 12px;
-  }
+.sheet {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 31;
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100dvh - 48px);
+  padding: 0 12px calc(12px + env(safe-area-inset-bottom));
+  border-top: 1px solid var(--edge);
+  background: var(--ground);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  animation: rise 0.24s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
 
-  .main,
-  .aside {
-    display: contents;
-  }
+.sheetGrip {
+  display: grid;
+  flex: none;
+  place-items: center;
+  height: 32px;
+}
 
-  .chart {
-    order: 1;
-  }
+.sheetGrip::before {
+  content: '';
+  width: 44px;
+  height: 4px;
+  background: var(--chosen-edge);
+}
 
-  .ticket {
-    order: 2;
-  }
-
-  .under {
-    order: 3;
-  }
-
-  .facts {
-    order: 4;
-  }
-
-  .chartWait {
-    height: 312px;
+@keyframes rise {
+  from {
+    transform: translateY(24px);
+    opacity: 0;
   }
 }
 
-/* The four tiles of direction A: under the chart on a desk; on a phone after the ticket, before the person's own. */
-.tilesPlace {
-  min-width: 0;
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
 }
 
-@media (max-width: 767px) {
-  .tilesPlace {
-    order: 3;
+@media (prefers-reduced-motion: reduce) {
+  .sheet,
+  .sheetScrim {
+    animation: none;
   }
 }

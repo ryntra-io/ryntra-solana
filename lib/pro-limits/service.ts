@@ -38,7 +38,7 @@ import { base58 } from "../solana/limits/model.ts";
 import { ed25519Valid } from "../solana/limits/trigger-tx.ts";
 import { TICKET_TTL_MS, ticketKeyConfigured } from "../liquidity/studio/ticket.ts";
 
-import type { ProLimitsGate, ProLimitsNetwork, ProQuote } from "./gate.ts";
+import { proLimitsStopped, type ProLimitsGate, type ProLimitsNetwork, type ProQuote } from "./gate.ts";
 import { checkProSigned, issueProTicket, proDigest, readProTicket, type ProAction } from "./ticket.ts";
 
 type Env = Readonly<Record<string, string | undefined>>;
@@ -365,6 +365,8 @@ export async function proReview(input: ProReviewInput, deps: ProDeps): Promise<P
   const collector = deps.collector(gate.network);
   try {
     if (input.action === "place") {
+      // The stop holds new money only: what rests can always be taken back and collected.
+      if (proLimitsStopped(deps.env)) return failure("PRO_LIMIT_REFUSED", "New ladders are paused right now. Taking back works.");
       const found = await find(input.mint, at.value, deps);
       if (!found) return failure("PRO_LIMIT_NO_MARKET", "This coin has no pool a ladder can rest in.");
       if (!found.market.placing) return failure("PRO_LIMIT_REFUSED", "The pool takes no new orders now.");

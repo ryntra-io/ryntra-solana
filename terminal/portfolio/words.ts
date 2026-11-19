@@ -40,8 +40,17 @@ export const PORTFOLIO = words(
     // The recent actions and the panels.
     recent: 'Recent activity',
     close: 'Close',
-    receiveTitle: 'Receive',
-    receiveFrom: 'Send SOL or any Solana coin to this address — from another wallet or an exchange.',
+    // The coins nobody prices, folded at the list's end.
+    solana: 'Solana',
+    noPriceMore: (n: string) => `${n} more without a price`,
+    noPriceFold: 'Hide coins without a price',
+    // The history.
+    history: 'History',
+    historyInfo: 'What the history shows',
+    historyText: 'Your swaps, transfers and bridges made in Ryntra, newest first. The full on-chain history of any wallet is coming.',
+    historyOther: 'History of another wallet — coming soon.',
+    historyConnect: 'Connect a wallet — its history will be here.',
+    wallet: 'Wallet',
   },
   {
     topUp: 'Поповнити',
@@ -72,7 +81,14 @@ export const PORTFOLIO = words(
     hiddenFigure: 'Суму сховано',
     recent: 'Останні дії',
     close: 'Закрити',
-    receiveTitle: 'Отримати',
-    receiveFrom: 'Надішли SOL чи будь-яку монету Solana на цю адресу — з іншого гаманця чи з біржі.',
+    solana: 'Solana',
+    noPriceMore: (n: string) => `Ще ${n} без ціни`,
+    noPriceFold: 'Сховати монети без ціни',
+    history: 'Історія',
+    historyInfo: 'Що показує історія',
+    historyText: 'Твої обміни, перекази й мости, зроблені в Ryntra, — від найновіших. Повна історія будь-якого гаманця з ланцюга — скоро.',
+    historyOther: 'Історія чужого гаманця — скоро.',
+    historyConnect: 'Підключи гаманець — тут буде його історія.',
+    wallet: 'Гаманець',
   },
 );

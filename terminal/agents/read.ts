@@ -1,7 +1,6 @@
 import { readAsk } from '../../city/lib/autopilot/read.ts';
 import { fit, keyOf, type Book, type Command, type Context, type Gates, type Row } from '../../city/lib/command/parse.ts';
-import { hireFit, readHire, type CrewGates, type Role } from '../../city/lib/crew/read.ts';
-import { firstSentences, type Say } from '../../city/lib/crew/say.ts';
+import { hireFit, readHire, type CrewGates } from '../../city/lib/crew/read.ts';
 import { readDollarAsk } from '../../city/lib/earn/dollar-read.ts';
 import { readPilotAsk } from '../../city/lib/pilot/read.ts';
 import { readLadderAsk } from '../../city/lib/trade/pro-read.ts';
@@ -60,12 +59,4 @@ export function agentRow(input: string, book: Book, context: Context, gates: Gat
   return command ? { key: keyOf(command), command } : null;
 }
 
-/** The sentences ready to say in one tap: the city's first sentences, for the agents open here. */
-export function readySentences(lang: 'en' | 'uk', book: Book, crew: CrewGates): readonly Say[] {
-  return firstSentences(lang, book, { trade: crew.trader, launch: crew.launcher });
-}
 
-/** Where a hire leads: the trader's and the autopilot's cards are this screen's own; the keeper's pools and a launch are their shelves'. */
-export function hireWay(role: Role): 'here' | 'earn' | 'launch' {
-  return role === 'keeper' ? 'earn' : role === 'launcher' ? 'launch' : 'here';
-}

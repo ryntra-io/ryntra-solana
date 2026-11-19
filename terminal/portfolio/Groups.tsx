@@ -8,14 +8,16 @@ import type { Lang } from '@/city/lib/i18n/langs';
 import { USDC } from '@/city/lib/trade/tiles';
 import { resultShown, solPlain, usdShown, type Shown } from '@/terminal/agents/figures';
 import { RoleBadge } from '@/terminal/agents/glyphs';
-import type { MineRow, RowState } from '@/terminal/agents/rows';
+import { workerPath, type MineRow, type RowState } from '@/terminal/agents/rows';
 import { AGENTS } from '@/terminal/agents/words';
-import { TICKET_OPEN, iconOf } from '@/terminal/coin/Ticket';
+import { TICKET_OPEN } from '@/terminal/coin/Ticket';
+import { USDC_LOGO, spotLogo } from '@/terminal/coin/staples';
+import { logoOf as marketLogo } from '@/terminal/market/depth-view';
 import { ExplainBox, ExplainButton } from '@/terminal/coin/parts';
 import { sumText } from '@/terminal/earn/rows';
-import { coinHref, shelfHref, shelfOn } from '@/terminal/shell/shelves';
+import { coinHref, shelfOn } from '@/terminal/shell/shelves';
 import { Cell, Chip, CoinLogo, Icon, Panel, Quiet, Table, TableHead, TableRow, changeText, changeTone, priceText } from '@/terminal/ui';
-import { PROTOCOL_NAME, exitLines, loanShare, mintOf, platformName, stakeState, type ExitLine, type Group, type GroupId, type Row } from './all-view';
+import { NATIVE_SOL_MINT, PROTOCOL_NAME, exitLines, loanShare, mintOf, platformName, stakeState, type ExitLine, type Group, type GroupId, type MarketFact, type Row } from './all-view';
 import { ALL } from './all-words';
 import { RiskMark } from './CleanBlock';
 import { solFigure, type CleanRead, type RiskReason } from './clean-view';
@@ -48,8 +50,27 @@ export type GroupsProps = Readonly<{
   onClean: () => void;
 }>;
 
-/** A coin's logo: USDC's own, the rest through Ryntra's proxy — a disc with its letter where there is none. */
-export const logoFor = (mint: string): string | null => (mint === USDC.mint ? iconOf(USDC) : `/api/icon/${mint}`);
+/** SOL's own picture, kept with the site — native SOL is no tower, and the logo route answers nothing for it. */
+const SOL_LOGO = '/site/universe/SOL.png';
+
+/**
+ * A coin's logo and the addresses tried after it, each once (as the pool's desk does): SOL's and USDC's own
+ * pictures kept with the site; the picture the market lists for the mint, through the engine's proxy; the engine's
+ * logo of a market coin; the catalogue's logo by the mint. The first that loads stands; none — the ticker's letter.
+ */
+export function logosFor(mint: string, fact: MarketFact | null = null): readonly string[] {
+  const all = [mint === USDC.mint ? USDC_LOGO : null, mint === NATIVE_SOL_MINT ? SOL_LOGO : null, fact?.icon ? marketLogo({ id: mint, icon: fact.icon }) : null, `/api/icon/${mint}`, spotLogo(mint)];
+  return [...new Set(all.filter((src): src is string => Boolean(src)))];
+}
+
+/** A coin's logo with its whole queue of addresses. */
+function Logo({ mint, symbol, fact, size = 'm' }: { mint: string; symbol: string; fact: MarketFact | null; size?: 's' | 'm' }) {
+  const list = logosFor(mint, fact);
+  return <CoinLogo src={list[0] ?? null} also={list.slice(1)} symbol={symbol} size={size} />;
+}
+
+/** The ticket's own logo address for a coin: the first of its queue. */
+export const logoFor = (mint: string, fact: MarketFact | null = null): string | null => logosFor(mint, fact)[0] ?? null;
 
 const unitsText = (units: number, lang: Lang): string => digits(unitsFigure(units), lang);
 
@@ -97,7 +118,7 @@ export function Groups(props: GroupsProps) {
   const coins = group('coins');
   const dust = group('dust');
   return (
-    <div className={a.groups}>
+    <div id="positions" className={a.groups}>
       {pools ? <PoolsGroup {...props} group={pools} lines={lines} /> : null}
       {staking ? <StakingGroup {...props} group={staking} lines={lines} /> : null}
       {lending ? <LendingGroup {...props} group={lending} lines={lines} /> : null}
@@ -185,21 +206,21 @@ function Unread({ rows, reread, busy }: { rows: readonly Row[]; reread: () => vo
 
 const readRows = (group: Group): Row[] => group.rows.filter((row) => row.position.state !== 'unread');
 
-function Logos({ row }: { row: Row }) {
+function Logos({ row, fact }: { row: Row; fact: (mint: string) => MarketFact | null }) {
   if (!row.coins.length) return null;
   return (
     <span className={a.pair} aria-hidden="true">
       {row.coins.map((coin) => (
-        <CoinLogo key={coin.mint} src={logoFor(coin.mint)} symbol={coin.symbol ?? '?'} size={row.coins.length > 1 ? 's' : 'm'} />
+        <Logo key={coin.mint} mint={coin.mint} fact={fact(coin.mint)} symbol={coin.symbol ?? '?'} size={row.coins.length > 1 ? 's' : 'm'} />
       ))}
     </span>
   );
 }
 
-function NameCell({ row, name, sub, tone }: { row: Row; name: string; sub: string | null; tone?: 'warn' }) {
+function NameCell({ row, name, sub, tone, fact }: { row: Row; name: string; sub: string | null; tone?: 'warn'; fact: (mint: string) => MarketFact | null }) {
   return (
     <Cell className={a.nameCell}>
-      <Logos row={row} />
+      <Logos row={row} fact={fact} />
       <span className={a.words}>
         <span className={a.name}>{name}</span>
         {sub ? (
@@ -335,7 +356,9 @@ type Lines = ReadonlyMap<string, ExitLine>;
 
 /* ── pools ────────────────────────────────────────────────────────────── */
 
-const POOL_COLUMNS = 'minmax(170px, 1.4fr) minmax(140px, 1.2fr) minmax(84px, 0.8fr) minmax(76px, 0.7fr) minmax(190px, auto)';
+const POOL_COLUMNS = 'minmax(150px, 1.4fr) minmax(130px, 1.2fr) minmax(84px, 0.8fr) minmax(76px, 0.7fr) minmax(184px, auto)';
+/** A wallet only looked at: no «Collect · Close» — only the «i» of a position that does not leave in one step. */
+const POOL_COLUMNS_READ = 'minmax(150px, 1.4fr) minmax(130px, 1.2fr) minmax(84px, 0.8fr) minmax(76px, 0.7fr) minmax(44px, auto)';
 
 function PoolsGroup({ data, group, lines, own, door, narrow, onCollect, onExit }: GroupsProps & { group: Group; lines: Lines }) {
   const w = useWords(ALL);
@@ -362,7 +385,7 @@ function PoolsGroup({ data, group, lines, own, door, narrow, onCollect, onExit }
               return (
                 <PhoneRow
                   key={row.id}
-                  logos={<Logos row={row} />}
+                  logos={<Logos row={row} fact={data.fact} />}
                   name={nameOf(row, w)}
                   sub={withAge([state, rangeOf(row)].filter(Boolean).join(' · ') || PROTOCOL_NAME[row.position.protocol], row, w, lang)}
                   tone={row.position.inRange === false ? 'warn' : undefined}
@@ -384,7 +407,7 @@ function PoolsGroup({ data, group, lines, own, door, narrow, onCollect, onExit }
             })}
           </ul>
         ) : (
-          <Table columns={POOL_COLUMNS} minWidth={720} label={w.pools}>
+          <Table columns={own ? POOL_COLUMNS : POOL_COLUMNS_READ} minWidth={own ? 680 : 540} label={w.pools}>
             <TableHead>
               <Cell head>{w.position}</Cell>
               <Cell head>{w.range}</Cell>
@@ -402,7 +425,7 @@ function PoolsGroup({ data, group, lines, own, door, narrow, onCollect, onExit }
               return (
                 <Fragment key={row.id}>
                   <TableRow>
-                    <NameCell row={row} name={nameOf(row, w)} sub={withAge(PROTOCOL_NAME[row.position.protocol], row, w, lang)} />
+                    <NameCell row={row} fact={data.fact} name={nameOf(row, w)} sub={withAge(PROTOCOL_NAME[row.position.protocol], row, w, lang)} />
                     <Cell className={a.rangeCell}>
                       {row.position.inRange === null ? null : <Chip tone={row.position.inRange ? 'ok' : 'warn'}>{row.position.inRange ? w.inRange : w.outOfRange}</Chip>}
                       {mark ? <span className={a.rangeMark}>{mark}</span> : null}
@@ -461,7 +484,7 @@ function StakingGroup({ data, group, lines, own, door, narrow, onCollect, onExit
               return (
                 <PhoneRow
                   key={row.id}
-                  logos={<Logos row={row} />}
+                  logos={<Logos row={row} fact={data.fact} />}
                   name={nameOf(row, w)}
                   sub={withAge(state?.word ?? amount(row), row, w, lang)}
                   tone={state?.tone === 'warn' ? 'warn' : undefined}
@@ -500,7 +523,7 @@ function StakingGroup({ data, group, lines, own, door, narrow, onCollect, onExit
               return (
                 <Fragment key={row.id}>
                   <TableRow>
-                    <NameCell row={row} name={nameOf(row, w)} sub={withAge(null, row, w, lang)} />
+                    <NameCell row={row} fact={data.fact} name={nameOf(row, w)} sub={withAge(null, row, w, lang)} />
                     <Cell>{state ? <Chip tone={state.tone}>{state.word}</Chip> : null}</Cell>
                     <Cell end tone="dim">
                       {amount(row) ?? '—'}
@@ -551,7 +574,7 @@ function LendingGroup({ data, group, lines, own, door, narrow, onCollect, onExit
               return (
                 <PhoneRow
                   key={row.id}
-                  logos={<Logos row={row} />}
+                  logos={<Logos row={row} fact={data.fact} />}
                   name={nameOf(row, w)}
                   sub={withAge([PROTOCOL_NAME[row.position.protocol], kind(row)].filter(Boolean).join(' · '), row, w, lang)}
                   value={valueText(row.usd, lang, p.noPrice)}
@@ -589,7 +612,7 @@ function LendingGroup({ data, group, lines, own, door, narrow, onCollect, onExit
               return (
                 <Fragment key={row.id}>
                   <TableRow>
-                    <NameCell row={row} name={nameOf(row, w)} sub={withAge(PROTOCOL_NAME[row.position.protocol], row, w, lang)} />
+                    <NameCell row={row} fact={data.fact} name={nameOf(row, w)} sub={withAge(PROTOCOL_NAME[row.position.protocol], row, w, lang)} />
                     <Cell className={a.plain}>{kind(row)}</Cell>
                     <Cell end>{valueText(row.usd, lang, p.noPrice)}</Cell>
                     <Cell end tone={row.earnedUsd !== null && row.earnedUsd > 0 ? 'up' : 'dim'}>
@@ -615,7 +638,7 @@ function LendingGroup({ data, group, lines, own, door, narrow, onCollect, onExit
 
 const OTHER_COLUMNS = 'minmax(200px, 1.6fr) minmax(150px, 1.2fr) minmax(96px, 0.8fr)';
 
-function OtherGroup({ group, narrow }: GroupsProps & { group: Group }) {
+function OtherGroup({ data, group, narrow }: GroupsProps & { group: Group }) {
   const w = useWords(ALL);
   const p = useWords(PORTFOLIO);
   const lang = useLang();
@@ -626,7 +649,7 @@ function OtherGroup({ group, narrow }: GroupsProps & { group: Group }) {
       {narrow ? (
         <ul className={a.rows}>
           {rows.map((row) => (
-            <PhoneRow key={row.id} logos={<Logos row={row} />} name={nameOf(row, w)} sub={platformName(row.position.platform)} value={valueText(row.usd, lang, p.noPrice)} />
+            <PhoneRow key={row.id} logos={<Logos row={row} fact={data.fact} />} name={nameOf(row, w)} sub={platformName(row.position.platform)} value={valueText(row.usd, lang, p.noPrice)} />
           ))}
         </ul>
       ) : (
@@ -640,7 +663,7 @@ function OtherGroup({ group, narrow }: GroupsProps & { group: Group }) {
           </TableHead>
           {rows.map((row) => (
             <TableRow key={row.id}>
-              <NameCell row={row} name={nameOf(row, w)} sub={null} />
+              <NameCell row={row} fact={data.fact} name={nameOf(row, w)} sub={null} />
               <Cell tone="dim">{platformName(row.position.platform) ?? '—'}</Cell>
               <Cell end>{valueText(row.usd, lang, p.noPrice)}</Cell>
             </TableRow>
@@ -653,17 +676,26 @@ function OtherGroup({ group, narrow }: GroupsProps & { group: Group }) {
 
 /* ── the coins ────────────────────────────────────────────────────────── */
 
-const COIN_COLUMNS = 'minmax(170px, 1.6fr) minmax(84px, 0.9fr) minmax(84px, 0.9fr) minmax(64px, 0.6fr) minmax(90px, 0.9fr) minmax(150px, auto)';
+/* The whole page's width, or 720 beside an open panel: the columns fit both without a sideways scroll. */
+const COIN_COLUMNS = 'minmax(140px, 1.6fr) minmax(80px, 0.9fr) minmax(84px, 0.9fr) minmax(60px, 0.6fr) minmax(96px, 1fr) minmax(164px, auto)';
+/** A wallet only looked at has no «Buy · Sell»: its table keeps no empty column for them. */
+const COIN_COLUMNS_READ = 'minmax(170px, 1.6fr) minmax(96px, 0.9fr) minmax(96px, 0.9fr) minmax(72px, 0.6fr) minmax(120px, 1fr)';
 
-type CoinView = Readonly<{ row: Row; mint: string; symbol: string; name: string; dayPct: number | null; risk: readonly RiskReason[]; ask: CoinAsk }>;
+type CoinView = Readonly<{ row: Row; mint: string; symbol: string; name: string; dayPct: number | null; risk: readonly RiskReason[]; ask: CoinAsk; fact: MarketFact | null }>;
 
-function coinView(row: Row, data: AllData, risk: GroupsProps['risk']): CoinView | null {
+/** Native SOL is Solana itself — never «Wrapped SOL», the market's name of the token account's coin. */
+const isNative = (row: Row): boolean => row.position.id === 'wallet:sol';
+
+function coinView(row: Row, data: AllData, risk: GroupsProps['risk'], solana: string): CoinView | null {
   const mint = mintOf(row.position);
   if (!mint) return null;
   const market = data.coin(mint);
-  const symbol = (row.name ?? row.coins[0]?.symbol ?? '?').replace(/^\$+/, '');
-  const name = market?.name ?? symbol;
-  return { row, mint, symbol, name, dayPct: market?.dayPct ?? null, risk: risk.get(mint) ?? [], ask: { mint, symbol, name, icon: logoFor(mint) } };
+  const fact = data.fact(mint);
+  const symbol = (row.name ?? row.coins[0]?.symbol ?? fact?.symbol ?? '?').replace(/^\$+/, '');
+  const name = isNative(row) ? solana : (market?.name ?? symbol);
+  // A day's move only for a coin with a price: a coin listed «No price» says nothing of its day.
+  const dayPct = row.usd === null ? null : (market?.dayPct ?? null);
+  return { row, mint, symbol, name, dayPct, risk: risk.get(mint) ?? [], ask: { mint, symbol, name, icon: logoFor(mint, fact) }, fact };
 }
 
 /** A coin's first cell: its logo, its ticker and its name — or, for a coin better left alone, its mark where the name would stand. */
@@ -677,7 +709,7 @@ function CoinNameCell({ coin, href }: { coin: CoinView; href?: string }) {
   );
   return (
     <span role="cell" className={coin.risk.length ? a.marked : a.nameCell}>
-      <CoinLogo src={logoFor(coin.mint)} symbol={coin.symbol} />
+      <Logo mint={coin.mint} fact={coin.fact} symbol={coin.symbol} />
       <span className={a.words}>
         {ticker}
         {coin.risk.length ? <RiskMark symbol={coin.symbol} risk={coin.risk} /> : coin.name !== coin.symbol ? <span className={a.sub}>{coin.name}</span> : null}
@@ -701,7 +733,18 @@ function CoinsGroup({ data, group, own, narrow, risk, onTrade }: GroupsProps & {
   const lang = useLang();
   const linked = shelfOn('market');
   const trades = own && TICKET_OPEN;
-  const coins = readRows(group).flatMap((row) => coinView(row, data, risk) ?? []);
+  const [unpricedOpen, setUnpricedOpen] = useState(false);
+  const all = readRows(group).flatMap((row) => coinView(row, data, risk, p.solana) ?? []);
+  // The coins nobody prices stand folded at the list's end: a wallet's spam never buries what it holds.
+  const priced = all.filter((coin) => coin.row.usd !== null);
+  const unpriced = all.filter((coin) => coin.row.usd === null);
+  const coins = unpricedOpen ? all : priced;
+  const fold = unpriced.length ? (
+    <button type="button" className={a.moreRow} aria-expanded={unpricedOpen} onClick={() => setUnpricedOpen((was) => !was)}>
+      <span>{unpricedOpen ? p.noPriceFold : p.noPriceMore(digits(String(unpriced.length), lang))}</span>
+      <Icon name="chevron" size="s" />
+    </button>
+  ) : null;
   return (
     <GroupPanel title={w.coins} count={group.count} usd={group.usd}>
       {coins.length ? (
@@ -710,7 +753,7 @@ function CoinsGroup({ data, group, own, narrow, risk, onTrade }: GroupsProps & {
             {coins.map((coin) => (
               <PhoneRow
                 key={coin.row.id}
-                logos={<CoinLogo src={logoFor(coin.mint)} symbol={coin.symbol} />}
+                logos={<Logo mint={coin.mint} fact={coin.fact} symbol={coin.symbol} />}
                 name={coin.symbol}
                 sub={coin.row.units === null ? null : `${unitsText(coin.row.units, lang)} ${coin.symbol}`}
                 foot={coin.risk.length ? <MarkFoot coin={coin} /> : undefined}
@@ -723,7 +766,7 @@ function CoinsGroup({ data, group, own, narrow, risk, onTrade }: GroupsProps & {
             ))}
           </ul>
         ) : (
-          <Table columns={COIN_COLUMNS} minWidth={720} label={w.coins}>
+          <Table columns={trades ? COIN_COLUMNS : COIN_COLUMNS_READ} minWidth={trades ? 680 : 580} label={w.coins}>
             <TableHead>
               <Cell head>{p.coin}</Cell>
               <Cell head end>
@@ -738,7 +781,7 @@ function CoinsGroup({ data, group, own, narrow, risk, onTrade }: GroupsProps & {
               <Cell head end sorted>
                 {p.value}
               </Cell>
-              <Cell head />
+              {trades ? <Cell head /> : null}
             </TableHead>
             {coins.map((coin) => (
               <TableRow key={coin.row.id}>
@@ -753,23 +796,22 @@ function CoinsGroup({ data, group, own, narrow, risk, onTrade }: GroupsProps & {
                   {coin.dayPct === null ? '—' : changeText(coin.dayPct, lang)}
                 </Cell>
                 <Cell end>{valueText(coin.row.usd, lang, p.noPrice)}</Cell>
-                <Cell end className={a.rowActs}>
-                  {trades ? (
-                    <>
-                      <Quiet size="s" aria-label={p.buyCoin(coin.symbol)} onClick={() => onTrade(coin.ask, 'buy')}>
-                        {p.buy}
-                      </Quiet>
-                      <Quiet size="s" aria-label={p.sellCoin(coin.symbol)} onClick={() => onTrade(coin.ask, 'sell')}>
-                        {p.sell}
-                      </Quiet>
-                    </>
-                  ) : null}
-                </Cell>
+                {trades ? (
+                  <Cell end className={a.rowActs}>
+                    <Quiet size="s" aria-label={p.buyCoin(coin.symbol)} onClick={() => onTrade(coin.ask, 'buy')}>
+                      {p.buy}
+                    </Quiet>
+                    <Quiet size="s" aria-label={p.sellCoin(coin.symbol)} onClick={() => onTrade(coin.ask, 'sell')}>
+                      {p.sell}
+                    </Quiet>
+                  </Cell>
+                ) : null}
               </TableRow>
             ))}
           </Table>
         )
       ) : null}
+      {fold}
       <Unread rows={group.rows} reread={data.reread} busy={data.rereading} />
     </GroupPanel>
   );
@@ -784,7 +826,7 @@ function DustGroup({ data, group, own, narrow, risk, cleanRead, onClean }: Group
   const p = useWords(PORTFOLIO);
   const c = useWords(CLEAN);
   const lang = useLang();
-  const coins = readRows(group).flatMap((row) => coinView(row, data, risk) ?? []);
+  const coins = readRows(group).flatMap((row) => coinView(row, data, risk, p.solana) ?? []);
   const empty = (cleanRead?.items ?? []).filter((item) => item.kind === 'empty');
   const emptySol = empty.reduce((sum, item) => sum + item.lamports, 0) / 1e9;
   const emptyLine = empty.length ? { name: w.emptyAccounts, count: String(empty.length), value: `≈ ${digits(solFigure(emptySol), lang)} SOL` } : null;
@@ -800,7 +842,7 @@ function DustGroup({ data, group, own, narrow, risk, cleanRead, onClean }: Group
           {coins.map((coin) => (
             <PhoneRow
               key={coin.row.id}
-              logos={<CoinLogo src={logoFor(coin.mint)} symbol={coin.symbol} />}
+              logos={<Logo mint={coin.mint} fact={coin.fact} symbol={coin.symbol} />}
               name={coin.symbol}
               sub={coin.row.units === null ? null : `${unitsText(coin.row.units, lang)} ${coin.symbol}`}
               foot={coin.risk.length ? <MarkFoot coin={coin} /> : undefined}
@@ -869,15 +911,18 @@ function resultOf(row: MineRow, solUsd: number | null, lang: Lang): Shown | null
   return 'usd' in row.result ? usdShown(row.result.usd, lang) : resultShown(row.result.raw, solUsd, lang);
 }
 
-/** The person's agents and what each holds: their money stands outside the wallet, so it has a group of its own. Each row leads to the Agents screen, where an agent is managed. */
+/**
+ * The person's bots on a budget and what each holds: their money stands outside the wallet, so it has a group of its
+ * own. Each row leads to its own bot's page, where it is managed and stopped; the keeper's to Earn.
+ */
 function AgentsGroup({ data, agents, narrow }: GroupsProps) {
   const w = useWords(ALL);
   const p = useWords(PORTFOLIO);
   const aw = useWords(AGENTS);
   const lang = useLang();
-  const href = shelfOn('agents') ? shelfHref('agents', 'live') : undefined;
+  const hrefOf = (row: MineRow) => (shelfOn(row.role === 'keeper' ? 'earn' : 'agents') ? workerPath(row.role) : undefined);
   const solUsd = data.answer?.solUsd ?? null;
-  const logo = (row: MineRow) => (row.coin ? <CoinLogo src={logoFor(row.coin.mint)} symbol={row.coin.symbol} /> : <RoleBadge role={row.role} />);
+  const logo = (row: MineRow) => (row.coin ? <Logo mint={row.coin.mint} fact={data.fact(row.coin.mint)} symbol={row.coin.symbol} /> : <RoleBadge role={row.role} />);
   return (
     <GroupPanel title={w.agents} count={agents.rows.length} usd={agents.usd}>
       {narrow ? (
@@ -886,7 +931,7 @@ function AgentsGroup({ data, agents, narrow }: GroupsProps) {
             const held = agents.held.get(row.key)?.usd ?? null;
             const result = resultOf(row, solUsd, lang);
             const named = agentWords(aw, row);
-            return <PhoneRow key={row.key} logos={logo(row)} name={named.name} sub={named.sub} value={held === null ? (row.budget ? `${solPlain(row.budget.perDayRaw, lang)} SOL` : '—') : sumText(held, lang)} second={result?.text ?? null} secondTone={result?.tone} href={href} />;
+            return <PhoneRow key={row.key} logos={logo(row)} name={named.name} sub={named.sub} value={held === null ? (row.budget ? `${solPlain(row.budget.perDayRaw, lang)} SOL` : '—') : sumText(held, lang)} second={result?.text ?? null} secondTone={result?.tone} href={hrefOf(row)} />;
           })}
         </ul>
       ) : (
@@ -909,7 +954,7 @@ function AgentsGroup({ data, agents, narrow }: GroupsProps) {
             const named = agentWords(aw, row);
             return (
               <TableRow key={row.key}>
-                <Cell href={href} className={a.nameCell}>
+                <Cell href={hrefOf(row)} className={a.nameCell}>
                   {logo(row)}
                   <span className={a.words}>
                     <span className={a.name}>{named.name}</span>

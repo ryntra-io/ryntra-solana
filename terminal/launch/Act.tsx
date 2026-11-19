@@ -2,18 +2,15 @@
 
 import { useId, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { num } from '@/city/lib/i18n/dict';
 import { useLang } from '@/city/lib/i18n/lang';
 import type { Phase } from '@/city/lib/launch/flow';
-import { pct } from '@/city/lib/launch/format';
-import { poolOpensAt } from '@/city/lib/launch/pool';
-import { reviewRows } from '@/city/lib/launch/terms';
-import { ExplainBox, ExplainButton, connectOrPick } from '@/terminal/coin/parts';
+import { connectOrPick } from '@/terminal/coin/parts';
 import { WalletPick } from '@/terminal/coin/WalletPick';
 import { useWhen } from './Form';
+import { Glyph } from './glyphs';
 import { coinHref } from '@/terminal/shell/shelves';
 import { Action, Quiet } from '@/terminal/ui';
-import { LADDER, POOL_SPLIT_BPS, clockLeft, lineShareBpsOf, refusalOf, sniperOf } from './launch-view';
+import { clockLeft, refusalOf } from './launch-view';
 import type { LaunchModel } from './useLaunchModel';
 import { useSeconds } from './useSeconds';
 import l from './launch.module.css';
@@ -40,76 +37,29 @@ export function Act({ m, onTopUp, onNewPicture, onEdit }: { m: LaunchModel; onTo
   };
   return (
     <div className={l.act}>
-      <Line m={m} />
-      {picking && !m.connection ? (
-        <WalletPick onBack={() => setPicking(false)} />
-      ) : (
-        <Action onClick={press} disabled={!m.open} busy={m.status === 'reading'} data-launch-act={m.newPicture ? 'picture' : !m.connection ? 'connect' : 'launch'}>
-          {label}
-        </Action>
+      {m.open ? null : (
+        <p className={l.line} data-launch-line="closed">
+          {m.status === 'reading' ? ' ' : w.closed}
+        </p>
       )}
-    </div>
-  );
-}
-
-/** The one line before the signature — the fee and who gets it, or when the pool trades and what is locked — and the risk. */
-function Line({ m }: { m: LaunchModel }) {
-  const { w } = m;
-  useLang();
-  const id = useId();
-  const now = useSeconds(15_000);
-  const when = useWhen(m);
-  const [open, setOpen] = useState(false);
-  if (!m.open) {
-    return (
-      <p className={l.line} data-launch-line="closed">
-        <span>{m.status === 'reading' ? ' ' : w.closed}</span>
-      </p>
-    );
-  }
-  const sniper = sniperOf(m.format, m.preset);
-  const ladder = m.format === 'pool' && m.choice?.ladder === true;
-  const parts =
-    m.format === 'pool' && m.choice
-      ? [now !== null ? w.linePool(when(poolOpensAt(m.choice, now), true)) : null, ladder ? w.lineLockedPart(pct(10_000 - LADDER.shareBps)) : w.lineLocked, w.lineShare(pct(POOL_SPLIT_BPS.creator))]
-      : [sniper ? w.lineFee(pct(sniper.endBps)) : null, lineShareBpsOf(m.preset) !== null ? w.lineYou(pct(lineShareBpsOf(m.preset)!)) : null];
-  const said = parts.filter((part): part is string => Boolean(part));
-  const rows: readonly (readonly [string, readonly string[]])[] =
-    m.format === 'pool'
-      ? [
-          [w.how, [w.poolHow]],
-          [w.share, [w.lineShare(pct(POOL_SPLIT_BPS.creator)), w.poolTheRest(pct(POOL_SPLIT_BPS.ryntra))]],
-          ...(ladder ? [[w.ladder, [w.ladderHow(pct(LADDER.shareBps), `×${num(LADDER.near)}`, `×${num(LADDER.far)}`)]] as const] : []),
-          [w.cost, [w.costPool]],
-        ]
-      : m.preset && m.network
-        ? // The city's review behind «i»: first the whole split before the signature — you, Ryntra, Meteora, the exit.
-          reviewRows(m.preset, m.network, m.cost, false)
-            .filter((row) => row.id !== 'network' && row.id !== 'halo')
-            .map((row) => [row.label, row.id === 'line' ? [row.lines.join(' · ')] : row.lines] as const)
-        : [];
-  return (
-    <div className={l.lineRow}>
-      <p className={l.line} data-launch-line={m.format}>
-        {said.map((part) => (
-          <span key={part}>{part}</span>
-        ))}
-        <span className={l.risk}>{w.lineRisk}</span>
-      </p>
-      {rows.length ? <ExplainButton label={w.lineInfo} open={open} controls={id} onToggle={() => setOpen((was) => !was)} /> : null}
-      {open ? (
-        <ExplainBox id={id}>
-          <span className={l.explainRows}>
-            {rows.map(([name, lines]) => (
-              <span key={name} className={l.explainRow}>
-                <b>{name}</b>
-                {lines.map((text) => (
-                  <span key={text}>{text}</span>
-                ))}
-              </span>
-            ))}
+      {/* On a phone the action stays in the thumb's reach above the tab bar while the form scrolls under it. */}
+      <div className={l.actBar}>
+        {picking && !m.connection ? (
+          <WalletPick onBack={() => setPicking(false)} />
+        ) : (
+          <Action onClick={press} disabled={!m.open} busy={m.status === 'reading'} data-launch-act={m.newPicture ? 'picture' : !m.connection ? 'connect' : 'launch'}>
+            {label}
+          </Action>
+        )}
+      </div>
+      {/* Under the hood, in one line: the person signs in their own wallet — and the risk, said plainly. */}
+      {m.open ? (
+        <p className={l.hood} data-launch-line={m.format}>
+          <Glyph name="lock" small />
+          <span>
+            {w.underHood} · {w.risk}
           </span>
-        </ExplainBox>
+        </p>
       ) : null}
     </div>
   );

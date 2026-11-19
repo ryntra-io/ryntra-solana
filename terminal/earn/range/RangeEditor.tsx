@@ -1,14 +1,13 @@
 'use client';
 
 import { useId, useRef, type KeyboardEvent, type PointerEvent } from 'react';
-import { rangePrices } from '@/city/lib/earn/pier';
 import { digits, useWords } from '@/city/lib/i18n/dict';
 import { useLang } from '@/city/lib/i18n/lang';
 import type { EarnBinsAnswer } from '@/lib/earn-pools/bins';
 import { Icon, Kick, Quiet, Slider } from '@/terminal/ui';
 import type { FactRow } from './facts';
 import { pressDown, pressMove, type Press, type Step } from './gesture';
-import { RANGE_MAX_HALF, RANGE_MIN_HALF, barsOf, clampHalf, halfAt, pctText, quickPicks, reachOf, shapeAt, spanOf, type RangeView, type ShapeId } from './model';
+import { RANGE_MAX_HALF, RANGE_MIN_HALF, barsOf, clampHalf, edgeTexts, halfAt, pctText, quickPicks, reachOf, shapeAt, spanOf, type RangeView, type ShapeId } from './model';
 import type { BinsState } from './useBins';
 import { RANGE } from './words';
 import r from './range.module.css';
@@ -118,12 +117,15 @@ export function BinsChart({ answer, half, max, shape, onHalf }: { answer: EarnBi
   );
 }
 
-/** The range's two prices under the chart, each with how far it stands from the price, and the price now between them. */
-function Edges({ range, price, unit }: { range: RangeView; price: number; unit: string }) {
+/**
+ * The range's two prices under the chart, each with how far it stands from the price, and the price now between them —
+ * all three to the places the pool's step needs, the price now as the pool's head says it.
+ */
+function Edges({ range, price, unit, stepBps }: { range: RangeView; price: number; unit: string; stepBps: number }) {
   const w = useWords(RANGE);
   const lang = useLang();
-  const prices = rangePrices(range.low, range.high);
-  const now = rangePrices(price, range.high).low;
+  const prices = edgeTexts(range.low, range.high, price, stepBps);
+  const now = prices.now;
   return (
     <div className={r.edges}>
       <div className={r.edgeCell}>
@@ -227,6 +229,7 @@ export function RangeEditor({
   unit,
   onHalf,
   facts,
+  compact = false,
 }: {
   id: string;
   bins: BinsState;
@@ -239,6 +242,8 @@ export function RangeEditor({
   unit: string;
   onHalf?: (half: number) => void;
   facts: readonly FactRow[];
+  /** The bars with the range over them and its edges only — a pool's own page shows it before «Tune». */
+  compact?: boolean;
 }) {
   const w = useWords(RANGE);
   const lang = useLang();
@@ -252,14 +257,14 @@ export function RangeEditor({
           {bins.status === 'failed' ? <p className={r.cap}>{w.failed}</p> : null}
         </div>
       )}
-      <Edges range={range} price={price} unit={unit} />
-      {onHalf ? (
+      <Edges range={range} price={price} unit={unit} stepBps={stepBps} />
+      {compact ? null : onHalf ? (
         <>
           <Slider value={half} min={RANGE_MIN_HALF} max={max} onChange={(next) => onHalf(clampHalf(next, max))} label={w.width} valueText={w.widthOf(digits(pctText(reach.upPct), lang))} />
           <QuickRow stepBps={stepBps} half={half} max={max} onHalf={onHalf} />
         </>
       ) : null}
-      <RangeFacts rows={facts} />
+      {compact ? null : <RangeFacts rows={facts} />}
     </div>
   );
 }

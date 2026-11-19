@@ -3,7 +3,7 @@
 import { useEffect, useMemo } from 'react';
 import { spendable } from '@/city/lib/districts/harbor/deposit';
 import { SOL_MINT } from '@/city/lib/earn/lst';
-import { GOAL_SHAPE, MAX_HALF, PIER_GOALS, PIER_SLIPPAGE_BPS, PIER_STYLES, STYLE_HALF, pierCosts, pierHalf, otherInSol, rangePrices, solShort, solUsd, styleOfHalf, unitsShort, zapFigures, type Pier, type PierGoal, type PierStyle } from '@/city/lib/earn/pier';
+import { GOAL_SHAPE, MAX_HALF, PIER_GOALS, PIER_SLIPPAGE_BPS, PIER_STYLES, STYLE_HALF, pierCosts, pierHalf, otherInSol, solShort, solUsd, styleOfHalf, unitsShort, zapFigures, type Pier, type PierGoal, type PierStyle } from '@/city/lib/earn/pier';
 import { pierSeries } from '@/city/lib/earn/pier-history';
 import { PIER_LOCKED, pierChoice, pierGoal, usePier, zapReviewOf } from '@/city/lib/earn/pier-store';
 import { digits, useWords } from '@/city/lib/i18n/dict';
@@ -14,7 +14,7 @@ import { Action, AmountField, Kick, Quiet, Segment } from '@/terminal/ui';
 import { Facts, Note, OneLine, Result, RiskDots, TicketHead, iconOf } from './bits';
 import { noticeKey } from './failures';
 import { SHAPE_WORD, factRows, gapLine, rangeLine } from './range/facts';
-import { dayEstimate, dayMove, gapView, heldShare, pctText, rangeView, rangeWorth, reachOf, rentView } from './range/model';
+import { dayEstimate, dayMove, edgeTexts, gapView, heldShare, pctText, rangeView, rangeWorth, reachOf, rentView } from './range/model';
 import { Names, RangeEditor, RangeLine, useEditorId } from './range/RangeEditor';
 import { useBins, useTune } from './range/useBins';
 import { RANGE } from './range/words';
@@ -47,8 +47,10 @@ export function lineOf(parts: readonly (string | null)[]): string {
  * Adding to a pool: the goal and the range, the amount in SOL, the one line before the signature and the one amber
  * action. The pool's own flow as the city runs it — the part of the SOL the other coin needs is swapped and the position
  * opened in one approval; the exact figures are built while the form is read, and the wallet signs exactly those.
+ * On a pool's own page the page names the pool: `bare` leaves out the ticket's head, and `peek` shows the
+ * range over the pool's liquidity — its bars and edges — before «Tune» opens the rest.
  */
-export function PoolTicket({ pier, row, addOpen, onConnect }: { pier: Pier; row: PoolRow; addOpen: boolean; onConnect: () => void }) {
+export function PoolTicket({ pier, row, addOpen, onConnect, bare = false, peek = false }: { pier: Pier; row: PoolRow; addOpen: boolean; onConnect: () => void; bare?: boolean; peek?: boolean }) {
   const w = useWords(EARN);
   const rw = useWords(RANGE);
   const lang = useLang();
@@ -144,7 +146,8 @@ export function PoolTicket({ pier, row, addOpen, onConnect }: { pier: Pier; row:
   const rent = reviewCosts ? { pay: solShort(reviewCosts.rent), back: solShort(reviewCosts.rentBack), all: reviewCosts.rent === reviewCosts.rentBack, exact: true } : guestRent ? { pay: solShort(guestRent.pay), back: solShort(guestRent.back), all: guestRent.pay === guestRent.back, exact: false } : null;
   const facts = factRows(rw, lang, {
     range,
-    steps: 'bins',
+    // One word for a step of the price on every pool's form («33 bins» here, «33 steps» on DLMM Pro's).
+    steps: 'steps',
     shape: GOAL_SHAPE[goal],
     goesIn,
     exact: Boolean(figures?.amounts.length),
@@ -154,6 +157,8 @@ export function PoolTicket({ pier, row, addOpen, onConnect }: { pier: Pier; row:
     day: day ? { usd: sumText(day.dayUsd, lang), basis: day.basis } : null,
   });
   const gap = read ? gapLine(rw, lang, gapView(read.market.gapPct, stepBps)) : null;
+  // The range's two prices behind «Details», to the places the pool's step needs.
+  const edges = edgeTexts(range.low, range.high, priceNow, stepBps);
   const problem =
     !typed || !choice.problem
       ? null
@@ -177,7 +182,7 @@ export function PoolTicket({ pier, row, addOpen, onConnect }: { pier: Pier; row:
   return (
     <>
       {/* A day's fees as the table's row says them: what trades paid the pool, from the very read the ticket stands on. */}
-      <TicketHead coins={row.coins} name={row.name} sub={feeText(row.feePct, lang)} figure={pier.pool.fees24hUsd !== null ? shortUsd(pier.pool.fees24hUsd, lang) : null} figureCap={w.fees24} />
+      {bare ? null : <TicketHead coins={row.coins} name={row.name} sub={feeText(row.feePct, lang)} figure={pier.pool.fees24hUsd !== null ? shortUsd(pier.pool.fees24hUsd, lang) : null} figureCap={w.fees24} />}
       {/* While the wallet is open or the bytes travel, the form is what is being signed: it holds still. */}
       <fieldset className={e.form} disabled={PIER_LOCKED.has(phase)}>
       <AmountField
@@ -203,8 +208,8 @@ export function PoolTicket({ pier, row, addOpen, onConnect }: { pier: Pier; row:
         <Segment<PierStyle> label={w.width} value={styleOfHalf(half)} onChange={(id) => edit(() => usePier.getState().setStyle(id))} items={PIER_STYLES.map((id) => ({ id, label: w[WIDTH_WORD[id]] }))} />
         <Names items={PIER_STYLES.map((id) => ({ id, label: digits(`±${pctText(reachOf(stepBps, pierHalf(id)).upPct)}%`, lang), on: id === styleOfHalf(half) }))} />
       </div>
-      <RangeLine line={rangeLine(rw, lang, range, pier.pool.y.symbol, 'bins')} open={tune} onOpen={setTune} controls={editorId} />
-      {tune ? (
+      <RangeLine line={rangeLine(rw, lang, range, pier.pool.y.symbol, 'steps', stepBps)} open={tune} onOpen={setTune} controls={editorId} />
+      {tune || peek ? (
         <RangeEditor
           id={editorId}
           bins={bins}
@@ -217,6 +222,7 @@ export function PoolTicket({ pier, row, addOpen, onConnect }: { pier: Pier; row:
           unit={pier.pool.y.symbol}
           onHalf={copied || PIER_LOCKED.has(phase) ? undefined : (next) => edit(() => usePier.getState().setHalf(next))}
           facts={facts}
+          compact={!tune}
         />
       ) : null}
       </fieldset>
@@ -224,7 +230,7 @@ export function PoolTicket({ pier, row, addOpen, onConnect }: { pier: Pier; row:
       <OneLine label={w.poolDetails} line={lineOf([figures ? (figures.feePct ? w.ryntraFee(digits(figures.feePct, lang)) : w.ryntraNone) : null, w.band(digits(String(PIER_SLIPPAGE_BPS / 100), lang))])}>
         <Facts
           rows={[
-            [w.dRange, digits(`${rangePrices(range.low, range.high).low} – ${rangePrices(range.low, range.high).high} ${pier.pool.y.symbol}`, lang)],
+            [w.dRange, digits(`${edges.low} – ${edges.high} ${pier.pool.y.symbol}`, lang)],
             [w.dGoesIn, goesIn ? digits(`≈ ${goesIn}`, lang) : null],
             [w.dSwap, figures?.swapInSol ? `${digits(figures.swapInSol, lang)} → ${digits(figures.swapFloor ?? '—', lang)}` : null],
             [w.dMinimum, `${digits(solShort(choice.minimum), lang)} SOL`],

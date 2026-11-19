@@ -83,6 +83,11 @@ export type Row = Readonly<{
   units: number | null;
   /** A single coin's price, from its worth and its amount. */
   price: number | null;
+  /**
+   * The worth was counted on the screen from the market's price of a coin the engine left unpriced (a pool's side) —
+   * never set on a row the engine priced.
+   */
+  marketPriced?: boolean;
 }>;
 
 const PRINCIPAL = new Set(['held', 'supplied', 'borrowed']);
@@ -132,10 +137,79 @@ export function groupsOf(answer: Pick<Answer, 'positions'>, litter: ReadonlySet<
   });
 }
 
+/* ── the market beside the engine ─────────────────────────────────────── */
+
+/** What the market says of a coin (`/api/v1/market/depth`, the list of named mints): its name, logo, price and day. */
+export type MarketFact = Readonly<{ symbol: string | null; name: string | null; icon: string | null; price: number | null; dayPct: number | null }>;
+
+const groupSum = (rows: readonly Row[]): number | null => {
+  const priced = rows.filter((row) => row.usd !== null && row.position.state !== 'unread');
+  return priced.length ? priced.reduce((sum, row) => sum + (row.usd as number), 0) : null;
+};
+
+/**
+ * The groups with what the market adds where the engine is silent: a coin without a symbol gets the market's, a pool
+ * with no name is named by its coins, and a position the engine could not price — one of its coins has no engine
+ * price — is priced at the market's price of that coin, but only when every coin it holds has a price. The coins and the
+ * dust stay the engine's own: a coin it did not price is listed «No price».
+ */
+export function withMarket(groups: readonly Group[], fact: (mint: string) => MarketFact | null): Group[] {
+  return groups.map((group) => {
+    const works = group.id === 'pools' || group.id === 'staking' || group.id === 'lending';
+    let changed = false;
+    const rows = group.rows.map((row): Row => {
+      if (row.position.state === 'unread') return row;
+      const coins = row.coins.map((coin) => (coin.symbol ? coin : { ...coin, symbol: fact(coin.mint)?.symbol ?? null }));
+      // A name the engine made without one of the coins (an older engine took a fee's coin for the missing side) is
+      // made again from the coins themselves.
+      const sideUnnamed = row.coins.some((coin) => !coin.symbol);
+      const paired = works && coins.length > 1 && coins.every((coin) => coin.symbol) ? coins.map((coin) => coin.symbol).join('–') : null;
+      const named = sideUnnamed && paired ? paired : (row.name ?? paired);
+      let usd = row.usd;
+      let marketPriced = row.marketPriced;
+      if (works && usd === null) {
+        const principal = row.position.tokens.filter((token) => PRINCIPAL.has(token.role));
+        let sum = 0;
+        let all = principal.length > 0;
+        for (const token of principal) {
+          if (token.usd !== null) {
+            sum += token.role === 'borrowed' ? -Math.abs(token.usd) : token.usd;
+            continue;
+          }
+          const price = fact(token.mint)?.price ?? null;
+          if (price === null || !(price > 0) || token.amountRaw === null || token.decimals === null) {
+            all = false;
+            break;
+          }
+          const worth = unitsOf(token.amountRaw, token.decimals) * price;
+          sum += token.role === 'borrowed' ? -worth : worth;
+        }
+        if (all) {
+          // Its fees and rewards too, as the engine counts a pool it priced — each where it has a price.
+          for (const token of row.position.tokens) {
+            if (token.role !== 'fee' && token.role !== 'reward') continue;
+            const price = token.usd === null ? (fact(token.mint)?.price ?? null) : null;
+            if (token.usd !== null) sum += token.usd;
+            else if (price !== null && price > 0 && token.amountRaw !== null && token.decimals !== null) sum += unitsOf(token.amountRaw, token.decimals) * price;
+          }
+          usd = sum;
+          marketPriced = true;
+        }
+      }
+      const same = usd === row.usd && named === row.name && coins.every((coin, i) => coin === row.coins[i]);
+      if (same) return row;
+      changed = true;
+      return { ...row, coins, name: named, usd, marketPriced };
+    });
+    return changed ? { ...group, rows, usd: groupSum(rows) } : group;
+  });
+}
+
 /* ── the total and its parts ──────────────────────────────────────────── */
 
-export type PartId = 'coins' | 'pools' | 'staking' | 'lending' | 'agents';
-export const PARTS: readonly PartId[] = ['pools', 'staking', 'lending', 'coins', 'agents'];
+export type PartId = 'coins' | 'dust' | 'pools' | 'staking' | 'lending' | 'agents';
+/** The legend's parts, each the sum its group shows: the dust stands apart from the coins, as its group does. */
+export const PARTS: readonly PartId[] = ['pools', 'staking', 'lending', 'coins', 'dust', 'agents'];
 
 export type Summary = Readonly<{
   /** Everything counted, dollars: the engine's own sum, and what the agents hold beside it. */
@@ -149,20 +223,24 @@ export type Summary = Readonly<{
   bar: readonly Readonly<{ id: PartId; share: number }>[];
   /** Everything answered and nothing is held. */
   empty: boolean;
+  /** A source did not answer now: reading again may bring it — the only time the screen offers «Read again». */
+  unread: boolean;
 }>;
 
 /**
- * «Total»: the engine's sum — and the agents' budgets, which stand outside the wallet — with its parts. The coins and
- * the dust are one part; lending is deposits less borrows. A part with nothing in it is left out.
+ * «Total»: the engine's sum — and the agents' budgets, which stand outside the wallet, and a position the screen priced
+ * at the market where the engine could not ({@link withMarket}) — with its parts, each the sum its group shows; lending
+ * is deposits less borrows. A part with nothing in it is left out.
  */
 export function summaryOf(answer: Answer, groups: readonly Group[], agentsUsd: number | null = null): Summary {
   const of = (id: GroupId): number => groups.find((group) => group.id === id)?.usd ?? 0;
   const agents = agentsUsd !== null && agentsUsd > 0 ? agentsUsd : 0;
-  const sums: Readonly<Record<PartId, number>> = { pools: of('pools'), staking: of('staking'), lending: of('lending'), coins: of('coins') + of('dust'), agents };
+  const sums: Readonly<Record<PartId, number>> = { pools: of('pools'), staking: of('staking'), lending: of('lending'), coins: of('coins'), dust: of('dust'), agents };
   const parts = PARTS.filter((id) => Math.abs(sums[id]) >= 0.005).map((id) => ({ id, usd: sums[id] }));
   const drawn = parts.filter((part) => part.usd > 0);
   const whole = drawn.reduce((sum, part) => sum + part.usd, 0);
-  const usd = answer.totals.usd + agents;
+  const marketed = groups.flatMap((group) => group.rows).reduce((sum, row) => sum + (row.marketPriced && row.usd !== null ? row.usd : 0), 0);
+  const usd = answer.totals.usd + agents + marketed;
   const held = answer.positions.some((position) => position.state !== 'unread');
   const complete = wholeOf(answer, groups);
   return {
@@ -172,6 +250,7 @@ export function summaryOf(answer: Answer, groups: readonly Group[], agentsUsd: n
     parts,
     bar: whole > 0 ? drawn.map((part) => ({ id: part.id, share: part.usd / whole })) : [],
     empty: complete && !held && agents === 0,
+    unread: partial(answer),
   };
 }
 

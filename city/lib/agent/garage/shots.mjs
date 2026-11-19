@@ -191,7 +191,7 @@ for (const s of SIZES) {
     await win().locator("[data-garage-advice]").waitFor({ timeout: 90_000 });
     await win().locator("[data-garage-details]").click();
     await page.waitForTimeout(400);
-    await win().locator("[data-garage-left]").scrollIntoViewIfNeeded();
+    await win().locator("[data-garage-details]").scrollIntoViewIfNeeded();
     await page.waitForTimeout(600);
     if (want("advice")) await shot("advice");
 

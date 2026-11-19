@@ -15,8 +15,13 @@ export const OLD_PRO_KEY = 'ryntra.terminal.pro.v1';
 
 export const columnsKey = (table: string): string => `ryntra.terminal.columns.${table}.v1`;
 
-/** The set a table starts with: what the person chose, else all on a wide window or after «Pro», else the main ones. */
-export function startSet(kept: string | null, width: number, oldPro: string | null): ColumnSet {
+/**
+ * The set a table starts with: what the person chose, else all on a wide window or after «Pro», else the main ones. A
+ * table in a page's action column (`byWindow` false — the page is as wide on every window) starts with the
+ * main ones whatever the window.
+ */
+export function startSet(kept: string | null, width: number, oldPro: string | null, byWindow = true): ColumnSet {
   if (kept === 'main' || kept === 'all') return kept;
+  if (!byWindow) return 'main';
   return width >= WIDE_PX || oldPro === '1' ? 'all' : 'main';
 }

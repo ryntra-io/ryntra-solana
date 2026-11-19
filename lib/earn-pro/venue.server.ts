@@ -21,8 +21,10 @@ export { DLMM_PRO_PROGRAM, DlmmProRefusal };
 export type { DlmmProRefusalCode, DlmmProVenue };
 export { careRefusalOf, type CareSubject } from "../core/venues/meteora-dlmm-pro/care-rules.server.ts";
 export { CARE_RIGHTS } from "../core/venues/meteora-dlmm-pro/earn.server.ts";
+/** What a limit order keeps of the fee on what it fills. */
+export { makerShareOf } from "../core/venues/meteora-dlmm-pro/ladder.ts";
 export type { EarnIncome, EarnOpenBuild } from "../core/venues/meteora-dlmm-pro/earn.server.ts";
-export { EARN_GOALS, EARN_STYLES, isEarnGoal, isEarnStyle, type EarnGoal, type EarnStyle } from "../core/venues/meteora-dlmm-pro/goals.ts";
+export { CUSTOM_GOAL, EARN_GOALS, EARN_STYLES, isEarnGoal, isEarnStyle, isOpenGoal, isShapeColumns, type EarnGoal, type EarnStyle, type OpenGoal } from "../core/venues/meteora-dlmm-pro/goals.ts";
 export type { DlmmProSteps } from "../core/venues/meteora-dlmm-pro/bins.server.ts";
 export type { DlmmProPool } from "../core/venues/meteora-dlmm-pro/pools.server.ts";
 export type { DlmmProBuild, DlmmProTx } from "../core/venues/meteora-dlmm-pro/tx.server.ts";

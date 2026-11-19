@@ -1,6 +1,8 @@
 /**
- * The budgets the city's window offers: one tap picks the day's budget, and the trade cap and the length
- * follow from it, inside the starter caps a new agent holds (`./terms.ts`). Pure — the window and the server share it.
+ * The three budgets the city's window once offered (one tap picked the day, the trade cap and the length
+ * followed). A budget is the person's own numbers (`./budget.ts`) and nothing here is
+ * offered or checked; the presets stay only to read the agent's book written before: an entry of then names its preset,
+ * and what it moved into the vault and gave the agent for its fees are the preset's.
  */
 
 export const BUDGET_PRESET_IDS = ["small", "medium", "large"] as const;
@@ -25,14 +27,4 @@ export const BUDGET_PRESETS: Readonly<Record<BudgetPresetId, BudgetPreset>> = Ob
   large: { id: "large", budget: SOL / 2n, perDay: SOL / 2n, perTrade: SOL / 10n, days: 30, agentFee: SOL / 100n },
 });
 
-export const budgetPreset = (id: BudgetPresetId): BudgetPreset => BUDGET_PRESETS[id];
-
 export const isBudgetPreset = (value: unknown): value is BudgetPresetId => typeof value === "string" && (BUDGET_PRESET_IDS as readonly string[]).includes(value);
-
-/**
- * The budgets each network offers. Mainnet opened to everyone with one budget only —
- * 0.1 SOL a day (`small`) — while Squads' policy layer waits on its audit.
- */
-export const PRESETS_ON: Readonly<Record<"devnet" | "mainnet", readonly BudgetPresetId[]>> = Object.freeze({ devnet: BUDGET_PRESET_IDS, mainnet: ["small"] });
-
-export const presetOpenOn = (network: "devnet" | "mainnet", id: BudgetPresetId): boolean => PRESETS_ON[network].includes(id);

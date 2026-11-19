@@ -131,47 +131,6 @@
   font-size: var(--type-action);
 }
 
-.qr {
-  display: flex;
-  justify-content: center;
-}
-
-.qr img,
-.qrBone {
-  display: block;
-  width: 160px;
-  height: 160px;
-}
-
-.qrBone {
-  background: rgba(255, 231, 194, 0.12);
-}
-
-.address {
-  margin: 0;
-  font-family: var(--display);
-  font-weight: 700;
-  font-size: var(--type-base);
-  line-height: 1.5;
-  text-align: center;
-  word-spacing: 0.2em;
-  overflow-wrap: anywhere;
-  color: var(--ice);
-}
-
-.receiveChips {
-  display: flex;
-  justify-content: center;
-}
-
-.receiveLine {
-  margin: 0;
-  font-size: var(--type-small);
-  line-height: 1.45;
-  text-align: center;
-  color: var(--ice);
-}
-
 .scrim {
   position: fixed;
   inset: 0;

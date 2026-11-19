@@ -9,7 +9,7 @@ import { LSTS } from '../../city/lib/earn/lst.ts';
 import { lstHolding, type LstHolding } from '../../city/lib/earn/mine.ts';
 import { PIER_MODE } from '../../city/lib/earn/pier-gate.ts';
 import { PIER_LOCKED, usePier } from '../../city/lib/earn/pier-store.ts';
-import { EARN_PRO_OPEN, type ProBoat, type ProPier } from '../../city/lib/earn/pro.ts';
+import { EARN_PRO_OPEN, proOffered, type ProBoat, type ProPier } from '../../city/lib/earn/pro.ts';
 import { useProPier } from '../../city/lib/earn/pro-store.ts';
 import { useSaver } from '../../city/lib/earn/saver-store.ts';
 import { useEarnData } from '../../city/lib/earn/store.ts';
@@ -156,7 +156,10 @@ export type EarnFigures = Readonly<{
   staked: readonly LstHolding[];
   lent: readonly DollarPosition[];
   markets: Readonly<Partial<Record<'USDC' | 'SOL', DollarMarket | null>>>;
+  /** The Pro pools a new position is offered in here (where the terminal opens it). */
   proPiers: readonly ProPier[];
+  /** Every Pro pool the engine serves: the pool of a position the wallet holds is found here, offered or not. */
+  proAll: readonly ProPier[];
   proBoats: readonly ProBoat[];
 }>;
 
@@ -178,7 +181,9 @@ export function useEarnFigures(owner: string | null): EarnFigures {
   return useMemo(() => {
     const pools = piers.status === 'ready' ? piers.value.pools : [];
     const solPriceUsd = venueSolUsd(pools);
-    const proPiers = EARN_PRO_OPEN && proList.status === 'ready' ? proList.value.piers : [];
+    const proAll = EARN_PRO_OPEN && proList.status === 'ready' ? proList.value.piers : [];
+    // A new position is offered where the terminal opens it; a position held is shown wherever it is.
+    const proPiers = proList.status === 'ready' ? proAll.filter((pier) => proOffered(pier, proList.value.network)) : proAll;
     const rows = [...poolRows(pools), ...proPoolRows(proPiers, solPriceUsd)];
     const poolsRead = piers.status === 'ready' ? 'ready' : piers.status === 'error' || !EARN_OPEN ? (rows.length ? 'ready' : 'failed') : 'reading';
 
@@ -207,9 +212,9 @@ export function useEarnFigures(owner: string | null): EarnFigures {
       : [];
     const lent = owner && lend?.owner === owner ? DOLLAR_ASSETS.flatMap((asset) => (lend.positions[asset] ? [lend.positions[asset]] : [])) : [];
     const markets = lend ? lend.markets : NO_MARKETS;
-    const proBoats = owner && proPiers.length && proBoatsFor?.owner === owner && proBoatsFor.value.status === 'ready' ? proBoatsFor.value.value : [];
+    const proBoats = owner && proAll.length && proBoatsFor?.owner === owner && proBoatsFor.value.status === 'ready' ? proBoatsFor.value.value : [];
     const entries = owner && typeof window !== 'undefined' ? entriesOf(owner) : new Map();
-    const table = positionRows({ views, entries, staked, lent, markets, proBoats, proPiers, solPriceUsd });
+    const table = positionRows({ views, entries, staked, lent, markets, proBoats, proPiers: proAll, solPriceUsd });
 
     const viewsRead = positions?.owner === owner ? positions.value.status : 'loading';
     const positionsRead: EarnFigures['positionsRead'] = !owner
@@ -222,6 +227,6 @@ export function useEarnFigures(owner: string | null): EarnFigures {
             ? 'failed'
             : 'reading';
     const sums = totals(table);
-    return { pools: rows, poolsRead, stakes, yieldRead, lendRate, addOpen, paused, exitOpen, lendOpen, positions: table, positionsRead, working: sums.workingUsd, earned: sums.earnedUsd, solPriceUsd, views, staked, lent, markets, proPiers, proBoats };
+    return { pools: rows, poolsRead, stakes, yieldRead, lendRate, addOpen, paused, exitOpen, lendOpen, positions: table, positionsRead, working: sums.workingUsd, earned: sums.earnedUsd, solPriceUsd, views, staked, lent, markets, proPiers, proAll, proBoats };
   }, [piers, feed, positions, lots, states, surface, proList, proBoatsFor, holdings, holdingsRead, owner]);
 }

@@ -87,8 +87,8 @@ for (const size of SIZES) {
     await page.keyboard.press("Escape");
 
     if (size.mobile) {
-      // The sections sheet behind the mark: the wallet, the shelves without a tab, the city, the language.
-      await tap(page.locator("[data-terminal='mark']"));
+      // The menu sheet behind the menu's button: the wallet, the shelves without a tab, the city, the language.
+      await tap(page.locator("[data-terminal='menu-button']"));
       await page.waitForSelector("[role='dialog'][aria-modal='true']", { timeout: 10_000 });
       await shot("sheet");
       // The wallet from the sheet: its list stays open under the finger (no wallet in this browser: where to get one).

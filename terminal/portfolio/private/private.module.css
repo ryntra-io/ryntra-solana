@@ -1,0 +1,239 @@
+/* The private balance (Portfolio's side column), the link page and the wallet check. Tokens only (DESIGN.md). */
+
+.block {
+  min-width: 0;
+}
+
+.head {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.badge {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  color: var(--lilac);
+  background: var(--well);
+  border: 1px solid var(--line);
+}
+
+.words {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.line {
+  margin: 0;
+  font-size: var(--type-small);
+  line-height: 1.4;
+  color: var(--soft);
+}
+
+.coins {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--line);
+}
+
+.coin {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 40px;
+  border-bottom: 1px solid var(--line);
+  font-size: var(--type-body);
+  color: var(--ice);
+}
+
+.coinName {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.fieldLabel {
+  font-size: var(--type-small);
+  color: var(--soft);
+}
+
+.input {
+  min-height: 44px;
+  padding: 0 12px;
+  font: inherit;
+  font-size: var(--type-body);
+  color: var(--ice);
+  background: var(--well);
+  border: 1px solid var(--line);
+}
+
+.input:focus-visible {
+  outline: 1px solid var(--edge);
+  outline-offset: 0;
+}
+
+/* «Others see»: who, to whom, how much — each seen or hidden, on one line. */
+.seen {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  font-size: var(--type-small);
+  color: var(--soft);
+}
+
+.seenPart {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.seenYes {
+  color: var(--warm);
+}
+
+.seenNo {
+  color: var(--mint);
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.grow {
+  flex: 1 1 0;
+}
+
+.linkBox {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  background: var(--well);
+  border: 1px solid var(--line);
+}
+
+.linkText {
+  overflow-wrap: anywhere;
+  font-size: var(--type-small);
+  color: var(--ice);
+}
+
+.links {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.linkRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  border-top: 1px solid var(--line);
+  font-size: var(--type-body);
+  color: var(--ice);
+}
+
+.note {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-left: 2px solid var(--amber);
+}
+
+.fail {
+  margin: 0;
+  font-size: var(--type-small);
+  color: var(--warm);
+}
+
+.tx {
+  font-size: var(--type-small);
+  color: var(--soft);
+}
+
+.tx a {
+  color: var(--ice);
+}
+
+.file {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
+
+.howList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0 0 0 16px;
+}
+
+.facts {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+}
+
+.fact {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 40px;
+  border-bottom: 1px solid var(--line);
+  font-size: var(--type-body);
+}
+
+.fact dt {
+  color: var(--soft);
+}
+
+.fact dd {
+  margin: 0;
+  color: var(--ice);
+  text-align: right;
+}
+
+.factYes {
+  color: var(--mint);
+}
+
+.factNo {
+  color: var(--warm);
+}

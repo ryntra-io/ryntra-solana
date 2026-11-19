@@ -211,7 +211,7 @@ export const EN: Sections = {
             'Tap **Sign**. This proves the wallet is yours and moves no money.',
             'On each date you get a reminder: a note under the bell, and on Telegram or by push if you turned them on. Open it and sign that purchase.',
           ),
-          p(s.stopsAlways ? 'The same sentence sets limits and stops: “sell half my JUP when it rises 20 percent”, “stop loss on all my WIF”. What you set stands in **My instructions** on this device, where you can cancel it.' : 'The same sentence sets limits: “sell half my JUP when it rises 20 percent”. What you set stands in **My instructions** on this device, where you can cancel it.'),
+          p(s.stopsAlways ? 'The same sentence sets limits and stops: “sell half my JUP when it rises 20 percent”, “stop loss on all my MET”. What you set stands in **My instructions** on this device, where you can cancel it.' : 'The same sentence sets limits: “sell half my JUP when it rises 20 percent”. What you set stands in **My instructions** on this device, where you can cancel it.'),
         ),
       ),
       part(
@@ -364,8 +364,7 @@ export const EN: Sections = {
           row('Pools and pool orders: Ryntra fee', say.pct(0), 'On purpose'),
           row('SOL Saver: Ryntra fee', say.pct(f.fees.major), 'It is a trade of a large coin. The staked coin’s own pool also keeps a share of its rewards'),
           row('Smallest add to a pool', `${say.decimal(f.earn.pierMinSol)} SOL`, 'Higher if the costs that never return would be too large a share'),
-          row('Largest single add', say.usd(f.earn.pierCeilingUsd)),
-          row('Pool orders: largest order', say.usd(f.earn.limitCeilingUsd), `You earn ${say.whole(f.earn.makerSharePct)} of the swap fees in the bin when it fills`),
+          row('Pool orders: your share of the fees', say.whole(f.earn.makerSharePct), 'Of the swap fees in the bin when your order fills'),
           row('Opening a position', 'A deposit in SOL', 'Most comes back when you leave; the pool’s shared part may not. Shown before you sign'),
         ),
       ),
@@ -422,7 +421,7 @@ export const EN: Sections = {
           rows(
             row('“Buy some SOL every week”', 'A regular purchase', `Reminds you, and you sign each buy. From ${say.usd(f.recurringMinUsd)}`),
             row('“Buy JUP if it drops to 0.7”', 'A limit', 'Fills by itself at your price'),
-            row('“Sell half my BONK if it falls 10 percent”', 'A stop', s.stopsAlways ? 'Tells you, and you sign the sale' : 'Comes with stops watched around the clock'),
+            row('“Sell half my JUP if it falls 10 percent”', 'A stop', s.stopsAlways ? 'Tells you, and you sign the sale' : 'Comes with stops watched around the clock'),
           ),
         ),
         sub(
@@ -438,7 +437,7 @@ export const EN: Sections = {
           !s.budget,
           steps(
             'Open **Agents**, then **Bots**. **Your agent** stands at the top.',
-            'Choose a budget. The line under it shows the limit for a trade, for a day, and how many days it runs. New agents start small.',
+            'Write your budget: how much a day, how much a trade, for how many days — any numbers you choose.',
             'Tap **Sign**, once, in your wallet. The agent starts on its own.',
             'Watch what is left of the budget. **Stop** takes one more signature, and the rest returns to your wallet.',
           ),
@@ -473,7 +472,7 @@ export const EN: Sections = {
         'cost',
         COST,
         rows(
-          row('Asking Ryntra', 'Free', 'A daily allowance of answers, shown in the panel. Past it, you get the city’s own read of the market'),
+          row('Asking Ryntra', 'Free'),
           row('What the agent does', 'The usual fee', 'The same as if you traded yourself: [[fees|All fees]]'),
           row('Hiring it', 'No subscription'),
         ),

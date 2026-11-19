@@ -5,8 +5,11 @@
  *
  * - `closed` (the default, and any value it does not know): the Piers read and show, and offer nothing;
  * - `canary`: one wallet — the owner's, named only in the server's environment and compared character for character —
- *   may add, up to `PIER_CANARY_CEILING_USD`; to everyone else the Piers look closed (the canary is not announced);
- * - `open`: everyone the engine admits, up to the ceiling of the venue.
+ *   may add; to everyone else the Piers look closed (the operator tries it first, decision 92);
+ * - `open`: everyone the engine admits.
+ *
+ * No sum of Ryntra's on an add in either state: the add is what the
+ * person asks and holds. A venue the city does not build on still takes nothing from it.
  *
  * And one switch that needs no new build: `RYNTRA_CITY_HARBOR_STOP` set to anything stops new money going in at once.
  * It never traps money: taking fees and leaving a position stay open whenever the engine allows them.
@@ -25,14 +28,8 @@ export const PIER_STOP_ENV = 'RYNTRA_CITY_HARBOR_STOP';
 export const PIER_MODES = ['closed', 'canary', 'open'] as const;
 export type PierMode = (typeof PIER_MODES)[number];
 
-/** The canary's ceiling for one add, dollars at the venue's prices: the smallest live check. */
-export const PIER_CANARY_CEILING_USD = 5;
-
-/**
- * The ceiling for one add on each venue once open, dollars at the venue's prices. The SOL Pier builds on DLMM only;
- * a venue not named here takes no add from the city.
- */
-export const PIER_CEILING_USD: Readonly<Record<string, number>> = { 'meteora-dlmm': 1_000 };
+/** The venues the SOL Pier builds on: DLMM only; a venue not named here takes no add from the city. */
+export const PIER_VENUES: ReadonlySet<string> = new Set(['meteora-dlmm']);
 
 export type Env = Readonly<Record<string, string | undefined>>;
 
@@ -50,10 +47,10 @@ export function pierStopped(env: Env): boolean {
 }
 
 export type PierAdmission =
-  | Readonly<{ ok: true; mode: Exclude<PierMode, 'closed'>; ceilingUsd: number }>
+  | Readonly<{ ok: true; mode: Exclude<PierMode, 'closed'> }>
   | Readonly<{ ok: false; code: 'PIER_CLOSED' | 'PIER_STOPPED' | 'PIER_VENUE' }>;
 
-/** Whether this wallet may put new money in on this venue through the city now, and up to how much. */
+/** Whether this wallet may put new money in on this venue through the city now: no sum of Ryntra's on it. */
 export function admitPierAdd(owner: string | null, venue: string, env: Env): PierAdmission {
   const mode = pierMode(env[PIER_MODE_ENV]);
   if (mode === 'closed') return { ok: false, code: 'PIER_CLOSED' };
@@ -62,9 +59,8 @@ export function admitPierAdd(owner: string | null, venue: string, env: Env): Pie
     if (!wallet || owner === null || owner !== wallet) return { ok: false, code: 'PIER_CLOSED' };
   }
   if (pierStopped(env)) return { ok: false, code: 'PIER_STOPPED' };
-  const venueCeiling = Object.hasOwn(PIER_CEILING_USD, venue) ? PIER_CEILING_USD[venue]! : 0;
-  if (!(venueCeiling > 0)) return { ok: false, code: 'PIER_VENUE' };
-  return { ok: true, mode, ceilingUsd: mode === 'canary' ? Math.min(PIER_CANARY_CEILING_USD, venueCeiling) : venueCeiling };
+  if (!PIER_VENUES.has(venue)) return { ok: false, code: 'PIER_VENUE' };
+  return { ok: true, mode };
 }
 
 /**
@@ -81,9 +77,9 @@ export function admitPierExit(owner: string | null, env: Env): boolean {
   return false;
 }
 
-/** An add's worth against its ceiling: a deposit without a price is refused rather than guessed. */
-export function withinCeiling(depositUsd: number | null, ceilingUsd: number): boolean {
-  return depositUsd !== null && Number.isFinite(depositUsd) && depositUsd > 0 && depositUsd <= ceilingUsd;
+/** An add's worth, priced, against the engine's own bound if it names one (null — none): a deposit without a price is refused rather than guessed. */
+export function withinCeiling(depositUsd: number | null, ceilingUsd: number | null): boolean {
+  return depositUsd !== null && Number.isFinite(depositUsd) && depositUsd > 0 && (ceilingUsd === null || depositUsd <= ceilingUsd);
 }
 
 /** SOL against USDC or an LST of the SOL Saver: the only pairs the city's SOL Pier builds. */
@@ -97,10 +93,10 @@ type PricedToken = Readonly<{ mint: string; decimals: number | null; priceUsd: n
 export type AddCheck = Readonly<{ ok: true; usd: number }> | Readonly<{ ok: false; code: 'PIER_PAIR' | 'PIER_UNPRICED' | 'PIER_CEILING' }>;
 
 /**
- * Before anything is built: the pool is a SOL pier, and the most the add can put in — the amounts asked, which the
- * engine never exceeds — is within the ceiling at the venue's own prices of those very mints.
+ * Before anything is built: the pool is a SOL pier, and the add — the amounts asked, which the engine never exceeds — is
+ * priced at the venue's own prices of those very mints (and within the engine's own bound, if it names one).
  */
-export function checkPierAdd(amounts: Readonly<{ amountX: string; amountY: string }>, pool: Readonly<{ x: PricedToken; y: PricedToken }> | null, ceilingUsd: number): AddCheck {
+export function checkPierAdd(amounts: Readonly<{ amountX: string; amountY: string }>, pool: Readonly<{ x: PricedToken; y: PricedToken }> | null, ceilingUsd: number | null = null): AddCheck {
   if (!pool || !isSolPair(pool.x.mint, pool.y.mint)) return { ok: false, code: 'PIER_PAIR' };
   if (pool.x.decimals === null || pool.y.decimals === null) return { ok: false, code: 'PIER_UNPRICED' };
   const usd = depositUsd(
@@ -108,6 +104,7 @@ export function checkPierAdd(amounts: Readonly<{ amountX: string; amountY: strin
     { x: pool.x.priceUsd, y: pool.y.priceUsd },
   );
   if (usd === null) return { ok: false, code: 'PIER_UNPRICED' };
+  if (!withinCeiling(usd, null)) return { ok: false, code: 'PIER_UNPRICED' };
   return withinCeiling(usd, ceilingUsd) ? { ok: true, usd } : { ok: false, code: 'PIER_CEILING' };
 }
 
@@ -115,7 +112,7 @@ export function checkPierAdd(amounts: Readonly<{ amountX: string; amountY: strin
 export type PierStates = Readonly<{
   add: 'on' | 'off';
   exit: 'on' | 'off';
-  /** The add's ceiling in dollars for this wallet now; null when it may not add. */
+  /** The engine's own bound on one add in dollars, if it names one; null — none (no sum of Ryntra's). */
   ceilingUsd: number | null;
   /** New money is stopped by the switch (exits still on). */
   stopped: boolean;
@@ -123,16 +120,15 @@ export type PierStates = Readonly<{
 
 export type EngineStates = Readonly<{ add: Readonly<{ status: string }>; remove: Readonly<{ status: string }>; claim: Readonly<{ status: string }>; maxDepositUsd: number | null }>;
 
-/** The city's admission and the engine's together: the lower ceiling, and on only where both say on. */
+/** The city's admission and the engine's together: on only where both say on. */
 export function pierStates(owner: string | null, env: Env, engine: EngineStates): PierStates {
   const add = admitPierAdd(owner, 'meteora-dlmm', env);
   const exit = admitPierExit(owner, env) && engine.remove.status === 'on';
-  const engineAdd = engine.add.status === 'on';
-  const ceiling = add.ok && engineAdd ? (engine.maxDepositUsd === null ? add.ceilingUsd : Math.min(add.ceilingUsd, engine.maxDepositUsd)) : null;
+  const on = add.ok && engine.add.status === 'on';
   return {
-    add: ceiling !== null ? 'on' : 'off',
+    add: on ? 'on' : 'off',
     exit: exit ? 'on' : 'off',
-    ceilingUsd: ceiling,
+    ceilingUsd: on ? engine.maxDepositUsd : null,
     // Said only to a wallet the Harbor is open to: the canary is not announced to anyone else.
     stopped: !add.ok && add.code === 'PIER_STOPPED',
   };

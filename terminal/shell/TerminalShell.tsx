@@ -10,7 +10,9 @@ import { Header } from './Header';
 import { startMarket } from './market';
 import { PhoneBar } from './PhoneBar';
 import { Rail } from './Rail';
+import { forgetMenu, hydrateMenu, MENU_BOOT_SCRIPT } from './menu-fold';
 import { forgetRail, hydrateRail, RAIL_BOOT_SCRIPT } from './rail-fold';
+import { usePlaceOnArrival } from './place';
 import { SectionsSheet } from './SectionsSheet';
 import { MarketSeed } from './useMarket';
 import s from './shell.module.css';
@@ -33,6 +35,13 @@ export function TerminalShell({ initial, children }: { initial: CitySnapshot; ch
     hydrateRail();
     return forgetRail;
   }, []);
+  // And which of the menu's groups the person keeps folded.
+  useLayoutEffect(() => {
+    hydrateMenu();
+    return forgetMenu;
+  }, []);
+  // A place on a screen the menu leads to (`#history`): brought into view once the screen has drawn it.
+  usePlaceOnArrival();
   useEffect(() => startCityAccount(), []);
   useEffect(() => startMarket(initial), [initial]);
   // The first action's funnel: the same moments the city counted, now from the terminal.
@@ -42,7 +51,7 @@ export function TerminalShell({ initial, children }: { initial: CitySnapshot; ch
   return (
     <MarketSeed.Provider value={initial}>
       {/* The folded rail on the root before the first paint: it does not jump for a person who keeps it folded. */}
-      <script dangerouslySetInnerHTML={{ __html: RAIL_BOOT_SCRIPT }} />
+      <script dangerouslySetInnerHTML={{ __html: RAIL_BOOT_SCRIPT + MENU_BOOT_SCRIPT }} />
       <div className={s.app}>
         <Rail />
         <div className={s.main}>

@@ -6,7 +6,7 @@ import { citySigner } from '../app-bridge/route.ts';
 import type { Tower } from '../market/types.ts';
 import { makeTradeCard, type CardOutcome, type CardRequest, type TradeCardFace } from './card.ts';
 import { createEngine, type Engine, type OrderBody, type QuoteBody } from './engine.ts';
-import { orderMatchesReview, orderWarnings, warningLine } from './figures.ts';
+import { orderMatchesReview, orderMovedALot, orderWarnings, warningLine } from './figures.ts';
 import {
   confirmTrade,
   prepareOrder,
@@ -24,8 +24,8 @@ import { proveWallet, type ProofOutcome } from './proof.ts';
 import { wordsNow } from '../i18n/dict.ts';
 import { FLOW } from './words.ts';
 import { cleanAmountInput, typedAmount, type AmountProblem } from './amount.ts';
-import { ticker } from './format.ts';
-import { quoteLine } from './quote-copy.ts';
+import { askDecimals, knownDecimals, learnDecimals } from './decimals.ts';
+import { momentary, quietWaitMs, quoteLine } from './quote-copy.ts';
 import { amountText, SHARES, sizingOf, slideAmount, spendMax, startAmount, type Sizing } from './size.ts';
 import { boltLamports, tradePrefsNow } from '../settings/trade.ts';
 import { isBase, payAssetFor, payOptionsFor, SOL, unitOf, type Balance, type PayAsset, type Side } from './tiles.ts';
@@ -48,11 +48,19 @@ export type QuoteState =
   | Readonly<{ status: 'error'; key: string; refusal: Refusal }>;
 
 /** The exact order on the card: what the wallet will be asked to sign. */
-export type Review = Readonly<{ key: string; order: OrderBody; receivedAt: number; renewals: number }>;
+export type Review = Readonly<{
+  key: string;
+  order: OrderBody;
+  receivedAt: number;
+  renewals: number;
+  /** The order whose figures were last said: quiet renewals are measured against it, so slips never add up unsaid. */
+  said?: OrderBody;
+}>;
 
 export type Phase = 'idle' | 'preparing' | 'wallet' | 'sending' | 'checking' | 'done' | 'failed' | 'unknown';
 
-export type Notice = Readonly<{ tone: 'info' | 'warn' | 'error'; text: string }>;
+/** `code`: the engine's own code behind a refusal, so a screen can say it in the person's terms. */
+export type Notice = Readonly<{ tone: 'info' | 'warn' | 'error'; text: string; code?: string }>;
 
 /** A finished trade, with the decimals the engine read for its two coins so the card can write the amounts. */
 export type Done = Readonly<{ trade: SettledTrade; side: Side; tower: TowerRef; pay: PayAsset; decimals: Readonly<Record<string, number>> }>;
@@ -77,6 +85,8 @@ export type TradeEnv = Readonly<{
   refreshHoldings: (delaysMs?: readonly number[]) => void;
   card: (request: CardRequest) => Promise<CardOutcome>;
   prove: (connection: Connection) => Promise<ProofOutcome>;
+  /** 0…1: spreads the quiet second asks of people refused in the same second. */
+  jitter: () => number;
 }>;
 
 /** The one record of an open signature, shared with every other trade surface of Ryntra in this tab. */
@@ -119,6 +129,7 @@ let env: TradeEnv = {
   refreshHoldings: (delays) => useWallet.getState().refreshHoldings(delays),
   card: (request) => makeTradeCard(request, { fetch: (url, init) => fetch(url, init), sleep }),
   prove: proveWallet,
+  jitter: () => Math.random(),
 };
 
 /** Swap what the card reaches: for tests, and nothing else. */
@@ -132,6 +143,9 @@ const AFTER_TRADE_READS_MS = [1_500, 7_000];
 const OPTIMISTIC_MS = 60_000;
 /** A typed amount, or one the slider is dragged to, is priced once it rests for this long. */
 export const TYPING_MS = 450;
+
+/** A price on screen stays through a refresh refused for the moment (`momentary`) while it is this young; the next beat asks again. */
+export const KEEP_PRICE_MS = 60_000;
 
 /** A price that did not come, in the card's own calm words: the engine's English never reaches the screen (`quote-copy.ts`). */
 export function quoteRefusal(code: string): Refusal {
@@ -159,6 +173,11 @@ export type Choice = Readonly<{
   amountRaw: string | null;
   /** What is wrong with the amount in the field, in plain words. */
   problem: AmountProblem | null;
+  /**
+   * The amount the engine is asked a price for: the field's amount — also one more than the wallet holds, whose price
+   * stands beside the shortfall's own line; never ordered. Null while the field holds no amount.
+   */
+  askRaw: string | null;
   /** A sale of the whole holding. */
   all: boolean;
   inputMint: string;
@@ -174,7 +193,16 @@ export type Choice = Readonly<{
  * What the person picked beyond the side: the asset to pay with (SOL or USDC by symbol, the other coin by mint), the
  * other coin itself, and the amount in the field.
  */
-export type Picks = Readonly<{ pay?: string | null; typed?: string; other?: PayAsset | null }>;
+export type Picks = Readonly<{
+  pay?: string | null;
+  typed?: string;
+  other?: PayAsset | null;
+  /**
+   * An amount over the balance is still priced, beside its shortfall — the plain swap's way. Other
+   * faces of the card keep their rule: such an amount is neither priced nor ordered.
+   */
+  overPriced?: boolean;
+}>;
 
 /** How a pay asset is picked: SOL and USDC by their symbol, any other coin by its mint. */
 export function payKey(asset: PayAsset): string {
@@ -193,12 +221,16 @@ export function choiceOf(tower: TowerRef, side: Side, holdings: Holdings | null,
   const opensAccount = Boolean(holdings) && outputMint !== SOL.mint && !holdings?.tokens.has(outputMint);
   const max = spendMax(spending, spendsSol, opensAccount);
   // A sale is typed in the coin's own units, which only its balance tells; so is a coin of the wallet paid with.
-  const spendUnit = side === 'buy' ? unitOf(pay) : ticker(tower.symbol);
-  const spendDecimals = side === 'buy' ? (pay.decimals ?? (spending && spending.spendableRaw !== '0' ? spending.decimals : null)) : (spending?.decimals ?? null);
+  const spendUnit = side === 'buy' ? unitOf(pay) : unitOf({ mint: tower.mint, symbol: tower.symbol });
+  // A coin's decimals: the wallet's own balance of it when it holds some, else what is known of the coin without a
+  // wallet (`decimals.ts`) — a sale before a wallet, or of a coin the wallet does not hold, is priced all the same.
+  const held = inputMint === SOL.mint ? (holdings?.sol ?? null) : (holdings?.tokens.get(inputMint) ?? null);
+  const spendDecimals = side === 'buy' ? (pay.decimals ?? held?.decimals ?? knownDecimals(pay.mint)) : (held?.decimals ?? knownDecimals(tower.mint));
   const asset = spendDecimals === null ? null : { symbol: spendUnit, decimals: spendDecimals };
   const limit = spendsSol && spending && max !== null ? { spendableRaw: max.toString(), decimals: spending.decimals } : spending;
   const typed = picks.typed && asset ? typedAmount(picks.typed, asset, limit, spendsSol && max !== null) : null;
   const amountRaw = typed?.ok ? typed.amountRaw : null;
+  const askRaw = typed ? (typed.ok ? typed.amountRaw : picks.overPriced ? (typed.askRaw ?? null) : null) : null;
   return {
     pay,
     options: payOptionsFor(tower.mint, other),
@@ -206,12 +238,13 @@ export function choiceOf(tower: TowerRef, side: Side, holdings: Holdings | null,
     sizing: sizingOf(asset ? max : null, amountRaw, side === 'sell' ? tradePrefsNow().sells : SHARES),
     amountRaw,
     problem: typed && !typed.ok ? typed.problem : null,
+    askRaw,
     all: side === 'sell' && Boolean(amountRaw && spending && amountRaw === spending.spendableRaw),
     inputMint,
     outputMint,
     spendUnit,
     spendDecimals,
-    key: amountRaw ? `${side}:${inputMint}>${outputMint}:${amountRaw}` : null,
+    key: askRaw ? `${side}:${inputMint}>${outputMint}:${askRaw}` : null,
   };
 }
 
@@ -273,6 +306,8 @@ type TradeStore = {
   optimistic: Readonly<Record<string, Readonly<{ held: boolean; at: number }>>>;
   /** The tower that just got bought: the city celebrates it for a moment. */
   celebrate: Readonly<{ mint: string; at: number }> | null;
+  /** Counts the coins whose decimals were read from the chain: a field typed in one of them is priced again. */
+  learned: number;
 
   /**
    * The card for a tower or any coin, on buying unless `side` says otherwise: «Mine» opens it on selling. The way to
@@ -280,7 +315,8 @@ type TradeStore = {
    */
   openFor: (tower: Tower | CoinRef, side?: Side, options?: Readonly<{ mode?: Mode; launch?: boolean; view?: View }>) => void;
   close: () => void;
-  setSide: (side: Side) => void;
+  /** `keep`: the field's text to carry over to the other side (the swap's flip keeps its amount). */
+  setSide: (side: Side, keep?: string) => void;
   /**
    * A share of what can be spent, 0–100: a chip's, priced at once, or the slider's, priced once it rests. The field
    * takes the amount it is.
@@ -336,13 +372,15 @@ export const BUSY: ReadonlySet<Phase> = new Set(['wallet', 'sending', 'checking'
 
 let actionTicket = 0;
 let quoteTicket = 0;
+/** Coins whose decimals are being read from the chain this moment. */
+const readingDecimals = new Set<string>();
 let typingTicket = 0;
 let quietRecovery: string | null = null;
 
 export const useTrade = create<TradeStore>((set, get) => {
   const current = () => {
     const state = get();
-    return state.tower ? choiceOf(state.tower, state.side, env.wallet().holdings, { pay: state.pay, typed: state.typed, other: state.other }) : null;
+    return state.tower ? choiceOf(state.tower, state.side, env.wallet().holdings, { pay: state.pay, typed: state.typed, other: state.other, overPriced: state.view === 'swap' }) : null;
   };
 
   const intentOf = (choice: Choice, connection: Connection): Intent | null =>
@@ -394,7 +432,7 @@ export const useTrade = create<TradeStore>((set, get) => {
         set({ phase: 'idle', auto: false, notice: { tone: 'warn', text: outcome.note }, worseAt: env.now(), review: reviewOf(outcome.order, outcome.receivedAt, key) });
         return;
       case 'refused':
-        set({ phase: 'idle', auto: false, review: null, notice: { tone: 'error', text: outcome.refusal.message } });
+        set({ phase: 'idle', auto: false, review: null, notice: { tone: 'error', text: outcome.refusal.message, code: outcome.refusal.code } });
         return;
       case 'cancelled':
         set({ phase: 'idle', auto: false, notice: { tone: 'info', text: wordsNow(FLOW).cancelledInWallet } });
@@ -453,6 +491,7 @@ export const useTrade = create<TradeStore>((set, get) => {
     held: false,
     optimistic: {},
     celebrate: null,
+    learned: 0,
 
     openFor: (tower, side = 'buy', options = {}) => {
       if (get().open && (BUSY.has(get().phase) || get().held)) return;
@@ -471,7 +510,7 @@ export const useTrade = create<TradeStore>((set, get) => {
       set({ ...initial });
     },
 
-    setSide: (side) => {
+    setSide: (side, keep) => {
       const state = get();
       if (!state.tower || state.side === side || state.phase !== 'idle' || state.held) return;
       // A coin found to be paid in is not one to pay with until the wallet holds it: buying falls back to SOL.
@@ -479,7 +518,7 @@ export const useTrade = create<TradeStore>((set, get) => {
       const chosen = payAssetFor(state.tower.mint, state.pay, state.other);
       const held = balanceOf(holdings, chosen.mint);
       const pay = side === 'buy' && !isBase(chosen) && held !== null && held.spendableRaw === '0' ? SOL.symbol : state.pay;
-      const typed = startTyped(state.tower, side, holdings, { pay, other: state.other });
+      const typed = keep !== undefined ? cleanAmountInput(keep) : startTyped(state.tower, side, holdings, { pay, other: state.other });
       actionTicket += 1;
       typingTicket += 1;
       set({ side, pay, typed, review: null, notice: null, quote: { status: 'none' } });
@@ -531,17 +570,45 @@ export const useTrade = create<TradeStore>((set, get) => {
 
     refreshQuote: async () => {
       const choice = current();
-      if (get().launch || !choice?.amountRaw || !choice.key) {
+      if (get().launch || !choice?.askRaw || !choice.key) {
         set({ quote: { status: 'none' } });
+        // An amount typed in a coin whose decimals are not known yet: they are read once from the chain, then priced —
+        // one wait per coin at a time; a read that did not come says so (`decimalsUnread`), and the next beat asks again.
+        const state = get();
+        if (!state.launch && choice && choice.spendDecimals === null && state.typed && !readingDecimals.has(choice.inputMint)) {
+          const mint = choice.inputMint;
+          readingDecimals.add(mint);
+          void askDecimals(mint).then((decimals) => {
+            readingDecimals.delete(mint);
+            set({ learned: get().learned + 1 });
+            const now = current();
+            if (decimals !== null && now && now.inputMint === mint && now.askRaw) void get().refreshQuote();
+          });
+        }
         return;
       }
       const key = choice.key;
       const my = ++quoteTicket;
       const previous = get().quote;
       // A refresh of the same price keeps the old figures on screen until the new ones arrive.
-      if (!(previous.status === 'ready' && previous.key === key)) set({ quote: { status: 'loading', key } });
-      const answer = await env.engine.quote({ inputMint: choice.inputMint, outputMint: choice.outputMint, amountRaw: choice.amountRaw });
-      if (my !== quoteTicket || current()?.key !== key) return;
+      const kept = previous.status === 'ready' && previous.key === key ? previous : null;
+      if (!kept) set({ quote: { status: 'loading', key } });
+      const asked = { inputMint: choice.inputMint, outputMint: choice.outputMint, amountRaw: choice.askRaw };
+      const stale = () => my !== quoteTicket || current()?.key !== key;
+      const young = () => kept !== null && env.now() - kept.at < KEEP_PRICE_MS;
+      let answer = await env.engine.quote(asked);
+      // Refused only for the moment: a young price on screen simply stays (the next beat asks again); a field still
+      // waiting for its first price shimmers on and the price is asked once more, quietly — after the slot the venue
+      // names, never into the same full window again and again.
+      const wait = !answer.ok && !young() ? quietWaitMs(answer.failure, env.jitter()) : null;
+      if (wait !== null) {
+        await env.sleep(wait);
+        if (stale()) return;
+        answer = await env.engine.quote(asked);
+      }
+      if (stale()) return;
+      if (!answer.ok && momentary(answer.failure.code) && young()) return;
+      if (answer.ok) for (const [mint, decimals] of Object.entries(answer.value.decimals ?? {})) learnDecimals(mint, decimals);
       set({
         quote: answer.ok
           ? { status: 'ready', key, body: answer.value, at: env.now() }
@@ -561,7 +628,14 @@ export const useTrade = create<TradeStore>((set, get) => {
       const key = choice.key;
       const my = ++actionTicket;
       set({ phase: 'preparing', auto, autoKey: auto ? key : state.autoKey, notice: auto ? state.notice : null });
-      settle(await prepareOrder(intent, deps(connection)), my, key);
+      const outcome = await prepareOrder(intent, deps(connection));
+      // An order the card builds by itself and is refused is let go in silence — the person asked for nothing yet, and a
+      // red reason before any press only frightens; a press builds it again and says what it hears.
+      if (outcome.kind === 'refused' && get().auto && my === actionTicket) {
+        set({ phase: 'idle', auto: false });
+        return;
+      }
+      settle(outcome, my, key);
     },
 
     renew: async () => {
@@ -583,11 +657,16 @@ export const useTrade = create<TradeStore>((set, get) => {
         return;
       }
       const same = orderMatchesReview(review.order, fresh.order);
+      // Worse figures are never agreed to by a press right after them; only a move worth words — from the figures last
+      // said — is said in words.
+      const baseline = review.said ?? review.order;
+      const said = !same && orderMovedALot(baseline, fresh.order);
       set({
         phase: 'idle',
         auto: false,
-        review: { key: review.key, order: fresh.order, receivedAt: fresh.receivedAt, renewals: review.renewals + 1 },
-        ...(same ? {} : { worseAt: env.now(), notice: { tone: 'warn' as const, text: wordsNow(FLOW).priceMoved } }),
+        review: { key: review.key, order: fresh.order, receivedAt: fresh.receivedAt, renewals: review.renewals + 1, said: said ? fresh.order : baseline },
+        ...(same ? {} : { worseAt: env.now() }),
+        ...(said ? { notice: { tone: 'warn' as const, text: wordsNow(FLOW).priceMoved } } : {}),
       });
     },
 
@@ -599,6 +678,12 @@ export const useTrade = create<TradeStore>((set, get) => {
       }
       if (state.phase === 'unknown') {
         void get().recover();
+        return 'ok';
+      }
+      // The card is building its own order: the press takes it as its own — the field shuts, the button waits, and the
+      // order is shown when it lands; the wallet opens on the next press, as for any price alone.
+      if (state.phase === 'preparing' && state.auto && !state.review) {
+        set({ auto: false });
         return 'ok';
       }
       if (state.phase !== 'idle' || state.mode !== 'market') return 'ok';

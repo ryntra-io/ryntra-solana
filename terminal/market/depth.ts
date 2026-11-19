@@ -2,11 +2,12 @@
 
 import { useEffect, useRef } from 'react';
 import { create } from 'zustand';
-import type { DepthAnswer, DepthCoin, DepthList, DepthWindow } from '@/lib/market-depth/model';
-import { DEFAULT_FILTERS, DEFAULT_QUICK, DEFAULT_WINDOW, isQuick, type Filters, type QuickSol } from './depth-view';
+import type { DepthAnswer, DepthCoin, DepthKind, DepthWindow } from '@/lib/market-depth/model';
+import { noteDayMoves } from './day-move';
+import { AGES, DEFAULT_FILTERS, DEFAULT_QUICK, DEFAULT_WINDOW, VENUES, isQuick, withTwin, type Filters, type KindTab, type QuickSol, type Range, type ShownList } from './depth-view';
 
 /**
- * The Market's depth in the browser: one list over one window at a time, read from the engine
+ * The Market's depth in the browser (by kind of asset): one kind's list over one window at a time, read from the engine
  * (`/api/v1/market/depth`) and read again every `REFRESH_MS` while the page is in view; every list already read stays,
  * so going back to a list shows it at once. The person's own choices — the list, the window, the filters, the quick-buy
  * sum — stay in this browser. Which columns the table shows is the table's own memory (`terminal/ui/column-set.ts`).
@@ -15,22 +16,28 @@ import { DEFAULT_FILTERS, DEFAULT_QUICK, DEFAULT_WINDOW, isQuick, type Filters, 
 export const REFRESH_MS = 30_000;
 /** The counts over the lists not on screen are read again this often. */
 const AHEAD_MS = 120_000;
-const PREFS_KEY = 'ryntra.terminal.market.depth.v1';
+/* v2: the filters of decision 109 — «Hide risky» on, «Verified only» off; a v1 choice is not read back. */
+const PREFS_KEY = 'ryntra.terminal.market.depth.v2';
 
 export type Read = Readonly<{ status: 'reading' | 'ready' | 'failed'; coins: readonly DepthCoin[]; at: number }>;
-type Pick = DepthList | 'saved';
+/** What a read is of: one kind's list («meme/trending»), or the starred coins. */
+export type Target = 'saved' | `${DepthKind}/${ShownList}`;
+export const targetOf = (tab: KindTab, list: ShownList): Target => (tab === 'saved' ? 'saved' : `${tab}/${list}`);
 
 type DepthState = {
   reads: Readonly<Record<string, Read>>;
-  list: Pick;
+  /** The tab: a kind of asset, or «Saved». */
+  tab: KindTab;
+  /** The list's view: trending, rising, falling, most trades. */
+  list: ShownList;
   window: DepthWindow;
   filters: Filters;
   quick: QuickSol;
 };
 
-export const useDepth = create<DepthState>(() => ({ reads: {}, list: 'trending', window: DEFAULT_WINDOW, filters: DEFAULT_FILTERS, quick: DEFAULT_QUICK }));
+export const useDepth = create<DepthState>(() => ({ reads: {}, tab: 'all', list: 'trending', window: DEFAULT_WINDOW, filters: DEFAULT_FILTERS, quick: DEFAULT_QUICK }));
 
-export const readKey = (list: Pick, window: DepthWindow, mints: readonly string[] = []) => (list === 'saved' ? `saved:${[...mints].sort().join(',')}` : `${list}:${window}`);
+export const readKey = (target: Target, window: DepthWindow, mints: readonly string[] = []) => (target === 'saved' ? `saved:${[...mints].sort().join(',')}` : `${target}:${window}`);
 
 function storage(): Storage | null {
   try {
@@ -56,12 +63,25 @@ export function startPrefs(): void {
   }
 }
 
+const bound = (value: unknown): number | null | undefined => (value === null ? null : typeof value === 'number' && Number.isFinite(value) && value >= 0 ? value : undefined);
+
+function pickRange(raw: unknown): Range | undefined {
+  if (!raw || typeof raw !== 'object') return undefined;
+  const min = bound((raw as Range).min);
+  const max = bound((raw as Range).max);
+  return min === undefined || max === undefined ? undefined : { min, max };
+}
+
 function pickFilters(raw: Partial<Filters>): Partial<Filters> {
   const out: Record<string, unknown> = {};
-  for (const key of ['mcap', 'liquidity', 'volume', 'holders'] as const) if (raw[key] === null || typeof raw[key] === 'number') out[key] = raw[key];
-  if (typeof raw.verified === 'boolean') out.verified = raw.verified;
-  if (raw.age && ['any', '1h', '24h', '7d', '30d', 'old'].includes(raw.age)) out.age = raw.age;
-  if (raw.change && ['any', 'up', 'down'].includes(raw.change)) out.change = raw.change;
+  for (const key of ['liquidity', 'mcap'] as const) {
+    const range = pickRange(raw[key]);
+    if (range) out[key] = range;
+  }
+  for (const key of ['volume', 'holders'] as const) if (bound(raw[key]) !== undefined) out[key] = raw[key];
+  for (const key of ['verified', 'hideRisky'] as const) if (typeof raw[key] === 'boolean') out[key] = raw[key];
+  if ((AGES as readonly unknown[]).includes(raw.age)) out.age = raw.age;
+  if ((VENUES as readonly unknown[]).includes(raw.venue)) out.venue = raw.venue;
   return out as Partial<Filters>;
 }
 
@@ -74,25 +94,34 @@ function keep(): void {
   }
 }
 
-export const setList = (list: Pick) => useDepth.setState({ list });
+export const setTab = (tab: KindTab) => useDepth.setState({ tab });
+export const setList = (list: ShownList) => useDepth.setState({ list });
 export const setWindow = (window: DepthWindow) => (useDepth.setState({ window }), keep());
 export const setFilters = (filters: Filters) => (useDepth.setState({ filters }), keep());
 export const setQuick = (quick: QuickSol) => (useDepth.setState({ quick }), keep());
 
 const flying = new Set<string>();
 
-async function read(list: Pick, window: DepthWindow, mints: readonly string[]): Promise<void> {
-  const key = readKey(list, window, mints);
+async function read(target: Target, window: DepthWindow, mints: readonly string[]): Promise<void> {
+  const key = readKey(target, window, mints);
   if (flying.has(key)) return;
   flying.add(key);
   const had = useDepth.getState().reads[key];
   if (!had) useDepth.setState((st) => ({ reads: { ...st.reads, [key]: { status: 'reading', coins: [], at: 0 } } }));
-  const query = list === 'saved' ? `list=saved&mints=${mints.slice(0, 50).join(',')}` : `list=${list}&window=${window}`;
+  const [kind, list] = target.split('/');
+  const query = target === 'saved' ? `list=saved&mints=${mints.slice(0, 50).join(',')}` : `list=${list}&kind=${kind}&window=${window}`;
   try {
     const res = await fetch(`/api/v1/market/depth?${query}`, { headers: { accept: 'application/json' } });
     if (!res.ok) throw new Error(String(res.status));
     const body = (await res.json()) as DepthAnswer;
-    const coins = Array.isArray(body.coins) ? body.coins : [];
+    // A ticker in a known coin's letters from another script is a twin, said and hidden as one.
+    const coins = Array.isArray(body.coins) ? body.coins.map(withTwin) : [];
+    // Each coin's day, noted as of the read: every screen says the newest.
+    const readAt = typeof body.readAt === 'string' ? Date.parse(body.readAt) : Number.NaN;
+    noteDayMoves(
+      coins.map((coin) => ({ mint: coin.id, change: coin.stats['24h']?.change ?? null })),
+      Number.isFinite(readAt) ? Math.min(readAt, Date.now()) : Date.now(),
+    );
     useDepth.setState((st) => ({ reads: { ...st.reads, [key]: { status: 'ready', coins, at: Date.now() } } }));
   } catch {
     // A failed read keeps what was on screen; with nothing yet, the list says it did not come.
@@ -103,7 +132,7 @@ async function read(list: Pick, window: DepthWindow, mints: readonly string[]): 
 }
 
 /** Keeps the list on screen read: now, then every `REFRESH_MS` while the page is visible. */
-export function useDepthRead(list: Pick, window: DepthWindow, mints: readonly string[]): Read {
+export function useDepthRead(list: Target, window: DepthWindow, mints: readonly string[]): Read {
   const key = readKey(list, window, mints);
   const mintsKey = mints.join(',');
   useEffect(() => {
@@ -126,11 +155,11 @@ export function useDepthRead(list: Pick, window: DepthWindow, mints: readonly st
   return now ?? { status: 'reading', coins: [], at: 0 };
 }
 
-/** Reads a list ahead, so the count over it is there before it is opened. */
-export function useDepthAhead(lists: readonly DepthList[], window: DepthWindow): void {
+/** Reads lists ahead — each kind's view on screen — so the count over a tab is there before it is opened. */
+export function useDepthAhead(lists: readonly Target[], window: DepthWindow): void {
   const key = lists.join(',');
   useEffect(() => {
-    const ahead = key.split(',') as DepthList[];
+    const ahead = key.split(',') as Target[];
     let i = 0;
     // One after another, a moment apart: the first list on screen goes first; the counts are read again every
     // `AHEAD_MS` while the page is in view.

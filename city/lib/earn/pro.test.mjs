@@ -6,7 +6,7 @@ process.env.NEXT_PUBLIC_RYNTRA_CITY_EARN_PRO = "open";
 
 const { clock, no, ok, scriptedEngine, wire } = await import("../districts/harbor/test-fixtures.mjs");
 const { useEarn } = await import("./open.ts");
-const { EARN_PRO_OPEN, PRO_MAX_LAMPORTS, PRO_MIN_LAMPORTS, PRO_RESERVE_LAMPORTS, bandPct, proAmounts, proChoice, proDefaultGoal, proDepth, proIncome, proName, proOther, proPrice, proReach, proReward, proSol } = await import("./pro.ts");
+const { EARN_PRO_OPEN, PRO_MIN_LAMPORTS, PRO_RESERVE_LAMPORTS, bandPct, proAmounts, proChoice, proDefaultGoal, proDepth, proIncome, proName, proOther, proPrice, proReach, proReward, proSol } = await import("./pro.ts");
 const { PRO_LOCKED, proFailure, proGoal, setProEnv, signableOf, useProPier } = await import("./pro-store.ts");
 const { earnWords } = await import("./words.ts");
 
@@ -123,11 +123,11 @@ test("the choice: an amount of SOL within the engine's bounds, held with the SOL
   assert.deepEqual([good.problem, good.lamports, good.key], [null, 1_000_000_000n, `pro:open:${OWNER}:${POOL}:balanced:even:1000000000`]);
   assert.equal(proChoice(pier(), "balanced", "even", "abc", rich, OWNER).problem, "format");
   assert.equal(proChoice(pier(), "balanced", "even", "0.04", rich, OWNER).problem, "min");
-  assert.equal(proChoice(pier(), "balanced", "even", "11", holdings(50e9), OWNER).problem, "max");
+  assert.equal(proChoice(pier(), "balanced", "even", "11", holdings(50e9), OWNER).problem, null, "no ceiling on an opening");
   assert.equal(proChoice(pier(), "balanced", "even", "1", holdings(1.03e9), OWNER).problem, "sol", "the position's deposit is kept aside");
   assert.equal(proChoice(pier(), "balanced", "even", "1", null, OWNER).problem, null, "a wallet not read yet is not refused");
   assert.equal(proChoice(pier(), "balanced", "even", "1", rich, null).key, null, "no wallet, no Review");
-  assert.equal(proChoice(pier(), "balanced", "even", "1", rich, OWNER).max, PRO_MAX_LAMPORTS, "never more than one opening takes");
+  assert.equal(proChoice(pier(), "balanced", "even", "1", rich, OWNER).max, 12_000_000_000n - PRO_RESERVE_LAMPORTS, "as much as the wallet holds beside the deposit");
   assert.equal(proChoice(pier(), "balanced", "even", "1", holdings(3e9), OWNER).max, 3_000_000_000n - PRO_RESERVE_LAMPORTS);
   assert.notEqual(proChoice(pier(), "calm", "even", "1", rich, OWNER).key, good.key, "another width is another Review");
   assert.notEqual(proChoice(pier(), "balanced", "near", "1", rich, OWNER).key, good.key, "another goal is another Review");

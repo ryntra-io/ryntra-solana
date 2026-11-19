@@ -282,7 +282,7 @@ test("the facts before the signature, in both languages: the two prices, the bin
   ]);
   const uk = factRows(RANGE.uk, "uk", { ...input, day: { usd: "$1,24", basis: "range" } });
   assert.deepEqual(uk.map((row) => row[1]), [
-    "69 бінів · Curve",
+    "69 бінів · Крива",
     "0,5 SOL + 74,9 USDC",
     "0,5 SOL → 74,9 USDC · за 149,8 USDC",
     "0,1288 SOL · 0,0574 повернеться",
@@ -297,7 +297,7 @@ test("the facts before the signature, in both languages: the two prices, the bin
   assert.equal(factRows(RANGE.en, "en", { ...input, rent: { pay: "0.0574", back: "0.0574", all: true, exact: true } })[3][1], "0.0574 SOL · all back at exit");
   /* The pool's own facts before a Review: «about» — the wallet's own missing account is the Review's to add. */
   assert.equal(factRows(RANGE.uk, "uk", { ...input, rent: { pay: "0.1288", back: "0.0574", all: false, exact: false } })[3][1], "≈ 0,1288 SOL · 0,0574 повернеться");
-  assert.deepEqual(factRows(RANGE.uk, "uk", { ...input, steps: "steps", range: rangeView(150, 4, 1) })[0], ["Кроків", "3 кроки · Curve"]);
+  assert.deepEqual(factRows(RANGE.uk, "uk", { ...input, steps: "steps", range: rangeView(150, 4, 1) })[0], ["Кроків", "3 кроки · Крива"]);
   /* The careful figure says what it is a share of. */
   assert.equal(factRows(RANGE.en, "en", { ...input, day: { usd: "$0.60", basis: "pool" } })[5][1], "≈ $0.60 · share of the whole pool");
   assert.equal(factRows(RANGE.uk, "uk", { ...input, day: { usd: "$0,60", basis: "pool" } })[5][1], "≈ $0,60 · частка всього пулу");

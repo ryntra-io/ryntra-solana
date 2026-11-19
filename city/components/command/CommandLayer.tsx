@@ -12,7 +12,7 @@ import { run } from '@/city/lib/command/run';
 import { closeCommand, shutCommandWhile, useCommand } from '@/city/lib/command/store';
 import { digits, useWords, wordsNow } from '@/city/lib/i18n/dict';
 import { headline } from '@/city/lib/instruct/face';
-import { presetFor, rhythmOf } from '@/city/lib/autopilot/plan';
+import { budgetFor, rhythmOf } from '@/city/lib/autopilot/plan';
 import { readAsk } from '@/city/lib/autopilot/read';
 import { readDollarAsk } from '@/city/lib/earn/dollar-read';
 import { readPilotAsk } from '@/city/lib/pilot/read';
@@ -347,8 +347,9 @@ function faceOf(command: Command, w: Words, agent: (typeof INSTRUCT)['en']): { i
     case 'autopilot': {
       const a = wordsNow(AUTOPILOT);
       if (command.ask.kind === 'launch') return { icon: <LaunchGlyph />, label: a.launchTitle, fill: command.ask.symbol ? `$${command.ask.symbol}` : command.ask.name, where: a.kicker };
-      const preset = presetFor(command.ask.perDaySol).preset;
-      return { icon: <SparkGlyph />, label: preset ? digits(a.trades(String(rhythmOf(preset).perDay))) : a.tradesAsk, fill: null, where: a.kicker };
+      // The day as said — never cut to a budget of the city's.
+      const budget = budgetFor(command.ask.perDaySol);
+      return { icon: <SparkGlyph />, label: budget ? digits(a.trades(String(rhythmOf(budget).perDay))) : a.tradesAsk, fill: null, where: a.kicker };
     }
   }
 }

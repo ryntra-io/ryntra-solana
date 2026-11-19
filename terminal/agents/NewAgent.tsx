@@ -1,28 +1,26 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { presetFor } from '@/city/lib/autopilot/plan';
+import { Fragment, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { planLine, planOfText, signedPct, testedLine } from '@/city/lib/autopilot/plan-line';
 import { readPaper, signTrade, startPaper, testNow, useAutopilot } from '@/city/lib/autopilot/store';
 import { AUTOPILOT } from '@/city/lib/autopilot/words';
 import { agentFeeFigures } from '@/city/lib/bots/agent-fee';
-import { MANDATE_NET, MANDATE_PRESETS, useMandate, type MandateNote } from '@/city/lib/bots/mandate';
+import { MANDATE_NET, useMandate, type MandateNote } from '@/city/lib/bots/mandate';
 import { agentCoins, bookOf, type Coin } from '@/city/lib/command/parse';
 import { fundsFor, shortOfFunds, solAbout } from '@/city/lib/crew/funds';
 import { funnelSay } from '@/city/lib/crew/funnel-say';
 import { PILOT_STARTER } from '@/city/lib/crew/hire';
 import type { Role } from '@/city/lib/crew/read';
-import { sayCoin } from '@/city/lib/crew/say';
+import { sayCoin, sayCoins } from '@/city/lib/crew/say';
 import { digits, useWords } from '@/city/lib/i18n/dict';
 import { useLang } from '@/city/lib/i18n/lang';
+import type { Lang } from '@/city/lib/i18n/langs';
 import { readPilotAsk } from '@/city/lib/pilot/read';
 import { goLive, PILOT_NET, startPaper as startPilotPaper, usePilot } from '@/city/lib/pilot/store';
 import { walletShort } from '@/city/lib/pilot/wallet-check';
-import type { AgentView } from '@/city/lib/autopilot/store';
 import { useWallet } from '@/city/lib/trade/wallet';
-import { BUDGET_PRESETS, type BudgetPresetId } from '@/lib/mandate/presets';
+import { budgetIssue, budgetTotal, DAYS_MAX, defaultDays, defaultTrade, HANDY_SHARES, handyBudget, leastTradeOf, roundUp, TRADE_MIN_LAMPORTS, type AgentBudget, type BudgetIssue, type HandyShare } from '@/lib/mandate/budget';
 import { legsOf, legsUsd, PILOT_PARTS, type PilotPart, type PilotPlanData } from '@/lib/pilot/plan';
-import type { PilotView } from '@/lib/pilot/view';
 import { openPanel } from '@/terminal/shell/frame';
 import { useMarket } from '@/terminal/shell/useMarket';
 import { NARROW } from '@/terminal/shell/useNarrow';
@@ -31,8 +29,6 @@ import { WALLET } from '@/terminal/shell/words';
 import { Action, AmountField, CoinLogo, Figure, Icon, Info, Kick, Panel, Quiet, Search, Shares, Title, usdText } from '@/terminal/ui';
 import { budgetText, lamportsTyped, solPlain, usdShown } from './figures';
 import { PlusIcon, RoleBadge } from './glyphs';
-import { AgentCard } from './Mine';
-import type { MineRow } from './rows';
 import { AGENTS } from './words';
 import a from './agents.module.css';
 
@@ -44,10 +40,6 @@ function connect(): void {
   connectWallet();
 }
 
-/** Lamports as the decimal the city's budget reader takes: «0.250000000». */
-const solSaid = (lamports: bigint) => `${lamports / 1_000_000_000n}.${(lamports % 1_000_000_000n).toString().padStart(9, '0')}`;
-
-const perDayOf = (id: BudgetPresetId) => BUDGET_PRESETS[id].perDay;
 
 /** What a step answered, in the screen's words. */
 export function noteWords(w: W, kind: NonNullable<MandateNote>['kind']): string {
@@ -72,6 +64,7 @@ function Head({ role, kick, children }: { role: Role; kick: string; children?: R
         <Title as="h2" className={a.asideTitle}>
           {w[role]}
         </Title>
+        <span className={a.job}>{w[`${role}Job`]}</span>
       </div>
       {children}
     </div>
@@ -100,16 +93,6 @@ export function How({ extra }: { extra?: string | null }) {
   );
 }
 
-/** One fact with its label, the size the approved design gives the new agent's limits. */
-function Fact({ label, value }: { label: string; value: string }) {
-  return (
-    <div className={a.fact}>
-      <Kick>{label}</Kick>
-      <Figure value={value} size="s" />
-    </div>
-  );
-}
-
 /** The amber action, or the wallet's door while no wallet is connected. */
 function Give({ label, busy, disabled, onPress }: { label: string; busy: boolean; disabled: boolean; onPress: (who: Readonly<{ wallet: string; owner: string }>) => void }) {
   const w = useWords(AGENTS);
@@ -131,20 +114,27 @@ function Give({ label, busy, disabled, onPress }: { label: string; busy: boolean
 
 /* ---------------------------------------------------------------- the trader: a new agent */
 
-/** The coins the agent may buy on mainnet: the person names one — a tap, or another from the market's list. */
+/**
+ * The coins the agent may buy on mainnet: the person names one. At hand — the one she picked and the two an example may
+ * name, JUP and MET (decision 108: no coin advertised); «+» finds any other, the coins her wallet holds first.
+ */
 function Coins({ book }: { book: ReturnType<typeof bookOf> }) {
   const w = useWords(AGENTS);
   const coin = useMandate((st) => st.coin);
+  const owner = useWallet((st) => st.connection?.address ?? null);
+  const held = useWallet((st) => (st.holdings && st.holdings.owner === owner ? st.holdings.tokens : null));
   const [adding, setAdding] = useState(false);
   const [query, setQuery] = useState('');
-  // Two coins at hand, as the approved design shows them: the one picked, the first sentence's, the market's best; «+» finds any other.
-  const first = sayCoin(book);
-  const shown = [...(coin ? [coin] : []), ...(first ? [first] : []), ...agentCoins(book, 4)].filter((c, at, all) => all.findIndex((one) => one.mint === c.mint) === at).slice(0, 2);
+  const named = useMemo(() => sayCoins(book), [book]);
+  const shown = [...(coin ? [coin] : []), ...named].filter((c, at, all) => all.findIndex((one) => one.mint === c.mint) === at).slice(0, 3);
   const found = useMemo(() => {
     const q = query.trim().toLowerCase().replace(/^\$/u, '');
-    const all = agentCoins(book, 80);
-    return (q ? all.filter((c) => c.symbol.toLowerCase().includes(q) || c.name.toLowerCase().includes(q)) : all).slice(0, 6);
-  }, [book, query]);
+    const all = agentCoins(book, Number.MAX_SAFE_INTEGER);
+    if (q) return all.filter((c) => c.symbol.toLowerCase().includes(q) || c.name.toLowerCase().includes(q)).slice(0, 6);
+    // Nothing typed: her own coins, then JUP and MET — never the market's best.
+    const hers = held ? all.filter((c) => held.has(c.mint)) : [];
+    return [...hers, ...named].filter((c, at, list) => list.findIndex((one) => one.mint === c.mint) === at).slice(0, 6);
+  }, [book, query, held, named]);
   const pick = (c: Pick<Coin, 'mint' | 'symbol' | 'icon'>) => {
     useMandate.getState().setCoin({ mint: c.mint, symbol: c.symbol, icon: c.icon });
     setAdding(false);
@@ -181,88 +171,178 @@ function Coins({ book }: { book: ReturnType<typeof bookOf> }) {
   );
 }
 
+const SOL_ASSET = { symbol: 'SOL', icon: '/api/icon/So11111111111111111111111111111111111111112' } as const;
+
+type Fields = Readonly<{ day: string; trade: string; days: string }>;
+
+/** What the fields say when their numbers are not a budget the agent takes yet; null — they are, or the day is empty. */
+function issueLine(w: W, lang: Lang, issue: BudgetIssue | 'noTrade' | null, perDay: bigint | null): string | null {
+  switch (issue) {
+    case 'noTrade':
+    case 'zero':
+      return w.needTrade;
+    case 'tradeMin':
+      return w.tradeMin(budgetText(TRADE_MIN_LAMPORTS, lang));
+    case 'tradeOverDay':
+      return w.tradeOverDay;
+    case 'buys':
+      return perDay === null ? null : w.tradeLeast(budgetText(roundUp(leastTradeOf(perDay)), lang));
+    case 'term':
+      return w.termRange(digits(String(DAYS_MAX), lang));
+    case 'tooLarge':
+      return w.tooLarge;
+    default:
+      return null;
+  }
+}
+
 /**
- * The day's budget. The field takes what a person types and reads it the city's own way: the largest of the budgets
- * the engine offers that is not above what was typed — never more than said — and «new agents start at …» when more was
- * typed than a new agent starts with. Less than the smallest budget is no budget; leaving the field puts the last
- * budget back, so the field always shows exactly what the signature will give.
+ * The person's budget: the day she writes, and the trade and the term that follow from it —
+ * each hers to write over; no ceiling of Ryntra's. Beside the day, shares of her own wallet (10 · 25 · 50 % · all),
+ * never a sum of ours. The numbers become the card's budget the moment the agent takes them; until then one short line
+ * says what is wrong. A sentence's day («trade 1 SOL a day») or a share tapped fills the fields.
  */
 function Budget() {
   const w = useWords(AGENTS);
   const lang = useLang();
-  const preset = useAutopilot((st) => st.preset);
-  const capped = useAutopilot((st) => st.capped);
+  const budget = useAutopilot((st) => st.budget);
   const owner = useWallet((st) => st.connection?.address ?? null);
   const spendable = useWallet((st) => (st.holdingsRead === 'ready' && st.holdings && st.holdings.owner === owner ? (st.holdings.sol?.spendableRaw ?? null) : null));
-  const [text, setText] = useState('');
+  // The wallet's SOL is mainnet's: it says nothing of a test network's budget.
+  const spendRaw = MANDATE_NET === 'mainnet' && spendable && /^\d{1,20}$/u.test(spendable) ? BigInt(spendable) : null;
+  const [fields, setFields] = useState<Fields>({ day: '', trade: '', days: '' });
+  const [share, setShare] = useState<string | null>(null);
+  // The fields the person wrote herself: what follows from the day never writes over them.
+  const own = useRef({ trade: false, days: false });
   const typing = useRef(false);
-  const last = useRef<BudgetPresetId | null>(null);
-  const smallest = perDayOf(MANDATE_PRESETS[0]!);
-  const largest = perDayOf(MANDATE_PRESETS.at(-1)!);
+  const test = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => void (test.current && clearTimeout(test.current)), []);
 
   // The agent's card with its budget is shown: the funnel's moment.
   useEffect(() => funnelSay('agent_card'), []);
 
-  // The wallet's SOL beside the budget — mainnet's: it says nothing of a test network's budget.
+  // The wallet's SOL beside the budget — mainnet's.
   useEffect(() => {
     if (owner && MANDATE_NET === 'mainnet') useWallet.getState().refreshHoldings();
   }, [owner]);
 
+  // The card's budget into the fields — a sentence's day, a share tapped — while the person is not writing.
   useEffect(() => {
-    if (preset) last.current = preset;
-    if (!typing.current) setText(preset ? budgetText(perDayOf(preset), lang) : '');
-  }, [preset, lang]);
+    if (typing.current) return;
+    own.current = { trade: false, days: false };
+    setFields(budget ? { day: budgetText(budget.perDay, lang), trade: budgetText(budget.perTrade, lang), days: String(budget.days) } : { day: '', trade: '', days: '' });
+  }, [budget, lang]);
 
-  const type = (typed: string) => {
+  /** The day, the trade and the term the fields make, what follows from the day filled in where she wrote nothing. */
+  const read = (text: Fields) => {
+    const perDay = lamportsTyped(text.day);
+    if (perDay === null) return { perDay: null, perTrade: null, term: null };
+    const perTrade = own.current.trade ? lamportsTyped(text.trade) : defaultTrade(perDay);
+    const typed = /^\d{1,6}$/u.test(text.days) ? Number(text.days) : null;
+    const term = own.current.days ? typed : perTrade === null ? null : defaultDays({ perDay, perTrade }, spendRaw);
+    return { perDay, perTrade, term };
+  };
+
+  const write = (text: Fields) => {
     typing.current = true;
-    setText(typed);
-    const raw = lamportsTyped(typed);
-    const said = raw === null ? { preset: null, capped: false } : presetFor(solSaid(raw), MANDATE_PRESETS);
-    useAutopilot.setState({ preset: said.preset, capped: said.capped });
-    if (said.preset) {
-      useMandate.getState().setPreset(said.preset);
-      void testNow();
-    }
+    setShare(null);
+    const next = read(text);
+    setFields({
+      day: text.day,
+      trade: own.current.trade ? text.trade : next.perTrade === null ? '' : budgetText(next.perTrade, lang),
+      days: own.current.days ? text.days : next.term === null ? '' : String(next.term),
+    });
+    const made = next.perDay !== null && next.perTrade !== null && next.term !== null ? { perDay: next.perDay, perTrade: next.perTrade, days: next.term } : null;
+    const taken: AgentBudget | null = made && budgetIssue(made) === null ? made : null;
+    useAutopilot.getState().setBudget(taken);
+    if (test.current) clearTimeout(test.current);
+    if (taken) test.current = setTimeout(() => void testNow(), 700);
   };
-  const leave = () => {
-    if (!typing.current) return;
+
+  const pickShare = (id: string) => {
+    const b = spendRaw === null ? null : handyBudget(spendRaw, Number(id) as HandyShare);
+    if (!b) return;
+    own.current = { trade: false, days: false };
     typing.current = false;
-    const now = useAutopilot.getState();
-    const keep = now.preset ?? last.current ?? MANDATE_PRESETS[0]!;
-    if (!now.preset) {
-      useAutopilot.setState({ capped: false });
-      now.pick(keep);
-    }
-    setText(budgetText(perDayOf(keep), lang));
-  };
-  const pick = (id: BudgetPresetId) => {
-    typing.current = false;
-    useAutopilot.setState({ capped: false });
-    useAutopilot.getState().pick(id);
+    setShare(id);
+    useAutopilot.getState().setBudget(b);
     void testNow();
   };
 
+  const now = read(fields);
+  const issue = now.perDay === null ? null : now.perTrade === null ? 'noTrade' : now.term === null ? 'term' : budgetIssue({ perDay: now.perDay, perTrade: now.perTrade, days: now.term });
+  const line = issueLine(w, lang, issue, now.perDay);
+  const shares = spendRaw === null ? [] : HANDY_SHARES.filter((s) => handyBudget(spendRaw, s) !== null);
+
+  return (
+    <div
+      className={a.budgetFields}
+      onBlur={() => {
+        typing.current = false;
+      }}
+    >
+      <AmountField label={w.budgetDay} aside={spendRaw !== null ? w.balance(solPlain(spendRaw.toString(), lang)) : undefined} value={fields.day} onChange={(day) => write({ ...fields, day })} asset={SOL_ASSET} />
+      {shares.length ? <Shares label={w.shares} value={share} onPick={pickShare} options={shares.map((s) => ({ id: String(s), label: s === 100 ? w.max : digits(`${s}%`, lang) }))} /> : null}
+      <div className={a.tiles}>
+        <AmountField
+          size="s"
+          label={w.perTrade}
+          unit="SOL"
+          value={fields.trade}
+          onChange={(trade) => {
+            own.current.trade = true;
+            write({ ...fields, trade });
+          }}
+        />
+        <AmountField
+          size="s"
+          label={w.term}
+          unit={w.daysUnit(fields.days || '0')}
+          whole
+          value={fields.days}
+          onChange={(days) => {
+            own.current.days = true;
+            write({ ...fields, days });
+          }}
+        />
+      </div>
+      {line ? <Note warn>{line}</Note> : null}
+    </div>
+  );
+}
+
+/** Before the signature, in one line: her day, and what stands under «the keys stay yours». */
+function Terms({ budget }: { budget: AgentBudget | null }) {
+  const w = useWords(AGENTS);
+  const lang = useLang();
+  const fee = agentFeeFigures(lang);
   return (
     <>
-      <div onBlur={leave}>
-        <AmountField label={w.budgetDay} aside={MANDATE_NET === 'mainnet' && spendable ? w.balance(solPlain(spendable, lang)) : undefined} value={text} onChange={type} asset={{ symbol: 'SOL', icon: '/api/icon/So11111111111111111111111111111111111111112' }} />
-      </div>
-      {MANDATE_PRESETS.length > 1 ? <Shares label={w.budgets} value={preset} onPick={pick} options={MANDATE_PRESETS.map((id) => ({ id, label: budgetText(perDayOf(id), lang) }))} /> : null}
-      {capped ? (
-        <Note>{w.startsSmall(budgetText(largest, lang))}</Note>
-      ) : !preset ? (
-        <Note warn>{w.least(budgetText(smallest, lang))}</Note>
-      ) : typing.current && lamportsTyped(text) !== perDayOf(preset) ? (
-        <Note>{w.willGive(budgetText(perDayOf(preset), lang))}</Note>
+      {budget ? (
+        <span className={a.cap} data-agent-terms="">
+          {w
+            .terms(budgetText(budget.perDay, lang))
+            .split(' · ')
+            .map((part, at) => (
+              <Fragment key={part}>
+                {at ? ' · ' : null}
+                <span className={a.part}>{part}</span>
+              </Fragment>
+            ))}
+        </span>
       ) : null}
+      <span className={a.cap}>{w.feeLine(fee.low, fee.high)}</span>
     </>
   );
 }
 
+/** «Give 30 SOL»: the action says what the signature takes — the vault's part and the agent's network fees. */
+const giveLabel = (w: W, lang: Lang, budget: AgentBudget | null) => (budget ? w.giveSum(budgetText(budgetTotal(budget), lang)) : w.give);
+
 function TraderForm({ note, onAct }: { note: ReactNode; onAct: () => void }) {
   const w = useWords(AGENTS);
   const lang = useLang();
-  const preset = useAutopilot((st) => st.preset);
+  const budget = useAutopilot((st) => st.budget);
   const plan = useAutopilot((st) => st.plan);
   const tested = useAutopilot((st) => st.tested);
   const coin = useMandate((st) => st.coin);
@@ -272,40 +352,32 @@ function TraderForm({ note, onAct }: { note: ReactNode; onAct: () => void }) {
   const towers = useMarket().towers;
   const book = useMemo(() => bookOf(towers), [towers]);
   const needsCoin = MANDATE_NET === 'mainnet';
-  const fee = agentFeeFigures(lang);
-  const limits = preset ? BUDGET_PRESETS[preset] : null;
   const line = planLine(plan, AUTOPILOT[lang], lang);
   // A wallet that cannot hold the budget and the agent's network fees cannot sign it: the card says what is needed.
-  const short = needsCoin && Boolean(owner) && shortOfFunds(spendable, preset);
+  const short = needsCoin && Boolean(owner) && shortOfFunds(spendable, budget);
   return (
-    <Panel tone="hi" gap={12} label={w.newAgent}>
+    <Panel tone="hi" pad="l" gap={16} label={w.newAgent}>
       <Head role="trader" kick={w.newAgent}>
         <How extra={testedLine(tested?.run ?? null, AUTOPILOT[lang], lang)} />
       </Head>
       {needsCoin ? <Coins book={book} /> : null}
       {line ? <span className={a.plan}>{line}</span> : null}
       <Budget />
-      {limits ? (
-        <div className={a.tiles}>
-          <Fact label={w.perTrade} value={`${w.upTo(solPlain(limits.perTrade.toString(), lang))} SOL`} />
-          <Fact label={w.term} value={w.days(String(limits.days))} />
-        </div>
-      ) : null}
-      <span className={a.cap}>{w.feeLine(fee.low, fee.high)}</span>
+      <Terms budget={budget} />
       {needsCoin && !coin && owner ? <Note>{w.pickCoin}</Note> : null}
-      {short && preset ? <Note warn>{w.needSol(digits(solAbout(fundsFor(preset).about), lang))}</Note> : null}
+      {short && budget ? <Note warn>{w.needSol(digits(solAbout(fundsFor(budget).about), lang))}</Note> : null}
       {note}
       <Give
-        label={w.give}
+        label={giveLabel(w, lang, budget)}
         busy={busy}
-        disabled={!preset || (needsCoin && !coin) || short}
+        disabled={!budget || (needsCoin && !coin) || short}
         onPress={(who) => {
           onAct();
           void signTrade(who);
         }}
       />
       {needsCoin ? (
-        <Quiet full disabled={!tested || !coin || !preset} onClick={() => startPaper()} data-agent-practice="">
+        <Quiet full disabled={!tested || !coin || !budget} onClick={() => startPaper()} data-agent-practice="">
           {w.practice}
         </Quiet>
       ) : null}
@@ -320,11 +392,11 @@ function TraderPaper({ note, onAct }: { note: ReactNode; onAct: () => void }) {
   const lang = useLang();
   const paper = useAutopilot((st) => st.paper);
   const run = useAutopilot((st) => st.paperRun);
-  const preset = useAutopilot((st) => st.preset);
+  const budget = useAutopilot((st) => st.budget);
   const busy = useMandate((st) => st.busy === 'enable');
   const owner = useWallet((st) => st.connection?.address ?? null);
   const spendable = useWallet((st) => (st.holdingsRead === 'ready' && st.holdings && st.holdings.owner === owner ? (st.holdings.sol?.spendableRaw ?? null) : null));
-  const short = MANDATE_NET === 'mainnet' && Boolean(owner) && shortOfFunds(spendable, preset);
+  const short = MANDATE_NET === 'mainnet' && Boolean(owner) && shortOfFunds(spendable, budget);
   useEffect(() => {
     if (!paper) return;
     void readPaper();
@@ -332,13 +404,13 @@ function TraderPaper({ note, onAct }: { note: ReactNode; onAct: () => void }) {
       if (document.visibilityState === 'visible') void readPaper();
     }, 60_000);
     return () => clearInterval(timer);
-  }, [paper]);
+  }, [paper, budget]);
   if (!paper) return null;
   const plan = planOfText(paper.plan);
   const line = planLine(plan, AUTOPILOT[lang], lang);
   const pct = run && run.buys > 0 ? run.resultPct : null;
   return (
-    <Panel tone="hi" gap={12} label={w.paperKick}>
+    <Panel tone="hi" pad="l" gap={16} label={w.paperKick}>
       <Head role="trader" kick={w.paperKick}>
         <How />
       </Head>
@@ -365,12 +437,14 @@ function TraderPaper({ note, onAct }: { note: ReactNode; onAct: () => void }) {
           <span className={a.cap}>{w.paperNone}</span>
         )}
       </div>
-      {short && preset ? <Note warn>{w.needSol(digits(solAbout(fundsFor(preset).about), lang))}</Note> : null}
+      <Budget />
+      <Terms budget={budget} />
+      {short && budget ? <Note warn>{w.needSol(digits(solAbout(fundsFor(budget).about), lang))}</Note> : null}
       {note}
       <Give
-        label={w.give}
+        label={giveLabel(w, lang, budget)}
         busy={busy}
-        disabled={!preset || short}
+        disabled={!budget || short}
         onPress={(who) => {
           // Live, the agent takes the very plan and coin it practised.
           onAct();
@@ -386,20 +460,25 @@ function TraderPaper({ note, onAct }: { note: ReactNode; onAct: () => void }) {
   );
 }
 
-function Trader({ note, onAct }: { note: ReactNode; onAct: () => void }) {
+/**
+ * «Recurring buys» (decision 109: a rule, so a bot): the card that was the Agents screen's «Trader», as it
+ * was — the coin, the budget a day and what follows from it, one signature; or the practice on paper.
+ */
+export function Trader({ note, onAct }: { note: ReactNode; onAct: () => void }) {
   const paper = useAutopilot((st) => st.paper);
   const coin = useMandate((st) => st.coin);
   const towers = useMarket().towers;
   // The practice is kept in this browser: it shows from the first paint after hydration, never in the server's page.
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
-  // The card stands on the city's own ask of the agent: a budget a day, the budget the city starts a new agent on.
+  // The card stands on the city's own ask of the agent; a budget she already wrote stays — no sum of Ryntra's is put in.
   useEffect(() => {
+    const kept = useAutopilot.getState().budget ?? useMandate.getState().budget;
     const before = useAutopilot.getState();
     if (before.ask?.kind !== 'trade') before.show({ kind: 'trade', said: '', perDaySol: null });
-    if (!useAutopilot.getState().preset) useAutopilot.getState().pick(useMandate.getState().preset);
+    if (!useAutopilot.getState().budget && kept) useAutopilot.getState().setBudget(kept);
   }, []);
-  // On mainnet the agent buys a coin the person names: the first sentence's coin stands picked, one tap changes it.
+  // On mainnet the agent buys a coin the person names: an example's coin (JUP, else MET) stands picked, one tap changes it.
   useEffect(() => {
     if (MANDATE_NET !== 'mainnet' || coin || !towers.length) return;
     const first = sayCoin(bookOf(towers));
@@ -415,7 +494,7 @@ function Trader({ note, onAct }: { note: ReactNode; onAct: () => void }) {
 const pctOf = (bps: number, lang: 'en' | 'uk') => digits(`${Math.round(bps / 100)}%`, lang);
 
 /** The plan's parts as one bar and a line each: a name, a share, and — before the signature — what it holds. */
-function Split({ shares, plan, solUsd }: { shares: Readonly<Record<PilotPart, number>>; plan: PilotPlanData; solUsd: number | null }) {
+export function Split({ shares, plan, solUsd }: { shares: Readonly<Record<PilotPart, number>>; plan: PilotPlanData; solUsd: number | null }) {
   const w = useWords(AGENTS);
   const lang = useLang();
   const names: Readonly<Record<PilotPart, string>> = { trade: w.partTrade, save: w.partSave, pool: w.partPool, reserve: w.partReserve };
@@ -457,7 +536,8 @@ function PilotInfo() {
   );
 }
 
-function PilotPropose({ solUsd }: { solUsd: number | null }) {
+/** The money autopilot's plan for the whole budget, before the signature: its shares, what it holds, its one action. */
+export function PilotPropose({ solUsd }: { solUsd: number | null }) {
   const w = useWords(AGENTS);
   const lang = useLang();
   const ask = usePilot((st) => st.ask);
@@ -477,14 +557,14 @@ function PilotPropose({ solUsd }: { solUsd: number | null }) {
     if (usePilot.getState().ask) return;
     const book = bookOf(towers);
     const starter = readPilotAsk(PILOT_STARTER[lang], book) ?? readPilotAsk(PILOT_STARTER.en, book);
-    const first = agentCoins(book)[0] ?? null;
+    const first = sayCoin(book);
     if (starter) usePilot.getState().show(starter, solUsd, first ? { mint: first.mint, symbol: first.symbol, icon: first.icon } : null);
   }, [towers, lang, solUsd]);
   useEffect(() => usePilot.getState().reprice(solUsd), [solUsd]);
 
   if (!ask || !split || !plan) {
     return (
-      <Panel tone="hi" gap={12} label={w.newAgent}>
+      <Panel tone="hi" pad="l" gap={16} label={w.newAgent}>
         <Head role="pilot" kick={w.newAgent}>
           <PilotInfo />
         </Head>
@@ -496,10 +576,10 @@ function PilotPropose({ solUsd }: { solUsd: number | null }) {
   const total = priced !== null && !short ? PILOT_PARTS.reduce((sum, part) => sum + legsUsd(split.legs, priced)[part], 0) : null;
   const onPaper = phase === 'paper' || phase === 'signing';
   const result = paper ? usdShown(paper.totalUsd, lang) : null;
-  const noCoin = Boolean(split.preset) && PILOT_NET === 'mainnet' && !coin;
+  const noCoin = Boolean(split.budget) && PILOT_NET === 'mainnet' && !coin;
   const said: Readonly<Record<NonNullable<typeof note>['kind'], string>> = { on: w.pilotOn, partial: w.pilotPartial, stopped: w.pilotStopped, walletNo: w.noteWalletNo, refused: w.noteRefused, unreachable: w.noteUnreachable };
   return (
-    <Panel tone="hi" gap={12} label={w.newAgent}>
+    <Panel tone="hi" pad="l" gap={16} label={w.newAgent}>
       <Head role="pilot" kick={w.newAgent}>
         <PilotInfo />
       </Head>
@@ -518,7 +598,7 @@ function PilotPropose({ solUsd }: { solUsd: number | null }) {
           )}
         </div>
       ) : null}
-      {split.preset ? <span className={a.cap}>{w.pilotPay(fee.low, fee.high)}</span> : null}
+      {split.budget ? <span className={a.cap}>{w.pilotPay(fee.low, fee.high)}</span> : null}
       <span className={a.cap}>{w.pilotRisk}</span>
       {noCoin ? <Note>{w.pickCoin}</Note> : null}
       {short ? <Note warn>{w.pilotShort(short)}</Note> : null}
@@ -532,46 +612,4 @@ function PilotPropose({ solUsd }: { solUsd: number | null }) {
       )}
     </Panel>
   );
-}
-
-/* ---------------------------------------------------------------- the panel beside the list */
-
-export type NewAgentProps = Readonly<{
-  role: Role | null;
-  rows: readonly MineRow[];
-  /** The traders' books, by policy. */
-  views: Readonly<Record<string, AgentView>>;
-  pilot: PilotView | null;
-  solUsd: number | null;
-  /** The line a step of this panel answered with. */
-  note: ReactNode;
-  /** A step of this panel began: its answer belongs here. */
-  onAct: () => void;
-  /** The row whose «Stop» waits on the wallet. */
-  stopping: string | null;
-  onStop: (row: MineRow) => void;
-}>;
-
-/**
- * The panel for the agent the screen is about: at work — its card with its figures and «Stop»; not hired yet — the new
- * agent: what it buys, the day's budget, the limits that follow from it, one line on the fee and the stop, and the one
- * action. «Give the budget» is one signature in the person's own wallet.
- */
-export function NewAgent({ role, rows, views, pilot, solUsd, note, onAct, stopping, onStop }: NewAgentProps) {
-  if (!role) return null;
-  const working = rows.find((row) => row.role === role) ?? null;
-  if (working) {
-    const shares = role === 'pilot' && pilot ? (pilot.care?.shares ?? pilot.plan.shares) : null;
-    return (
-      <>
-        <AgentCard row={working} view={working.role === 'trader' && working.stop && 'record' in working.stop ? (views[working.stop.record.policy] ?? null) : null} solUsd={solUsd} stopping={stopping} onStop={onStop}>
-          {shares && pilot ? <Split shares={shares} plan={pilot.plan} solUsd={null} /> : null}
-        </AgentCard>
-        {note}
-      </>
-    );
-  }
-  if (role === 'pilot') return <PilotPropose solUsd={solUsd} />;
-  if (role === 'trader') return <Trader note={note} onAct={onAct} />;
-  return null;
 }

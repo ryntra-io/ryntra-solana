@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useId, useRef, useState, type ReactNode } from 'react';
 import { digits, useWords } from '@/city/lib/i18n/dict';
 import { useLang } from '@/city/lib/i18n/lang';
@@ -11,6 +12,7 @@ import {
   BASE_BANDS,
   FEE_TVL_STEPS,
   FEES_STEPS,
+  HIGH_MIN_TVL_USD,
   START_FILTERS,
   STEP_BANDS,
   STRATEGIES,
@@ -41,11 +43,18 @@ export const TYPE_NAME: Readonly<Record<PoolType, string>> = { dlmm: 'DLMM', 'da
 const STEP_NAME: Readonly<Record<Exclude<StepBand, 'any'>, string>> = { tight: '1–5', mid: '6–20', wide: '21–100', wider: '100+' };
 const BASE_NAME: Readonly<Record<Exclude<BaseBand, 'any'>, string>> = { low: '≤ 0.05%', mid: '0.05–0.3%', high: '> 0.3%' };
 
-/** A row's second line: the type, and in the plain look its step. */
-export function rowCaption(row: ChooseRow, w: W, lang: Lang): string {
-  const step = row.step === null ? '—' : digits(String(row.step), lang);
-  return `${TYPE_NAME[row.type]} · ${w.stepOf(step)}`;
+/** A row's second line: the type and the fee a trade pays now (the price step is a column of «All»). */
+export function rowCaption(row: ChooseRow, w: W, lang: Lang, short = false): string {
+  const parts = [TYPE_NAME[row.type]];
+  // On a desk's row the fee stands bare beside the kind — «DLMM · 0,10%» whole on a laptop; its word is the
+  // row's title.
+  if (row.feePct !== null) parts.push(short ? feeText(row.feePct, lang) : w.feeOf(feeText(row.feePct, lang)));
+  else if (row.step !== null) parts.push(w.stepOf(digits(String(row.step), lang)));
+  return parts.join(' · ');
 }
+
+/** A pool's own page in the terminal: DLMM Pro's desk, and DLMM's once it stands; DAMM v2 has none. */
+export const poolPage = (row: ChooseRow): string | null => (row.type === 'damm-v2' ? null : `/pool/${row.address}`);
 
 /* ── one filter: a chip that opens its choices under it ─────────────────────────────────────────────────────────── */
 
@@ -88,7 +97,7 @@ function Pick<T extends string | number>({ name, value, options, current, onPick
 }
 
 /** The strategies the screen draws as cards above the filters (EarnScreen's `cards`). */
-const CARD_STRATEGIES: ReadonlySet<Strategy> = new Set<Strategy>(['stable', 'high']);
+const CARD_STRATEGIES: ReadonlySet<Strategy> = new Set<Strategy>(['stable', 'reward']);
 
 const usdOptions = (steps: readonly number[], any: string, lang: Lang): Option<number>[] => steps.map((step) => ({ id: step, label: step === 0 ? any : floorText(step, 'usd', lang) }));
 
@@ -113,7 +122,14 @@ export function FilterBar({ filters, onFilters, sort, onSort, more, onMore, ever
   ];
   const sortNames: Readonly<Record<SortKey, string>> = { fees: w.sortFees, feeTvl: w.sortFeeTvl, tvl: w.sortTvl, volume: w.sortVolume, age: w.sortAge, step: w.sortStep, base: w.sortBase };
   const sorts: SortKey[] = every ? ['fees', 'feeTvl', 'tvl', 'volume', 'age', 'step', 'base'] : ['fees', 'feeTvl', 'tvl', 'volume', 'age'];
+  // The orders the table's own heads give: «Main» has no column of age.
+  const headSorted = every || sort.key !== 'age';
   const changed = JSON.stringify(filters) !== JSON.stringify(START_FILTERS);
+  const reset = (
+    <Quiet size="s" onClick={() => onFilters(START_FILTERS)}>
+      {w.fReset}
+    </Quiet>
+  );
   return (
     <div className={e.filtersWrap}>
     <div className={e.filters} role="group" aria-label={w.filters}>
@@ -132,6 +148,8 @@ export function FilterBar({ filters, onFilters, sort, onSort, more, onMore, ever
               }}
             >
               {strategyName(strategy, w)}
+              {/* «High income» counts a pool from its depth: said on the chip while it holds (the rule was unseen). */}
+              {strategy === 'high' && filters.strategy === 'high' ? <span className={e.chipFloor}>{w.sHighFrom(floorText(HIGH_MIN_TVL_USD, 'usd', lang).replace(/^> /, ''))}</span> : null}
             </button>
           ))}
           <span className={e.stratSep} aria-hidden="true" />
@@ -165,32 +183,39 @@ export function FilterBar({ filters, onFilters, sort, onSort, more, onMore, ever
       <button type="button" className={cx(e.chip, filters.verified && e.chipOn)} aria-pressed={filters.verified} onClick={() => set({ verified: !filters.verified })}>
         {w.fVerified}
       </button>
-      {compact ? null : (
+      {compact && changed ? reset : null}
+      <div className={e.grow} />
+      {/* A desk sorts by the table's own heads; a phone's rows have none, so its order is a chip — and a desk keeps the chip
+          while the order is by a column «Main» does not show (the newest first). */}
+      {compact || !headSorted ? <Pick end name={w.sortBy} value={`${sortNames[sort.key]} ${sort.dir === 'desc' ? '↓' : '↑'}`} options={sorts.map((key) => ({ id: key, label: sortNames[key] }))} current={sort.key} onPick={(key) => onSort({ key, dir: 'desc' })} on={false} /> : null}
+    </div>
+    {/* «+ Filters», the reset and the table's own «Columns» stand at the bar's end, outside the filters: the filters may
+        scroll on a laptop's desk, these stay whole and in reach («+ Фільтри» was cut on 1920 and 1440). */}
+    {compact ? null : (
+      <div className={e.filtersEnd}>
+        {changed ? reset : null}
         <button type="button" className={cx(e.chip, rare && e.chipOn)} aria-expanded={rare} aria-disabled={rareSet || undefined} data-earn="more-filters" onClick={rareSet ? undefined : onMore}>
           {`+ ${w.filters}`}
         </button>
-      )}
-      {changed ? (
-        <Quiet size="s" onClick={() => onFilters(START_FILTERS)}>
-          {w.fReset}
-        </Quiet>
-      ) : null}
-      <div className={e.grow} />
-      {columns}
-      <Pick end name={w.sortBy} value={`${sortNames[sort.key]} ${sort.dir === 'desc' ? '↓' : '↑'}`} options={sorts.map((key) => ({ id: key, label: sortNames[key] }))} current={sort.key} onPick={(key) => onSort({ key, dir: 'desc' })} on={false} />
-    </div>
+        {columns}
+      </div>
+    )}
     </div>
   );
 }
 
 export function strategyName(strategy: Strategy, w: W): string {
-  return strategy === 'stable' ? w.sStable : strategy === 'high' ? w.sHigh : w.sSol;
+  return strategy === 'stable' ? w.sStable : strategy === 'high' ? w.sHigh : strategy === 'reward' ? w.sReward : w.sSol;
 }
 
 /* ── the table ───────────────────────────────────────────────────────────────────────────────────────────────────── */
 
-const COLUMNS_MAIN = 'minmax(160px, 1.8fr) repeat(3, minmax(80px, 1fr)) minmax(88px, 1fr) 84px';
-const COLUMNS_ALL = 'minmax(190px, 1.6fr) 44px 56px repeat(3, minmax(72px, 1fr)) 60px 48px 76px';
+/* «всі пули… має бути ширше, де більше інформації, все розписано, все чітко». The
+   list runs the desk's whole width, as Meteora's and DexScreener's do: by default the pool — its pair, type, step and
+   fee — what is in it, the day's volume, the day's fees and those fees against what is in it, the row's one bright
+   figure; «All» adds the step and the base fee as columns of their own and the pool's age. */
+const COLUMNS_MAIN = 'minmax(200px, 1.4fr) repeat(4, minmax(84px, 1fr)) 104px';
+const COLUMNS_ALL = 'minmax(200px, 1.4fr) minmax(48px, 0.5fr) minmax(56px, 0.6fr) repeat(4, minmax(84px, 1fr)) minmax(56px, 0.6fr) 104px';
 
 function SortHead({ id, sort, onSort, children }: { id: SortKey; sort: Sort; onSort: (next: Sort) => void; children: ReactNode }) {
   const on = sort.key === id;
@@ -208,7 +233,7 @@ export function PoolsTable({ rows, every, sort, onSort, frontKey, held, onPick, 
   const w = useWords(EARN);
   const lang = useLang();
   return (
-    <Table columns={every ? COLUMNS_ALL : COLUMNS_MAIN} minWidth={every ? 740 : 640} label={w.pools}>
+    <Table columns={every ? COLUMNS_ALL : COLUMNS_MAIN} minWidth={every ? 900 : 700} label={w.pools}>
       <TableHead>
         <Cell head>{w.cPool}</Cell>
         {every ? (
@@ -231,7 +256,7 @@ export function PoolsTable({ rows, every, sort, onSort, frontKey, held, onPick, 
           {w.fees24}
         </SortHead>
         <SortHead id="feeTvl" sort={sort} onSort={onSort}>
-          {every ? w.cFeeTvl : w.cFeeTvlA}
+          {w.cFeeTvlDay}
         </SortHead>
         {every ? (
           <SortHead id="age" sort={sort} onSort={onSort}>
@@ -242,29 +267,45 @@ export function PoolsTable({ rows, every, sort, onSort, frontKey, held, onPick, 
       </TableHead>
       {rows.map((row) => {
         const front = frontKey === pickKey(row);
+        const page = poolPage(row);
         return (
           <TableRow key={row.key} current={front}>
             <span role="cell" className={e.cellPair}>
               <Pair coins={row.coins} />
               <span className={e.cellWords}>
-                <button type="button" className={cx(e.sym, e.rowHit)} disabled={held} onClick={() => onPick(row)}>
-                  {row.name}
-                </button>
-                <span className={e.cap}>{every ? TYPE_NAME[row.type] : rowCaption(row, w, lang)}</span>
+                {/* The pair is the row's way to the pool's own page — never while a signature is out, when the ticket stays
+                    in front; a pool without a page of its own opens its ticket instead. */}
+                {page && !held ? (
+                  <Link href={page} className={cx(e.sym, e.rowHit)}>
+                    {row.name}
+                  </Link>
+                ) : (
+                  <button type="button" className={cx(e.sym, e.rowHit)} disabled={held} onClick={() => onPick(row)}>
+                    {row.name}
+                  </button>
+                )}
+                <span className={e.cap} title={every ? undefined : rowCaption(row, w, lang)}>{every ? TYPE_NAME[row.type] : rowCaption(row, w, lang, true)}</span>
               </span>
             </span>
             {every ? (
               <>
-                <Cell end>{row.step === null ? '—' : digits(String(row.step), lang)}</Cell>
-                <Cell end>{feeText(row.baseFeePct, lang)}</Cell>
+                <Cell end tone="dim">
+                  {row.step === null ? '—' : digits(String(row.step), lang)}
+                </Cell>
+                <Cell end tone="dim">
+                  {feeText(row.baseFeePct, lang)}
+                </Cell>
               </>
             ) : null}
             <Cell end>{shortUsd(row.tvlUsd, lang)}</Cell>
             <Cell end tone="dim">
               {shortUsd(row.volume24hUsd, lang)}
             </Cell>
-            <Cell end>{shortUsd(row.fees24hUsd, lang)}</Cell>
-            <Cell end tone={row.feeTvlPct !== null && row.feeTvlPct > 0 ? 'up' : undefined}>
+            <Cell end>
+              {shortUsd(row.fees24hUsd, lang)}
+              {row.reward ? <span className={e.rewardLine}>{w.rewardDay(digits(row.reward.perDay, lang), row.reward.symbol)}</span> : null}
+            </Cell>
+            <Cell end tone={row.feeTvlPct !== null && row.feeTvlPct > 0 ? 'up' : undefined} className={e.lead}>
               {dayPctText(row.feeTvlPct, lang)}
             </Cell>
             {every ? (
@@ -273,7 +314,7 @@ export function PoolsTable({ rows, every, sort, onSort, frontKey, held, onPick, 
               </Cell>
             ) : null}
             <span role="cell" className={e.cellEnd}>
-              <Quiet size="s" disabled={held} onClick={() => onPick(row)} className={row.act === 'view' ? e.viewBtn : undefined}>
+              <Quiet size="s" disabled={held} onClick={() => onPick(row)} className={cx(e.rowAct, row.act === 'view' && e.viewBtn)} aria-label={`${row.act === 'view' ? w.view : w.add} · ${row.name}`} data-earn-pick="">
                 {row.act === 'view' ? w.view : w.add}
               </Quiet>
             </span>
@@ -291,6 +332,7 @@ export function pickKey(row: ChooseRow): string {
 
 /** The phone's list: the pair and its type, a day's fees over the depth and in dollars. */
 export function PhoneRows({ rows, held, onPick }: { rows: readonly ChooseRow[]; held: boolean; onPick: (row: ChooseRow) => void }) {
+  const w = useWords(EARN);
   const lang = useLang();
   return (
     <div className={e.pList}>
@@ -298,7 +340,7 @@ export function PhoneRows({ rows, held, onPick }: { rows: readonly ChooseRow[]; 
         <div key={row.key} className={e.pRow}>
           <Pair coins={row.coins} />
           <span className={e.pMain}>
-            <button type="button" className={cx(e.sym, e.rowHit)} disabled={held} onClick={() => onPick(row)}>
+            <button type="button" className={cx(e.sym, e.rowHit)} disabled={held} onClick={() => onPick(row)} data-earn-pick="">
               {row.name}
             </button>
             <span className={e.cap}>{`${TYPE_NAME[row.type]} · ${shortUsd(row.tvlUsd, lang)}`}</span>
@@ -306,6 +348,7 @@ export function PhoneRows({ rows, held, onPick }: { rows: readonly ChooseRow[]; 
           <span className={e.pSide}>
             <span className={cx(row.feeTvlPct !== null && row.feeTvlPct > 0 && e.up)}>{dayPctText(row.feeTvlPct, lang)}</span>
             <span className={e.cap}>{shortUsd(row.fees24hUsd, lang)}</span>
+            {row.reward ? <span className={e.rewardLine}>{w.rewardDay(digits(row.reward.perDay, lang), row.reward.symbol)}</span> : null}
           </span>
         </div>
       ))}

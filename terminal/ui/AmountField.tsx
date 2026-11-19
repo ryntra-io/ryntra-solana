@@ -2,6 +2,7 @@
 
 import { useId } from 'react';
 import { CoinLogo } from './CoinLogo';
+import { cx } from './cx';
 import { Icon } from './icons';
 import { Kick } from './Type';
 import s from './ui.module.css';
@@ -17,6 +18,8 @@ export function amountText(typed: string): string {
 /**
  * The amount field: its label, an optional line on the right (the balance), the big number and the coin it is in.
  * The text is kept as typed — the screen reads it the way its engine wants (`city/lib/trade/**`); nothing here rounds.
+ * `size="s"` — the same field at a tile's size, beside another; `unit` — a quiet word after the number («SOL», «days»);
+ * `whole` — whole numbers only (a count of days).
  */
 export function AmountField({
   label,
@@ -26,7 +29,11 @@ export function AmountField({
   asset,
   onAsset,
   assetLabel,
+  assetOpen,
   placeholder = '0',
+  size = 'l',
+  unit,
+  whole = false,
 }: {
   label: string;
   aside?: string;
@@ -36,11 +43,16 @@ export function AmountField({
   /** Opens the screen's own list of coins; without it the coin is shown, not chosen. */
   onAsset?: () => void;
   assetLabel?: string;
+  /** The list `onAsset` opens stands open: the pill says so to a screen reader. */
+  assetOpen?: boolean;
   placeholder?: string;
+  size?: 'l' | 's';
+  unit?: string;
+  whole?: boolean;
 }) {
   const id = useId();
   return (
-    <div className={s.field}>
+    <div className={cx(s.field, size === 's' && s.fieldS)}>
       <div className={s.fieldHead}>
         <label htmlFor={id}>
           <Kick>{label}</Kick>
@@ -50,25 +62,26 @@ export function AmountField({
       <div className={s.fieldRow}>
         <input
           id={id}
-          className={s.amount}
+          className={cx(s.amount, size === 's' && s.amountS)}
           type="text"
-          inputMode="decimal"
+          inputMode={whole ? 'numeric' : 'decimal'}
           autoComplete="off"
           spellCheck={false}
           value={value}
           placeholder={placeholder}
-          onChange={(event) => onChange(amountText(event.target.value))}
+          onChange={(event) => onChange(whole ? event.target.value.replace(/\D/g, '').slice(0, 6) : amountText(event.target.value))}
         />
+        {unit ? <span className={s.fieldUnit}>{unit}</span> : null}
         {asset ? (
           onAsset ? (
-            <button type="button" className={s.pill} onClick={onAsset} aria-label={assetLabel ?? asset.symbol}>
-              <CoinLogo src={asset.icon} symbol={asset.symbol} size="s" />
+            <button type="button" className={s.pill} onClick={onAsset} aria-label={assetLabel ?? asset.symbol} aria-haspopup={assetOpen === undefined ? undefined : 'menu'} aria-expanded={assetOpen}>
+              <CoinLogo src={asset.icon} symbol={asset.symbol} size="s" eager />
               {asset.symbol}
               <Icon name="chevron" size="s" />
             </button>
           ) : (
             <span className={s.pill}>
-              <CoinLogo src={asset.icon} symbol={asset.symbol} size="s" />
+              <CoinLogo src={asset.icon} symbol={asset.symbol} size="s" eager />
               {asset.symbol}
             </span>
           )

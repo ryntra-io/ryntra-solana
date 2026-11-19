@@ -30,6 +30,10 @@ export type AgentAsk =
       coin?: Coin | null;
       /** The strategy said, with its numbers; absent — the steady one. */
       plan?: StrategyPlan;
+      /** A trade's limit in SOL, the person's digits; absent — the mandate's own for the day. */
+      perTradeSol?: string | null;
+      /** The agent's term in days, from the person's digits; absent — the mandate's own. */
+      days?: number | null;
     }>
   | Readonly<{
       kind: 'launch';

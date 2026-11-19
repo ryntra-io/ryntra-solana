@@ -39,6 +39,14 @@ export type MineRow = Readonly<{
   stop: Readonly<{ record: MandateRecord }> | Readonly<{ care: string }> | null;
 }>;
 
+/**
+ * Where a worker at work is managed: Recurring buys and the money autopilot are bots, each on
+ * its own page under «Bots»; the pool keeper's pools are Earn's.
+ */
+export function workerPath(role: MineRow['role']): string {
+  return role === 'trader' ? '/bots/recurring' : role === 'pilot' ? '/bots/autopilot' : '/earn';
+}
+
 /** The mandate still stands on chain: «Stop» still means something (the city's own rule for its card). */
 export function mandateLive(record: MandateRecord | null, status: MandateStatus | undefined, view: Pick<AgentView, 'status'> | null): boolean {
   return Boolean(record && (status?.active ?? true) && view?.status !== 'stopped');
@@ -157,30 +165,8 @@ export function keeperRows(cares: readonly CareRow[] | null): MineRow[] {
     });
 }
 
-/** «Today» over the screen: the trades of the last day and their result in lamports — each null when no row read it. */
-export function todayOf(rows: readonly MineRow[]): Readonly<{ trades: number | null; raw: string | null }> {
-  const counted = rows.map((row) => row.trades).filter((n): n is number => n !== null);
-  const read = rows.map((row) => row.dayRaw).filter((raw): raw is string => raw !== null);
-  return { trades: counted.length ? counted.reduce((sum, n) => sum + n, 0) : null, raw: read.length ? read.reduce((sum, raw) => sum + BigInt(raw), 0n).toString() : null };
-}
 
-/** The roles with an agent at work, for the cards' state. */
-export function workingRoles(rows: readonly MineRow[]): Readonly<Record<Role, boolean>> {
-  const at = (role: Role) => rows.some((row) => row.role === role);
-  return { trader: at('trader'), pilot: at('pilot'), keeper: at('keeper'), launcher: false };
-}
 
-export type CardState = 'hire' | 'chosen' | 'working' | 'soon';
-
-/**
- * What an agent's card says: at work for this wallet; shut on this deployment or waiting for its shelf — «coming»; the
- * one the new agent's panel shows — «chosen»; else «hire».
- */
-export function cardState(role: Role, open: Readonly<Record<Role, boolean>>, working: Readonly<Record<Role, boolean>>, chosen: Role | null): CardState {
-  if (working[role]) return 'working';
-  if (!open[role]) return 'soon';
-  return chosen === role ? 'chosen' : 'hire';
-}
 
 /* ---------------------------------------------------------------- history */
 

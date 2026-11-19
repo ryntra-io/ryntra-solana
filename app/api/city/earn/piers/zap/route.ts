@@ -36,7 +36,7 @@ export async function POST(request: Request) {
     if (!admitted.ok) return liquidityFailure(403, admitted.code, 'The Harbor takes no new money from this wallet now.', door.rate);
     // The most a Zap puts in is the SOL it takes: priced on SOL's side of the pool, against the ceiling.
     const solOnX = pool?.x.mint === SOL_MINT;
-    const check = checkPierAdd({ amountX: solOnX ? input.request.amountIn : '0', amountY: solOnX ? '0' : input.request.amountIn }, pool, admitted.ceilingUsd);
+    const check = checkPierAdd({ amountX: solOnX ? input.request.amountIn : '0', amountY: solOnX ? '0' : input.request.amountIn }, pool);
     if (!check.ok) return liquidityFailure(403, check.code, 'This add is outside what the Harbor takes.', door.rate);
   } else {
     if (!admitPierExit(owner, process.env)) return liquidityFailure(403, 'PIER_CLOSED', 'The Harbor is closed to this wallet.', door.rate);

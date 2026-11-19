@@ -114,16 +114,15 @@ test("a cut corner is the bottom right one, by `--cut` or `--cut-s`, only where 
    are this closed list, each with its count. It only gets shorter: a corner written anywhere else fails, a corner added
    to a listed sheet fails, and a corner taken out asks for its count to be lowered here. */
 const FORM_OUTSIDE_KIT = {
-  "terminal/agents/agents.module.css": 4,
-  "terminal/coin/chart.module.css": 3,
+  "terminal/agents/agents.module.css": 3,
+  "terminal/coin/chart.module.css": 2,
   "terminal/coin/coin.module.css": 1,
   "terminal/coin/ladder/ladder.module.css": 1,
-  "terminal/coin/line.module.css": 2,
   "terminal/coin/ticket.module.css": 1,
   "terminal/earn/earn.module.css": 4,
   "terminal/earn/range/range.module.css": 2,
-  "terminal/launch/launch.module.css": 8,
-  "terminal/market/depth.module.css": 8,
+  "terminal/launch/launch.module.css": 3,
+  "terminal/market/depth.module.css": 6,
   "terminal/market/home.module.css": 5,
   "terminal/portfolio/portfolio.module.css": 3,
   "terminal/shell/shell.module.css": 11,

@@ -2,13 +2,6 @@
    the ticket with staking and lending on the right; on a phone one list at a time and the ticket as a sheet. Every
    colour, face and size is the terminal's own variable. */
 
-.head {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 16px;
-}
-
 .grow {
   flex: 1 1 0;
   min-width: 0;
@@ -34,28 +27,7 @@
   min-width: 0;
 }
 
-/* ── a panel's head: its sign, its name, its «i» ─────────────────────── */
-
-.panelHead {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 16px 18px 10px;
-}
-
-.panelHead.flush {
-  padding: 0;
-}
-
-.panelHead > svg {
-  color: var(--lilac);
-}
-
-.panelHead .panelTitle {
-  flex: 1 1 0;
-  min-width: 0;
-  font-size: var(--type-action);
-}
+/* ── a quiet line under a list, and the «i» of a line ─────────────────── */
 
 .hint {
   padding: 0 18px 12px;
@@ -147,6 +119,27 @@
 
 .capWrap {
   white-space: normal;
+}
+
+/* «High income»'s floor, said on its chip while it holds. */
+.chipFloor {
+  margin-left: 6px;
+  font-weight: 500;
+  opacity: 0.72;
+}
+
+/* The row of one of the city's own pools that holds nothing yet: its line invites the first position. */
+.cap.invite {
+  font-weight: 600;
+  color: var(--amber);
+}
+
+/* Where the pair's cell is narrow (a laptop beside the ticket), the invitation says its first words only; a phone's row
+   has the room. */
+@media (min-width: 768px) and (max-width: 1679px) {
+  .inviteMore {
+    display: none;
+  }
 }
 
 /* The row's name is its control: its shade covers the whole row, so a tap anywhere on the row picks it. */
@@ -249,10 +242,6 @@
 
 .line[aria-current='true'] .sym {
   color: var(--lilac);
-}
-
-.subHead {
-  padding-top: 6px;
 }
 
 /* ── the ticket ──────────────────────────────────────────────────────── */
@@ -378,6 +367,26 @@
 
 .note[data-tone='plain'] {
   color: var(--ice);
+}
+
+/* A pool's own reward under its fees: the second line of income, in the rising tone. */
+.rewardLine {
+  display: block;
+  font-size: var(--type-caption);
+  color: var(--up);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.incomeFigure {
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: var(--type-body);
+  font-variant-numeric: tabular-nums;
+}
+
+.incomeFigure[data-tone='up'] {
+  color: var(--up);
 }
 
 .get {
@@ -565,10 +574,6 @@
   }
 }
 
-
-.viewTabs {
-  flex: 0 1 auto;
-}
 
 .up {
   color: var(--mint);
@@ -771,12 +776,31 @@
 
 .filtersWrap {
   position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+/* The pools' bar stands as tall as every other tab's bar: the table under it starts at the same place on each tab. */
+.filtersWrap > .filters {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 44px;
+}
+
+.filtersEnd {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
 }
 
 .sortBtn {
   font: inherit;
+  line-height: 1.2;
   color: inherit;
-  white-space: nowrap;
+  text-align: right;
 }
 
 .sortBtn:hover {
@@ -866,6 +890,230 @@
   color: var(--ice);
 }
 
+/* Every tab of «Earn» is a
+   list on the desk's whole width: on the left the ways to earn, the tab's bar and its table, as wide as the desk
+   allows; on the right the tab's own ticket, 400 px (420 on a wide desk) — Meteora's action column is 415, a trading
+   desk's form 356–476 — the whole height of the list, its panel held at the top while the list scrolls. A turn of the
+   tabs moves nothing but the contents. */
+
+.desk {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 400px;
+  align-items: stretch;
+  gap: 24px;
+}
+
+.deskMain {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+  container: earnlist / inline-size;
+}
+
+/* The ways to earn: four in one row on every desk, the same on every tab. */
+.deskMain > .cards {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+/* A laptop beside the ticket: the cards' figure a step smaller. */
+@container earnlist (min-width: 600px) and (max-width: 1100px) {
+  .deskMain > .cards .card {
+    padding: 14px 16px;
+  }
+
+  .deskMain > .cards .cardFigure {
+    font-size: var(--type-lead);
+  }
+}
+
+/* A list narrower than the widest desk's: the pools' filters stay one row that scrolls sideways — every tab's table
+   then starts at the same place. A filter's menu opens under the whole row. */
+@container earnlist (min-width: 600px) and (max-width: 1400px) {
+  /* The row scrolls: its right edge fades, and its end leaves room past the last chip, so a chip under the edge reads as
+     more to scroll — never as one cut off. */
+  .deskMain .filters {
+    flex-wrap: nowrap;
+    padding-right: 32px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    mask-image: linear-gradient(to right, var(--ink) calc(100% - 32px), transparent);
+  }
+
+  .deskMain .filters::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* A laptop's desk fits the whole row where it can: the chips a step tighter, and «Columns» says its two choices
+     without its name (the name stays its label for a screen reader). */
+  .deskMain .filters {
+    gap: 6px;
+  }
+
+  .deskMain .chip {
+    padding: 0 10px;
+  }
+
+  .deskMain .filtersEnd [data-terminal='columns'] > span:first-child {
+    display: none;
+  }
+
+  .deskMain .filters > * {
+    flex: none;
+  }
+
+  .deskMain .filters .pickBox {
+    position: static;
+  }
+}
+
+/* Each part keeps its own height: the cards' strip scrolls sideways and would otherwise give its height away. */
+.deskMain > * {
+  flex-shrink: 0;
+}
+
+.deskSide {
+  min-width: 0;
+}
+
+.deskTicket {
+  position: sticky;
+  /* Under the frame's header, which stays at the top of the window. */
+  top: calc(var(--top) + 16px);
+  display: flex;
+  flex-direction: column;
+}
+
+.deskTicket[data-tall] {
+  position: static;
+}
+
+@media (min-width: 1680px) {
+  .desk {
+    grid-template-columns: minmax(0, 1fr) 420px;
+  }
+}
+
+/* A narrow desk: the ticket under the list, the list the whole width. */
+@media (max-width: 1199px) {
+  .desk {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .deskTicket {
+    position: static;
+  }
+}
+
+/* A tab's bar: what the list is and how it works behind «i», the list's own controls on the right. */
+.bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  min-height: 44px;
+}
+
+.barName {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  color: var(--lilac);
+}
+
+.barTitle {
+  font-size: var(--type-action);
+  color: var(--ice);
+}
+
+.barFigures {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 10px;
+  font-size: var(--type-caption);
+  font-variant-numeric: tabular-nums;
+  color: var(--dim);
+}
+
+.barFigures b {
+  font-size: var(--type-body);
+  color: var(--ice);
+}
+
+/* A row's one bright figure: what the row is chosen by. */
+.lead {
+  font-size: var(--type-base);
+  font-weight: 800;
+}
+
+/* The row's action stands over the row's own link, which answers a tap anywhere else on the row. */
+.rowAct {
+  position: relative;
+  z-index: 1;
+}
+
+.sideTitle {
+  font-size: var(--type-action);
+}
+
+.bonusFig {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.push {
+  margin-left: auto;
+}
+
+/* «With liquidity · All»: each half as wide as its words, never squeezed by the bar. */
+/* «My positions» with nothing to list: the section's sign and one line, centred under the table's head. */
+.mineEmpty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 40px 24px;
+  border-top: 1px solid var(--line);
+  text-align: center;
+}
+
+.mineIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  color: var(--lilac);
+  border: 1px solid var(--edge);
+  background: var(--well);
+}
+
+.mineTitle {
+  max-width: 420px;
+  font-size: var(--type-action);
+  font-weight: 650;
+  line-height: 1.35;
+  color: var(--ice);
+}
+
+.segBox {
+  display: flex;
+  flex: none;
+  min-width: 240px;
+}
+
+.segBox > * {
+  flex: 1 1 auto;
+}
+
+.distBox {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
 @media (max-width: 767px) {
   .desktopOnly {
     display: none;
@@ -875,19 +1123,16 @@
     display: flex;
   }
 
+  .desk,
+  .deskMain {
+    gap: 14px;
+  }
+
   .phoneCol {
     flex: 1 1 100%;
     flex-direction: column;
     gap: 14px;
     min-width: 0;
-  }
-
-  .head {
-    gap: 12px;
-  }
-
-  .tabsRow > * > button {
-    height: 44px;
   }
 
   .cards {
@@ -924,6 +1169,11 @@
   }
 
   .filters::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* The bar of DLMM Pro keeps its figures and its choice on one row: the venue's mark is the tab's own name here. */
+  .barBadge {
     display: none;
   }
 

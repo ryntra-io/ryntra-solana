@@ -31,8 +31,10 @@ const ALL = [
   { name: "desk", width: 1440, height: 900, mobile: false },
   { name: "wide", width: 1920, height: 1080, mobile: false },
   { name: "phone", width: 390, height: 844, mobile: true },
+  // The widest desk the operator looks on: only when named.
+  { name: "xl", width: 2560, height: 1440, mobile: false, named: true },
 ];
-const SIZES = process.env.SIZES ? ALL.filter((size) => process.env.SIZES.split(",").includes(size.name)) : ALL;
+const SIZES = process.env.SIZES ? ALL.filter((size) => process.env.SIZES.split(",").includes(size.name)) : ALL.filter((size) => !size.named);
 const LANGS = (process.env.LANGS ?? "en,uk").split(",");
 /** Which stages run: guest, wallet, gap, pro; all when not named. */
 const STAGES = process.env.STAGES ? new Set(process.env.STAGES.split(",")) : null;

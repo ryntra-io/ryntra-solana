@@ -62,11 +62,17 @@
   --type-title-l: 22px;
   --type-headline: 24px;
   --type-figure: 30px;
+  /* A section's name at the head of its page. */
+  --type-page: 28px;
 
   /* The frame's measures. */
   --rail: 228px;
   --top: 68px;
   --tabbar: 76px;
+  /* One page for every section: the action page's width, its action column and its side column. */
+  --page: 1120px;
+  --page-main: 720px;
+  --page-side: 376px;
 
   min-height: 100dvh;
   color-scheme: dark;

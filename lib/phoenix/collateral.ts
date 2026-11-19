@@ -70,14 +70,13 @@ export function traderSubaccountOf(owner: string, subaccount: number): string {
 
 /**
  * Who may move collateral today, set at runtime like the pools' gate: `CLOSED` (the default, and any other value) —
- * no screen offers it and no route builds it; `CANARY` — the one wallet named in the environment, a deposit or a
- * withdrawal of at most `CANARY_MAX_USD` each: the operator's first live check on mainnet; `OPEN` — everyone. A stranger
+ * no screen offers it and no route builds it; `CANARY` — the one wallet named in the environment: the operator tries it
+ * first (decision 92), with no sum of Ryntra's; `OPEN` — everyone. A stranger
  * under `CANARY` is told the same as under `CLOSED`. The gate is asked at the Review and again at the relay: a gate
  * that closed or narrowed in between holds the bytes back.
  */
 export const PHOENIX_COLLATERAL_ENV = "RYNTRA_PHOENIX_COLLATERAL";
 export const PHOENIX_CANARY_WALLET_ENV = "RYNTRA_PHOENIX_CANARY_WALLET";
-export const CANARY_MAX_USD = 5;
 
 export type Env = Readonly<Record<string, string | undefined>>;
 export type CollateralAction = "deposit" | "withdraw";
@@ -89,7 +88,7 @@ export function admitCollateral(owner: string | null, env: Env): CollateralAdmis
   if (mode === "OPEN") return { ok: true, mode, maxMicro: null };
   if (mode === "CANARY") {
     const wallet = env[PHOENIX_CANARY_WALLET_ENV]?.trim();
-    if (wallet && owner !== null && owner === wallet) return { ok: true, mode, maxMicro: BigInt(CANARY_MAX_USD) * 10n ** BigInt(USDC_DECIMALS) };
+    if (wallet && owner !== null && owner === wallet) return { ok: true, mode, maxMicro: null };
   }
   return { ok: false, code: "ACTIONS_CLOSED" };
 }

@@ -17,7 +17,7 @@ import {
   startAmount,
   SWAP_SOL_RESERVE_LAMPORTS,
 } from "./size.ts";
-import { SOL, USDC } from "./tiles.ts";
+import { SOL, USDC, USDT_MINT } from "./tiles.ts";
 
 const JUP = { mint: "JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN", symbol: "JUP", decimals: 6 };
 
@@ -118,6 +118,11 @@ test("where the amount starts: all of a sale; a small first buy the wallet cover
   assert.equal(startAmount("buy", SOL, 0n), 0n);
   assert.equal(startAmount("buy", JUP, 120_000_000n), 30_000_000n);
   assert.equal(startAmount("buy", JUP, null), 0n);
+  // Tether starts where USDC does: ten dollars the wallet covers, else a quarter.
+  const USDT = { mint: USDT_MINT, symbol: "USDT", decimals: 6 };
+  assert.equal(startAmount("buy", USDT, null), 10_000_000n);
+  assert.equal(startAmount("buy", USDT, 120_500_000n), 10_000_000n);
+  assert.equal(startAmount("buy", USDT, 8_000_000n), 2_000_000n);
 });
 
 test("the slider's keyboard: arrows by one, pages by ten, Home and End to the ends", () => {

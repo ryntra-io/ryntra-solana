@@ -1,14 +1,15 @@
 import { create } from 'zustand';
-import { BUDGET_PRESETS, PRESETS_ON, type BudgetPresetId } from '../../../lib/mandate/presets.ts';
+import { budgetFund, budgetIssue, budgetTotal, type AgentBudget } from '../../../lib/mandate/budget.ts';
 
 /**
- * The agent with a budget in the bots window: one tap picks the budget, the limits stand in one line, and
- * the person's wallet signs once — her smart account, the budget in its vault and the agent's policy, held on chain.
- * «Stop» is one more signature, and the rest comes back to her wallet.
+ * The agent with a budget: the person writes her own numbers — a day, a trade, a term, any she likes
+ * (decision 108: no ceiling of Ryntra's) — they stand in one line, and her wallet signs once: her smart
+ * account, the budget in its vault and the agent's policy, held on chain. «Stop» is one more signature, and the rest
+ * comes back to her wallet.
  *
  * The window shows this only when the deployment says `NEXT_PUBLIC_RYNTRA_CITY_MANDATE=devnet` or `=mainnet`; the
- * engine's routes answer 404 while their own switch (`RYNTRA_AGENT_MANDATE`) is closed. Mainnet opened to everyone
- * with one budget, 0.1 SOL a day; there the person names the coin the agent buys.
+ * engine's routes answer 404 while their own switch (`RYNTRA_AGENT_MANDATE`) is closed. On mainnet the person names the
+ * coin the agent buys.
  *
  * The mandate is kept in this browser — its public addresses and numbers, never a key, apart for each network — and
  * read back from the chain while the window is open. The signing is `mandate-sign.ts` and its checks `mandate-check.ts`, loaded on the tap: the
@@ -26,9 +27,6 @@ export function mandateNetwork(value: string | undefined): MandateNetwork | null
 export const MANDATE_NET: MandateNetwork | null = mandateNetwork(process.env.NEXT_PUBLIC_RYNTRA_CITY_MANDATE);
 /** The Wallet Standard chain the wallet signs for. */
 export const MANDATE_CHAIN: 'solana:devnet' | 'solana:mainnet' = MANDATE_NET === 'mainnet' ? 'solana:mainnet' : 'solana:devnet';
-
-/** The budgets this deployment's network offers: all three on devnet, 0.1 SOL a day on mainnet. */
-export const MANDATE_PRESETS: readonly BudgetPresetId[] = PRESETS_ON[MANDATE_NET ?? 'devnet'];
 
 /** The coin the agent buys on mainnet, as the person named it: a tower of the city, never SOL or USDC. */
 export type MandateCoin = Readonly<{ mint: string; symbol: string; icon: string | null }>;
@@ -69,7 +67,8 @@ const kept = (): Kept | null => {
 };
 
 type MandateState = {
-  preset: BudgetPresetId;
+  /** The person's numbers, once they make a budget the agent takes; null — not written yet. */
+  budget: AgentBudget | null;
   /** Mainnet: the coin the agent buys; null — not named yet. */
   coin: MandateCoin | null;
   /** Kept per wallet: a wallet sees its own mandate only. */
@@ -78,7 +77,7 @@ type MandateState = {
   busy: 'enable' | 'stop' | null;
   note: MandateNote;
   hydrated: boolean;
-  setPreset: (preset: BudgetPresetId) => void;
+  setBudget: (budget: AgentBudget | null) => void;
   setCoin: (coin: MandateCoin | null) => void;
   hydrate: () => void;
   keep: (record: MandateRecord) => void;
@@ -90,14 +89,14 @@ type MandateState = {
 export function createMandateStore(options: Readonly<{ storage?: () => Kept | null }> = {}) {
   const store = options.storage ?? kept;
   return create<MandateState>((set, get) => ({
-    preset: MANDATE_PRESETS.includes('medium') ? 'medium' : MANDATE_PRESETS[0]!,
+    budget: null,
     coin: null,
     records: {},
     status: {},
     busy: null,
     note: null,
     hydrated: false,
-    setPreset: (preset) => set({ preset: MANDATE_PRESETS.includes(preset) ? preset : MANDATE_PRESETS[0]! }),
+    setBudget: (budget) => set({ budget: budget && budgetIssue(budget) === null ? budget : null }),
     setCoin: (coin) => set({ coin }),
     hydrate: () => {
       if (get().hydrated) return;
@@ -127,10 +126,12 @@ export function createMandateStore(options: Readonly<{ storage?: () => Kept | nu
 
 export const useMandate = createMandateStore();
 
-/** The limits of a preset, as the one line shows them (lamports → SOL). */
-export function presetLimits(id: BudgetPresetId): Readonly<{ budget: number; perTrade: number; perDay: number; days: number }> {
-  const preset = BUDGET_PRESETS[id];
-  return { budget: Number(preset.budget) / 1e9, perTrade: Number(preset.perTrade) / 1e9, perDay: Number(preset.perDay) / 1e9, days: preset.days };
+/**
+ * A budget as the windows show it (lamports → SOL): what goes into the vault, all the signature takes with the agent's
+ * network fees, the day, the trade and the term.
+ */
+export function budgetLimits(budget: AgentBudget): Readonly<{ budget: number; total: number; perTrade: number; perDay: number; days: number }> {
+  return { budget: Number(budgetFund(budget)) / 1e9, total: Number(budgetTotal(budget)) / 1e9, perTrade: Number(budget.perTrade) / 1e9, perDay: Number(budget.perDay) / 1e9, days: budget.days };
 }
 
 if (typeof window !== 'undefined' && process.env.NODE_ENV !== 'production') Object.assign(window, { __mandate: useMandate });

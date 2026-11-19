@@ -207,7 +207,8 @@ function Rewards({ owner }: { owner: string }) {
     tiles.push({ label: r.referral, value: digits(`$${view.scouts.fromFriends}`), line: r.friends(view.scouts.friends) });
     tiles.push({ label: r.cashback, value: digits(`$${view.scouts.cashback}`), line: view.scouts.pending !== '0.00' ? `${r.pending} $${view.scouts.pending}` : undefined });
   }
-  if (view?.credits) tiles.push({ label: r.credits, value: digits(String(view.credits.balance)), line: view.credits.freeLeft > 0 ? r.creditsLine(view.credits.freeLeft) : undefined });
+  /* No count of the day's free credits on the screen. */
+  if (view?.credits) tiles.push({ label: r.credits, value: digits(String(view.credits.balance)) });
 
   return (
     <section className={p.rewards} aria-label={r.title}>

@@ -8,8 +8,7 @@ import type { Lang } from '@/city/lib/i18n/langs';
 import { Cell, Chip, CoinLogo, Icon, Info, Panel, Quiet, Table, TableHead, TableRow, Tile, Title } from '@/terminal/ui';
 import { budgetUse, resultShown, solPlain, usdShown, type Shown } from './figures';
 import { RoleBadge } from './glyphs';
-import { tradeHistory, type MineRow, type PastRow, type RowState } from './rows';
-import { shelfHref } from '@/terminal/shell/shelves';
+import { tradeHistory, workerPath, type MineRow, type PastRow, type RowState } from './rows';
 import { AGENTS } from './words';
 import a from './agents.module.css';
 
@@ -102,8 +101,8 @@ export type MineProps = Readonly<{
 const viewOf = (row: MineRow, views: MineProps['views']): AgentView | null => (row.stop && 'record' in row.stop && row.role === 'trader' ? (views[row.stop.record.policy] ?? null) : null);
 
 /**
- * «My agents» on a desk: one row an agent — the day's budget and what is spent of it, the day's trades, the result as
- * its own book counts it, and «Stop». No wallet, or none at work: one quiet line.
+ * «My bots» of the budget on a desk: one row a bot — the day's budget and what is spent of it, the day's trades, the
+ * result as its own book counts it, and «Stop». No wallet, or none at work: one quiet line.
  */
 export function MineTable({ rows, owner, views, solUsd, note, stopping, onStop }: MineProps) {
   const w = useWords(AGENTS);
@@ -161,7 +160,7 @@ export function MineTable({ rows, owner, views, solUsd, note, stopping, onStop }
                       {stopping === row.key ? w.stopping : w.stop}
                     </Quiet>
                   ) : null}
-                  {result ? <Share text={w.shareText(names[row.role], result.text, row.span)} /> : null}
+                  {result ? <Share text={w.shareText(names[row.role], result.text, row.span)} path={workerPath(row.role)} /> : null}
                 </Cell>
               </TableRow>
             );
@@ -176,14 +175,14 @@ export function MineTable({ rows, owner, views, solUsd, note, stopping, onStop }
 }
 
 /**
- * «Share»: the agent's result as one line and the screen's address — the phone's own share sheet, else copied. The
- * result is what the agent's own book counts; nothing is promised.
+ * «Share»: the bot's result as one line and its page's address — the phone's own share sheet, else copied. The result
+ * is what the bot's own book counts; nothing is promised.
  */
-function Share({ text }: { text: string }) {
+function Share({ text, path }: { text: string; path: string }) {
   const w = useWords(AGENTS);
   const [copied, setCopied] = useState(false);
   const share = async () => {
-    const url = `${window.location.origin}${shelfHref('agents', 'live')}`;
+    const url = `${window.location.origin}${path}`;
     try {
       if (typeof navigator.share === 'function') return await navigator.share({ text, url });
       await navigator.clipboard.writeText(`${text} ${url}`);

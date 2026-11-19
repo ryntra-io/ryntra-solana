@@ -5,9 +5,10 @@
  *
  * A mandate joins the book only as the chain has it: the policy exists under the smart account program, its one signer
  * is this agent, the person is the account's settings signer, and the vault and the budget's account are the ones the
- * program derives. Its numbers are one of the city's presets, so the agent never trades by numbers the person did not
- * choose; the chain holds the very same caps again. And its coin is no coin of Ryntra's launchpad and none of the
- * person's own (`./ryntra-coins.server.ts`) — the signer asks the same again before every trade.
+ * program derives. Its numbers are the policy's own: the day's cap and the trade's the person signed stand in
+ * the policy on chain, so the agent never trades by numbers she did not sign — any numbers, no ceiling of Ryntra's. And
+ * its coin is no coin of Ryntra's launchpad and none of the person's own (`./ryntra-coins.server.ts`) — the
+ * signer asks the same again before every trade.
  */
 
 import { Connection, PublicKey } from "@solana/web3.js";
@@ -15,11 +16,11 @@ import { Connection, PublicKey } from "@solana/web3.js";
 import type { GuardCollection, GuardStore } from "../guard/store.ts";
 import type { Mandate } from "./human.ts";
 import { tokenAccountOf } from "./human.ts";
-import { BUDGET_PRESETS, presetOpenOn, type BudgetPresetId } from "./presets.ts";
+import { BUDGET_PRESETS, type BudgetPresetId } from "./presets.ts";
+import { agentNetworkOf, budgetFund, budgetRefusal, DAYS_MAX, termOf, type AgentBudget } from "./budget.ts";
 import { policyCarriesFee } from "./fee.ts";
 import type { MandateGate, MandateNetwork, MandateRecord } from "./service.server.ts";
 import { NATIVE_MINT, readPolicyHead, readSettings, ssaAddress, SSA_PROGRAM_ID } from "./ssa.ts";
-import { STARTER_CAPS } from "./terms.ts";
 import { planFrom, planText, STEADY, type Mark, type StrategyPlan } from "./plans.ts";
 import { type AgentTrade, type PauseReason, type StrategyId } from "./strategy.ts";
 import { storeScreen, type AgentScreen } from "./ryntra-coins.server.ts";
@@ -35,7 +36,10 @@ export type BookEntry = Readonly<{
   v: 1;
   cluster: MandateNetwork;
   record: MandateRecord;
-  preset: BudgetPresetId;
+  preset?: BudgetPresetId;
+  /** What the signature moved into her vault, and gave the agent for its network fees, lamports. */
+  fundRaw?: string;
+  networkRaw?: string;
   strategy: StrategyId;
   /** The strategy with its numbers (`./plans.ts` `planText`); absent on an entry of before — the steady one. */
   plan?: string;
@@ -120,21 +124,45 @@ export async function chainRefusal(record: MandateRecord, gate: OpenGate, connec
   if (!head.settings.equals(settings) || !ssaAddress.policy(settings, head.seed).equals(policy)) return "the mandate is not this account's";
   if (head.signers.length !== 1 || !head.signers[0]!.key.equals(gate.agent)) return "the mandate names another agent";
   if (!policyCarriesFee(policyInfo.data, NATIVE_MINT)) return "the mandate was signed before Ryntra's fee";
+  const caps = budgetOfRecord(record, 0);
+  if (!caps || !policyCarriesCaps(policyInfo.data, caps)) return "the numbers are not the policy's";
   if (!state.signers.some((signer) => signer.key.equals(owner))) return "not the person's smart account";
   const vault = ssaAddress.vault(settings, 0);
   if (vault.toBase58() !== record.vault || tokenAccountOf(vault, NATIVE_MINT).toBase58() !== record.budget) return "not the account's vault";
   return null;
 }
 
-/** The preset whose numbers the record carries; null — numbers the city never offers. */
-export function presetOf(record: Pick<MandateRecord, "perTrade" | "perDay">): BudgetPresetId | null {
-  const found = Object.values(BUDGET_PRESETS).find((preset) => preset.perTrade.toString() === record.perTrade && preset.perDay.toString() === record.perDay);
-  return found?.id ?? null;
-}
+/** A u64 as the policy's bytes hold it, little-endian. */
+const u64Bytes = (value: bigint): Buffer => {
+  const out = Buffer.alloc(8);
+  out.writeBigUInt64LE(value);
+  return out;
+};
 
 /**
- * Put a mandate in the agent's book: checked on chain, its numbers a preset's, its end within a new agent's length.
- * A mandate already in the book stays as it is — the strategy is the one it joined with.
+ * Whether the policy's bytes carry the record's caps: the day's in its spending limit, the trade's in its amount rules
+ * (`./terms.ts` `mandatePolicy`). A record whose numbers the policy does not hold is not the person's signature.
+ */
+export function policyCarriesCaps(policyData: Uint8Array, caps: Readonly<{ perTrade: bigint; perDay: bigint }>): boolean {
+  const data = Buffer.from(policyData);
+  return data.indexOf(u64Bytes(caps.perDay)) >= 0 && data.indexOf(u64Bytes(caps.perTrade)) >= 0;
+}
+
+/** The budget a record stands for, its term read back from its end. */
+export function budgetOfRecord(record: Pick<MandateRecord, "perTrade" | "perDay" | "expiresAt">, nowMs: number): AgentBudget | null {
+  if (![record.perTrade, record.perDay, record.expiresAt].every((value) => typeof value === "string" && /^\d{1,20}$/u.test(value))) return null;
+  return { perDay: BigInt(record.perDay), perTrade: BigInt(record.perTrade), days: termOf(BigInt(record.expiresAt), nowMs) };
+}
+
+/** What the mandate moved into her vault: the entry's own figure, or — an entry of before — its preset's. */
+export const fundOf = (entry: Pick<BookEntry, "preset" | "fundRaw">): bigint => (entry.fundRaw !== undefined ? BigInt(entry.fundRaw) : entry.preset ? (BUDGET_PRESETS[entry.preset]?.budget ?? 0n) : 0n);
+
+/** What she gave the agent for its network fees with the mandate, the same way. */
+export const networkOf = (entry: Pick<BookEntry, "preset" | "networkRaw">): bigint => (entry.networkRaw !== undefined ? BigInt(entry.networkRaw) : entry.preset ? (BUDGET_PRESETS[entry.preset]?.agentFee ?? 0n) : 0n);
+
+/**
+ * Put a mandate in the agent's book: checked on chain, its numbers the policy's own and a budget the agent takes, its end
+ * in the future. A mandate already in the book stays as it is — the strategy is the one it joined with.
  */
 export async function registerMandate(
   input: Readonly<{ record: MandateRecord; strategy: StrategyId; said: string | null; plan?: StrategyPlan | null; bornAt?: number | null }>,
@@ -145,12 +173,12 @@ export async function registerMandate(
   const plan = input.plan ?? STEADY;
   if (plan.id !== input.strategy) return { ok: false, code: "REFUSED", reason: "The strategy and its plan disagree." };
   if (plan.id === "early" && (input.bornAt === null || input.bornAt === undefined || !(input.bornAt <= now))) return { ok: false, code: "REFUSED", reason: "An early plan needs the launch it buys." };
-  const preset = presetOf(input.record);
-  if (!preset) return { ok: false, code: "REFUSED", reason: "The numbers are not a budget the city offers." };
-  /* Mainnet takes only its own budgets: a larger mandate signed elsewhere is not the agent's. */
-  if (!presetOpenOn(gate.network, preset)) return { ok: false, code: "REFUSED", reason: `The budget is not one ${gate.network} offers.` };
+  /* Any budget the person signed — the agent's own bounds only (`./budget.ts`), no ceiling of Ryntra's. */
+  const budget = budgetOfRecord(input.record, now);
+  const wrong = budget ? budgetRefusal(budget) : "not numbers";
+  if (!budget || wrong) return { ok: false, code: "REFUSED", reason: `The numbers are not a budget the agent takes: ${wrong}.` };
   const ends = Number(input.record.expiresAt) * 1000;
-  if (!(ends > now) || ends - now > (STARTER_CAPS.SOL.days + 1) * 86_400_000) return { ok: false, code: "REFUSED", reason: "The mandate's end is not a new agent's." };
+  if (!(ends > now) || ends - now > (DAYS_MAX + 1) * 86_400_000) return { ok: false, code: "REFUSED", reason: "The mandate's end is not one the agent takes." };
   const refusal = await chainRefusal(input.record, gate, deps.connection);
   if (refusal) return { ok: false, code: "REFUSED", reason: `Not a mandate for this agent: ${refusal}.` };
   const book = bookOf(deps.store);
@@ -171,7 +199,9 @@ export async function registerMandate(
     v: 1,
     cluster: gate.network,
     record: input.record,
-    preset,
+    /* What her numbers put in the vault — never the vault total: another mandate of hers may share the vault. */
+    fundRaw: budgetFund(budget).toString(),
+    networkRaw: agentNetworkOf(budget).toString(),
     strategy: input.strategy,
     plan: planText(plan),
     ...(plan.id === "early" && input.bornAt ? { bornAt: input.bornAt } : {}),

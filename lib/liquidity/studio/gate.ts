@@ -4,10 +4,6 @@
  *
  * - `CLOSED` (the default, and what any other value reads as): no screen offers
  *   an action and no route builds one;
- * - `CANARY`: one wallet — the operator's, named in the environment and
- *   compared character for character — may act, and an add may put in at most
- *   `CANARY_MAX_DEPOSIT_USD`. The first live check on mainnet is made this way,
- *   with the smallest amount, before anyone else is offered the actions;
  * - `OPEN`: everyone, to any amount.
  *
  * The wallet is runtime input on purpose, never a constant here: an address in
@@ -23,9 +19,6 @@ import { ACTIONS_UNTIL, type LiquidityAction } from "./contract.ts";
 
 export const LIQUIDITY_ACTIONS_ENV = "RYNTRA_LIQUIDITY_ACTIONS";
 export const LIQUIDITY_CANARY_WALLET_ENV = "RYNTRA_LIQUIDITY_CANARY_WALLET";
-
-/** The most a canary add may put in, in dollars at the venue's token prices. Withdrawing and claiming are bounded by what went in. */
-export const CANARY_MAX_DEPOSIT_USD = 5;
 
 export const LIQUIDITY_GATE_MODES = ["CLOSED", "CANARY", "OPEN"] as const;
 export type LiquidityGateMode = (typeof LIQUIDITY_GATE_MODES)[number];
@@ -51,7 +44,7 @@ export function admitLiquidityAction(owner: string | null, env: Env): GateAdmiss
   if (mode === "OPEN") return { ok: true, mode, maxDepositUsd: null };
   if (mode === "CANARY") {
     const wallet = env[LIQUIDITY_CANARY_WALLET_ENV]?.trim();
-    if (wallet && owner !== null && owner === wallet) return { ok: true, mode, maxDepositUsd: CANARY_MAX_DEPOSIT_USD };
+    if (wallet && owner !== null && owner === wallet) return { ok: true, mode, maxDepositUsd: null };
   }
   return { ok: false, code: "ACTIONS_CLOSED" };
 }

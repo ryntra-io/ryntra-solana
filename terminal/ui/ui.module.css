@@ -134,11 +134,11 @@
   justify-content: center;
   gap: 10px;
   width: 100%;
-  height: 54px;
+  height: var(--act-h, 54px);
   padding: 0 24px;
   font-family: var(--ui);
   font-weight: 700;
-  font-size: 16px;
+  font-size: var(--act-size, 16px);
   line-height: 1.15;
   text-align: center;
   /* Amber is the screen's one action. Where a screen already has it — the home page's «Say» — a second action's place
@@ -446,6 +446,25 @@
 
 .amount::placeholder {
   color: rgba(152, 153, 166, 0.55);
+}
+
+/* The same field at a tile's size, two in a row (an agent's trade and term). */
+.fieldS {
+  gap: 8px;
+  min-width: 0;
+  padding: 12px 14px;
+}
+
+.amountS {
+  min-width: 0;
+  font-size: var(--type-lead);
+}
+
+.fieldUnit {
+  flex: none;
+  font-size: var(--type-small);
+  font-weight: 600;
+  color: var(--dim);
 }
 
 .pill {
@@ -929,6 +948,181 @@
 @media (max-width: 767px) {
   .search input {
     font-size: 16px;
+  }
+}
+
+/* ── the page: one template for every section ──────────────────────────────────────────────────────────────
+   Two kinds. An action page is one container `--page` wide in the middle of the working area, its content from the
+   top; every tab of its section stands in the same container. A desk takes the whole working width. The head is one
+   line in both: the name, the tabs straight after it, a quiet mark on the right. */
+
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  width: 100%;
+  min-width: 0;
+  padding-top: 24px;
+}
+
+.page[data-page='action'] {
+  max-width: var(--page);
+  margin-inline: auto;
+}
+
+.pageHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 24px;
+  min-height: 44px;
+  min-width: 0;
+}
+
+.pageTitle {
+  flex: none;
+  margin: 0;
+  font-family: var(--ui);
+  font-size: var(--type-page);
+  font-weight: 650;
+  letter-spacing: -0.015em;
+  line-height: 1.15;
+}
+
+.pageTabs {
+  display: flex;
+  min-width: 0;
+}
+
+.pageGrow {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.pageMark {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+
+/* An action page of a section whose other tabs are desks (`head="desk"` — the Bots' forms beside the Grid):
+   the page runs the working width as the desk does, so the head and its tabs stand on the desk's line on every tab; what
+   is under the head keeps the action page's container, in the middle. */
+.page[data-page='action'][data-head='desk'] {
+  max-width: none;
+  margin-inline: 0;
+}
+
+.page[data-head='desk'] > :not(.pageHead) {
+  width: 100%;
+  max-width: var(--page);
+  margin-inline: auto;
+}
+
+/* The two columns of an action page — the same on every one of them; without a side column the main one takes the
+   page's whole width. */
+.actionBody {
+  display: grid;
+  grid-template-columns: minmax(0, var(--page-main)) var(--page-side);
+  justify-content: space-between;
+  align-items: start;
+  gap: 24px;
+}
+
+.actionBody:not([data-side]) {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.actionMain,
+.actionSide {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+/* The one action of the page reads as one family on every section: the panel's room, and the action's height and size
+   (`--act-h`, `--act-size`: the action reads them, so a screen's own measure still wins). */
+@media (min-width: 768px) {
+  .page[data-page='action'] {
+    --act-h: 56px;
+    --act-size: var(--type-action);
+  }
+
+  .actionMain .hi.padL {
+    padding: 32px;
+  }
+}
+
+/* A wide desk: the brand's soft light behind the page's top — one tile of the same height on every tab, the page never
+   shorter than it, so the light fades out inside the page's own box and never ends on an edge. Nothing over or under the
+   frame. */
+@media (min-width: 1440px) {
+  .page[data-page='action'] {
+    min-height: 640px;
+    background:
+      radial-gradient(closest-side at 34% 42%, color-mix(in srgb, var(--violet) 22%, transparent), color-mix(in srgb, var(--violet) 6%, transparent) 55%, transparent 90%) 0 0 / 100% 640px no-repeat,
+      radial-gradient(closest-side at 52% 66%, color-mix(in srgb, var(--amber) 8%, transparent), transparent 80%) 0 0 / 100% 640px no-repeat;
+  }
+
+  /* The light stays behind the container, not the whole working width. */
+  .page[data-page='action'][data-head='desk'] {
+    background-position: center top;
+    background-size: min(100%, var(--page)) 640px;
+  }
+}
+
+/* A narrow desk: the whole page as wide as a form — its head, its lists and its two columns, the side one under the
+   main one. */
+@media (max-width: 1099px) {
+  .page[data-page='action'] {
+    max-width: var(--page-main);
+  }
+
+  .page[data-head='desk'] > :not(.pageHead) {
+    max-width: var(--page-main);
+  }
+
+  .actionBody {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* A phone: one column, the head's tabs on their own row, scrolling sideways. */
+@media (max-width: 767px) {
+  .page {
+    gap: 14px;
+    padding-top: 8px;
+  }
+
+  .pageHead {
+    flex-wrap: wrap;
+    gap: 4px 12px;
+    min-height: 0;
+  }
+
+  .pageTitle {
+    font-size: var(--type-headline);
+  }
+
+  .pageTabs {
+    order: 3;
+    flex: 1 0 100%;
+  }
+
+  .pageMark {
+    display: none;
+  }
+
+  .actionBody {
+    gap: 14px;
+  }
+
+  .actionMain,
+  .actionSide {
+    gap: 14px;
   }
 }
 

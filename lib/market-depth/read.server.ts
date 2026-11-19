@@ -1,7 +1,7 @@
 import "server-only";
 
 import { CURATED } from "../../city/lib/market/curated.ts";
-import { DEPTH_LIMIT, listCoins, listPaths, mergeCoins, type DepthAnswer, type DepthList, type DepthWindow, type JupiterTokenV2 } from "./model.ts";
+import { DEPTH_LIMIT, listCoins, listPaths, mergeCoins, type DepthAnswer, type DepthKind, type DepthList, type DepthWindow, type JupiterTokenV2 } from "./model.ts";
 
 /**
  * The server's read of the Market's depth: Jupiter's Token API v2 with the engine's own key (`RYNTRA_JUPITER_API_KEY`,
@@ -103,11 +103,12 @@ export async function readPath(path: string, now: number = Date.now(), fetchImpl
 }
 
 /** One list over one window, as the Market shows it. `null` — Jupiter answered none of its paths. */
-export async function readDepth(list: DepthList, window: DepthWindow, fetchImpl: typeof fetch = fetch): Promise<DepthAnswer | null> {
-  const paths = listPaths(list, window, STOCK_MINTS);
+export async function readDepth(list: DepthList, window: DepthWindow, fetchImpl: typeof fetch = fetch, kind: DepthKind = "all"): Promise<DepthAnswer | null> {
+  const paths = listPaths(list, window, STOCK_MINTS, kind);
   const answers = await Promise.all(paths.map((path) => readPath(path, Date.now(), fetchImpl)));
   if (answers.every((answer) => answer.length === 0)) return null;
-  return { list, window, coins: listCoins(list, window, answers, STOCKS), readAt: new Date().toISOString() };
+  // The old «stocks» list is the stocks, whatever kind was asked: the answer says what it served.
+  return { list, kind: list === "stocks" ? "stock" : kind, window, coins: listCoins(list, window, answers, STOCKS, kind), readAt: new Date().toISOString() };
 }
 
 /** For the tests: forget what this instance read. */
@@ -122,10 +123,10 @@ export function forgetDepth(): void {
 /** The coins a person starred, by mint (at most `DEPTH_LIMIT`), in the order given. `null` — Jupiter did not answer. */
 export async function readSaved(mints: readonly string[], fetchImpl: typeof fetch = fetch): Promise<DepthAnswer | null> {
   const asked = [...new Set(mints)].slice(0, DEPTH_LIMIT);
-  if (!asked.length) return { list: "saved", window: "24h", coins: [], readAt: new Date().toISOString() };
+  if (!asked.length) return { list: "saved", kind: "all", window: "24h", coins: [], readAt: new Date().toISOString() };
   const tokens = await readPath(`search?query=${[...asked].sort().join(",")}`, Date.now(), fetchImpl, "saved");
   if (!tokens.length) return null;
   const coins = mergeCoins([tokens], STOCKS);
   const order = new Map(asked.map((mint, i) => [mint, i]));
-  return { list: "saved", window: "24h", coins: coins.filter((c) => order.has(c.id)).sort((a, b) => order.get(a.id)! - order.get(b.id)!), readAt: new Date().toISOString() };
+  return { list: "saved", kind: "all", window: "24h", coins: coins.filter((c) => order.has(c.id)).sort((a, b) => order.get(a.id)! - order.get(b.id)!), readAt: new Date().toISOString() };
 }

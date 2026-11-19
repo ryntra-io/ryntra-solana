@@ -1,0 +1,163 @@
+{
+  "ok": true,
+  "address": "4EeXQa4MKrBSwDj9pHEoZXjiiUaZmWzveGq5X9dUKPGW",
+  "available": "18.62",
+  "pending": "4.10",
+  "lifetime": "86.35",
+  "cashback": "21.85",
+  "referralL1": "58.40",
+  "referralL2": "6.10",
+  "sourceAmounts": {
+    "CASHBACK": "21850000",
+    "REFERRAL_L1": "58400000",
+    "REFERRAL_L2": "6100000"
+  },
+  "claimable": false,
+  "claimBlockedReason": "Rewards payouts are temporarily unavailable.",
+  "pendingReasons": [],
+  "referrals": {
+    "level1": 14,
+    "level2": 3
+  },
+  "rows": [
+    {
+      "kind": "REFERRAL_L1",
+      "display": "+$3.20",
+      "amount": "3.20",
+      "valued": true,
+      "detail": "JUP",
+      "at": "2026-11-18T08:41:00.000Z"
+    },
+    {
+      "kind": "CASHBACK",
+      "display": "+$1.12",
+      "amount": "1.12",
+      "valued": true,
+      "detail": "SOL",
+      "at": "2026-11-18T07:05:00.000Z"
+    },
+    {
+      "kind": "REFERRAL_L1",
+      "display": "+$7.85",
+      "amount": "7.85",
+      "valued": true,
+      "detail": "WIF",
+      "at": "2026-11-17T21:12:00.000Z"
+    },
+    {
+      "kind": "REFERRAL_L2",
+      "display": "+$0.42",
+      "amount": "0.42",
+      "valued": true,
+      "detail": "BONK",
+      "at": "2026-11-17T16:30:00.000Z"
+    },
+    {
+      "kind": "CLAIM",
+      "display": "−$25.00",
+      "amount": "25.00",
+      "valued": true,
+      "detail": null,
+      "at": "2026-11-16T12:00:00.000Z"
+    },
+    {
+      "kind": "REFERRAL_L1",
+      "display": "+$12.10",
+      "amount": "12.10",
+      "valued": true,
+      "detail": "SOL",
+      "at": "2026-11-15T10:20:00.000Z"
+    },
+    {
+      "kind": "REFERRAL_L1",
+      "display": "+$4.75",
+      "amount": "4.75",
+      "valued": true,
+      "detail": "JUP",
+      "at": "2026-11-14T09:00:00.000Z"
+    }
+  ],
+  "referral": {
+    "code": "K7Q2M8XPLW4Z",
+    "link": "https://ryntra.io/r/K7Q2M8XPLW4Z"
+  },
+  "claim": null,
+  "invitedBy": null,
+  "points": {
+    "points": "12 480",
+    "level": 3,
+    "levelFrom": "5 000",
+    "nextLevelAt": "25 000",
+    "rank": 37,
+    "ranked": 1240,
+    "volume": "$48 210.55",
+    "trades": 186,
+    "activeDays": 23,
+    "policyVersion": "1.0.0",
+    "excluded": false
+  },
+  "rank": {
+    "rank": "GOLD",
+    "points": "312",
+    "fromTrades": "120",
+    "fromFriends": "192",
+    "fromLaunches": "0",
+    "rankFrom": "100",
+    "next": {
+      "rank": "SAPPHIRE",
+      "at": "1 000",
+      "toGo": "688",
+      "friendShare": 25
+    },
+    "friendShare": 20,
+    "secondLevelShare": 5,
+    "ladder": [
+      {
+        "rank": "BRONZE",
+        "from": "0",
+        "friendShare": 10
+      },
+      {
+        "rank": "SILVER",
+        "from": "10",
+        "friendShare": 15
+      },
+      {
+        "rank": "GOLD",
+        "from": "100",
+        "friendShare": 20
+      },
+      {
+        "rank": "SAPPHIRE",
+        "from": "1 000",
+        "friendShare": 25
+      },
+      {
+        "rank": "DIAMOND",
+        "from": "10 000",
+        "friendShare": 30
+      }
+    ],
+    "windowDays": 30,
+    "rulesVersion": "2.2.0"
+  },
+  "achievements": null,
+  "started": "2026-09-10T00:00:00.000Z",
+  "programme": {
+    "rulesVersion": "2.1.0",
+    "claimMinimum": "0.25",
+    "claimMinimumWithAccount": "0.25",
+    "claimMinimumWithoutAccount": "1.00",
+    "usdcAccount": "PRESENT",
+    "firstTenOffer": {
+      "cap": "10.00",
+      "days": 30,
+      "walletsPerMonth": 100
+    },
+    "firstTen": null,
+    "inviterWindow": {
+      "share": 30,
+      "days": 90
+    }
+  }
+}

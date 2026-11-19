@@ -1,0 +1,108 @@
+/* The coin's facts at the ticket's foot: four figures and the buys against the sells. Tokens only. */
+
+.facts {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.headRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.title {
+  font-size: var(--type-caption);
+  font-weight: 700;
+  color: var(--soft);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px 16px;
+  margin: 0;
+}
+
+.cell {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.cell dt {
+  font-size: var(--type-micro);
+  font-weight: 600;
+  color: var(--dim);
+}
+
+.cell dd {
+  margin: 0;
+  font-size: var(--type-body);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--ice);
+}
+
+.cell dd[data-tone='warn'] {
+  color: var(--warm);
+}
+
+.rights {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: var(--type-caption);
+}
+
+.rights [data-tone='ok'] {
+  color: var(--mint);
+}
+
+.rights [data-tone='warn'] {
+  color: var(--warm);
+}
+
+.flow {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.flowRow {
+  display: grid;
+  grid-template-columns: 52px 56px minmax(0, 1fr) 56px;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--type-caption);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.win {
+  color: var(--dim);
+}
+
+.buys {
+  color: var(--mint);
+  text-align: right;
+}
+
+.sells {
+  color: var(--flare);
+}
+
+.bar {
+  height: 4px;
+  background: linear-gradient(90deg, var(--mint) var(--buy), var(--flare) var(--buy));
+}
+
+/* A short ticket column keeps the four facts; the buys and sells by window wait for a taller one. */
+@container deskticket (max-height: 800px) {
+  .flow {
+    display: none;
+  }
+}

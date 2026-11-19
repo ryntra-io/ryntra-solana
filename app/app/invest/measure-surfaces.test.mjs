@@ -92,7 +92,7 @@ test("the swap's quote and its signable order are asked once more after the prov
   assert.match(QUOTE_ROUTE, /const settled = await priced;/);
   const LANES = source("../../../lib/core/solana-swap/fee-route.server.ts");
   /* The v2 branch's own ask, not only the as-now one: the phone's quotes take it too. */
-  assert.match(LANES, /const askOrder = \(\) => askOnceMoreAfterRate\(\(\) => fetchQuote\(\{ inputMint, outputMint, amountRaw, referral \}, selection\)\);/);
+  assert.match(LANES, /const askOrder = \(\) => askOnceMoreAfterRate\(\(\) => fetchQuote\(\{ inputMint, outputMint, amountRaw, referral, excludeRouters: QUOTE_EXCLUDED_ROUTERS \}, selection\)\);/);
   assert.match(LANES, /askOnceMoreAfterRate\(\(\) => \(deps\.fetchBuild \?\? fetchJupiterBuild\)\(/);
   /* A person's order waits for the window itself, up to its ten seconds: a $1 purchase on production was refused with the reset 4 s away (2026-09-28). */
   assert.match(ORDER_ROUTE, /askOnceMoreAfterRate\(\s*\(\) =>\s*fetchJupiterExecutableOrder\(/);

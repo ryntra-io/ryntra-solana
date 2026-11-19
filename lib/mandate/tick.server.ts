@@ -22,10 +22,9 @@ import { PublicKey, type AddressLookupTableAccount, type Connection, type Transa
 
 import type { GuardStore } from "../guard/store.ts";
 import type { KeySigner } from "../launch/signer/signer.server.ts";
-import { bookOf, claimKey, mandateOf, planOfEntry, readBook, readEntry, TRADES_KEPT, withTrade, writeEntry, type BookEntry, type BookStatus, type OpenGate } from "./book.server.ts";
+import { bookOf, claimKey, fundOf, mandateOf, planOfEntry, readBook, readEntry, TRADES_KEPT, withTrade, writeEntry, type BookEntry, type BookStatus, type OpenGate } from "./book.server.ts";
 import { frozenOn, isFrozen } from "./freeze.server.ts";
 import { reconcile } from "./mission.ts";
-import { BUDGET_PRESETS } from "./presets.ts";
 import { DIP_WINDOW_MS, exitOf, ruleOf, type Mark } from "./plans.ts";
 import { policyCarriesFee, type FeeSides } from "./fee.ts";
 import { feeMintOf } from "./terms.ts";
@@ -323,7 +322,7 @@ async function workFor(given: BookEntry, deps: TickDeps, now: () => number, trad
    * The money adds up before every spend — the budget she moved in is what the done trades spent plus what the
    * vault holds on chain. A vault holding less than the book can explain is money moved outside the book: nothing more.
    */
-  const books = reconcile({ budgetRaw: BUDGET_PRESETS[entry.preset]?.budget ?? 0n, leftRaw: left, trades: entry.trades, full: entry.trades.length >= TRADES_KEPT });
+  const books = reconcile({ budgetRaw: fundOf(entry), leftRaw: left, trades: entry.trades, full: entry.trades.length >= TRADES_KEPT });
   if (books.state === "off") return settle(deps.store, working, "paused", at, "mismatch");
   const held = done.flatMap((row) => (row.level === undefined ? [] : [row.level]));
   const rule = ruleOf({ plan, now: at, marks: freshMarks(working.marks, at), anchor: working.anchor ?? null, held, position: { spent, worth: (await quote()) ?? null }, bornAt: working.bornAt ?? null });

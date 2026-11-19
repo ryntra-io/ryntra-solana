@@ -67,7 +67,7 @@ export const proCarePrefix = (network: EarnProNetwork, owner?: string): string =
  */
 export type Watch = Readonly<{ value: number; coin: string; unit: string }>;
 
-export function watchOf(pier: Readonly<{ solIsX: boolean; price: number; x: Readonly<{ symbol: string }>; y: Readonly<{ symbol: string }> }>, otherKind: "sol" | "dollar" | "staked-sol" | "test" | null): Watch {
+export function watchOf(pier: Readonly<{ solIsX: boolean; price: number; x: Readonly<{ symbol: string }>; y: Readonly<{ symbol: string }> }>, otherKind: "sol" | "dollar" | "staked-sol" | "test" | "other" | null): Watch {
   const other = pier.solIsX ? pier.y.symbol : pier.x.symbol;
   const inverse = pier.price > 0 ? 1 / pier.price : 0;
   if (otherKind === "dollar") return { value: pier.solIsX ? pier.price : inverse, coin: "SOL", unit: other };

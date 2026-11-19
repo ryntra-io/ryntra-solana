@@ -1,12 +1,12 @@
 import { TERMINAL_MODE, terminalOpen, type TerminalMode } from './flag.ts';
-import { CITY_PATH, COIN_PATH, HOME_PAGE, HOME_PATH, SHELVES, shelfOn, type ShelfId, type Shelves } from './shelves.ts';
+import { BRIDGE_ON, BRIDGE_PATH, CITY_PATH, COIN_PATH, HOME_PAGE, HOME_PATH, REWARDS_PATH, SHELVES, shelfOn, type ShelfId, type Shelves } from './shelves.ts';
 
 /**
  * The terminal as the home page (decision 105): with the switch open, `/` is the Market and the city moves to `/city`.
  * Every address that led into the city — the old interface's, the short ones a person types, a coin's `/c/<mint>`, the
  * links in posts, notes and reports (`/?open=<window>`) — leads to the terminal's section that does the same work, in
- * one hop. What the terminal has no shelf for yet (Futures, Predictions, Rewards, Settings) keeps opening its window in
- * the city, which still works at its own address. With the switch closed none of this applies: `/` is the city.
+ * one hop. What the terminal has no shelf for yet (Futures, Predictions, Settings) keeps opening its window in the city,
+ * which still works at its own address. With the switch closed none of this applies: `/` is the city.
  *
  * Pure data and pure functions, no imports but the switch and the shelves: the build's config and the address layer
  * (`middleware.ts`) read this file before anything is compiled.
@@ -25,12 +25,16 @@ const WINDOW_SHELF: Readonly<Record<string, ShelfId | null>> = {
   agents: 'agents',
   agent: 'agents',
   assistant: 'agents',
-  /* The terminal has no Rewards and no Settings: both stay the city's windows. */
-  hall: null,
+  /* The Hall is «Rewards», a page of the Portfolio shelf at its own address (`WINDOW_PAGE`). */
+  hall: 'portfolio',
+  /* The terminal has no Settings: it stays the city's window. */
   settings: null,
 };
 
-/** Money's tabs: the bridge is a tab of Swap; sending, topping up and the history are the Portfolio's. */
+/** A window whose work is a page of a shelf at an address of its own, not the shelf's: the city's «Hall» is «Rewards». */
+const WINDOW_PAGE: Readonly<Record<string, Readonly<{ shelf: ShelfId; path: string }>>> = { hall: { shelf: 'portfolio', path: REWARDS_PATH } };
+
+/** Money's tabs: the bridge is the Swap shelf's (its own page, where it is open); sending, topping up and the history are the Portfolio's. */
 const MONEY_SHELF: Readonly<Record<string, ShelfId>> = { bridge: 'swap', send: 'portfolio', topup: 'portfolio', activity: 'portfolio' };
 
 /** The shelf a city window opens in the terminal, or null when the city keeps it. */
@@ -45,6 +49,13 @@ function shelfPath(id: ShelfId | null, mode: TerminalMode, shelves: Shelves): st
   return id === 'market' ? HOME_PATH : shelves[id].path;
 }
 
+/** Where a city window opens in the terminal, or null when the city keeps it: its page, else its shelf, while that shelf is on. */
+function windowPath(window: string, tab: string | null, mode: TerminalMode, shelves: Shelves): string | null {
+  const page = WINDOW_PAGE[window];
+  if (page) return shelfOn(page.shelf, mode, shelves) ? page.path : null;
+  return shelfPath(shelfOfWindow(window, tab), mode, shelves);
+}
+
 /** A city address that names a window (`/?open=…&…`), led into the city at its own address with the same ask. */
 function inCity(query: string): string {
   return `${CITY_PATH}${query ? `?${query}` : ''}`;
@@ -55,7 +66,7 @@ function inCity(query: string): string {
  * coin's screen; the city's home is the Market; a window is its shelf, or the city's window where no shelf does its work;
  * a document of the site stays where it is. An origin in front (the application host's rows) is kept.
  */
-export function terminalDestination(destination: string, mode: TerminalMode = TERMINAL_MODE, shelves: Shelves = SHELVES): string {
+export function terminalDestination(destination: string, mode: TerminalMode = TERMINAL_MODE, shelves: Shelves = SHELVES, bridgeOn: boolean = BRIDGE_ON): string {
   const origin = destination.match(/^https?:\/\/[^/]+/)?.[0] ?? '';
   const local = destination.slice(origin.length) || '/';
   if (local === '/c/:mint') return shelfOn('market', mode, shelves) ? `${origin}${COIN_PATH}/:mint` : destination;
@@ -64,7 +75,9 @@ export function terminalDestination(destination: string, mode: TerminalMode = TE
   const query = new URLSearchParams(local.slice(2));
   const window = query.get('open');
   if (!window) return destination;
-  const own = shelfPath(shelfOfWindow(window, query.get('tab')), mode, shelves);
+  // The bridge has its own page in «Trade» where money moves between networks.
+  if (window === 'money' && query.get('tab') === 'bridge' && bridgeOn && shelfOn('swap', mode, shelves)) return `${origin}${BRIDGE_PATH}`;
+  const own = windowPath(window, query.get('tab'), mode, shelves);
   // The query keeps its `:eventId` and the like as Next writes them: rebuilt by hand, never re-encoded.
   return `${origin}${own ?? inCity(local.slice(2))}`;
 }
@@ -134,7 +147,7 @@ export function homeAsk(search: string, mode: TerminalMode = TERMINAL_MODE, shel
   if (coin && new RegExp(`^${MINT}$`).test(coin)) return { path: `${COIN_PATH}/${coin}`, drop: ['coin'] };
   const window = query.get('open');
   if (!window) return null;
-  const own = shelfPath(shelfOfWindow(window, query.get('tab')), mode, shelves);
+  const own = windowPath(window, query.get('tab'), mode, shelves);
   // The city keeps the ask whole: its window reads `open`, `tab`, `market` and `page` from its own address.
   return own ? { path: own, drop: ['open', 'tab', 'market', 'page'] } : { path: CITY_PATH, drop: [] };
 }

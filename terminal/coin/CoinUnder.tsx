@@ -18,15 +18,21 @@ import type { Stop } from '@/city/lib/trade/stops';
 import { balanceOf } from '@/city/lib/trade/store';
 import { useWallet } from '@/city/lib/trade/wallet';
 import { useLadder } from '@/city/lib/trade/pro-store';
-import { Cell, CoinCell, Panel, Quiet, Table, TableHead, TableRow, Tabs, changeTone, coinIcon, priceText } from '@/terminal/ui';
+import { Cell, CoinCell, Quiet, Table, TableHead, TableRow, Tabs, changeTone, coinIcon, priceText } from '@/terminal/ui';
 import { coinName } from '@/terminal/market/market-view';
 import { positionOf, signedUsd, tradesOf, type OwnTrade } from './coin-view';
 import { LadderOrders, useLadderCount } from './ladder/LadderOrders';
 import { bare } from './parts';
+import { DESK } from './desk-words';
 import { COIN } from './words';
 import u from './coin.module.css';
 
-export type UnderTab = 'position' | 'orders' | 'trades';
+/**
+ * What the bottom panel shows: the person's own — the position, the orders, the history of their trades through Ryntra —
+ * and the market's — its trades, its holders, its traders. With a wallet the panel opens on the person's own,
+ * without one on the market's; a desk too narrow for the trades column has the column's two tabs here too.
+ */
+export type UnderTab = 'position' | 'orders' | 'trades' | 'market' | 'holders' | 'traders' | 'depth';
 
 const NO_STOPS: readonly Stop[] = [];
 const POSITION_COLUMNS = 'minmax(150px, 1.4fr) repeat(4, minmax(84px, 1fr)) 96px';
@@ -38,11 +44,15 @@ const liveStop = (view: string) => view === 'watching' || view === 'reached';
 
 /**
  * Under the chart: what the engine says of the person's own in this coin — the position the wallet holds, its limit
- * orders and stops (where the engine keeps them open), and its trades through Ryntra. Each tab says one calm line
- * when it has nothing to show. Nothing here is drawn that the engine does not give.
+ * orders and stops (where the engine keeps them open), and its trades through Ryntra — and of the market: the coin's
+ * trades as they come, its largest holders and who traded it most. Each tab says one calm line when it has
+ * nothing to show. Nothing here is drawn that the engine does not give.
+ *
+ * `market`, `holders`, `traders` and `depth` are drawn by the screen (`render`): the tables of the market's own read.
  */
-export function CoinUnder({ coin, price, tab, onTab, onSell }: { coin: Tower; price: number | null; tab: UnderTab; onTab: (tab: UnderTab) => void; onSell: () => void }) {
+export function CoinUnder({ coin, logo, price, tab, onTab, onSell, market, extra = [] }: { coin: Tower; logo: string | null; price: number | null; tab: UnderTab; onTab: (tab: UnderTab) => void; onSell: () => void; market: (tab: 'market' | 'holders' | 'traders' | 'depth') => ReactNode; extra?: readonly ('market' | 'depth')[] }) {
   const w = useWords(COIN);
+  const d = useWords(DESK);
   const address = useWallet((st) => st.connection?.address ?? null);
   const orders = useSpot((st) => ownOrders(st.orders, address));
   const stops = useSpot((st) => (st.stopsOwner === address ? st.stops : NO_STOPS));
@@ -67,20 +77,40 @@ export function CoinUnder({ coin, price, tab, onTab, onSell }: { coin: Tower; pr
   const live = mine.filter((order) => OPEN_ORDER_STATES.has(order.state) || order.canClaim).length + stopRows.filter((row) => liveStop(row.view)).length + ladders;
   const ordersHere = SPOT_OPEN || ladder !== null;
 
-  const tabs = [
-    { id: 'position' as const, label: w.position },
-    ...(ordersHere ? [{ id: 'orders' as const, label: w.orders, ...(live ? { count: String(live) } : {}) }] : []),
-    { id: 'trades' as const, label: w.trades },
+  const own = address
+    ? [
+        { id: 'position' as const, label: w.position },
+        ...(ordersHere ? [{ id: 'orders' as const, label: w.orders, ...(live ? { count: String(live) } : {}) }] : []),
+        { id: 'trades' as const, label: d.history },
+      ]
+    : [];
+  const marketTabs = [
+    ...(extra.includes('market') || !address ? [{ id: 'market' as const, label: d.marketTrades }] : []),
+    ...(extra.includes('depth') ? [{ id: 'depth' as const, label: d.tapeDepth }] : []),
+    { id: 'holders' as const, label: d.holdersTab },
+    { id: 'traders' as const, label: d.tradersTab },
   ];
-  const shown: UnderTab = tab === 'orders' && !ordersHere ? 'position' : tab;
+  const tabs = [...own, ...marketTabs];
+  // A tab that is not on the panel now (the wallet left, the orders shut) gives way to the panel's first.
+  const shown: UnderTab = tabs.some((item) => item.id === tab) && !(tab === 'orders' && !ordersHere) ? tab : tabs[0]!.id;
 
   return (
-    <Panel pad="none" edge label={w.under}>
+    <>
       <div className={u.underHead}>
         <Tabs bare label={w.under} value={shown} onChange={onTab} items={tabs} />
       </div>
-      {shown === 'position' ? <PositionTab coin={coin} price={price} onSell={onSell} /> : shown === 'orders' ? <OrdersTab coin={coin} ladder={ladder} ladders={ladders} orders={mine} stops={mineStops} stopRows={stopRows} reading={Boolean(address) && (!orders || (orders.status === 'reading' && orders.at === null))} failed={orders?.status === 'failed'} tokens={orders?.tokens ?? {}} /> : <TradesTab coin={coin} />}
-    </Panel>
+      <div className={u.underBody}>
+        {shown === 'position' ? (
+          <PositionTab coin={coin} logo={logo} price={price} onSell={onSell} />
+        ) : shown === 'orders' ? (
+          <OrdersTab coin={coin} ladder={ladder} ladders={ladders} orders={mine} stops={mineStops} stopRows={stopRows} reading={Boolean(address) && (!orders || (orders.status === 'reading' && orders.at === null))} failed={orders?.status === 'failed'} tokens={orders?.tokens ?? {}} />
+        ) : shown === 'trades' ? (
+          <TradesTab coin={coin} />
+        ) : (
+          market(shown)
+        )}
+      </div>
+    </>
   );
 }
 
@@ -93,7 +123,7 @@ function Line({ children }: { children: ReactNode }) {
   );
 }
 
-function PositionTab({ coin, price, onSell }: { coin: Tower; price: number | null; onSell: () => void }) {
+function PositionTab({ coin, logo, price, onSell }: { coin: Tower; logo: string | null; price: number | null; onSell: () => void }) {
   const w = useWords(COIN);
   const lang = useLang();
   const connected = useWallet((st) => Boolean(st.connection));
@@ -123,7 +153,7 @@ function PositionTab({ coin, price, onSell }: { coin: Tower; price: number | nul
         <Cell head />
       </TableHead>
       <TableRow>
-        <CoinCell icon={coinIcon(coin)} symbol={sym} name={coinName(coin)} />
+        <CoinCell icon={logo ?? coinIcon(coin)} symbol={sym} name={coinName(coin)} />
         <Cell end>{digits(formatUnits(position.amountRaw, position.decimals, 'down'), lang)}</Cell>
         <Cell end>{position.entry !== null ? priceText(position.entry, lang) : '—'}</Cell>
         <Cell end>{price !== null ? priceText(price, lang) : '—'}</Cell>

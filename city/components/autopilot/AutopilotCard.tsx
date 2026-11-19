@@ -1,8 +1,8 @@
 'use client';
 
 import { useEffect, useId, useState } from 'react';
-import type { BudgetPresetId } from '@/lib/mandate/presets';
-import { MANDATE_CHAIN, MANDATE_NET, MANDATE_PRESETS, useMandate, presetLimits } from '@/city/lib/bots/mandate';
+import { HANDY_SHARES, handyBudget, type AgentBudget } from '@/lib/mandate/budget';
+import { MANDATE_CHAIN, MANDATE_NET, useMandate } from '@/city/lib/bots/mandate';
 import { agentCoins, bookNow } from '@/city/lib/command/doors';
 import { agentFeeFigures } from '@/city/lib/bots/agent-fee';
 import { sol } from '@/city/lib/bots/format';
@@ -12,10 +12,9 @@ import { useLang } from '@/city/lib/i18n/lang';
 import { agentCard, cardTag } from '@/city/lib/launch/cards';
 import { useLaunch } from '@/city/lib/launch/district';
 import { rhythmOf, solText } from '@/city/lib/autopilot/plan';
-import { calmPlan, STEADY } from '@/lib/mandate/plans';
 import { steadyRhythm } from '@/lib/mandate/strategy';
 import { budgetLines, pctText, planLine, planOfText, planRules, signedPct, testedLine } from '@/city/lib/autopilot/plan-line';
-import { launchProposal, readAgentView, readPaper, signTrade, startPaper, stopTrade, useAutopilot, type AgentView } from '@/city/lib/autopilot/store';
+import { launchProposal, readAgentView, readPaper, signTrade, startPaper, stopTrade, testNow, useAutopilot, type AgentView } from '@/city/lib/autopilot/store';
 import { AGENT_REPORT, AGENT_REPORT_OPEN, holdFigure, hourText, resultRaw, solFigure, toneOf, worthTelling } from '@/city/lib/autopilot/report';
 import { useAgentReport } from '@/city/lib/autopilot/report-client';
 import { AUTOPILOT } from '@/city/lib/autopilot/words';
@@ -124,12 +123,12 @@ function Details({ lines, said, tested, trades }: { lines: readonly string[]; sa
  * Connect, then the one button. The one wallet this browser has connects on the tap, without a list; with
  * none, the way out to get one comes back to this card; a wallet that cannot hold the budget is offered «Add SOL».
  */
-function SignButton({ label, busy, disabled, onPress, said, preset }: { label: string; busy: boolean; disabled: boolean; onPress: (who: { wallet: string; owner: string }) => void; said: string; preset: BudgetPresetId | null }) {
+function SignButton({ label, busy, disabled, onPress, said, budget }: { label: string; busy: boolean; disabled: boolean; onPress: (who: { wallet: string; owner: string }) => void; said: string; budget: AgentBudget | null }) {
   const w = useWords(AUTOPILOT);
   const connection = useWallet((st) => st.connection);
   const connecting = useWallet((st) => st.connecting);
   const [picking, setPicking] = useState(false);
-  const funds = useFundsShort(preset);
+  const funds = useFundsShort(budget);
   if (!connection && picking) return <CardWalletPicker said={said} onBack={() => setPicking(false)} />;
   if (!connection) {
     const connect = () => {
@@ -147,7 +146,7 @@ function SignButton({ label, busy, disabled, onPress, said, preset }: { label: s
     return (
       <>
         <AddSol about={funds.about} className={i.action} lineClass={i.notice} />
-        {preset ? <BuyNow preset={preset} className={s.quiet} /> : null}
+        {budget ? <BuyNow budget={budget} className={s.quiet} /> : null}
         <WalletLine />
       </>
     );
@@ -176,15 +175,15 @@ function noteText(w: W, kind: 'on' | 'stopped' | 'walletNo' | 'refused' | 'unrea
 function TradeStart({ said }: { said: string }) {
   const w = useWords(AUTOPILOT);
   const lang = useLang();
-  const preset = useAutopilot((st) => st.preset);
-  const capped = useAutopilot((st) => st.capped);
+  const budget = useAutopilot((st) => st.budget);
   const busy = useMandate((st) => st.busy === 'enable');
   const note = useMandate((st) => st.note);
-  // The rhythm at the plan's calm pace — the buys it will really make.
+  // The rhythm is the person's own numbers — the buys it will really make.
   const asked = useAutopilot((st) => st.plan);
-  const pace = calmPlan(asked ?? STEADY).pace ?? null;
-  const rhythm = preset ? rhythmOf(preset, pace) : null;
-  const largest = presetLimits(MANDATE_PRESETS.at(-1)!).perDay;
+  const rhythm = budget ? rhythmOf(budget, asked?.pace ?? null) : null;
+  // Nothing said: shares of her own wallet beside the question — never a sum of Ryntra's (decision 108).
+  const spendable = useWallet((st) => (st.holdingsRead === 'ready' && st.holdings && st.holdings.owner === st.connection?.address ? (st.holdings.sol?.spendableRaw ?? null) : null));
+  const handy = !budget && spendable && /^\d{1,20}$/u.test(spendable) ? HANDY_SHARES.map((share) => handyBudget(BigInt(spendable), share)).filter((b): b is AgentBudget => b !== null).filter((b, at, all) => all.findIndex((one) => one.perDay === b.perDay) === at) : [];
   const fee = agentFeeFigures(lang);
   // Mainnet: the agent buys a coin the person named — in her words, the tower on screen, or one tap here.
   const coin = useMandate((st) => st.coin);
@@ -198,7 +197,7 @@ function TradeStart({ said }: { said: string }) {
   const line = planLine(plan, w, lang);
   const rules = planRules(plan, w, lang, rhythm ? { buys: rhythm.buys, perTrade: sol(rhythm.perTrade, lang) } : null, SELLS);
   const testedText = testedLine(tested?.run ?? null, w, lang);
-  const budget = budgetLines(rhythm, plan, w, lang);
+  const lines = budgetLines(rhythm, plan, w, lang);
   return (
     <>
       <div className={i.hero}>
@@ -207,8 +206,8 @@ function TradeStart({ said }: { said: string }) {
         </span>
         <div className={i.heroText}>
           <span className={i.kicker}>{w.kicker}</span>
-          <h2 className={i.headline} data-autopilot-budget="">{budget.headline}</h2>
-          {budget.size ? <p className={i.sub} data-autopilot-size="">{budget.size}</p> : null}
+          <h2 className={i.headline} data-autopilot-budget="">{lines.headline}</h2>
+          {lines.size ? <p className={i.sub} data-autopilot-size="">{lines.size}</p> : null}
           {needsCoin && coin ? <p className={i.sub} data-autopilot-coin={coin.mint}>{w.buys(coin.symbol)}</p> : null}
           {early && launch?.state === 'picking' ? <p className={i.sub}>{w.pickingLaunch}</p> : null}
           {line ? (
@@ -231,25 +230,36 @@ function TradeStart({ said }: { said: string }) {
           </div>
         </div>
       ) : null}
-      {MANDATE_PRESETS.length > 1 || capped || !preset ? (
-      <div className={i.ask} role="radiogroup" aria-label={w.budget}>
-        <p className={i.question}>{preset ? w.budget : w.pickBudget}</p>
-        <div className={i.chips}>
-          {MANDATE_PRESETS.map((id) => (
-            <button key={id} type="button" role="radio" aria-checked={id === preset} className={`${i.chip} ${id === preset ? s.chipOn : ''}`} onClick={() => useAutopilot.getState().pick(id)}>
-              {w.amount(sol(presetLimits(id).perDay, lang))}
-            </button>
-          ))}
+      {!budget ? (
+        <div className={i.ask} role="radiogroup" aria-label={w.budget}>
+          <p className={i.question}>{w.pickBudget}</p>
+          {handy.length ? (
+            <div className={i.chips}>
+              {handy.map((b) => (
+                <button
+                  key={b.perDay.toString()}
+                  type="button"
+                  role="radio"
+                  aria-checked={false}
+                  className={i.chip}
+                  onClick={() => {
+                    useAutopilot.getState().setBudget(b);
+                    void testNow();
+                  }}
+                >
+                  {w.amount(sol(Number(b.perDay) / 1e9, lang))}
+                </button>
+              ))}
+            </div>
+          ) : null}
         </div>
-        {capped ? <p className={i.notice}>{w.startsSmall(sol(largest, lang))}</p> : null}
-      </div>
       ) : null}
       {note && note.kind !== 'on' ? <p className={note.kind === 'walletNo' || note.kind === 'stopped' ? i.notice : i.problem}>{noteText(w, note.kind)}</p> : null}
       <div className={i.dock}>
         {rhythm ? <p className={i.fee}>{w.limits(sol(rhythm.perTrade, lang), sol(rhythm.perDay, lang), rhythm.days)}</p> : null}
         <p className={i.fee} data-autopilot-fee="">{w.fee(fee.low, fee.high)}</p>
-        <SignButton label={w.sign} busy={busy} disabled={!preset || (needsCoin && !coin)} onPress={(who) => void signTrade(who)} said={said} preset={preset} />
-        {tested && coin && preset ? (
+        <SignButton label={w.sign} busy={busy} disabled={!budget || (needsCoin && !coin)} onPress={(who) => void signTrade(who)} said={said} budget={budget} />
+        {tested && coin && budget ? (
           <button type="button" className={s.quiet} onClick={() => startPaper()} data-autopilot-practice="">
             {w.practice}
           </button>
@@ -267,7 +277,7 @@ function PaperFace({ said }: { said: string }) {
   const lang = useLang();
   const paper = useAutopilot((st) => st.paper);
   const run = useAutopilot((st) => st.paperRun);
-  const preset = useAutopilot((st) => st.preset);
+  const budget = useAutopilot((st) => st.budget);
   const busy = useMandate((st) => st.busy === 'enable');
   useEffect(() => {
     if (!paper) return;
@@ -278,11 +288,11 @@ function PaperFace({ said }: { said: string }) {
   if (!paper) return null;
   const plan = planOfText(paper.plan);
   const line = planLine(plan, w, lang);
-  const rhythm = preset ? rhythmOf(preset, plan?.pace ?? null) : null;
+  const rhythm = budget ? rhythmOf(budget, plan?.pace ?? null) : null;
   const pct = run?.resultPct ?? null;
   const tone = pct === null ? undefined : pct > 0 ? 'up' : pct < 0 ? 'down' : undefined;
   const earned = run && pct !== null ? (run.heldSol + run.gotSol - run.spentSol) : null;
-  const budget = budgetLines(rhythm, plan, w, lang);
+  const lines = budgetLines(rhythm, plan, w, lang);
   const goLive = (who: { wallet: string; owner: string }) => {
     // Live, the agent takes the very plan and coin it practised.
     useAutopilot.setState({ plan });
@@ -297,8 +307,8 @@ function PaperFace({ said }: { said: string }) {
         </span>
         <div className={i.heroText}>
           <span className={s.paperKicker}>{w.paperKicker}</span>
-          <h2 className={i.headline} data-autopilot-budget="">{budget.headline}</h2>
-          {budget.size ? <p className={i.sub} data-autopilot-size="">{budget.size}</p> : null}
+          <h2 className={i.headline} data-autopilot-budget="">{lines.headline}</h2>
+          {lines.size ? <p className={i.sub} data-autopilot-size="">{lines.size}</p> : null}
           {paper.symbol ? <p className={i.sub}>{w.buys(paper.symbol)}</p> : null}
           {line ? <p className={s.plan}>{line}</p> : null}
         </div>
@@ -320,7 +330,7 @@ function PaperFace({ said }: { said: string }) {
         )}
       </div>
       <div className={i.dock}>
-        <SignButton label={w.goLive} busy={busy} disabled={!preset} onPress={goLive} said={said} preset={preset} />
+        <SignButton label={w.goLive} busy={busy} disabled={!budget} onPress={goLive} said={said} budget={budget} />
         <button type="button" className={s.quiet} onClick={() => useAutopilot.getState().setPaper(null)} data-autopilot-end-practice="">
           {w.endPractice}
         </button>

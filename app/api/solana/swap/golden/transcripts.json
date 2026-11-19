@@ -17941,6 +17941,7 @@
        }
       ],
       "routeAffectingOptions": [
+       "excludeRouters=jupiterz",
        "referralFee=50",
        "referralAccount=set"
       ],
@@ -17959,8 +17960,8 @@
       "schemaVersion": "1.0.0",
       "state": "FRESH",
       "execution": "NOT_EXECUTED",
-      "quoteDigest": "0x6861e6c74e9db61ccd8e3d3463ba51eb9c1c1c14960d451cef9737f6d4ed4a92",
-      "reviewDigest": "0xb8cbebb18bdb011f40e1c663b954a7a6558f52f3de98ec2abe45eb57bd9cd2dc",
+      "quoteDigest": "0x5dc98cebc7612e6f633604fcc65ccf2387df90cb2bfea613a3dcd9175e929f96",
+      "reviewDigest": "0xaf3cd7e78ba32f7c8c44f6d8ba24bbfd5c3e927ae50a2f5758d2127c0cc691d2",
       "quote": {
        "schema": "ryntra.solana.jupiter-order-quote",
        "schemaVersion": "1.0.0",
@@ -18033,6 +18034,7 @@
         }
        ],
        "routeAffectingOptions": [
+        "excludeRouters=jupiterz",
         "referralFee=50",
         "referralAccount=set"
        ],
@@ -18367,7 +18369,7 @@
       "evaluatedAt": "2026-10-01T12:00:00.000Z"
      }
     },
-    "bodyBytesSha256": "f1d9bf8b409ab6d5745b218849a2d3e28594d90e592e2d0999be4c7e545d4c91",
+    "bodyBytesSha256": "becea20f49ce507a8f48fb6c1cdc896a5943459622c1e3512af67ff2e07e21b2",
     "calls": [
      {
       "kind": "rpc",
@@ -18418,6 +18420,10 @@
        [
         "amount",
         "10000000"
+       ],
+       [
+        "excludeRouters",
+        "jupiterz"
        ],
        [
         "inputMint",
@@ -18526,6 +18532,10 @@
        [
         "amount",
         "10000000"
+       ],
+       [
+        "excludeRouters",
+        "jupiterz"
        ],
        [
         "inputMint",

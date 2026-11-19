@@ -1093,9 +1093,14 @@ test("every retained public composition mounts one chrome and a focusable skip t
   const cityPage = read("city/components/pages/DocumentPage.tsx");
   assert.equal((cityPage.match(/<main\b/g) ?? []).length, 1, "the city's page has one main landmark");
   assert.doesNotMatch(cityPage, /<(?:PublicHeader|FrozenHeader|FrozenFooter)\b/);
-  for (const file of ["app/docs/page.tsx", "app/developers/page.tsx", "app/support/page.tsx", "app/legal/terms/page.tsx", "app/legal/privacy/page.tsx"]) {
+  for (const file of ["app/developers/page.tsx", "app/legal/terms/page.tsx", "app/legal/privacy/page.tsx"]) {
     assert.match(read(file), /<CityDocument id="[a-z]+" \/>/, `${file} is the city's page`);
   }
+  /* `/docs` is the terminal's documentation: the terminal's frame holds its one main. */
+  assert.match(read("app/docs/page.tsx"), /<DocsHub \/>/, "app/docs/page.tsx is the terminal's documentation");
+  assert.match(read("app/docs/layout.tsx"), /<TerminalFrame>/);
+  /* `/support` and `/about` too: the terminal's frame around them. */
+  for (const file of ["app/support/page.tsx", "app/about/page.tsx"]) assert.match(read(file), /<TerminalFrame>/, `${file} stands in the terminal's frame`);
   for (const [file, view] of [
     ["app/docs/developers/page.tsx", "developers"],
     /* The Guard reference is asserted beside it, in its own test. */

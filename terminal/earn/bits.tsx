@@ -1,7 +1,7 @@
 'use client';
 
 import { Fragment, useId, useState, type ReactNode } from 'react';
-import { CoinLogo, Figure, Icon, Title, cx } from '@/terminal/ui';
+import { CoinLogo, Figure, Icon, cx } from '@/terminal/ui';
 import type { Coin, Risk } from './rows';
 import e from './earn.module.css';
 
@@ -11,12 +11,19 @@ const USDC = { mint: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v', logo: '/sit
 
 export const iconOf = (mint: string): string => (mint === USDC.mint ? USDC.logo : `/api/icon/${mint}`);
 
+/**
+ * Where a coin's logo is asked next when the engine's route has none (DLMM Pro's list was letters: the route
+ * answers nothing for a coin that is no market tower): the catalogue's own logo through the engine, by the coin's
+ * address. The letter only when neither loads.
+ */
+export const iconsAfter = (mint: string): readonly string[] => (mint === USDC.mint ? [] : [`/api/spot/icon?mint=${encodeURIComponent(mint)}`]);
+
 /** One coin's logo, or a pair's two with the second over the first's edge. */
 export function Pair({ coins, size = 'm' }: { coins: readonly Coin[]; size?: 'm' | 'l' }) {
   return (
     <span className={e.pair} aria-hidden="true">
       {coins.map((coin) => (
-        <CoinLogo key={coin.mint} src={iconOf(coin.mint)} symbol={coin.symbol} size={size} />
+        <CoinLogo key={coin.mint} src={iconOf(coin.mint)} also={iconsAfter(coin.mint)} symbol={coin.symbol} size={size} />
       ))}
     </span>
   );
@@ -45,36 +52,6 @@ export function Sign({ name }: { name: keyof typeof SIGNS }) {
     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">
       {SIGNS[name]}
     </svg>
-  );
-}
-
-/**
- * A panel's head: its sign, its name, and how the thing works behind one quiet «i» that opens under the head and
- * closes again. `extra` stands before the «i» — a count.
- */
-export function PanelHead({ sign, title, hintLabel, hint, flush = false, sub = false, extra }: { sign?: keyof typeof SIGNS; title: string; hintLabel?: string; hint?: string; flush?: boolean; sub?: boolean; extra?: ReactNode }) {
-  const [open, setOpen] = useState(false);
-  const id = useId();
-  return (
-    <>
-      <div className={cx(e.panelHead, flush && e.flush, sub && e.subHead)}>
-        {sign ? <Sign name={sign} /> : null}
-        <Title as="h2" className={e.panelTitle}>
-          {title}
-        </Title>
-        {extra}
-        {hint ? (
-          <button type="button" className={e.infoBtn} aria-label={hintLabel} aria-expanded={open} aria-controls={open ? id : undefined} onClick={() => setOpen((was) => !was)}>
-            <Icon name="info" size="s" />
-          </button>
-        ) : null}
-      </div>
-      {open && hint ? (
-        <p id={id} role="note" className={cx(e.hint, flush && e.flush)}>
-          {hint}
-        </p>
-      ) : null}
-    </>
   );
 }
 

@@ -1,7 +1,7 @@
 import type { EarnLendRate, EarnPool } from '../../lib/earn-pools/model.ts';
 import type { HarborPool } from '../../city/lib/districts/harbor/pools.ts';
 import { LSTS, SOL_MINT } from '../../city/lib/earn/lst.ts';
-import type { ProPier } from '../../city/lib/earn/pro.ts';
+import { proReward, type ProPier } from '../../city/lib/earn/pro.ts';
 import { digits } from '../../city/lib/i18n/dict.ts';
 import type { Lang } from '../../city/lib/i18n/langs.ts';
 import type { Coin, PoolRow, StakeRow } from './rows.ts';
@@ -38,6 +38,8 @@ export type ChooseRow = Readonly<{
   createdAt: string | null;
   page: string | null;
   act: RowAct;
+  /** The pool's own reward, a second line of income beside its fees: so much a day of a coin of its own (DLMM Pro's liquidity mining). */
+  reward?: Readonly<{ perDay: string; symbol: string }> | null;
 }>;
 
 const pairName = (x: Readonly<{ symbol: string }>, y: Readonly<{ symbol: string }>) => `${x.symbol} · ${y.symbol}`;
@@ -125,6 +127,7 @@ function fromPro(pier: ProPier, row: PoolRow | undefined): ChooseRow {
     createdAt: null,
     page: null,
     act: pier.takesDeposits ? 'pro' : 'view',
+    reward: proReward(pier),
   };
 }
 
@@ -163,7 +166,7 @@ export const BASE_BANDS = ['any', 'low', 'mid', 'high'] as const;
 export type BaseBand = (typeof BASE_BANDS)[number];
 const BASE_RANGE: Readonly<Record<Exclude<BaseBand, 'any'>, readonly [number, number]>> = { low: [0, 0.05], mid: [0.0500001, 0.3], high: [0.3000001, Infinity] };
 
-export const STRATEGIES = ['stable', 'high', 'sol'] as const;
+export const STRATEGIES = ['stable', 'high', 'sol', 'reward'] as const;
 export type Strategy = (typeof STRATEGIES)[number];
 
 export type Filters = Readonly<{
@@ -198,6 +201,8 @@ const stableCoin = (coin: Coin) => STABLE_MINTS.has(coin.mint) || STABLE_SYMBOLS
 export function inStrategy(row: ChooseRow, strategy: Strategy): boolean {
   if (strategy === 'stable') return stableCoin(row.coins[0]) && stableCoin(row.coins[1]);
   if (strategy === 'sol') return row.coins.some((coin) => coin.mint === SOL_MINT);
+  // «Pool reward»: the pools of DLMM Pro that take a deposit from here — one position the agent can look after, and the pool's own reward beside its fees.
+  if (strategy === 'reward') return row.type === 'pro' && row.act !== 'view';
   return (row.tvlUsd ?? 0) >= HIGH_MIN_TVL_USD;
 }
 
@@ -280,10 +285,12 @@ export function sortRows(rows: readonly ChooseRow[], sort: Sort): ChooseRow[] {
 }
 
 /** A strategy's own order: «High income» by a day's fees over the depth; the others by a day's fees. */
-export const STRATEGY_SORT: Readonly<Record<Strategy, Sort>> = { stable: { key: 'fees', dir: 'desc' }, high: { key: 'feeTvl', dir: 'desc' }, sol: { key: 'fees', dir: 'desc' } };
+export const STRATEGY_SORT: Readonly<Record<Strategy, Sort>> = { stable: { key: 'fees', dir: 'desc' }, high: { key: 'feeTvl', dir: 'desc' }, sol: { key: 'fees', dir: 'desc' }, reward: { key: 'tvl', dir: 'desc' } };
 
 /** A strategy's filter: the start's floors, its own set. */
 export function strategyFilters(strategy: Strategy): Filters {
+  // The chain gives a DLMM Pro pool its depth but no day's volume: «Pool reward» keeps no floor a young pool cannot meet.
+  if (strategy === 'reward') return { ...START_FILTERS, minTvl: 0, minVolume: 0, strategy };
   return { ...START_FILTERS, minTvl: strategy === 'high' ? HIGH_MIN_TVL_USD : START_FILTERS.minTvl, strategy };
 }
 
@@ -294,6 +301,8 @@ export function strategyFilters(strategy: Strategy): Filters {
 export function strategyPick(rows: readonly ChooseRow[], strategy: Strategy): ChooseRow | null {
   const ranked = sortRows(filterRows(rows, strategyFilters(strategy)), STRATEGY_SORT[strategy]);
   if (strategy === 'high') return ranked[0] ?? null;
+  // A pool whose reward runs names the card first.
+  if (strategy === 'reward') return ranked.find((row) => row.reward) ?? ranked[0] ?? null;
   return ranked.find((row) => row.act !== 'view') ?? ranked[0] ?? null;
 }
 

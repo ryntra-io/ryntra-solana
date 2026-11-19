@@ -47,7 +47,7 @@ export async function POST(request: Request) {
   const opened = await openLadderPost(request, "review", BodySchema, { acts: () => true, owner: (body) => body.owner });
   if (opened instanceof Response) return opened;
   const { gate, body } = opened;
-  const built = await buildLadder({ owner: body.owner, pool: body.pool, legs: body.legs, orderKeys: body.orderKeys, network: gate.network, pools: gate.pools, quotes: gate.quotes, maxUsd: gate.maxUsd });
+  const built = await buildLadder({ owner: body.owner, pool: body.pool, legs: body.legs, orderKeys: body.orderKeys, network: gate.network, pools: gate.pools, quotes: gate.quotes });
   if (!built.ok) return ladderFailure(built.code === "UNREACHABLE" || built.code === "SIMULATION_UNAVAILABLE" ? 503 : 422, built.code, built.reason, gate.rate);
   return Response.json(
     {

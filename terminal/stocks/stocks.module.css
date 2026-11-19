@@ -1,0 +1,98 @@
+/* A stock's facts on a pool page: the exchange's chip with «i» beside it, and the guard's line under them.
+   Tokens only; the chip and the «i» are the kit's own. */
+
+.facts {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+}
+
+/* The chip keeps one line: a long time on a narrow column ends in «…», never a second line. */
+.chip {
+  display: flex;
+  min-width: 0;
+}
+
+.chip > span {
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.chipText {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.guard {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  font-size: var(--type-caption);
+  font-weight: 600;
+  color: var(--soft);
+  font-variant-numeric: tabular-nums;
+}
+
+.guard svg {
+  flex: none;
+  color: var(--dim);
+}
+
+.guard[data-tone='warn'],
+.guard[data-tone='warn'] svg {
+  color: var(--amber);
+}
+
+/* Behind «i»: whose terms, and the issuer's own document. */
+.terms {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.termsHead {
+  font-weight: 700;
+}
+
+.termsLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 32px;
+  color: var(--amber);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.termsLink:hover {
+  color: var(--amber-hi);
+}
+
+/* The risk line before a signature, as a ticket draws it. */
+.risk {
+  margin: 0;
+  font-size: var(--type-caption);
+  font-weight: 600;
+  color: var(--soft);
+}
+
+/* The stand's page: the pools one under the other. */
+.stand {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}

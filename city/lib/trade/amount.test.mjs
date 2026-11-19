@@ -32,10 +32,11 @@ test("what is wrong with a typed amount, in plain words", () => {
 test("never more than the wallet holds", () => {
   const balance = { spendableRaw: "2400000000", decimals: 9 };
   assert.equal(typedAmount("2.4", SOL, balance).ok, true);
-  assert.deepEqual(typedAmount("2.5", SOL, balance), { ok: false, problem: { kind: "balance", text: "You have 2.4 SOL. Type that or less." } });
+  // The amount stays a real one beside the shortfall: its price is shown, never ordered.
+  assert.deepEqual(typedAmount("2.5", SOL, balance), { ok: false, problem: { kind: "balance", text: "You have 2.4 SOL. Type that or less." }, askRaw: "2500000000" });
   assert.equal(typedAmount("1", USDC, { spendableRaw: "0", decimals: 6 }).problem.kind, "balance");
   // SOL: the balance given is what may be spent once the network is paid, and the sentence says so.
-  assert.deepEqual(typedAmount("2.4", SOL, { spendableRaw: "2395616440", decimals: 9 }, true), { ok: false, problem: { kind: "balance", text: "Up to 2.395 SOL: the rest pays the network." } });
+  assert.deepEqual(typedAmount("2.4", SOL, { spendableRaw: "2395616440", decimals: 9 }, true), { ok: false, problem: { kind: "balance", text: "Up to 2.395 SOL: the rest pays the network." }, askRaw: "2400000000" });
 });
 
 test("one comma and no point is the decimal comma; any other comma is refused, never guessed", () => {

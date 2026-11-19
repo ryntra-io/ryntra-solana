@@ -5,12 +5,13 @@ import { useWords } from '@/city/lib/i18n/dict';
 import { cityAccount, useCityAccount, useReadiness } from '@/city/lib/quarter/account-live';
 import { shortAddress } from '@/city/lib/trade/format';
 import { useWallet } from '@/city/lib/trade/wallet';
-import { isPhoneUserAgent, PHANTOM_DOWNLOAD_URL, phantomBrowseUrl } from '@/lib/solana/open-in-wallet';
-import { Action, Chip, Icon, Quiet } from '@/terminal/ui';
-import { SEEKER_CONNECT_WALLET } from '@/lib/solana/seeker-connect';
+import { seekerRegistered } from '@/lib/solana/wallet.client';
+import { Action, Chip, Icon, Kick, Quiet } from '@/terminal/ui';
 import { closePanel, togglePanel, useFrame } from './frame';
+import { MenuIcon } from './menu-icons';
 import { useDismiss } from './useDismiss';
-import { headerWalletShows, walletLineCalm, walletsInOrder } from './wallet-panel';
+import { KNOWN, placeOf, walletRows, type GetRow, type Here, type Place } from './wallet-catalog';
+import { headerWalletShows, walletLineCalm } from './wallet-panel';
 import { WALLET } from './words';
 import s from './shell.module.css';
 
@@ -35,6 +36,10 @@ export function WalletButton() {
   // A wallet that lets go (locked, switched off) takes its menu with it: no empty panel under the button.
   useEffect(() => {
     if (!connection) closePanel('wallet');
+  }, [connection]);
+  // With no wallet, the window's logos are fetched while the page is idle: it never opens on empty discs.
+  useEffect(() => {
+    if (!connection) warmLogos();
   }, [connection]);
   // Once signed in from here, the menu has done its job.
   useEffect(() => {
@@ -88,6 +93,19 @@ export function WalletButton() {
       ) : null}
     </div>
   );
+}
+
+let warmed = false;
+
+/** The popular wallets' logos, into the browser's cache once per page, when it has nothing else to do. */
+function warmLogos(): void {
+  if (warmed) return;
+  warmed = true;
+  const fetchAll = () => {
+    for (const known of KNOWN) new Image().src = known.logo;
+  };
+  if (typeof window.requestIdleCallback === 'function') window.requestIdleCallback(fetchAll, { timeout: 4_000 });
+  else window.setTimeout(fetchAll, 1_500);
 }
 
 /** Connect and sign in with one message — the header's own request, so its one line shows here. */
@@ -164,72 +182,114 @@ export function WalletPanel({ inSheet = false }: { inSheet?: boolean }) {
   );
 }
 
-/** A wallet's name as a person reads it: the Seeker's own is «Seeker». */
-function walletName(name: string): string {
-  return name === SEEKER_CONNECT_WALLET ? 'Seeker' : name;
+/** A wallet's logo — the window's own for a wallet it knows, the icon a wallet registered otherwise — or its letter. */
+function WalletLogo({ src, name }: { src: string | null; name: string }) {
+  const [broken, setBroken] = useState(false);
+  useEffect(() => setBroken(false), [src]);
+  if (!src || broken)
+    return (
+      <span className={s.walletDisc} aria-hidden="true">
+        {name.slice(0, 1)}
+      </span>
+    );
+  // A file of the site or a wallet's own data address: nothing for the image optimiser to do.
+  // eslint-disable-next-line @next/next/no-img-element
+  return <img className={s.walletLogo} src={src} alt="" onError={() => setBroken(true)} />;
 }
 
 /**
- * Sign-in in one window (v2, kadr `A-LoginPhone`): what it is in one line, the wallets with the Seeker's first and
- * recommended, one amber «Sign in with …» for the first, and one calm line — closing the wallet's window changes nothing.
- * A tap on any row signs in with that wallet. Phantom, Solflare, Backpack — whatever this browser has; none found says
- * where to get one.
+ * Connecting in one window (v2, kadr `A-LoginPhone`). The wallets this browser has come first, under
+ * «Installed» — the Seeker's first and recommended — and a tap signs in with one; one amber «Sign in with …» for the
+ * first, and one calm line: closing the window changes nothing. Under them the popular Solana wallets it does not have,
+ * each with its logo and its one step: on a computer its install page, on a phone a link that opens Ryntra inside the
+ * wallet's app (`wallet-catalog.ts`). With none in the browser, the first of them is the amber step; its row stays a
+ * plain row of the list, so the window holds one lit choice.
  */
 function WalletList() {
   const w = useWords(WALLET);
   const wallets = useWallet((st) => st.wallets);
-  // A phone's browser has no wallet of its own: Ryntra opens inside Phantom's; a computer gets the wallet.
-  const [phone, setPhone] = useState(false);
-  useEffect(() => setPhone(isPhoneUserAgent(navigator.userAgent)), []);
-  if (!wallets.length) {
-    return (
-      <>
-        <p className={s.popLine}>{w.none}</p>
-        <a className={s.door} href={phone ? phantomBrowseUrl(window.location.href, window.location.origin) : PHANTOM_DOWNLOAD_URL} target={phone ? undefined : '_blank'} rel="noreferrer">
-          <Icon name="wallet" />
-          <span>{phone ? w.openInPhantom : w.getPhantom}</span>
-          <Icon name="arrow" size="s" />
-        </a>
-      </>
-    );
-  }
-  const list = walletsInOrder(wallets);
-  const first = list[0]!;
+  // Where the page is open, read as the list first draws: it only ever draws in the browser, after a tap (`step` is
+  // `pick`), so a phone never flashes a computer's words first.
+  const [place] = useState<Place>(() => (typeof navigator === 'undefined' ? 'desk' : placeOf(navigator.userAgent)));
+  const [here] = useState<Here>(() => (typeof window === 'undefined' ? { url: '', origin: '' } : { url: window.location.href, origin: window.location.origin }));
+  const { installed, more } = walletRows(wallets, place, here, place === 'android' && seekerRegistered());
   const pick = (name: string) => void cityAccount.getState().pick(name);
+  const desk = place === 'desk';
+  const first = installed[0] ?? null;
+  const firstGet = first ? null : (more.find((row): row is GetRow => row.kind === 'get') ?? null);
+  // An install page opens beside Ryntra; on a phone an «Open» link hands this page to the wallet's app.
+  const follow = (row: GetRow) => (row.step === 'install' ? window.open(row.href, '_blank', 'noopener,noreferrer') : window.location.assign(row.href));
+  const stepWord = (row: GetRow) => (row.step === 'install' ? w.install : w.open);
+
   return (
     <div className={s.login}>
       <div className={s.loginHead}>
-        <h2 className={s.loginTitle}>{w.signInTitle}</h2>
-        <p className={s.loginLine}>{w.oneSign}</p>
+        <h2 className={s.loginTitle}>{first ? w.signInTitle : w.connectTitle}</h2>
+        <p className={s.loginLine}>{first ? w.oneSign : desk ? w.noneHere : w.openInApp}</p>
       </div>
-      <div className={s.choices}>
-        {list.map((wallet, i) => {
-          const seeker = wallet.name === SEEKER_CONNECT_WALLET;
-          return (
-            <button key={wallet.name} type="button" className={s.choice} data-first={i === 0 && seeker ? '' : undefined} onClick={() => pick(wallet.name)}>
-              {wallet.icon ? (
-                // A wallet's own icon, as the wallet gives it (a data address): nothing for the image optimiser to do.
-                // eslint-disable-next-line @next/next/no-img-element
-                <img className={s.walletLogo} src={wallet.icon} alt="" />
-              ) : (
-                <span className={s.walletDisc} aria-hidden="true">
-                  {walletName(wallet.name).slice(0, 1)}
-                </span>
-              )}
+      {installed.length ? (
+        <div className={s.choices} role="group" aria-label={w.installed}>
+          {more.length ? <Kick className={s.choicesKick}>{w.installed}</Kick> : null}
+          {installed.map((row, i) => (
+            <button key={row.key} type="button" className={s.choice} data-first={i === 0 && row.seeker ? '' : undefined} data-wallet={row.key} onClick={() => pick(row.wallet)}>
+              <WalletLogo src={row.logo} name={row.name} />
               <span className={s.choiceWords}>
-                <span>{walletName(wallet.name)}</span>
-                {seeker ? <span className={s.choiceSub}>{w.inYourPhone}</span> : null}
+                <span>{row.name}</span>
+                {row.seeker ? <span className={s.choiceSub}>{w.inYourPhone}</span> : null}
               </span>
-              {seeker ? <Chip tone="warn">{w.recommended}</Chip> : <Icon name="arrow" size="s" />}
+              {row.seeker ? <Chip tone="warn">{w.recommended}</Chip> : <Icon name="arrow" size="s" />}
             </button>
-          );
-        })}
-      </div>
-      <Action onClick={() => pick(first.name)}>{w.signInWith(walletName(first.name))}</Action>
-      <p className={s.loginCalm}>
-        <Icon name="shield" size="s" />
-        {w.closeCalm}
-      </p>
+          ))}
+        </div>
+      ) : null}
+      {more.length ? (
+        <div className={s.choices} role="group" aria-label={first ? w.moreWallets : w.connectTitle}>
+          {first ? <Kick className={s.choicesKick}>{w.moreWallets}</Kick> : null}
+          {more.map((row) =>
+            row.kind === 'seeker' ? (
+              <button key={row.key} type="button" className={s.choice} data-wallet={row.key} onClick={() => pick(row.wallet)}>
+                <WalletLogo src={row.logo} name={row.name} />
+                <span className={s.choiceWords}>
+                  <span>{row.name}</span>
+                  <span className={s.choiceSub}>{w.onSeeker}</span>
+                </span>
+                <Icon name="arrow" size="s" />
+              </button>
+            ) : (
+              <a
+                key={row.key}
+                className={s.choice}
+                data-wallet={row.key}
+                href={row.href}
+                target={row.step === 'install' ? '_blank' : undefined}
+                rel="noreferrer noopener"
+                aria-label={row.step === 'install' ? w.installName(row.name) : w.openIn(row.name)}
+              >
+                <WalletLogo src={row.logo} name={row.name} />
+                <span className={s.choiceWords}>
+                  <span>{row.name}</span>
+                </span>
+                <span className={s.choiceStep}>
+                  {stepWord(row)}
+                  {/* An install page, beside Ryntra; the wallet's own app on a phone. */}
+                  {row.step === 'install' ? <MenuIcon name="out" small /> : <Icon name="arrow" size="s" />}
+                </span>
+              </a>
+            ),
+          )}
+        </div>
+      ) : null}
+      {first ? (
+        <Action onClick={() => pick(first.wallet)}>{w.signInWith(first.name)}</Action>
+      ) : firstGet ? (
+        <Action onClick={() => follow(firstGet)}>{firstGet.step === 'install' ? w.installName(firstGet.name) : w.openIn(firstGet.name)}</Action>
+      ) : null}
+      {first ? (
+        <p className={s.loginCalm}>
+          <Icon name="shield" size="s" />
+          {w.closeCalm}
+        </p>
+      ) : null}
     </div>
   );
 }

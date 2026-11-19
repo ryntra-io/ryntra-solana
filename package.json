@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Ryntra — a trading terminal for Solana with your own AI agent: it launches coins and trades for you inside a budget the chain holds. The web app, the terminal, the 3D city and the Android app.",
+  "description": "Ryntra — say it, your agent does the rest: a trading terminal for Solana with your own AI agent, working inside a budget the chain holds. Built on Jupiter and Meteora, Meteora DLMM Pro included. The web app, the terminal, the engine and the Android app.",
   "engines": {
     "node": ">=22 <25"
   },
@@ -40,7 +40,8 @@
     "@react-three/drei": "10.7.9",
     "@react-three/fiber": "9.8.2",
     "@react-three/postprocessing": "3.2.2",
-    "@ryntra/core": "file:vendor/ryntra-core/ryntra-core-0.10.0-f1a95462.tgz",
+    "@relayprotocol/relay-sdk": "8.0.5",
+    "@ryntra/core": "file:vendor/ryntra-core/ryntra-core-0.14.0-ef3b1232.tgz",
     "@solana-mobile/seeker-connect-ui": "0.2.0",
     "@solana-mobile/seeker-connect-wallet-standard": "0.2.0",
     "@solana-mobile/skr-domain": "1.1.1",

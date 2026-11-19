@@ -226,7 +226,7 @@ type RelayConnection = Pick<Connection, "getGenesisHash" | "sendRawTransaction">
  * with its signature; a refused bundle forwards none.
  */
 export async function relayLadder(
-  args: Readonly<{ owner: string; kind: RelayKind; items: readonly RelayItem[]; pools: readonly string[] | null; network?: LadderNetwork; maxUsd?: number | null }>,
+  args: Readonly<{ owner: string; kind: RelayKind; items: readonly RelayItem[]; pools: readonly string[] | null; network?: LadderNetwork }>,
   deps: Readonly<{
     connection?: RelayConnection;
     /** A placement's pool as the network has it now; required on mainnet, where pools are not listed. */
@@ -239,9 +239,8 @@ export async function relayLadder(
   if (args.kind === "place" && network === "mainnet") {
     if (!deps.pool) return { ok: false, code: "POOL_NOT_LISTED", reason: "No reader of pools.", index: -1 };
     const usd = await bundleUsd(args.items, deps.pool);
+    /* The pool must be one that takes ladders; the sum is the person's — no cap of Ryntra's. */
     if (usd === null) return { ok: false, code: "POOL_NOT_LISTED", reason: "The order sits in a pool not open to ladders.", index: -1 };
-    const maxUsd = args.maxUsd ?? null;
-    if (maxUsd !== null && !(usd <= maxUsd + 1e-9)) return { ok: false, code: "OVER_LIMIT", reason: `A ladder places up to $${maxUsd} for now.`, index: -1 };
   }
   const connection = deps.connection ?? (ladderConnection(network) as unknown as RelayConnection);
   /* The chain says which network it is: a wrong endpoint never receives the person's transactions. */

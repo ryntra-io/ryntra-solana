@@ -1,6 +1,8 @@
 import type { SolanaWalletAction } from '../../lib/solana/action-ledger.ts';
+import { exactDecimal } from '../../lib/solana/amounts.ts';
 import { formatUnits } from '../../city/lib/trade/format.ts';
-import { isBase, SOL, USDC, type PayAsset, type Side } from '../../city/lib/trade/tiles.ts';
+import { SWAP_SOL_RESERVE_LAMPORTS } from '../../city/lib/trade/size.ts';
+import { SOL, USDC, USDT_MINT, type Balance, type PayAsset, type Side } from '../../city/lib/trade/tiles.ts';
 
 /**
  * The Swap screen's own rules, without React: the rate the price on screen implies, what a coin picked from either
@@ -81,13 +83,13 @@ export function pickPlan(input: Readonly<{ side: Side; subject: string; counter:
 }
 
 /**
- * The coins a field offers, best first and each once: SOL and USDC, then the wallet's coins with something to spend
- * (what pays), or then the market's coins (what is got); a search narrows them by ticker or name, and a coin's full
- * address finds it among them.
+ * The coins a field offers, best first and each once — any coin on either side (decision 109: «any token for any»): SOL
+ * and USDC, then for what pays the wallet's own coins before the market's, for what is got the market's before the
+ * wallet's; a search narrows them by ticker or name, and a coin's full address finds it among them.
  */
 export function pickList(input: Readonly<{ field: Field; held: readonly PayAsset[]; market: readonly PayAsset[]; query: string; most: number }>): PayAsset[] {
   const base = [SOL, USDC];
-  const rest = input.field === 'pay' ? input.held : [...input.market, ...input.held];
+  const rest = input.field === 'pay' ? [...input.held, ...input.market] : [...input.market, ...input.held];
   const seen = new Set<string>();
   const all: PayAsset[] = [];
   for (const asset of [...base, ...rest]) {
@@ -102,6 +104,163 @@ export function pickList(input: Readonly<{ field: Field; held: readonly PayAsset
   const named = all.filter((asset) => !exact.includes(asset) && !starts.includes(asset) && (asset.name ?? '').toLowerCase().includes(query));
   return [...exact, ...starts, ...named].slice(0, input.most);
 }
+
+/**
+ * A field's list with what the engine's search over every Solana coin found (Jupiter's catalogue): the list's own coins
+ * first, then the found ones it does not already hold, each once, no more than `most`. A found coin without a ticker
+ * is not offered: a coin is never named from a guess.
+ */
+export function withFound(list: readonly PayAsset[], found: readonly PayAsset[], most: number): PayAsset[] {
+  const seen = new Set(list.map((asset) => asset.mint));
+  const more = found.filter((asset) => {
+    if (!asset.symbol || seen.has(asset.mint)) return false;
+    seen.add(asset.mint);
+    return true;
+  });
+  return [...list, ...more].slice(0, most);
+}
+
+/**
+ * A field's coins before anything is typed (M15 — as Jupiter's picker does it): «Your coins» — the wallet's
+ * own, the ones worth something first, by what they are worth — and «Main», the coins people trade most
+ * (`terminal/coin/staples.ts`), each once. What pays lists the wallet's coins first, what is got lists «Main» first.
+ * Nothing else stands here: no coin the person did not ask for — a meme of the day, a stock, a vulgar name — reaches the
+ * top of the list; a search finds any coin.
+ */
+export function pickStart(
+  input: Readonly<{ field: Field; held: readonly PayAsset[]; main: readonly PayAsset[]; worth: (asset: PayAsset) => number | null; most: number }>,
+): Readonly<{ mine: PayAsset[]; main: PayAsset[]; rest: PayAsset[] }> {
+  const valued = input.held.map((asset) => ({ asset, worth: input.worth(asset) }));
+  // «Your coins»: what the wallet holds that is worth something, most first, no more than `most`; the rest of the
+  // wallet — a coin nobody prices, an airdrop — after «Main», never above it.
+  const priced = valued.filter((row) => row.worth !== null && row.worth > 0).sort((a, b) => (b.worth ?? 0) - (a.worth ?? 0)).map((row) => row.asset);
+  const unpriced = valued.filter((row) => !(row.worth !== null && row.worth > 0)).map((row) => row.asset);
+  const mainMints = new Set(input.main.map((asset) => asset.mint));
+  if (input.field === 'pay') {
+    const mine = priced.slice(0, input.most);
+    const mineMints = new Set(mine.map((asset) => asset.mint));
+    const main = input.main.filter((asset) => !mineMints.has(asset.mint));
+    const shown = new Set([...mineMints, ...main.map((asset) => asset.mint)]);
+    return { mine, main, rest: [...priced.slice(input.most), ...unpriced].filter((asset) => !shown.has(asset.mint)) };
+  }
+  // What is got: «Main» first and whole, the wallet's other coins after it.
+  const mine = priced.filter((asset) => !mainMints.has(asset.mint)).slice(0, input.most);
+  const shown = new Set([...mainMints, ...mine.map((asset) => asset.mint)]);
+  return { mine, main: [...input.main], rest: [...priced, ...unpriced].filter((asset) => !shown.has(asset.mint)) };
+}
+
+/** A search worth asking the engine's catalogue: two characters at least, a ticker or an address, not more than 64. */
+export function searchable(query: string): boolean {
+  const text = query.trim().replace(/^\$/, '');
+  return text.length >= 2 && text.length <= 64;
+}
+
+/* ── the dollars beside a figure ──────────────────────────────────────── */
+
+/**
+ * What an amount is worth in dollars at the market's price, for the line under a field's figure: a dollar coin is a
+ * dollar, any other coin is the market's price for it; null when the amount or the price is not known — then no line.
+ */
+export function usdWorth(amount: number | null, price: number | null | undefined, dollar = false): number | null {
+  if (amount === null || !Number.isFinite(amount) || amount <= 0) return null;
+  const each = dollar ? 1 : price;
+  if (each === null || each === undefined || !Number.isFinite(each) || each <= 0) return null;
+  return amount * each;
+}
+
+/** A raw amount as a plain number, for the dollars beside it only; null when it cannot be read. */
+export function unitsOf(raw: string | null | undefined, decimals: number | null | undefined): number | null {
+  if (typeof raw !== 'string' || !/^\d{1,40}$/.test(raw) || decimals === null || decimals === undefined || decimals < 0) return null;
+  const value = Number(raw) / 10 ** decimals;
+  return Number.isFinite(value) ? value : null;
+}
+
+/* ── the flip and the reasons ─────────────────────────────────────────── */
+
+/** The significant digits the flip carries over: an amount a person reads, not the venue's last unit. */
+const FLIP_DIGITS = 6;
+
+/**
+ * The amount the flip writes in «You pay»: what «You get» showed — the same value, now paid — to six
+ * significant digits, rounded down, never cutting whole units. Null when no figure stood: the field then keeps its text.
+ */
+export function flipText(raw: string | null | undefined, decimals: number | null | undefined): string | null {
+  if (typeof raw !== 'string' || !/^\d{1,40}$/.test(raw) || decimals === null || decimals === undefined || decimals < 0) return null;
+  const amount = BigInt(raw);
+  if (amount === 0n) return null;
+  const length = amount.toString().length;
+  const cut = Math.max(0, Math.min(decimals, length - FLIP_DIGITS));
+  const unit = 10n ** BigInt(cut);
+  return exactDecimal(((amount / unit) * unit).toString(), decimals);
+}
+
+/**
+ * The wallet holds no SOL at all for the network's fee: a swap of any other coin cannot land, and the
+ * swap's one button says so before any press. A wallet not read yet is not short.
+ */
+export function feeShort(sol: Balance | null | undefined, inputMint: string): boolean {
+  return inputMint !== SOL.mint && sol !== null && sol !== undefined && /^\d+$/.test(sol.spendableRaw) && BigInt(sol.spendableRaw) === 0n;
+}
+
+/** SOL below what a swap may need beside its amount — the fee, the priority, a new account's rent. */
+export function solThin(sol: Balance | null | undefined): boolean {
+  return sol !== null && sol !== undefined && /^\d+$/.test(sol.spendableRaw) && BigInt(sol.spendableRaw) < SWAP_SOL_RESERVE_LAMPORTS;
+}
+
+/** What a refused press means in the person's terms, when the wallet tells more than the engine's code. */
+export type Reason = 'needSol' | 'frozen' | 'notBuilt';
+
+/**
+ * A refusal said truly. The engine's sentence guesses from its code alone: «the wallet does not cover
+ * the amount plus its fee» where the wallet holds 65 SOL, «the transaction that came back was not the one reviewed»
+ * where Jupiter only offered to pay the fee for a wallet without SOL. With the wallet's own read beside the code:
+ * - a fee payer that is not the wallet — the venue's offer to a wallet with no SOL — is SOL short for the fee;
+ * - a swap that could not be built or simulated is the coin's frozen account when one of its two is frozen, SOL short
+ *   when SOL is thin, else simply not built this time — never the wallet's fault when its balance covers it.
+ * Null: the engine's own sentence stands.
+ */
+export function reasonOf(input: Readonly<{ code: string | null | undefined; solThin: boolean; frozen: boolean }>): Reason | null {
+  // Exact codes only: a refusal of Ryntra's own checks (the bytes changed, an effect not proven) keeps its own sentence.
+  const code = input.code ?? '';
+  if (code === 'TRANSACTION_FEE_PAYER_MISMATCH') return 'needSol';
+  if (code !== 'ORDER_BUILD_FAILED' && code !== 'SIMULATION_FAILED') return null;
+  if (input.frozen) return 'frozen';
+  if (input.solThin) return 'needSol';
+  return code === 'ORDER_BUILD_FAILED' ? 'notBuilt' : null;
+}
+
+/* ── a pair from the address ──────────────────────────────────────────── */
+
+/** SOL, USDC and USDT by their tickers in an address; any other coin by its mint. */
+const BY_TICKER: Readonly<Record<string, string>> = { sol: SOL.mint, usdc: USDC.mint, usdt: USDT_MINT };
+
+/** A coin named in an address — a ticker of the three, or a mint's shape — or null. */
+export function mintOfParam(value: string | null | undefined): string | null {
+  if (!value) return null;
+  const text = value.trim();
+  const ticker = BY_TICKER[text.toLowerCase().replace(/^\$/, '')];
+  if (ticker) return ticker;
+  return /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(text) ? text : null;
+}
+
+/**
+ * The swap a link names: `/swap?from=USDC&to=<mint>` — the card's own model of a subject coin on a side
+ * and the counter coin that pays or is paid. The coin beyond SOL and USDC is the subject; between SOL and USDC, SOL.
+ * Bought when it is what comes, sold when it is what goes. Null when the link names no pair this card can stand on.
+ */
+export function pairOfLink(from: string | null, to: string | null): Readonly<{ subject: string; side: Side; counter: string | null }> | null {
+  const a = mintOfParam(from);
+  const b = mintOfParam(to);
+  // A coin named that is not one: the link names no pair this card can stand on — never a pair it did not name.
+  if ((from && !a) || (to && !b)) return null;
+  if (a && b && a === b) return null;
+  const base = (mint: string | null) => mint === SOL.mint || mint === USDC.mint;
+  if (b && (!base(b) || (base(a) && b === SOL.mint) || !a)) return { subject: b, side: 'buy', counter: a };
+  if (a) return { subject: a, side: 'sell', counter: b };
+  return null;
+}
+
+export { BRIDGE_PATH, leaveOf, type Leave } from './leave.ts';
 
 /* ── the wallet's recent swaps and transfers ──────────────────────────── */
 
@@ -246,29 +405,4 @@ export function depositStep(input: Readonly<{ connected: boolean; status: 'idle'
   if (!input.connected) return 'connect';
   if (input.shown) return 'copy';
   return input.status === 'loading' ? 'asking' : 'move';
-}
-
-/* ── the doors ────────────────────────────────────────────────────────── */
-
-export type DoorId = 'limitStop' | 'send';
-
-/**
- * The doors under the screen, each only where its way is open: limits and stops where the engine keeps them and the
- * coin's screen is on; a transfer where money may move. Buying with a card is drawn by no door: Ryntra has no card
- * purchase to open.
- */
-export function doorsShown(input: Readonly<{ limits: boolean; coinScreen: boolean; send: boolean }>): DoorId[] {
-  const doors: DoorId[] = [];
-  if (input.limits && input.coinScreen) doors.push('limitStop');
-  if (input.send) doors.push('send');
-  return doors;
-}
-
-/**
- * The coin «Limit and stop» opens: the coin of the ticket that is not a dollar — a limit on USDC would be a price of a
- * dollar in dollars. Of two coins that are neither, the one the ticket stands on.
- */
-export function limitCoin(subject: PayAsset, counter: PayAsset): PayAsset {
-  if (subject.mint !== USDC.mint) return subject;
-  return isBase(counter) ? SOL : counter;
 }

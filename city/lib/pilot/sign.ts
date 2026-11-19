@@ -1,4 +1,5 @@
 import { citySigner } from '../app-bridge/route.ts';
+import { agentNetworkOf, budgetFund } from '../../../lib/mandate/budget.ts';
 import { checkUnsigned, sameMessage } from '../bots/mandate-check.ts';
 import { joinAgent, post, type Fetcher, type SignMany, type Who } from '../bots/mandate-sign.ts';
 import { MANDATE_CHAIN, useMandate, type MandateCoin, type MandateRecord } from '../bots/mandate.ts';
@@ -63,13 +64,18 @@ export function pierFor(pools: readonly HarborPool[]): Pier | null {
 }
 
 async function buildTrade(who: Who, input: GoInput, fetcher: Fetcher, check: Check): Promise<Built | 'refused' | 'unreachable'> {
-  const preset = input.plan.preset;
-  if (!preset) return 'refused';
+  /* The trade's budget is the plan's own numbers — the whole trading share, no ceiling of Ryntra's. */
+  const budget = input.plan.budget;
+  if (!budget) return 'refused';
   const previous = useMandate.getState().records[who.owner];
-  const body = input.network === 'mainnet' ? { owner: who.owner, preset, smartAccount: previous?.settings ?? null, coin: input.coin?.mint } : { owner: who.owner, preset, smartAccount: previous?.settings ?? null };
-  const built = await post<{ record: MandateRecord; transactions: string[] }>(fetcher, '/api/bots/mandate/review', body);
+  const base = { owner: who.owner, perDay: budget.perDay, perTrade: budget.perTrade, days: budget.days, smartAccount: previous?.settings ?? null };
+  const body = input.network === 'mainnet' ? { ...base, coin: input.coin?.mint } : base;
+  const built = await post<{ record: MandateRecord; transactions: string[]; fundLamports?: string; networkLamports?: string }>(fetcher, '/api/bots/mandate/review', body);
   if (!built.ok) return built.status === 0 || built.status >= 500 ? 'unreachable' : 'refused';
   if (built.value.record.owner !== who.owner) return 'refused';
+  /* The vault's part and the agent's fees together are the plan's trade part, to the lamport — or nothing is signed. */
+  const shown = { perDay: BigInt(budget.perDay), perTrade: BigInt(budget.perTrade), days: budget.days };
+  if (built.value.record.perDay !== budget.perDay || built.value.record.perTrade !== budget.perTrade || built.value.fundLamports !== budgetFund(shown).toString() || built.value.networkLamports !== agentNetworkOf(shown).toString()) return 'refused';
   if (!check.unsigned(built.value.transactions, who.owner).ok) return 'refused';
   return { part: 'trade', wires: built.value.transactions, record: built.value.record };
 }
@@ -101,7 +107,7 @@ export async function goLive(who: Who, input: GoInput, deps: Deps = {}): Promise
 
   /* 1. Every part built by its own engine at once; nothing is signed yet. */
   const [trade, saveUsdc, saveSol, pool] = await Promise.all([
-    input.plan.preset ? buildTrade(who, input, fetcher, check) : Promise.resolve(null),
+    input.plan.budget ? buildTrade(who, input, fetcher, check) : Promise.resolve(null),
     live && legs.save.usdcRaw > 0n ? buildSave(who, 'saveUsdc', legs.save.usdcRaw, fetcher) : Promise.resolve(null),
     live && legs.save.solRaw > 0n ? buildSave(who, 'saveSol', legs.save.solRaw, fetcher) : Promise.resolve(null),
     live && legs.pool.solRaw > 0n ? buildPool(who, legs.pool.solRaw, fetcher) : Promise.resolve(null),
@@ -110,7 +116,7 @@ export async function goLive(who: Who, input: GoInput, deps: Deps = {}): Promise
   if (trade === 'refused') return { kind: 'refused', reason: 'The trade could not be prepared.' };
   const parts = [trade, saveUsdc, saveSol, pool].filter((x): x is Built => x !== null);
   if (!parts.length) return { kind: 'refused', reason: 'Nothing to sign.' };
-  const asked = Number(Boolean(input.plan.preset)) + Number(live && legs.save.usdcRaw > 0n) + Number(live && legs.save.solRaw > 0n) + Number(live && legs.pool.solRaw > 0n);
+  const asked = Number(Boolean(input.plan.budget)) + Number(live && legs.save.usdcRaw > 0n) + Number(live && legs.save.solRaw > 0n) + Number(live && legs.pool.solRaw > 0n);
   let partial = parts.length < asked;
 
   /* 2. One wallet prompt for all of them. */

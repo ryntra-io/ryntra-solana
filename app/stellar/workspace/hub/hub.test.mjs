@@ -2,6 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { createRequire } from "node:module";
+import { fileURLToPath } from "node:url";
 import { join } from "node:path";
 
 /**
@@ -86,6 +87,12 @@ function walk(dir, test_, found = []) {
 
 const STYLESHEETS = walk(ROOT, (name) => name.endsWith(".css"));
 const CORE_TOKENS = [createRequire(import.meta.url).resolve("@ryntra/core/tokens.css")];
+
+/* The pages that stand in the terminal's frame (`/docs`, `/roadmap`) paint with the terminal root's own
+   tokens (`terminal/styles/terminal.module.css`, `.root`): those references resolve there, and only those. */
+const TERMINAL_ROOT = fileURLToPath(new URL("../../../../terminal/styles/terminal.module.css", import.meta.url));
+const ON_TERMINAL_ROOT = [join("app", "docs", "_book"), join("app", "roadmap")];
+const TERMINAL_TOKENS = new Set([...readFileSync(TERMINAL_ROOT, "utf8").replace(/\/\*[\s\S]*?\*\//g, "").matchAll(/(?<!var\(\s*)(--[a-zA-Z0-9_-]+)\s*:/g)].map((m) => m[1]));
 const SOURCES = walk(ROOT, (name) => name.endsWith(".ts") || name.endsWith(".tsx"));
 
 /** CSS comments are prose. A regex cannot tell the difference, so they go first. */
@@ -122,6 +129,7 @@ function sweep() {
     const css = stripComments(readFileSync(file, "utf8"));
     for (const [, token] of css.matchAll(CSS_DEFINITION)) defined.add(token);
     for (const [, token] of css.matchAll(REFERENCE)) {
+      if (TERMINAL_TOKENS.has(token) && ON_TERMINAL_ROOT.some((dir) => file.includes(dir))) continue;
       if (!referenced.has(token)) referenced.set(token, new Set());
       referenced.get(token).add(file);
     }

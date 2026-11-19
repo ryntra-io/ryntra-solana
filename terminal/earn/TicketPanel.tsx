@@ -98,7 +98,7 @@ export function TicketBody({ ticket, figures, owner, onConnect }: { ticket: Tick
     }
     case 'proPosition': {
       const boat = figures.proBoats.find((entry) => entry.nftMint === ticket.nftMint) ?? (keptPro?.nftMint === ticket.nftMint ? keptPro : null);
-      const pier = boat ? figures.proPiers.find((entry) => entry.address === boat.pool) : undefined;
+      const pier = boat ? figures.proAll.find((entry) => entry.address === boat.pool) : undefined;
       if (!boat || !pier || keptPro?.nftMint !== ticket.nftMint) return null;
       const row = figures.positions.find((entry) => entry.kind === 'pro' && entry.ref === ticket.nftMint) ?? proPositionRow(boat, pier, figures.solPriceUsd);
       return <ProPositionTicket key={`${boat.nftMint}:${ticket.act}`} boat={boat} pier={pier} row={row} act={ticket.act} onConnect={onConnect} />;

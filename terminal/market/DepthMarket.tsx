@@ -1,96 +1,175 @@
 'use client';
 
 import Link from 'next/link';
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react';
 import { digits, useWords } from '@/city/lib/i18n/dict';
-import { fieldText } from '@/city/lib/i18n/figures';
 import { useLang, type Lang } from '@/city/lib/i18n/lang';
-import type { Tower } from '@/city/lib/market/types';
-import { useTrade } from '@/city/lib/trade/store';
-import { SOL } from '@/city/lib/trade/tiles';
-import type { DepthCoin, DepthList, DepthWindow } from '@/lib/market-depth/model';
-import { Ticket, TICKET_OPEN } from '@/terminal/coin/Ticket';
-import { useDismiss } from '@/terminal/shell/useDismiss';
+import type { DepthCoin, DepthKind, DepthWindow } from '@/lib/market-depth/model';
 import { coinHref } from '@/terminal/shell/shelves';
-import { openSide } from '@/terminal/shell/side';
-import { Split } from '@/terminal/shell/Split';
-import { useMarket } from '@/terminal/shell/useMarket';
 import { useNarrow } from '@/terminal/shell/useNarrow';
 import { SHELL } from '@/terminal/shell/words';
-import { CoinLogo, Columns, Icon, Search, Switch, changeText, changeTone, coinIcon, priceText, usdText, useColumnSet } from '@/terminal/ui';
+import { CoinLogo, Columns, Icon, Info, Quiet, Segment, Tabs, changeText, changeTone, priceText, usdText, useColumnSet } from '@/terminal/ui';
 import {
-  AGES,
   DEFAULT_FILTERS,
   DEFAULT_SORT,
+  KINDS,
   LISTS,
-  QUICK_SOL,
-  STEPS,
-  WAYS,
+  MAIN_COLUMNS,
+  ROWS_FIRST,
+  ROWS_MORE,
+  ROWS_PHONE,
   WINDOWS,
   ageMs,
   ageParts,
+  allCoins,
   buyShare,
   changeOf,
+  companyOf,
   countText,
-  dayLine,
   depthRows,
+  exchangeOpen,
   filtersOn,
   fitColumns,
-  timePath,
+  filtersFor,
+  isKindTab,
+  logoOf,
+  mixedRows,
   nextSort,
-  passes,
+  riskFacts,
   statsOf,
   volumeOf,
-  type AgeBound,
   type Filters,
+  type KindTab,
+  type RiskFact,
   type Sort,
+  type ShownList,
   type SortKey,
-  type Way,
 } from './depth-view';
-import { setFilters, setList, setQuick, setWindow, startPrefs, useDepth, useDepthAhead, useDepthRead } from './depth';
+import { useDayMove } from './day-move';
+import { readKey, setFilters, setList, setTab, setWindow, startPrefs, targetOf, useDepth, useDepthAhead, useDepthRead } from './depth';
 import { DEPTH, UNIT_WORD } from './depth-words';
+import { FiltersPanel } from './FiltersPanel';
+import { Shield, Sliders, Warn } from './glyphs';
+import { usePulse } from './pulse-store';
+import { padWord } from './pulse-view';
+import { ZapButton, type QuickCoin } from './QuickBuy';
 import { startSaved, toggleSaved, useSaved } from './saved';
 import d from './depth.module.css';
 
 type W = (typeof DEPTH)['en'];
 
 const WINDOW_WORD: Readonly<Record<DepthWindow, 'w5m' | 'w1h' | 'w6h' | 'w24h'>> = { '5m': 'w5m', '1h': 'w1h', '6h': 'w6h', '24h': 'w24h' };
-
-/** A row the pointer rests on this long becomes the side ticket's coin. */
-const PICK_REST_MS = 450;
-
-/** The coins the Pro strip names over the table, when the market read has them. */
-const STRIP = ['SOL', 'JUP', 'BONK', 'WIF', 'PUMP'] as const;
+/** «Saved» shows every starred coin: the person chose them, no filter hides one. */
+const SAVED_FILTERS: Filters = { ...DEFAULT_FILTERS, hideRisky: false };
 
 const moneyOr = (value: number | null, lang: Lang) => (value === null ? '—' : usdText(value, lang));
 const moveOr = (value: number | null, lang: Lang) => (value === null ? '—' : changeText(value, lang));
 
+const KIND_WORD: Readonly<Record<DepthKind, 'kindAll' | 'kindMeme' | 'kindCrypto' | 'kindStock' | 'kindPreipo'>> = { all: 'kindAll', meme: 'kindMeme', crypto: 'kindCrypto', stock: 'kindStock', preipo: 'kindPreipo' };
+const LIST_WORD: Readonly<Record<ShownList, 'trending' | 'gainers' | 'losers' | 'traded'>> = { trending: 'trending', gainers: 'gainers', losers: 'losers', traded: 'traded' };
+
 /**
- * The Market's depth (macket v2 «A + Pro from B»): the lists a trader opens first, filters, the window a move
- * is read over, every coin's age, holders and the mint and freeze rights, a quick buy of a ready sum on the same ticket
- * the coin's screen carries, and the star. «Pro» adds the density of B: every window side by side, market cap,
- * liquidity, buys and sells, traders, and a strip of the market's figures on top. Every figure is the engine's.
+ * The address's `?tab=` («Portfolio → Saved» opens `/?tab=saved`): a kind of asset or «saved»; the older
+ * addresses keep working — `stocks` is the Stocks tab, a list's name its view.
  */
-export function DepthMarket({ towers }: { towers: readonly Tower[] }) {
+function tabOf(value: string | null): { tab?: KindTab; list?: ShownList } | null {
+  if (isKindTab(value)) return { tab: value };
+  if (value === 'stocks') return { tab: 'stock' };
+  if (value && (LISTS as readonly string[]).includes(value)) return { list: value as ShownList };
+  return null;
+}
+
+/** The tab the address names, on arrival and whenever the address changes while the Market is open. */
+function TabParam() {
+  const raw = useSearchParams().get('tab');
+  const had = useRef<string | null>(raw);
+  const arrived = useRef(false);
+  useEffect(() => {
+    const said = tabOf(raw);
+    // The table's own tab wrote the address after it switched: that is no arrival, and nothing is scrolled.
+    const fromTable = arrived.current && Boolean(said?.tab) && useDepth.getState().tab === said?.tab;
+    arrived.current = true;
+    if (said?.tab && useDepth.getState().tab !== said.tab) setTab(said.tab);
+    if (said?.list && useDepth.getState().list !== said.list) setList(said.list);
+    // The address lost its tab (the menu's «Market»): the table goes back to «All».
+    if (!raw && had.current) setTab('all');
+    had.current = raw;
+    // «Saved» from the menu (QA 19.11: the tab stood below the fold): the list itself is brought into view.
+    if (said?.tab === 'saved' && !fromTable) return bringIntoView();
+  }, [raw]);
+  return null;
+}
+
+/** How long the Market's list is kept in view while the blocks above it are still drawing. */
+const HOLD_MS = 2500;
+
+/**
+ * The Market's list brought to the top of the view, and kept there while the blocks above it finish drawing — until the
+ * person scrolls, taps or types themselves.
+ */
+function bringIntoView(): () => void {
+  const place = () => document.getElementById('market-title')?.closest('section') ?? null;
+  const go = () => {
+    const section = place();
+    section?.scrollIntoView({ block: 'start' });
+    // A phone's row of tabs scrolls sideways: «Saved» stands at its end, so the row brings it in too.
+    section?.querySelector<HTMLElement>('[role="tab"][aria-selected="true"]')?.scrollIntoView({ block: 'nearest', inline: 'center' });
+  };
+  const frame = requestAnimationFrame(go);
+  const watch = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(go);
+  watch?.observe(document.body);
+  const stop = () => {
+    cancelAnimationFrame(frame);
+    watch?.disconnect();
+    window.clearTimeout(timer);
+    for (const kind of ['wheel', 'touchstart', 'keydown', 'pointerdown'] as const) window.removeEventListener(kind, stop);
+  };
+  const timer = window.setTimeout(stop, HOLD_MS);
+  for (const kind of ['wheel', 'touchstart', 'keydown', 'pointerdown'] as const) window.addEventListener(kind, stop, { passive: true });
+  return stop;
+}
+
+/** The tab on screen, written back to the address: `?tab=` for every tab but «All». */
+function writeTab(tab: KindTab): void {
+  try {
+    const url = new URL(window.location.href);
+    if (tab === 'all') url.searchParams.delete('tab');
+    else url.searchParams.set('tab', tab);
+    if (url.href !== window.location.href) window.history.replaceState(window.history.state, '', url);
+  } catch {
+    // An address that cannot be written keeps the list on screen as it is.
+  }
+}
+
+const quickOf = (coin: DepthCoin): QuickCoin => ({ id: coin.id, symbol: coin.symbol, name: coin.name, icon: coin.icon, logo: logoOf(coin) });
+
+/**
+ * The Market's table:
+ * the kind of asset on the first row — All · Memes · Crypto · Stocks · Pre-IPO · Saved — and quietly under it the view —
+ * Trending · Rising · Falling · Most trades — the window, filters and the table's own «Columns». Each kind shows the
+ * columns that tell it (`MAIN_COLUMNS`). A row is its coin's page: a tap opens it, the pointer resting on it changes
+ * nothing. The ⚡ beside it buys with the screen's one sum, right there; the ☆ keeps it in «Saved». One sign tells the
+ * facts against a coin; they open behind it. A kind with nothing in it shows no tab.
+ */
+export function DepthMarket() {
   const w = useWords(DEPTH);
+  const frame = useWords(SHELL);
   const lang = useLang();
   const narrow = useNarrow();
-  const live = useMarket().source === 'live';
+  const tab = useDepth((st) => st.tab);
   const list = useDepth((st) => st.list);
   const window = useDepth((st) => st.window);
   const filters = useDepth((st) => st.filters);
-  const quick = useDepth((st) => st.quick);
-  // Density is the table's own choice: «Columns» — the main ones or all of them — remembered by the browser.
-  // A phone has its own list.
+  const ryntraMints = usePulse((st) => st.ryntra);
+  const ryntra = useMemo(() => new Set(ryntraMints), [ryntraMints]);
   const [columnSet, setColumnSet] = useColumnSet('market');
   const all = columnSet === 'all' && !narrow;
-  const frame = useWords(SHELL);
   const savedMints = useSaved((st) => st.mints);
-  const [query, setQuery] = useState('');
-  const [searching, setSearching] = useState(false);
   const [sort, setSort] = useState<Sort>(DEFAULT_SORT);
-  const [picked, setPicked] = useState<string | null>(null);
   const [now, setNow] = useState(() => Date.now());
+  const [limit, setLimit] = useState(ROWS_FIRST);
+  const [filtering, setFiltering] = useState(false);
 
   useEffect(() => {
     startPrefs();
@@ -100,79 +179,52 @@ export function DepthMarket({ towers }: { towers: readonly Tower[] }) {
     const timer = setInterval(() => setNow(Date.now()), 60_000);
     return () => clearInterval(timer);
   }, []);
+  const first = narrow ? ROWS_PHONE : ROWS_FIRST;
+  useEffect(() => setLimit(first), [tab, list, window, filters, first]);
 
   const savedList = useMemo(() => [...savedMints].reverse().slice(0, 50), [savedMints]);
-  const read = useDepthRead(list, window, list === 'saved' ? savedList : []);
-  useDepthAhead(LISTS, window);
+  const target = targetOf(tab, list);
+  const read = useDepthRead(target, window, tab === 'saved' ? savedList : []);
+  // Every kind's view on screen is read ahead: its tab shows its count, and a kind with nothing stands hidden.
+  const ahead = useMemo(() => KINDS.map((kind) => targetOf(kind, list)), [list]);
+  useDepthAhead(ahead, window);
   const reads = useDepth((st) => st.reads);
-
-  const view = useMemo(() => ({ filters: list === 'saved' ? { ...filters, verified: false } : filters, window, sort, query, now }), [filters, window, sort, query, now, list]);
-  const rows = useMemo(() => depthRows(read.coins, view), [read.coins, view]);
-  const counts = useMemo(() => {
-    const out: Partial<Record<DepthList, number>> = {};
-    for (const l of LISTS) {
-      const r = reads[`${l}:${window}`];
-      if (r?.status === 'ready') out[l] = r.coins.filter((coin) => passes(coin, filters, window, now)).length;
+  /* «All» is the memes and the crypto together — every one its two tabs hold, so its count is theirs added up. */
+  const everyCoin = useMemo(
+    () => allCoins([reads[readKey(targetOf('all', list), window)]?.coins, reads[readKey(targetOf('meme', list), window)]?.coins, reads[readKey(targetOf('crypto', list), window)]?.coins]),
+    [reads, list, window],
+  );
+  const kinds = useMemo(() => {
+    const out: { kind: DepthKind; count: number | null }[] = [];
+    for (const kind of KINDS) {
+      const r = reads[readKey(targetOf(kind, list), window)];
+      const view = { filters: filtersFor(filters, kind), window, sort: DEFAULT_SORT, query: '', now, ryntra };
+      const count = r?.status === 'ready' ? (kind === 'all' ? mixedRows(everyCoin, view) : depthRows(r.coins, view)).length : null;
+      // A kind the market has nothing of shows no tab — unless it is the one on screen. A filter never hides a tab.
+      if (r?.status === 'ready' && r.coins.length === 0 && kind !== tab && kind !== 'all') continue;
+      out.push({ kind, count });
     }
     return out;
-  }, [reads, window, filters, now]);
+  }, [reads, list, window, filters, now, ryntra, tab, everyCoin]);
 
-  const coin = rows.find((row) => row.id === picked) ?? read.coins.find((row) => row.id === picked) ?? rows[0] ?? null;
-  const first = rows[0]?.id ?? null;
-  useEffect(() => {
-    if (picked === null && first !== null) setPicked(first);
-  }, [picked, first]);
-
-  const rest = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-  const pending = useRef<{ mint: string; sum: string } | null>(null);
-  // A resting pointer picks the ticket's coin only while the ticket rests: never under a trade, never while the person
-  // is in the ticket's fields, and a quick buy waiting for another coin is let go.
-  const pick = useCallback((mint: string, at: 'now' | 'rest') => {
-    clearTimeout(rest.current);
-    const take = () => {
-      const busy = useTrade.getState().phase !== 'idle' || Boolean(document.activeElement?.closest('[data-terminal="ticket-side"]'));
-      if (at === 'rest' && busy) return;
-      if (pending.current && pending.current.mint !== mint) pending.current = null;
-      setPicked(mint);
-    };
-    if (at === 'now') take();
-    else rest.current = setTimeout(take, PICK_REST_MS);
-  }, []);
-  const leave = useCallback(() => clearTimeout(rest.current), []);
-  useEffect(() => () => clearTimeout(rest.current), []);
-
-  // A quick buy: the ticket takes the coin, then the ready sum in SOL once it stands on it.
-  useEffect(
-    () =>
-      useTrade.subscribe((st) => {
-        const want = pending.current;
-        if (!want || !st.open || st.tower?.mint !== want.mint || st.phase !== 'idle') return;
-        pending.current = null;
-        if (st.side !== 'buy') st.setSide('buy');
-        useTrade.getState().setPay(SOL.symbol);
-        useTrade.getState().setTyped(fieldText(want.sum, lang));
-      }),
-    [lang],
+  const shownFilters = tab === 'saved' ? SAVED_FILTERS : filtersFor(filters, tab);
+  const rows = useMemo(
+    () => (tab === 'all' ? mixedRows(everyCoin, { filters, window, sort, query: '', now, ryntra }) : depthRows(read.coins, { filters: shownFilters, window, sort, query: '', now, ryntra })),
+    [tab, everyCoin, filters, read.coins, shownFilters, window, sort, now, ryntra],
   );
-  const quickBuy = (target: DepthCoin) => {
-    pending.current = { mint: target.id, sum: quick };
-    setPicked(target.id);
-    if (narrow) openSide('ticket');
-    const st = useTrade.getState();
-    if (st.open && st.tower?.mint === target.id && st.phase === 'idle') {
-      pending.current = null;
-      if (st.side !== 'buy') st.setSide('buy');
-      useTrade.getState().setPay(SOL.symbol);
-      useTrade.getState().setTyped(fieldText(quick, lang));
-    }
-  };
+  const visible = rows.slice(0, limit);
+  const on = filtersOn(filters);
 
-  const changeList = (next: DepthList | 'saved') => {
-    pending.current = null;
-    setList(list === next && next === 'saved' ? 'trending' : next);
-    setPicked(null);
+  const change = (next: KindTab) => {
+    setTab(next);
+    setSort(DEFAULT_SORT);
+    writeTab(next);
+  };
+  const view = (next: ShownList) => {
+    setList(next);
     setSort(DEFAULT_SORT);
   };
+  const kind: DepthKind = tab === 'saved' ? 'all' : tab;
 
   const none =
     read.status === 'reading' && !read.coins.length
@@ -180,181 +232,98 @@ export function DepthMarket({ towers }: { towers: readonly Tower[] }) {
       : read.status === 'failed'
         ? w.failed
         : !rows.length
-          ? list === 'saved' && !savedList.length
+          ? tab === 'saved' && !savedList.length
             ? w.noSaved
             : w.none
           : null;
-  // New coins are rarely verified yet: the empty list says why, and one tap shows them all.
-  const verifiedHides = !rows.length && filters.verified && list !== 'saved' && read.coins.some((c) => !c.verified);
 
-  const tickerCoin = coin ? { id: coin.id, symbol: coin.symbol, name: coin.name, icon: coinIcon(coin) } : null;
+  const tabs = [
+    ...kinds.map(({ kind: id, count }) => ({ id: id as KindTab, label: w[KIND_WORD[id]], count: count === null || narrow ? undefined : digits(String(count), lang) })),
+    { id: 'saved' as KindTab, label: w.saved, icon: <Icon name="star" size="s" />, count: savedMints.length && !narrow ? digits(String(savedMints.length), lang) : undefined },
+  ];
 
   return (
-    <section className={d.root} aria-label={w.market} data-terminal="depth">
-      {!narrow && live ? <Strip towers={towers} /> : null}
-
-      <div className={d.lists}>
-        <h2 className={d.marketTitle}>{w.market}</h2>
-        <div className={d.listTabs} role="tablist" aria-label={w.lists}>
-          {LISTS.map((id) => (
-            <button key={id} type="button" role="tab" aria-selected={list === id} className={d.listTab} onClick={() => changeList(id)}>
-              {w[id]}
-              {counts[id] !== undefined && !narrow ? <span className={d.count}>{digits(String(counts[id]), lang)}</span> : null}
-            </button>
-          ))}
-        </div>
+    <section className={d.market} aria-labelledby="market-title" data-terminal="depth">
+      <Suspense fallback={null}>
+        <TabParam />
+      </Suspense>
+      <div className={d.marketHead}>
+        <h2 id="market-title" className={d.h2}>
+          {w.market}
+        </h2>
+        <Tabs bare label={w.kinds} value={tab} onChange={change} items={tabs} className={d.listTabs} />
+      </div>
+      <div className={d.viewRow}>
+        {tab === 'saved' ? null : <Segment className={d.viewSeg} label={w.lists} value={list} onChange={view} items={LISTS.map((id) => ({ id, label: narrow && id === 'traded' ? w.tradedShort : w[LIST_WORD[id]] }))} />}
+        {tab === 'stock' ? <ExchangeMark now={now} /> : null}
+        {tab === 'stock' || tab === 'preipo' ? (
+          <Info label={w.aboutKind}>
+            <span className={d.kindNote}>{tab === 'stock' ? w.stockNote : w.preipoNote}</span>
+          </Info>
+        ) : null}
         <span className={d.grow} />
-        <button type="button" className={d.iconBtn} aria-label={w.saved} aria-pressed={list === 'saved'} onClick={() => changeList('saved')}>
-          <Icon name="star" />
-        </button>
-        <button type="button" className={d.iconBtn} aria-label={w.coin} aria-expanded={searching} onClick={() => setSearching((was) => !was)}>
-          <Icon name="search" />
-        </button>
-        {searching ? (
-          <div className={d.searchRow}>
-            <Search value={query} onChange={setQuery} placeholder={w.coin} />
+        <div className={d.controls}>
+          <Segment className={d.winSeg} label={w.windows} value={window} onChange={setWindow} items={WINDOWS.map((id) => ({ id, label: w[WINDOW_WORD[id]] }))} />
+          {tab === 'saved' ? null : (
+          <div className={d.pop}>
+            <Quiet size="s" className={d.filtersBtn} aria-haspopup="dialog" aria-expanded={filtering} data-filters-open="" onClick={() => setFiltering((was) => !was)}>
+              <Sliders />
+              {w.filters}
+              {on ? <span className={d.n1}>{digits(String(on), lang)}</span> : null}
+            </Quiet>
+            {filtering ? (
+              <FiltersPanel
+                filters={filters}
+                coins={read.coins}
+                win={window}
+                sort={sort}
+                now={now}
+                ryntra={ryntra}
+                onClose={() => setFiltering(false)}
+                onApply={(next) => {
+                  setFilters(next);
+                  setFiltering(false);
+                }}
+              />
+            ) : null}
+          </div>
+          )}
+          {narrow ? null : (
+            <Columns value={columnSet} onChange={setColumnSet} label={frame.columns} main={frame.colsMain} all={frame.colsAll} />
+          )}
+        </div>
+      </div>
+
+      <div className={d.tableBox}>
+        {narrow ? <PhoneRows rows={visible} window={window} now={now} kind={kind} /> : <DeskTable rows={visible} window={window} now={now} all={all} kind={kind} moving={list === 'gainers' || list === 'losers'} sort={sort} onSort={setSort} />}
+        {none ? (
+          <div className={d.none} role="status">
+            <span>{none}</span>
+            {tab !== 'saved' && on && read.coins.length ? (
+              <Quiet size="s" onClick={() => setFilters(DEFAULT_FILTERS)}>
+                {w.reset}
+              </Quiet>
+            ) : null}
           </div>
         ) : null}
       </div>
-
-      <div className={d.bar}>
-        <FiltersButton filters={filters} />
-        {narrow ? null : <FilterChips filters={filters} />}
-        <span className={d.grow} />
-        {narrow ? null : (
-          <Columns
-            value={columnSet}
-            onChange={setColumnSet}
-            label={frame.columns}
-            main={frame.colsMain}
-            all={frame.colsAll}
-          />
-        )}
-        <div className={d.windows} role="radiogroup" aria-label={w.windows}>
-          {WINDOWS.map((id) => (
-            <button key={id} type="button" role="radio" aria-checked={window === id} className={d.window} onClick={() => setWindow(id)}>
-              {w[WINDOW_WORD[id]]}
-            </button>
-          ))}
-        </div>
-        {narrow || !TICKET_OPEN ? null : <QuickPick />}
-      </div>
-
-      {TICKET_OPEN && tickerCoin && coin ? (
-        <Split
-          id="ticket"
-          sheetStart="folded"
-          label={w.ticket}
-          side={
-            <div className={d.side} data-terminal="ticket-side">
-              <Ticket coin={tickerCoin} head={<TicketHead coin={coin} />} lean={narrow} />
-              {narrow ? null : <CoinFacts coin={coin} now={now} />}
-            </div>
-          }
-          peek={<TicketPeek coin={coin} />}
-        >
-          <div className={d.table}>
-            {narrow ? (
-              <PhoneRows rows={rows} window={window} now={now} quick={quick} onQuick={quickBuy} />
-            ) : (
-              <DeskTable rows={rows} window={window} now={now} all={all} sort={sort} onSort={setSort} picked={coin?.id ?? null} onPick={pick} onLeave={leave} quick={quick} onQuick={quickBuy} />
-            )}
-            {none ? (
-              <div className={d.none} role="status">
-                <span>{verifiedHides ? w.noneVerified : none}</span>
-                {verifiedHides ? (
-                  <button type="button" className={d.noneBtn} onClick={() => setFilters({ ...filters, verified: false })}>
-                    {w.showAll}
-                  </button>
-                ) : filtersOn(filters) && read.coins.length ? (
-                  <button type="button" className={d.noneBtn} onClick={() => setFilters(DEFAULT_FILTERS)}>
-                    {w.reset}
-                  </button>
-                ) : null}
-              </div>
-            ) : null}
-          </div>
-        </Split>
-      ) : (
-        <div className={d.table}>
-          {narrow ? (
-            <PhoneRows rows={rows} window={window} now={now} quick={quick} onQuick={quickBuy} />
-          ) : (
-            <DeskTable rows={rows} window={window} now={now} all={all} sort={sort} onSort={setSort} picked={coin?.id ?? null} onPick={pick} onLeave={leave} quick={quick} onQuick={quickBuy} />
-          )}
-          {none ? (
-            <div className={d.none} role="status">
-              <span>{verifiedHides ? w.noneVerified : none}</span>
-              {verifiedHides ? (
-                <button type="button" className={d.noneBtn} onClick={() => setFilters({ ...filters, verified: false })}>
-                  {w.showAll}
-                </button>
-              ) : filtersOn(filters) && read.coins.length ? (
-                <button type="button" className={d.noneBtn} onClick={() => setFilters(DEFAULT_FILTERS)}>
-                  {w.reset}
-                </button>
-              ) : null}
-            </div>
-          ) : null}
-        </div>
-      )}
+      {rows.length > limit ? (
+        <Quiet className={d.more} onClick={() => setLimit((was) => was + ROWS_MORE)}>
+          {w.showMore}
+        </Quiet>
+      ) : null}
     </section>
   );
 }
 
-/** The folded sheet's bar on a phone: the coin and its price. */
-function TicketPeek({ coin }: { coin: DepthCoin }) {
-  const lang = useLang();
-  return (
-    <span className={d.peek}>
-      <CoinLogo src={coinIcon(coin)} symbol={coin.symbol} size="s" />
-      <b>{coin.symbol}</b>
-      <span>{coin.price === null ? '—' : priceText(coin.price, lang)}</span>
-    </span>
-  );
-}
-
-/** The coin over the side ticket: its logo, ticker, name, price and back to its own screen. */
-function TicketHead({ coin }: { coin: DepthCoin }) {
-  const lang = useLang();
-  const price = coin.price === null ? '—' : priceText(coin.price, lang);
-  return (
-    <div className={d.ticketHead}>
-      <CoinLogo src={coinIcon(coin)} symbol={coin.symbol} size="l" />
-      <span className={d.ticketWords}>
-        <span className={d.ticketSym}>{coin.symbol}</span>
-        <span className={d.ticketName}>{coin.name}</span>
-      </span>
-      <b className={d.ticketPrice} data-long={price.length > 9 ? '' : undefined}>
-        {price}
-      </b>
-      <Link className={d.iconBtn} href={coinHref(coin.id, 'live')} aria-label={coin.symbol}>
-        <Icon name="expand" size="s" />
-      </Link>
-    </div>
-  );
-}
-
-/** Holders, age and liquidity of the side ticket's coin, as tiles. */
-function CoinFacts({ coin, now }: { coin: DepthCoin; now: number }) {
+/** A quiet mark beside a stock's tab: whether the exchange is open now, by its hours. */
+function ExchangeMark({ now }: { now: number }) {
   const w = useWords(DEPTH);
-  const lang = useLang();
-  const age = ageMs(coin, now);
+  const open = exchangeOpen(now);
   return (
-    <div className={d.facts}>
-      <span className={d.fact}>
-        <span className={d.factWord}>{w.holders}</span>
-        <span className={d.factValue}>{countText(coin.holders, lang)}</span>
-      </span>
-      <span className={d.fact}>
-        <span className={d.factWord}>{w.age}</span>
-        <span className={d.factValue}>{age === null ? '—' : <AgeText ms={age} />}</span>
-      </span>
-      <span className={d.fact}>
-        <span className={d.factWord}>{w.liquidity}</span>
-        <span className={d.factValue}>{moneyOr(coin.liquidity, lang)}</span>
-      </span>
-    </div>
+    <span className={d.exchange} data-open={open ? '' : undefined}>
+      {open ? w.exchangeOpen : w.exchangeClosed}
+    </span>
   );
 }
 
@@ -365,46 +334,76 @@ function AgeText({ ms }: { ms: number }) {
   return <>{digits(`${n} ${w[UNIT_WORD[unit]]}`, lang)}</>;
 }
 
-/** «M» and «F» (in Ukrainian «М» and «З»): mint and freeze rights — mint when given up, flare when kept. */
-function Rights({ coin }: { coin: DepthCoin }) {
+const FACT_WORD = (fact: RiskFact, coin: DepthCoin, w: W, lang: Lang): string => {
+  switch (fact) {
+    case 'copy':
+      return w.factCopy(coin.copyOf ?? '');
+    case 'mint':
+      return w.factMint;
+    case 'freeze':
+      return w.factFreeze;
+    case 'top':
+      return w.factTop(digits(`${Math.round(coin.topHolders ?? 0)}%`, lang));
+    case 'thin':
+      return w.factThin;
+    case 'few':
+      return w.factFew;
+  }
+};
+
+/** The one sign of a coin's risk: a quiet shield with no fact against it, «⚠ N» with N; the facts open behind it. */
+function RiskSign({ coin }: { coin: DepthCoin }) {
   const w = useWords(DEPTH);
-  if (coin.mint === null && coin.freeze === null) return <span className={d.dim}>—</span>;
+  const lang = useLang();
+  const facts = riskFacts(coin);
+  const [open, setOpen] = useState(false);
+  const box = useRef<HTMLSpanElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const outside = (event: PointerEvent) => {
+      if (!box.current?.contains(event.target as Node)) setOpen(false);
+    };
+    const key = (event: KeyboardEvent) => event.key === 'Escape' && setOpen(false);
+    window.addEventListener('pointerdown', outside);
+    window.addEventListener('keydown', key);
+    return () => {
+      window.removeEventListener('pointerdown', outside);
+      window.removeEventListener('keydown', key);
+    };
+  }, [open]);
+  const label = facts.length ? w.riskOf(digits(String(facts.length), lang)) : w.riskClear;
   return (
-    <span className={d.rights}>
-      {coin.mint !== null ? (
-        <span className={d.right} data-on={coin.mint === 'on' ? '' : undefined} title={coin.mint === 'on' ? w.mintOn : w.mintOff} aria-label={coin.mint === 'on' ? w.mintOn : w.mintOff}>
-          {w.riskM}
-        </span>
-      ) : null}
-      {coin.freeze !== null ? (
-        <span className={d.right} data-on={coin.freeze === 'on' ? '' : undefined} title={coin.freeze === 'on' ? w.freezeOn : w.freezeOff} aria-label={coin.freeze === 'on' ? w.freezeOn : w.freezeOff}>
-          {w.riskF}
+    <span className={d.riskWrap} ref={box}>
+      <button
+        type="button"
+        className={d.risk}
+        data-level={facts.length ? 'warn' : 'clear'}
+        aria-label={label}
+        aria-expanded={open}
+        onClick={(event) => {
+          event.stopPropagation();
+          setOpen((was) => !was);
+        }}
+      >
+        {facts.length ? (
+          <>
+            <Warn />
+            {digits(String(facts.length), lang)}
+          </>
+        ) : (
+          <Shield />
+        )}
+      </button>
+      {open ? (
+        <span className={d.riskPop} role="note" onClick={(event) => event.stopPropagation()}>
+          <b>{label}</b>
+          {facts.map((fact) => (
+            <span key={fact}>{FACT_WORD(fact, coin, w, lang)}</span>
+          ))}
+          {coin.verified ? <span className={d.riskOk}>{w.verified}</span> : null}
         </span>
       ) : null}
     </span>
-  );
-}
-
-const Zap = () => (
-  <svg className={d.zap} viewBox="0 0 24 24" aria-hidden="true">
-    <path d="M13 2.5 4.5 13.5H11l-1 8 8.5-11H12z" />
-  </svg>
-);
-
-function QuickButton({ coin, sum, onQuick, wide = false }: { coin: DepthCoin; sum: string; onQuick: (coin: DepthCoin) => void; wide?: boolean }) {
-  const w = useWords(DEPTH);
-  const lang = useLang();
-  return (
-    <button
-      type="button"
-      className={d.quick}
-      data-wide={wide ? '' : undefined}
-      aria-label={w.quickBuy(fieldText(sum, lang), coin.symbol)}
-      onClick={() => onQuick(coin)}
-    >
-      <Zap />
-      {wide ? <span>{fieldText(sum, lang)}</span> : null}
-    </button>
   );
 }
 
@@ -417,50 +416,39 @@ function Star({ coin }: { coin: DepthCoin }) {
       className={d.star}
       aria-pressed={on}
       aria-label={on ? w.unstar(coin.symbol) : w.star(coin.symbol)}
-      onClick={() => toggleSaved(coin.id)}
+      onClick={(event) => {
+        event.stopPropagation();
+        toggleSaved(coin.id);
+      }}
     >
       <Icon name="star" size="s" />
     </button>
   );
 }
 
-/** The day's line through the four moves Jupiter measured; the tone of the day's move. */
-function DayLine({ coin }: { coin: DepthCoin }) {
-  const points = dayLine(coin);
-  if (!points) return <span className={d.dim}>—</span>;
-  const change = changeOf(coin, '24h') ?? 0;
-  return (
-    <svg className={d.line} viewBox="0 0 96 28" data-tone={changeTone(change)} aria-hidden="true">
-      <path d={timePath(points, 96, 28, 3)} />
-    </svg>
-  );
-}
-
-function CoinWords({ coin, now, holders = false }: { coin: DepthCoin; now: number; holders?: boolean }) {
+/**
+ * A coin's logo, ticker, a copy's mark, and its age under it (or `sub`, with `aside` beside the ticker). A company's
+ * token is named by its company, its ticker under it; a meme carries its launchpad.
+ */
+function CoinWords({ coin, now, sub, aside }: { coin: DepthCoin; now: number; sub?: ReactNode; aside?: ReactNode }) {
   const w = useWords(DEPTH);
-  const lang = useLang();
   const age = ageMs(coin, now);
+  const company = coin.kind === 'stock' || coin.kind === 'preipo';
   return (
     <span className={d.coin}>
-      <CoinLogo src={coinIcon(coin)} symbol={coin.symbol} size="m" />
+      <CoinLogo src={logoOf(coin)} symbol={coin.symbol} size="m" />
       <span className={d.coinWords}>
         <span className={d.coinSym}>
-          <span className={d.sym}>{coin.symbol}</span>
-          {coin.verified ? (
-            <span className={d.check} title={w.verified}>
-              <Icon name="check" size="s" />
+          <span className={d.sym}>{company ? companyOf(coin.name) : coin.symbol}</span>
+          {coin.kind === 'meme' && coin.launchpad ? <span className={d.pad}>{padWord({ launchpad: coin.launchpad, ryntra: null, venue: coin.venue })}</span> : null}
+          {coin.copyOf ? (
+            <span className={d.copy} title={w.factCopy(coin.copyOf)}>
+              {w.copy}
             </span>
           ) : null}
+          {aside}
         </span>
-        <span className={d.coinSub}>
-          {age === null ? null : <AgeText ms={age} />}
-          {holders && coin.holders !== null ? (
-            <>
-              {age === null ? null : ' · '}
-              {w.holdersShort(countText(coin.holders, lang))}
-            </>
-          ) : null}
-        </span>
+        <span className={d.coinSub}>{sub ?? (company ? coin.symbol : age === null ? null : <AgeText ms={age} />)}</span>
       </span>
     </span>
   );
@@ -475,7 +463,9 @@ type Column = Readonly<{
   grow: number;
   /** Lower stands first: a narrow table drops the highest numbers. */
   rank: number;
-  cell: (coin: DepthCoin) => ReactNode;
+  /** The name a kind's main set knows the column by (`MAIN_COLUMNS`): its id, unless said. */
+  group?: string;
+  cell: (coin: DepthCoin, index: number) => ReactNode;
   end?: boolean;
   tone?: (coin: DepthCoin) => 'up' | 'down' | undefined;
 }>;
@@ -496,93 +486,72 @@ function useWidth<T extends HTMLElement>(): [RefObject<T | null>, number] {
   return [ref, width];
 }
 
-function DeskTable({
-  rows,
-  window,
-  now,
-  all: every,
-  sort,
-  onSort,
-  picked,
-  onPick,
-  onLeave,
-  quick,
-  onQuick,
-}: {
-  rows: readonly DepthCoin[];
-  window: DepthWindow;
-  now: number;
-  /** Every column, or the main ones. */
-  all: boolean;
-  sort: Sort;
-  onSort: (sort: Sort) => void;
-  picked: string | null;
-  onPick: (mint: string, at: 'now' | 'rest') => void;
-  onLeave: () => void;
-  quick: string;
-  onQuick: (coin: DepthCoin) => void;
-}) {
+function DeskTable({ rows, window, now, all: every, kind, moving, sort, onSort }: { rows: readonly DepthCoin[]; window: DepthWindow; now: number; all: boolean; kind: DepthKind; moving: boolean; sort: Sort; onSort: (sort: Sort) => void }) {
   const w = useWords(DEPTH);
   const lang = useLang();
+  const router = useRouter();
   const [box, width] = useWidth<HTMLDivElement>();
   const move = (win: DepthWindow, rank: number): Column => ({
     id: `move-${win}`,
+    group: win === '24h' ? 'day' : win === window ? 'move' : 'other',
     key: `change${win}` as SortKey,
     head: w[WINDOW_WORD[win]],
-    min: 58,
-    grow: 0.7,
+    min: 70,
+    grow: 0.8,
     rank,
     end: true,
-    cell: (coin) => moveOr(changeOf(coin, win), lang),
+    // The day's move is the one every screen says; the shorter windows are the list's own.
+    cell: (coin) => (win === '24h' ? <DayCell coin={coin} /> : moveOr(changeOf(coin, win), lang)),
     tone: (coin) => {
       const change = changeOf(coin, win);
-      return change === null ? undefined : changeTone(change);
+      return win === '24h' || change === null ? undefined : changeTone(change);
     },
   });
-  // The window the person picked stands right after the price; every column adds the other windows.
+  // The window on screen stands right after the price, then the day; every column adds the other windows.
   const moves = every
-    ? WINDOWS.map((win) => move(win, win === window ? 2 : win === '24h' ? 3 : win === '5m' ? 6 : win === '1h' ? 6.5 : 11))
+    ? WINDOWS.map((win) => move(win, win === window ? 2 : win === '24h' ? 3 : 10 + WINDOWS.indexOf(win)))
     : window === '24h'
       ? [move('24h', 2)]
       : [move(window, 2), move('24h', 3)];
-  const all: Column[] = [
+  const table: Column[] = [
+    { id: 'n', key: null, head: w.n, min: 24, grow: 0, rank: 0.1, cell: (_coin, index) => <span className={d.num}>{digits(String(index + 1), lang)}</span> },
     {
       id: 'coin',
       key: 'symbol',
-      head: w.coinAge,
-      min: 150,
-      grow: 1.8,
+      head: w.coin,
+      min: 168,
+      grow: 1.7,
       rank: 0,
       cell: (coin) => (
-        <Link className={d.rowLink} href={coinHref(coin.id, 'live')}>
+        <Link className={d.rowLink} href={coinHref(coin.id, 'live')} onClick={(event) => event.stopPropagation()}>
           <CoinWords coin={coin} now={now} />
         </Link>
       ),
     },
-    { id: 'price', key: 'price', head: w.price, min: 88, grow: 1, rank: 1, end: true, cell: (coin) => <b className={d.price}>{coin.price === null ? '—' : priceText(coin.price, lang)}</b> },
+    { id: 'price', key: 'price', head: w.price, min: 96, grow: 1, rank: 1, end: true, cell: (coin) => <b className={d.price}>{coin.price === null ? '—' : priceText(coin.price, lang)}</b> },
     ...moves,
-    ...(every ? [] : [{ id: 'day', key: null, head: w.day, min: 96, grow: 0.9, rank: 9, end: true, cell: (coin: DepthCoin) => <DayLine coin={coin} /> }]),
-    { id: 'volume', key: 'volume', head: w.volume, min: 66, grow: 0.9, rank: every ? 4.8 : 5, end: true, cell: (coin) => moneyOr(volumeOf(coin, window), lang) },
-    { id: 'mcap', key: 'mcap' as SortKey, head: w.mcap, min: 96, grow: 0.9, rank: 7, end: true, cell: (coin: DepthCoin) => moneyOr(coin.mcap, lang) },
-    { id: 'liquidity', key: 'liquidity' as SortKey, head: w.liquidity, min: 86, grow: 0.9, rank: 12, end: true, cell: (coin: DepthCoin) => moneyOr(coin.liquidity, lang) },
-    { id: 'holders', key: 'holders', head: w.holders, min: 68, grow: 0.8, rank: 4, end: true, cell: (coin) => countText(coin.holders, lang) },
-    ...(every
-      ? [
-          { id: 'bs', key: 'trades' as SortKey, head: w.buysSells, min: 116, grow: 1.1, rank: 4.5, end: true, cell: (coin: DepthCoin) => <BuysSells coin={coin} window={window} /> },
-          { id: 'traders', key: 'traders' as SortKey, head: w.traders, min: 70, grow: 0.7, rank: 13, end: true, cell: (coin: DepthCoin) => countText(statsOf(coin, window)?.traders ?? null, lang) },
-        ]
-      : []),
-    { id: 'risk', key: null, head: w.risk, min: 52, grow: 0, rank: 1.5, cell: (coin) => <Rights coin={coin} /> },
-    ...(TICKET_OPEN ? [{ id: 'quick', key: null, head: '', min: every ? 44 : 70, grow: 0, rank: 0.5, end: true, cell: (coin: DepthCoin) => <QuickButton coin={coin} sum={quick} onQuick={onQuick} wide={!every} /> }] : []),
+    { id: 'volume', key: 'volume', head: w.volume, min: 76, grow: 0.8, rank: 4, end: true, cell: (coin) => moneyOr(volumeOf(coin, window), lang) },
+    { id: 'mcap', key: 'mcap', head: w.mcap, min: 80, grow: 0.85, rank: 5, end: true, cell: (coin) => moneyOr(coin.mcap, lang) },
+    { id: 'liquidity', key: 'liquidity', head: w.liquidity, min: 86, grow: 0.85, rank: 7, end: true, cell: (coin) => moneyOr(coin.liquidity, lang) },
+    { id: 'holders', key: 'holders', head: w.holders, min: 76, grow: 0.8, rank: 6, end: true, cell: (coin) => countText(coin.holders, lang) },
+    ...(kind === 'meme' ? [{ id: 'top', key: null, head: w.top10, min: 64, grow: 0.6, rank: 6.5, end: true, cell: (coin: DepthCoin) => (coin.topHolders === null ? '—' : digits(`${Math.round(coin.topHolders)}%`, lang)) }] : []),
+    { id: 'bs', key: 'trades', head: w.buysSells, min: 124, grow: 1.2, rank: 8, end: true, cell: (coin) => <BuysSells coin={coin} window={window} /> },
+    ...(every ? [{ id: 'traders', key: 'traders' as SortKey, head: w.traders, min: 76, grow: 0.7, rank: 14, end: true, cell: (coin: DepthCoin) => countText(statsOf(coin, window)?.traders ?? null, lang) }] : []),
+    { id: 'risk', key: null, head: w.risk, min: 52, grow: 0, rank: 1.5, cell: (coin) => <RiskSign coin={coin} /> },
+    { id: 'quick', key: null, head: '', min: 72, grow: 0, rank: 0.5, end: true, cell: (coin) => <ZapButton coin={quickOf(coin)} /> },
     { id: 'star', key: null, head: '', min: 28, grow: 0, rank: 1.2, cell: (coin) => <Star coin={coin} /> },
   ];
-  const columns = width ? fitColumns(all, width) : all.filter((c) => c.rank <= 5);
-  // The order by a column that left the table — another set of columns, a narrower window — goes back to the list's own.
+  // Each kind's main set shows its own columns; «All» shows every one.
+  // Rising and falling are ranked by the window's move: that column always stands.
+  const kept = every ? table : table.filter((c) => MAIN_COLUMNS[kind].includes(c.group ?? c.id) || (c.id === `move-${window}` && (moving || MAIN_COLUMNS[kind].includes('move'))));
+  const columns = width ? fitColumns(kept, width) : kept.filter((c) => c.rank <= 5);
+  // The order by a column that left the table goes back to the list's own.
   const sortShown = sort.key === DEFAULT_SORT.key || columns.some((c) => c.key === sort.key);
   useEffect(() => {
     if (width && !sortShown) onSort(DEFAULT_SORT);
   }, [width, sortShown, onSort]);
   const template = columns.map((c) => (c.grow ? `minmax(${c.min}px, ${c.grow}fr)` : `${c.min}px`)).join(' ');
+  const open = useCallback((coin: DepthCoin) => router.push(coinHref(coin.id, 'live')), [router]);
   return (
     <div className={d.scroll} ref={box}>
       <div role="table" aria-label={w.market} className={d.tbl} style={{ gridTemplateColumns: template }}>
@@ -599,11 +568,11 @@ function DeskTable({
             </span>
           ))}
         </div>
-        {rows.map((coin) => (
-          <div key={coin.id} role="row" className={d.tr} aria-current={coin.id === picked || undefined} onPointerMove={(event) => (event.movementX || event.movementY ? onPick(coin.id, 'rest') : undefined)} onPointerLeave={onLeave} onWheel={onLeave}>
+        {rows.map((coin, index) => (
+          <div key={coin.id} role="row" className={d.tr} onClick={() => open(coin)}>
             {columns.map((c) => (
               <span key={c.id} role="cell" className={d.cell} data-end={c.end ? '' : undefined} data-tone={c.tone?.(coin)}>
-                {c.cell(coin)}
+                {c.cell(coin, index)}
               </span>
             ))}
           </div>
@@ -611,6 +580,13 @@ function DeskTable({
       </div>
     </div>
   );
+}
+
+/** A coin's day as every screen says it — the newest read of it — in its tone. */
+function DayCell({ coin }: { coin: DepthCoin }) {
+  const lang = useLang();
+  const change = useDayMove(coin.id) ?? changeOf(coin, '24h');
+  return <span data-tone={change === null ? undefined : changeTone(change)}>{moveOr(change, lang)}</span>;
 }
 
 /** Buys and sells over the window, with the buys' share as a bar. */
@@ -631,195 +607,64 @@ function BuysSells({ coin, window }: { coin: DepthCoin; window: DepthWindow }) {
   );
 }
 
-function PhoneRows({ rows, window, now, quick, onQuick }: { rows: readonly DepthCoin[]; window: DepthWindow; now: number; quick: string; onQuick: (coin: DepthCoin) => void }) {
+function PhoneRows({ rows, window, now, kind }: { rows: readonly DepthCoin[]; window: DepthWindow; now: number; kind: DepthKind }) {
+  const w = useWords(DEPTH);
   const lang = useLang();
+  const router = useRouter();
   return (
-    <div className={d.phoneList}>
+    <div className={d.phoneList} role="list" aria-label={w.market}>
       {rows.map((coin) => {
         const change = changeOf(coin, window);
+        // A company's token is told by its company: no age, and its issuer's rights are no fact against it here.
+        const company = kind === 'stock' || kind === 'preipo';
+        const age = company ? null : ageMs(coin, now);
+        const facts = company ? 0 : riskFacts(coin).length;
         return (
-          <div key={coin.id} className={d.phoneRow}>
-            <Link className={d.rowLink} href={coinHref(coin.id, 'live')}>
-              <CoinWords coin={coin} now={now} holders />
+          <div key={coin.id} role="listitem" className={d.phoneRow} onClick={() => router.push(coinHref(coin.id, 'live'))}>
+            <Link className={d.rowLink} href={coinHref(coin.id, 'live')} onClick={(event) => event.stopPropagation()}>
+              <CoinWords
+                coin={coin}
+                now={now}
+                aside={
+                  <>
+                    {age === null ? null : (
+                      <span className={d.age}>
+                        <AgeText ms={age} />
+                      </span>
+                    )}
+                    {facts ? (
+                      <span className={d.phoneRisk} role="img" aria-label={w.riskOf(digits(String(facts), lang))}>
+                        <Warn />
+                        {digits(String(facts), lang)}
+                      </span>
+                    ) : null}
+                  </>
+                }
+                sub={
+                  kind === 'stock' || kind === 'preipo' ? (
+                    <>
+                      {coin.symbol} <span className={d.gap} /> {w.volShort} {moneyOr(volumeOf(coin, window), lang)}
+                    </>
+                  ) : kind === 'meme' ? (
+                    <>
+                      {w.capShort} {moneyOr(coin.mcap, lang)} <span className={d.gap} /> {w.holdersShort} {countText(coin.holders, lang)}
+                    </>
+                  ) : (
+                    <>
+                      {w.capShort} {moneyOr(coin.mcap, lang)} <span className={d.gap} /> {w.volShort} {moneyOr(volumeOf(coin, window), lang)}
+                    </>
+                  )
+                }
+              />
             </Link>
-            <Rights coin={coin} />
             <span className={d.phoneFig}>
               <b className={d.price}>{coin.price === null ? '—' : priceText(coin.price, lang)}</b>
-              <span data-tone={change === null ? undefined : changeTone(change)}>{moveOr(change, lang)}</span>
+              {window === '24h' ? <DayCell coin={coin} /> : <span data-tone={change === null ? undefined : changeTone(change)}>{moveOr(change, lang)}</span>}
             </span>
-            {TICKET_OPEN ? <QuickButton coin={coin} sum={quick} onQuick={onQuick} /> : null}
+            <ZapButton coin={quickOf(coin)} />
           </div>
         );
       })}
-    </div>
-  );
-}
-
-/** Pro: the market's figures in one line — the majors' prices and moves, and how many coins the market names. */
-function Strip({ towers }: { towers: readonly Tower[] }) {
-  const w = useWords(DEPTH);
-  const lang = useLang();
-  const named = STRIP.map((symbol) => towers.find((t) => t.verified && t.symbol.toUpperCase() === symbol)).filter((t): t is Tower => Boolean(t));
-  const listed = towers.filter((t) => t.verified).length;
-  if (!named.length) return null;
-  return (
-    <div className={d.strip}>
-      {named.map((t) => (
-        <Link key={t.id} href={coinHref(t.id, 'live')} className={d.stripCoin}>
-          <CoinLogo src={t.icon ? `/api/icon/${t.id}` : null} symbol={t.symbol} size="s" />
-          <b>{t.symbol}</b>
-          <span>{priceText(t.price, lang)}</span>
-          <span data-tone={changeTone(t.change24h)}>{changeText(t.change24h, lang)}</span>
-        </Link>
-      ))}
-      <span className={d.grow} />
-      <span className={d.stripCount}>
-        <Zap />
-        {w.onMarket} <b>{digits(String(listed), lang)}</b>
-      </span>
-    </div>
-  );
-}
-
-/** The quick-buy sum, picked once: every ⚡ buys that much SOL's worth. */
-function QuickPick() {
-  const w = useWords(DEPTH);
-  const lang = useLang();
-  const quick = useDepth((st) => st.quick);
-  const [open, setOpen] = useState(false);
-  const box = useRef<HTMLDivElement>(null);
-  useDismiss(open, box, () => setOpen(false));
-  return (
-    <div className={d.pop} ref={box}>
-      <button type="button" className={d.quickPick} aria-expanded={open} onClick={() => setOpen((was) => !was)}>
-        <Zap />
-        {w.quick} <b>{fieldText(quick, lang)} SOL</b>
-      </button>
-      {open ? (
-        <div className={d.menu} role="menu">
-          {QUICK_SOL.map((sum) => (
-            <button
-              key={sum}
-              type="button"
-              role="menuitemradio"
-              aria-checked={sum === quick}
-              className={d.menuItem}
-              onClick={() => {
-                setQuick(sum);
-                setOpen(false);
-              }}
-            >
-              {fieldText(sum, lang)} SOL
-            </button>
-          ))}
-        </div>
-      ) : null}
-    </div>
-  );
-}
-
-const FLOORS = ['mcap', 'liquidity', 'volume', 'holders'] as const;
-type Floor = (typeof FLOORS)[number];
-
-function floorText(key: Floor, value: number, lang: Lang): string {
-  return key === 'holders' ? countText(value, lang) : usdText(value, lang);
-}
-
-/** The filters that stand away from the default, each a chip; a tap opens «Filters». */
-function FilterChips({ filters }: { filters: Filters }) {
-  const w = useWords(DEPTH);
-  const lang = useLang();
-  const chips: { key: string; word: string; value: string }[] = [];
-  for (const key of FLOORS) if (filters[key] !== null) chips.push({ key, word: w[key], value: w.over(floorText(key, filters[key]!, lang)) });
-  if (filters.age !== 'any') chips.push({ key: 'age', word: w.age, value: ageBoundText(filters.age, w, lang) });
-  if (filters.change !== 'any') chips.push({ key: 'change', word: w.change, value: filters.change === 'up' ? w.up : w.down });
-  return (
-    <>
-      {chips.map((chip) => (
-        <button key={chip.key} type="button" className={d.chip} onClick={() => setFilters({ ...filters, [chip.key]: DEFAULT_FILTERS[chip.key as keyof Filters] })}>
-          <span className={d.chipWord}>{chip.word}</span> {chip.value}
-          <Icon name="close" size="s" />
-        </button>
-      ))}
-      <label className={d.chip} data-switch="">
-        <span className={d.chipWord}>{w.verified}</span>
-        <Switch on={filters.verified} onChange={(verified) => setFilters({ ...filters, verified })} label={w.verified} />
-      </label>
-    </>
-  );
-}
-
-function ageBoundText(age: AgeBound, w: W, lang: Lang): string {
-  if (age === 'any') return w.any;
-  if (age === 'old') return w.older;
-  const map: Record<Exclude<AgeBound, 'any' | 'old'>, [number, 'h' | 'd']> = { '1h': [1, 'h'], '24h': [24, 'h'], '7d': [7, 'd'], '30d': [30, 'd'] };
-  const [n, unit] = map[age];
-  return w.under(digits(`${n} ${w[UNIT_WORD[unit]]}`, lang));
-}
-
-/** «Filters · N»: every filter in one panel — a row of choices each, one tap a choice. */
-function FiltersButton({ filters }: { filters: Filters }) {
-  const w = useWords(DEPTH);
-  const lang = useLang();
-  const [open, setOpen] = useState(false);
-  const box = useRef<HTMLDivElement>(null);
-  useDismiss(open, box, () => setOpen(false));
-  const on = filtersOn(filters);
-  const set = (patch: Partial<Filters>) => setFilters({ ...filters, ...patch });
-  return (
-    <div className={d.pop} ref={box}>
-      <button type="button" className={d.filters} data-on={on ? '' : undefined} aria-expanded={open} onClick={() => setOpen((was) => !was)}>
-        <span aria-hidden="true">+</span> {w.filters}
-        {on ? <b>· {digits(String(on), lang)}</b> : null}
-      </button>
-      {open ? (
-        <div className={d.panel} role="dialog" aria-label={w.filters}>
-          {FLOORS.map((key) => (
-            <div key={key} className={d.panelRow}>
-              <span className={d.panelWord}>{w[key]}</span>
-              <div className={d.choices}>
-                {STEPS[key].map((value) => (
-                  <button key={String(value)} type="button" className={d.choice} aria-pressed={filters[key] === value} onClick={() => set({ [key]: value } as Partial<Filters>)}>
-                    {value === null ? w.any : w.over(floorText(key, value, lang))}
-                  </button>
-                ))}
-              </div>
-            </div>
-          ))}
-          <div className={d.panelRow}>
-            <span className={d.panelWord}>{w.age}</span>
-            <div className={d.choices}>
-              {AGES.map((age) => (
-                <button key={age} type="button" className={d.choice} aria-pressed={filters.age === age} onClick={() => set({ age })}>
-                  {ageBoundText(age, w, lang)}
-                </button>
-              ))}
-            </div>
-          </div>
-          <div className={d.panelRow}>
-            <span className={d.panelWord}>{w.change}</span>
-            <div className={d.choices}>
-              {WAYS.map((way: Way) => (
-                <button key={way} type="button" className={d.choice} aria-pressed={filters.change === way} onClick={() => set({ change: way })}>
-                  {way === 'any' ? w.any : way === 'up' ? w.up : w.down}
-                </button>
-              ))}
-            </div>
-          </div>
-          <div className={d.panelRow}>
-            <span className={d.panelWord}>{w.verified}</span>
-            <Switch on={filters.verified} onChange={(verified) => set({ verified })} label={w.verified} />
-          </div>
-          <div className={d.panelFoot}>
-            <button type="button" className={d.noneBtn} onClick={() => setFilters(DEFAULT_FILTERS)} disabled={!on}>
-              {w.reset}
-            </button>
-            <button type="button" className={d.done} onClick={() => setOpen(false)}>
-              {w.done}
-            </button>
-          </div>
-        </div>
-      ) : null}
     </div>
   );
 }

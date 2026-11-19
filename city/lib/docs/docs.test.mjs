@@ -295,17 +295,23 @@ test("no page of the old handbook is left to answer: every old route and chapter
     });
   for (const route of walk("app/docs").filter((path) => !path.includes("["))) assert.ok(sources.has(`/docs${route}`) || shadowedByChapters(`/docs${route}`), `/docs${route} still answers in the old interface`);
   const { DOC_PAGES } = await import("../../../app/docs/content/index.ts");
-  for (const page of DOC_PAGES.filter((p) => p.slug)) assert.ok(sources.has(`/docs/${page.slug}`), `/docs/${page.slug} still answers in the old interface`);
+  const { isSectionId } = await import("../../../app/docs/_book/book.ts");
+  // A chapter whose address is a section of the terminal's documentation again answers with that section.
+  for (const page of DOC_PAGES.filter((p) => p.slug)) assert.ok(sources.has(`/docs/${page.slug}`) || isSectionId(page.slug), `/docs/${page.slug} still answers in the old interface`);
   assert.match(read("next.config.ts"), /\.\.\.OLD_ADDRESS_REDIRECTS,[\s\S]*\.\.\.oldChapterRedirects\(\),/, "the rows lead the config");
 });
 
-test("the documentation is made of the city only, and the sitemap names every section", () => {
+test("the documentation is made of the city only, and the sitemap names every section", async () => {
   const OLD = /@\/app\/site\/|@\/components\/|@ryntra\/core|app\/site\/frozen|PublicHeader|FrozenFooter|InfoPage|@\/app\/app\/|@\/app\/docs\/|\.\/content\/index|docs-page/;
   for (const file of ["app/docs/page.tsx", "app/docs/[...slug]/page.tsx", "city/components/pages/CityDocument.tsx", "city/components/docs/DocsDocument.tsx", "city/components/docs/DocsView.tsx", "city/components/docs/docs.module.css", "city/lib/docs/read.server.ts", "city/lib/docs/book.ts"]) {
     assert.doesNotMatch(read(file), OLD, file);
   }
   assert.doesNotMatch(read("city/components/docs/docs.module.css"), /#ff681c/i);
-  for (const id of DOC_IDS) assert.ok(CITY_PAGES.some((page) => page.path === docPath(id)), `${id} is in the sitemap`);
+  // The documentation is the terminal's: its sections are in the sitemap, and the city's that lead there are not.
+  const { SECTION_IDS, OLD_SECTIONS } = await import("../../../app/docs/_book/book.ts");
+  for (const id of SECTION_IDS) assert.ok(CITY_PAGES.some((page) => page.path === `/docs/${id}`), `${id} is in the sitemap`);
+  for (const id of Object.keys(OLD_SECTIONS)) assert.ok(!CITY_PAGES.some((page) => page.path === `/docs/${id}`), `/docs/${id} only leads elsewhere`);
+  for (const id of DOC_IDS) assert.ok(SECTION_IDS.includes(id) || id in OLD_SECTIONS, `/docs/${id} still answers`);
   assert.doesNotMatch(read("city/lib/open/site-map.ts"), /'\/docs\/:path\+'/, "the documentation's pages are the city's now");
 });
 

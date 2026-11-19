@@ -1,0 +1,235 @@
+/* The coin's desk on the whole screen: the chart, the trades column, the ticket the whole height, the bottom
+   panel; borders the person drags. Panels are straight dark glass in the terminal's tokens; the handles are quiet
+   strips that light under the hand. No corner of its own: the ticket's one cut is the kit's. */
+
+.desk {
+  /* A trading desk is the window's height under the terminal's header: the frame's gutters (8 px over, 28 px under),
+     the page's own top (24 px), the coin's head (72 px) and the page's gap after it (24 px). */
+  --desk-h: max(600px, calc(100dvh - var(--top) - 156px));
+
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 8px var(--ticket, 340px);
+  grid-template-rows: minmax(0, 1fr) 8px var(--bottom, 200px);
+  grid-template-areas:
+    'chart hticket ticket'
+    'hbottom hticket ticket'
+    'bottom hticket ticket';
+  height: var(--desk-h);
+  min-width: 0;
+}
+
+.desk[data-wide] {
+  grid-template-columns: minmax(0, 1fr) 8px var(--tape, 252px) 8px var(--ticket, 340px);
+  grid-template-areas:
+    'chart htape tape hticket ticket'
+    'hbottom hbottom hbottom hticket ticket'
+    'bottom bottom bottom hticket ticket';
+}
+
+/* While a border moves, nothing under the hand is selected or catches the pointer. */
+.desk[data-dragging] {
+  user-select: none;
+}
+
+.desk[data-dragging] .chart,
+.desk[data-dragging] .tape,
+.desk[data-dragging] .bottom {
+  pointer-events: none;
+}
+
+.desk[data-dragging='tape'],
+.desk[data-dragging='ticket'] {
+  cursor: col-resize;
+}
+
+.desk[data-dragging='bottom'] {
+  cursor: row-resize;
+}
+
+.chart,
+.tape,
+.bottom {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  border: 1px solid var(--glass-edge);
+  background: var(--glass);
+}
+
+.chart {
+  grid-area: chart;
+}
+
+.tape {
+  grid-area: tape;
+}
+
+.bottom {
+  grid-area: bottom;
+  overflow: hidden;
+}
+
+.ticket {
+  grid-area: ticket;
+  container: deskticket / size;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--haze) transparent;
+}
+
+/* ── the handles ───────────────────────────────────────────────────────── */
+
+.handle {
+  position: relative;
+  display: grid;
+  place-items: center;
+  outline: none;
+  touch-action: none;
+}
+
+.handle[data-part='tape'] {
+  grid-area: htape;
+  cursor: col-resize;
+}
+
+.handle[data-part='ticket'] {
+  grid-area: hticket;
+  cursor: col-resize;
+}
+
+.handle[data-part='bottom'] {
+  grid-area: hbottom;
+  cursor: row-resize;
+}
+
+.gap {
+  grid-area: hbottom;
+}
+
+/* A thin line along the strip, brighter under the hand, while it moves, and with the keyboard on it. */
+.grip {
+  display: block;
+  width: 2px;
+  height: 36px;
+  background: var(--line);
+  transition: background-color 0.15s, height 0.15s, width 0.15s;
+}
+
+.handle[data-part='bottom'] .grip {
+  width: 36px;
+  height: 2px;
+}
+
+.handle:hover .grip,
+.handle:focus-visible .grip,
+.desk[data-dragging] .handle .grip {
+  height: 64px;
+  background: var(--lilac);
+}
+
+.handle[data-part='bottom']:hover .grip,
+.handle[data-part='bottom']:focus-visible .grip,
+.desk[data-dragging='bottom'] .handle[data-part='bottom'] .grip {
+  width: 64px;
+  height: 2px;
+}
+
+/* ── folding ───────────────────────────────────────────────────────────── */
+
+.fold {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 3;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  color: var(--dim);
+  opacity: 0;
+  transition: opacity 0.15s, color 0.15s;
+}
+
+.tape:hover .fold,
+.bottom:hover .fold,
+.fold:focus-visible,
+.bottom[data-folded] .fold {
+  opacity: 1;
+}
+
+.fold:hover {
+  color: var(--ice);
+}
+
+.fold[data-part='tape'] {
+  top: 10px;
+  right: 6px;
+}
+
+/* The bottom panel folds down: its arrows turn to say it. */
+.fold[data-part='bottom'] svg {
+  transform: rotate(-90deg);
+}
+
+.bottom[data-folded] .fold[data-part='bottom'] svg {
+  transform: rotate(90deg);
+}
+
+.strip {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+  color: var(--dim);
+}
+
+.strip:hover {
+  color: var(--ice);
+  background: var(--chosen);
+}
+
+.stripWord {
+  font-size: var(--type-caption);
+  font-weight: 600;
+  white-space: nowrap;
+  writing-mode: vertical-rl;
+}
+
+/* A phone never shows the desk: before the screen knows it is a phone (the server, the first paint) the chart alone
+   stands, the page's width. */
+@media (max-width: 767px) {
+  .desk,
+  .desk[data-wide] {
+    display: flex;
+    flex-direction: column;
+    height: auto;
+  }
+
+  .chart {
+    height: 420px;
+  }
+
+  .tape,
+  .ticket,
+  .bottom,
+  .handle,
+  .gap {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .grip,
+  .fold {
+    transition: none;
+  }
+}

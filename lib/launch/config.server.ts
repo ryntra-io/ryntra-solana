@@ -500,9 +500,11 @@ export const POOL_PAYER_FLOOR_LAMPORTS = 20_000_000n;
  * How many launches one creator's wallet may send in a day, and how many the
  * whole network in an hour — every send counted, the ones the chain refused
  * too: a creation that fails on chain still costs the pool payer its fee, so
- * failures are bounded by the same counts.
+ * failures are bounded by the same counts. A guard against bots, not a limit a
+ * person meets: a wallet's day is
+ * generous, and the network's hour is what bounds the pool payer's fees.
  */
-export const LAUNCHES_PER_CREATOR_PER_DAY = 3;
+export const LAUNCHES_PER_CREATOR_PER_DAY = 20;
 export const LAUNCHES_PER_HOUR = 60;
 
 /**

@@ -4,13 +4,16 @@
 //   node terminal/shell/form-shots.mjs <outDir> [base]        base defaults to http://localhost:3182
 //
 // A stand runs as people will get it (next build + next start with the production switches). Public pages only: no
-// wallet is connected, nothing is signed. The report (`form.json`) names every box that is neither square, the
+// wallet is connected, nothing is signed. Every screen says its corners in one line — «кути на екрані: 0, 4, коло» and
+// how many boxes carry the cut (../styles/corners.mjs). The report (`form.json`) names every box that is neither square, the
 // control's 4 px, a circle nor the brand's cut, every phone panel marked `edge` that does not run from edge to edge, and every part
 // a phone cuts off at its side; the run fails on any of them.
 //   ONLY=home,coin,rail,fold — a few screens or checks;  SIZES=desk,wide,phone;  LANGS=uk,en
 import { createRequire } from "node:module";
 import { mkdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
+
+import { addTally, corners } from "../styles/corners.mjs";
 
 const require = createRequire(import.meta.url);
 const { chromium } = require("playwright");
@@ -76,6 +79,7 @@ function measure(mobile) {
 
 const report = {};
 const wrong = [];
+const seen = {};
 for (const size of SIZES) {
   if (sizes.length && !sizes.includes(size.name)) continue;
   for (const lang of langs) {
@@ -103,9 +107,10 @@ for (const size of SIZES) {
         for (const b of boxes) tally[b.shape] = (tally[b.shape] ?? 0) + 1;
         const bad = boxes.filter((b) => b.wrong);
         if (sideways) bad.push({ wrong: `the page scrolls sideways by ${sideways}px`, cls: "page" });
-        report[tag] = { url: page.url(), tally, rail: await page.evaluate(() => Math.round(document.querySelector("[data-terminal='rail']")?.getBoundingClientRect().width ?? 0)), wrong: bad };
+        addTally(seen, tally);
+        report[tag] = { url: page.url(), corners: corners(tally).line, tally, rail: await page.evaluate(() => Math.round(document.querySelector("[data-terminal='rail']")?.getBoundingClientRect().width ?? 0)), wrong: bad };
         for (const b of bad) wrong.push(`${tag}: ${b.wrong} — ${b.cls} ${b.shape ?? ""} ${b.w ?? ""}×${b.h ?? ""} «${b.text ?? ""}»`);
-        console.log(tag, JSON.stringify(tally), bad.length ? `WRONG ${bad.length}` : "");
+        console.log(tag, corners(tally).line, JSON.stringify(tally), bad.length ? `WRONG ${bad.length}` : "");
       } catch (error) {
         report[tag] = { error: String(error).slice(0, 300) };
         wrong.push(`${tag}: ${String(error).slice(0, 160)}`);
@@ -204,6 +209,8 @@ if (!only.length || only.includes("fold")) {
 }
 
 await browser.close();
+report.corners = corners(seen, "на всіх екранах").line;
+console.log(`\n${report.corners}`);
 writeFileSync(path.join(out, "form.json"), JSON.stringify(report, null, 1));
 if (wrong.length) {
   console.error(`\n${wrong.length} wrong:\n${wrong.join("\n")}`);

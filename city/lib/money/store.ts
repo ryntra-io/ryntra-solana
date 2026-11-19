@@ -22,6 +22,8 @@ import {
   bridgeRefusalWords,
   bridgeRoute,
   browserRuns,
+  type BridgeArrive,
+  type BridgeCoin,
   confirmBridge,
   orderPhase,
   planBridge,
@@ -54,6 +56,10 @@ export type { Line, SendState } from './form.ts';
 
 export type BridgeState = Readonly<{
   network: DepositNetwork;
+  /** What leaves Solana: USDC (the default) or SOL. */
+  coin: BridgeCoin;
+  /** What arrives there: USDC (the default) or the network's own coin. */
+  arrive: BridgeArrive;
   to: string;
   amount: string;
   quote: Readonly<{ key: string; body: QuoteBody; at: number }> | null;
@@ -134,7 +140,7 @@ export const TYPING_MS = 400;
 const AFTER_MOVE_MS = [1_500, 7_000];
 const ORDER_POLL_MS = 4_000;
 
-const EMPTY_BRIDGE: BridgeState = { network: 'base', to: '', amount: '', quote: null, plan: null, phase: 'idle', line: null, order: null, receipt: null };
+const EMPTY_BRIDGE: BridgeState = { network: 'base', coin: 'USDC', arrive: 'USDC', to: '', amount: '', quote: null, plan: null, phase: 'idle', line: null, order: null, receipt: null };
 const EMPTY_DEPOSIT: DepositState = { network: null, address: null, status: 'idle', progress: null, since: 0 };
 const EMPTY_ACTIVITY: ActivityState = { read: null, status: 'none', opening: null, line: null, shown: null };
 
@@ -162,6 +168,8 @@ type MoneyStore = {
   resumeSend: () => void;
 
   setBridgeNetwork: (network: DepositNetwork) => void;
+  setBridgeCoin: (coin: BridgeCoin) => void;
+  setBridgeArrive: (arrive: BridgeArrive) => void;
   setBridgeTo: (to: string) => void;
   setBridgeAmount: (amount: string) => void;
   quoteBridge: () => Promise<void>;
@@ -190,9 +198,15 @@ function bump(key: keyof typeof tickets): number {
   return tickets[key];
 }
 
-/** The wallet's USDC on Solana: what Bridge moves out. */
+/** The wallet's USDC on Solana: what Bridge moves out by default. */
 export function bridgeUsdc(wallet: WalletRead | null) {
   return wallet?.assets.find((asset) => asset.mint === SOLANA_USDC_MINT) ?? null;
+}
+
+/** The wallet's coin a bridge out moves: its USDC, or its SOL (what it may spend, the engine's reserve kept). */
+export function bridgeHolding(wallet: WalletRead | null, coin: BridgeCoin) {
+  if (coin === 'USDC') return bridgeUsdc(wallet);
+  return wallet?.assets.find((asset) => asset.id === NATIVE_ID) ?? null;
 }
 
 function checkKey(owner: string, assetId: string, target: string): string {
@@ -313,16 +327,16 @@ export const useMoneyStore = create<MoneyStore>((set, get) => {
 
   const bridgeKey = (): string | null => {
     const { owner, wallet, bridge } = get();
-    const usdc = bridgeUsdc(wallet);
+    const held = bridgeHolding(wallet, bridge.coin);
     const destination = readDestination(bridge.to);
-    const amount = readAmount(bridge.amount, usdc ? { spendableRaw: usdc.spendableRaw, decimals: usdc.decimals, symbol: 'USDC' } : null);
+    const amount = readAmount(bridge.amount, held ? { spendableRaw: held.spendableRaw, decimals: held.decimals, symbol: bridge.coin } : null);
     if (!owner || !destination.ok || !amount.ok) return null;
-    return `${owner}|${bridge.network}|${destination.address}|${amount.raw}`;
+    return `${owner}|${bridge.network}|${bridge.coin}|${bridge.arrive}|${destination.address}|${amount.raw}`;
   };
 
   const bridgeAsk = (key: string) => {
-    const [owner, network, destination, amountRaw] = key.split('|');
-    const route = bridgeRoute(network as DepositNetwork);
+    const [owner, network, coin, arrive, destination, amountRaw] = key.split('|');
+    const route = bridgeRoute(network as DepositNetwork, coin as BridgeCoin, arrive as BridgeArrive);
     return route ? { route, owner, destination, amountRaw } : null;
   };
 
@@ -532,6 +546,14 @@ export const useMoneyStore = create<MoneyStore>((set, get) => {
     setBridgeNetwork: (network) => {
       if (!bridgeEditable(get().bridge.phase)) return;
       editBridge({ network, quote: null });
+    },
+    setBridgeCoin: (coin) => {
+      if (!bridgeEditable(get().bridge.phase) || get().bridge.coin === coin) return;
+      editBridge({ coin, amount: '', quote: null });
+    },
+    setBridgeArrive: (arrive) => {
+      if (!bridgeEditable(get().bridge.phase) || get().bridge.arrive === arrive) return;
+      editBridge({ arrive, quote: null });
     },
     setBridgeTo: (to) => {
       if (!bridgeEditable(get().bridge.phase)) return;

@@ -1,3 +1,4 @@
+import { MONEY_OPEN } from '../../city/lib/money/flag.ts';
 import { TERMINAL_MODE, terminalOpen, type TerminalMode } from './flag.ts';
 
 /**
@@ -12,15 +13,52 @@ import { TERMINAL_MODE, terminalOpen, type TerminalMode } from './flag.ts';
  * (`app/(terminal)/layout.tsx`), so moving between shelves is a navigation inside the page, and the browser's Back walks
  * the same history.
  *
- * Pure data and pure functions, no imports but the switch: the build's config reads this file before anything is
+ * Pure data and pure functions, no imports but the switches (the terminal's, and money's for the bridge): the build's config reads this file before anything is
  * compiled (`next.config.ts`: a shelf that is on takes its own short address back from the city).
  */
 
 export const SHELF_IDS = ['market', 'swap', 'futures', 'predict', 'earn', 'agents', 'launch', 'portfolio'] as const;
 export type ShelfId = (typeof SHELF_IDS)[number];
 
-export type ShelfEntry = Readonly<{ path: `/${string}`; ready: boolean }>;
+/**
+ * `also`: more addresses that are the shelf's own — a screen of the shelf at an address of its own (the Swap shelf's bridge,
+ * once it has its page; the Agents shelf's bots): the city's old redirect from it gives way, as from the shelf's own address.
+ */
+export type ShelfEntry = Readonly<{ path: `/${string}`; ready: boolean; also?: readonly `/${string}`[] }>;
 export type Shelves = Readonly<Record<ShelfId, ShelfEntry>>;
+
+/**
+ * The bridge's own page in «Trade»: the Swap shelf's, while the engine lets money move between networks (the
+ * page answers 404 otherwise, and the old `/bridge` keeps leading where it did).
+ */
+export const BRIDGE_PATH = '/bridge';
+export const BRIDGE_ON: boolean = MONEY_OPEN;
+const BRIDGE_ALSO: readonly `/${string}`[] = BRIDGE_ON ? [BRIDGE_PATH] : [];
+
+/**
+ * The bots' pages: each bot a screen of its own at `/bots/<bot>`, on the Agents shelf as the menu places them
+ * (decision 109) — so the city's old redirect from `/bots` gives way while the shelf is on.
+ */
+export const BOTS_ALSO: readonly `/${string}`[] = ['/bots'];
+
+/**
+ * Meteora DLMM Pro: the list of its pools at `/pro` and a pool's own desk at `/pool/<address>` — pages of the
+ * Earn shelf at addresses of their own.
+ */
+export const PRO_PATH = '/pro';
+export const POOL_PATH = '/pool';
+const EARN_ALSO: readonly `/${string}`[] = [PRO_PATH, POOL_PATH];
+
+/** «Money» — send, receive, invoices — is the Portfolio shelf's own page: the city's old `/money` gives way to it. */
+export const MONEY_PATH = '/money';
+const MONEY_ALSO: readonly `/${string}`[] = [MONEY_PATH];
+
+/**
+ * «Rewards» — points, rank, cashback and the link to invite a friend — is a page of the Portfolio shelf, at its own
+ * address: a wallet's own figures. With the shelf on it takes `/rewards` back from the city's «Hall».
+ */
+export const REWARDS_PATH = '/rewards';
+const PORTFOLIO_ALSO: readonly `/${string}`[] = [...MONEY_ALSO, REWARDS_PATH];
 
 export const SHELVES: Shelves = {
   market: {
@@ -30,6 +68,7 @@ export const SHELVES: Shelves = {
   swap: {
     path: '/swap',
     ready: true,
+    also: BRIDGE_ALSO,
   },
   futures: {
     path: '/futures',
@@ -42,10 +81,12 @@ export const SHELVES: Shelves = {
   earn: {
     path: '/earn',
     ready: true,
+    also: EARN_ALSO,
   },
   agents: {
     path: '/agent',
     ready: true,
+    also: BOTS_ALSO,
   },
   launch: {
     path: '/launch',
@@ -54,6 +95,7 @@ export const SHELVES: Shelves = {
   portfolio: {
     path: '/portfolio',
     ready: true,
+    also: PORTFOLIO_ALSO,
   },
 };
 
@@ -76,11 +118,9 @@ export const CITY_PATH = '/city';
 /** The kit page: the rail with every shelf in its preview state and every part of the kit (a stand only). */
 export const KIT_PATH = '/terminal/kit';
 
-/** The phone's five tabs, the agent in the middle. */
+/** The phone's five tabs, the agent in the middle; the rest of the menu stands in the sheet the mark in its header opens. */
 export const PHONE_TABS = ['market', 'swap', 'agents', 'earn', 'portfolio'] as const satisfies readonly ShelfId[];
 export const PHONE_CENTER: ShelfId = 'agents';
-/** The shelves a phone keeps out of its tab bar: they stand in the sections sheet the mark in its header opens. */
-export const PHONE_SHEET = ['futures', 'predict', 'launch'] as const satisfies readonly ShelfId[];
 
 /**
  * What the frame shows: `live` — the shelves that are on, at their own addresses; `preview` — on the kit page, every
@@ -136,15 +176,14 @@ export function shelfAt(pathname: string, shelves: Shelves = SHELVES): ShelfId |
   }
   if (path === HOME_PATH || path === COIN_PATH || path.startsWith(`${COIN_PATH}/`)) return 'market';
   for (const id of SHELF_IDS) {
-    const own = shelves[id].path;
-    if (path === own || path.startsWith(`${own}/`)) return id;
+    for (const own of [shelves[id].path, ...(shelves[id].also ?? [])]) if (path === own || path.startsWith(`${own}/`)) return id;
   }
   return null;
 }
 
-/** The addresses a shelf answers at: its own, and for the Market every coin's (the home page `/` is the Market's too). */
+/** The addresses a shelf answers at: its own and its `also`, and for the Market every coin's (the home page `/` is the Market's too). */
 export function ownAddresses(id: ShelfId, shelves: Shelves = SHELVES): string[] {
-  return id === 'market' ? [shelves.market.path, COIN_PATH] : [shelves[id].path];
+  return id === 'market' ? [shelves.market.path, COIN_PATH, ...(shelves.market.also ?? [])] : [shelves[id].path, ...(shelves[id].also ?? [])];
 }
 
 type RedirectRow = Readonly<{ source: string; has?: readonly Readonly<{ type: string }>[] }>;

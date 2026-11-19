@@ -1,8 +1,7 @@
 'use client';
 
 import { useEffect, useId, useState } from 'react';
-import { MANDATE_PRESETS, presetLimits, useMandate } from '@/city/lib/bots/mandate';
-import { sol } from '@/city/lib/bots/format';
+import { useMandate } from '@/city/lib/bots/mandate';
 import { digits, useWords } from '@/city/lib/i18n/dict';
 import { useLang } from '@/city/lib/i18n/lang';
 import { solText } from '@/city/lib/autopilot/plan';
@@ -155,7 +154,6 @@ function Propose() {
   if (!split || !plan) return <p className={i.notice}>{w.notePrice}</p>;
   const total = solUsd !== null ? PILOT_PARTS.reduce((sum, part) => sum + legsUsd(split.legs, solUsd)[part], 0) : null;
   const extra: string[] = [];
-  if (split.capped) extra.push(digits(w.capped(sol(presetLimits(MANDATE_PRESETS[0]!).perDay, lang)), lang));
   if (ask.coins.length > 1 && coin) extra.push(w.oneCoin(coin.symbol, ask.coins.slice(1).map((c) => c.symbol).join(', ')));
   if (split.dropped.length) extra.push(w.dropped(split.dropped.map((part) => PART_NAME(w, part)).join(', ')));
   const onPaper = phase === 'paper' || phase === 'signing';
@@ -176,7 +174,7 @@ function Propose() {
           <span className={i.kicker}>{w.kicker}</span>
           <h2 className={i.headline}>{w.headline}</h2>
           {total !== null && sums ? <p className={i.sub}>{w.total(usdText(total, lang))}</p> : null}
-          {split.preset && coin ? <p className={a.plan}>{w.on_trade(coin.symbol)}</p> : null}
+          {split.budget && coin ? <p className={a.plan}>{w.on_trade(coin.symbol)}</p> : null}
         </div>
       </div>
       <Split shares={split.shares} plan={plan} solUsd={sums ? solUsd : null} />
@@ -197,7 +195,7 @@ function Propose() {
           )}
         </div>
       ) : null}
-      {split.preset && PILOT_NET === 'mainnet' && !coin ? <p className={i.notice}>{w.pickCoin}</p> : null}
+      {split.budget && PILOT_NET === 'mainnet' && !coin ? <p className={i.notice}>{w.pickCoin}</p> : null}
       {short ? <p className={i.problem} data-pilot-short={short}>{w.short(short)}</p> : null}
       {/* «not enough» had no way on but practice — one quiet tap to Money's top-up, as on the agent's card.
           A button with a frame, not words that read as one more caption under the line. */}
@@ -208,7 +206,7 @@ function Propose() {
       ) : null}
       {note ? <p className={note.kind === 'walletNo' ? i.notice : i.problem}>{noteText(w, note.kind)}</p> : null}
       <div className={i.dock}>
-        {split.preset ? (
+        {split.budget ? (
           <p className={s.pay} data-pilot-pay="">
             {w.pay(fee.low, fee.high)}
           </p>
@@ -217,7 +215,7 @@ function Propose() {
           {w.risk}
         </p>
         {onPaper ? (
-          <Press label={w.live} busy={phase === 'signing'} busyLabel={w.signing} disabled={Boolean((split.preset && PILOT_NET === 'mainnet' && !coin) || short)} onPress={(who) => void goLive(who)} />
+          <Press label={w.live} busy={phase === 'signing'} busyLabel={w.signing} disabled={Boolean((split.budget && PILOT_NET === 'mainnet' && !coin) || short)} onPress={(who) => void goLive(who)} />
         ) : (
           <button type="button" className={i.action} onClick={() => void startPaper()} data-pilot-paper-start="">
             {w.paper}

@@ -13,7 +13,7 @@ import { feeText, solFigure } from './clean-view';
 import { askedOf, buildExit, runExit, setExitIncluded, setExitTarget, useExit } from './exit';
 import { amountFigure, receiveFigures, rentSol } from './exit-view';
 import { Glyph } from './glyphs';
-import { logoFor } from './Groups';
+import { logoFor, logosFor } from './Groups';
 import type { AllData } from './useAll';
 import a from './all.module.css';
 import p from './portfolio.module.css';
@@ -145,7 +145,7 @@ export function ExitPanel({ data, onClose }: { data: AllData; onClose: () => voi
                         <li key={line.id} className={a.exitRow} data-off={isOn ? undefined : ''}>
                           <span className={a.pair} aria-hidden="true">
                             {line.row.coins.map((coin) => (
-                              <CoinLogo key={coin.mint} src={logoFor(coin.mint)} symbol={coin.symbol ?? '?'} size="s" />
+                              <CoinLogo key={coin.mint} src={logoFor(coin.mint)} also={logosFor(coin.mint).slice(1)} symbol={coin.symbol ?? '?'} size="s" />
                             ))}
                           </span>
                           <span className={a.words}>

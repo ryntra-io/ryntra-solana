@@ -74,6 +74,8 @@ const PATHS = {
     </>
   ),
   close: <path d="M6 6l12 12M18 6L6 18" />,
+  /* The phone's menu: three lines. */
+  menu: <path d="M4 7h16M4 12h16M4 17h16" />,
   globe: (
     <>
       <circle cx="12" cy="12" r="8.5" />
@@ -91,6 +93,8 @@ const PATHS = {
   shield: <path d="M12 3.5 19 6v5.5c0 4.2-2.9 7.6-7 9-4.1-1.4-7-4.8-7-9V6zM9 12l2 2 4-4" />,
   fold: <path d="M4 5h16v14H4zM15 5v14M8.5 9.5 11 12l-2.5 2.5" />,
   unfold: <path d="M4 5h16v14H4zM15 5v14M11 9.5 8.5 12l2.5 2.5" />,
+  undo: <path d="M9 14 4.5 9.5 9 5M4.5 9.5h10a5 5 0 0 1 0 10H11" />,
+  redo: <path d="M15 14l4.5-4.5L15 5M19.5 9.5h-10a5 5 0 0 0 0 10H13" />,
   wallet: (
     <>
       <path d="M4 7.5h14.5a1.5 1.5 0 0 1 1.5 1.5v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 18V7.5Z" />

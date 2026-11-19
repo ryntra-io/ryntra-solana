@@ -102,7 +102,10 @@ const browser = await chromium.launch({ executablePath: chrome, args: ["--use-an
 const SIZES = [
   { name: "desk", width: 1440, height: 900, mobile: false },
   { name: "phone", width: 390, height: 844, mobile: true },
-].filter((size) => !process.env.SIZES || process.env.SIZES.split(",").includes(size.name));
+  // The wide desks the operator looks on: only when named.
+  { name: "wide", width: 1920, height: 1080, mobile: false, named: true },
+  { name: "xl", width: 2560, height: 1440, mobile: false, named: true },
+].filter((size) => (process.env.SIZES ? process.env.SIZES.split(",").includes(size.name) : !size.named));
 const LANGS = (process.env.LANGS ?? "en,uk").split(",");
 const report = [`JUP at $${jupPrice} (${source})`];
 
@@ -156,6 +159,8 @@ for (const size of SIZES) {
       asked.submits += 1;
       return json(route, 503, {});
     });
+    // The wallet holds no order of Jupiter's here: its read answers empty, so the tab shows the ladder alone.
+    await context.route("**/api/solana/limits/orders", (route) => json(route, 200, { orders: [], tokens: {}, complete: true }));
     await context.route("**/api/v1/ladders/orders?*", (route) => json(route, 200, { orders: [ORDER] }));
 
     const page = await context.newPage();
@@ -207,6 +212,12 @@ for (const size of SIZES) {
     await page.waitForSelector("canvas", { timeout: 60_000 }).catch(() => {});
     await settle();
     await page.waitForTimeout(2500);
+    // A phone's ticket is a sheet under «Buy JUP»: opened first, the Limit tab is in it.
+    if (size.mobile) {
+      const buy = page.locator("button[data-side='buy']").first();
+      if (await buy.count()) await tap(buy);
+      await page.waitForTimeout(800);
+    }
     await tap(limitTab());
     await page.waitForTimeout(800);
     await shot("limit-connect");
@@ -221,7 +232,8 @@ for (const size of SIZES) {
     await page.waitForTimeout(2000);
     // Under the chart, the orders the wallet has of this coin.
     const ordersTab = page.getByRole("tab", { name: new RegExp(`^${uk ? "Ордери" : "Orders"}`) });
-    if (await ordersTab.count()) await tap(ordersTab.first());
+    // On a phone the ticket's sheet stands over the tabs under the chart: they are read once it closes.
+    if (!size.mobile && (await ordersTab.count())) await tap(ordersTab.first());
     await page.waitForTimeout(1200);
     await shot("limit-ladder");
     if (size.mobile) {

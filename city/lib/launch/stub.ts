@@ -80,7 +80,7 @@ export const STUB_PRESETS_ANSWER: LaunchPresetsResponse = {
     { id: '3m-6m', cliffDays: 90, vestDays: 180 },
     { id: '6m-12m', cliffDays: 180, vestDays: 365 },
   ],
-  limits: { nameMax: 32, symbolMax: 10, descriptionMax: 280, imageMaxBytes: 262144, imageTypes: ['image/png', 'image/jpeg', 'image/webp', 'image/gif'], launchesPerDay: 3 },
+  limits: { nameMax: 32, symbolMax: 10, descriptionMax: 280, imageMaxBytes: 262144, imageTypes: ['image/png', 'image/jpeg', 'image/webp', 'image/gif'], launchesPerDay: 20 },
   /* The stand serves early access with the devnet stand's own bounds (`DEVNET_EARLY_ACCESS_BOUNDS`). */
   formats: {
     advanced: null,

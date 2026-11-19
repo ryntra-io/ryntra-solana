@@ -5,8 +5,15 @@
  * attribution. Both are honoured here rather than hoped for: every read goes
  * through one process-wide bucket of twenty-four calls a minute, a pool
  * resolution is kept for an hour, and a timeframe read is kept for its own TTL
- * and served stale for up to thirty minutes when the source rate-limits or
+ * and served stale — marked so — for hours when the source rate-limits or
  * fails. A chart that cannot be read says so; it never shows a flat line.
+ *
+ * The source's limit is one for every person, so a
+ * read is shared by every instance of the deployment, not only by this one —
+ * the platform's data cache holds each market's and interval's last good bars,
+ * served while the next read runs behind them and kept when that read is
+ * refused. Inside one instance the same question is one read (single-flight),
+ * and a refusal for rate stops every read until the source's own `Retry-After`.
  */
 
 import { readMintAccount } from "../solana/mint.ts";
@@ -23,6 +30,7 @@ import {
   type SpotPool,
   type SpotTimeframe,
 } from "./candles.ts";
+import { sharedRead } from "../stocks/shared-read.ts";
 import { readSpotMarket } from "./markets.server.ts";
 import { pauseAfterRate, ratePauseLeftMs, resetRatePauses } from "./shared-reads.ts";
 
@@ -59,7 +67,11 @@ export async function scaledUnitMultiplier(mint: string, now: number): Promise<n
 export const GECKO_SOLANA_BASE = "https://api.geckoterminal.com/api/v2/networks/solana";
 const BASE = GECKO_SOLANA_BASE;
 const POOL_TTL_MS = 60 * 60_000;
-const STALE_GRACE_MS = 30 * 60_000;
+/* How long the last good bars are served, stated stale, while the source refuses: a day's bars two days, any other six
+   hours (half an hour left an empty chart through a long refusal). */
+const HELD_MS: Readonly<Record<SpotTimeframe, number>> = { "1m": 6 * 3_600_000, "5m": 6 * 3_600_000, "15m": 6 * 3_600_000, "1h": 6 * 3_600_000, "4h": 6 * 3_600_000, "1d": 48 * 3_600_000 };
+/** The most markets and intervals one instance keeps in memory; the oldest read leaves first. */
+const MAX_HELD_READS = 600;
 const BUCKET_PER_MINUTE = 24;
 /* The chart is the page's first screen: the token page's own reads (its pools, trades, checks) stop while fewer than this
    many calls are left in the minute, so a page full of tabs never takes the chart down. */
@@ -102,12 +114,14 @@ export const NO_CHART_REASONS: Readonly<Record<"NO_POOL" | "NO_MAJOR_QUOTE" | "T
 /* A sliding one-minute window. Refusing locally is what keeps the source from
    refusing us for the next minute, which would take every chart down at once. */
 const calls: number[] = [];
-function takeCall(priority: "chart" | "page"): boolean {
+/** A call taken from the minute's budget (0), or how long until the budget has one again, ms. */
+function takeCall(priority: "chart" | "page"): number {
   const now = Date.now();
   while (calls.length > 0 && now - calls[0] > 60_000) calls.shift();
-  if (calls.length >= BUCKET_PER_MINUTE - (priority === "page" ? CHART_RESERVE : 0)) return false;
+  const room = BUCKET_PER_MINUTE - (priority === "page" ? CHART_RESERVE : 0);
+  if (calls.length >= room) return Math.max(1_000, 60_000 - (now - calls[calls.length - room]!));
   calls.push(now);
-  return true;
+  return 0;
 }
 
 /** One read of GeckoTerminal inside this instance's minute budget — the chart, the pools and the trades share it. */
@@ -115,7 +129,8 @@ export async function getJson(url: string, priority: "chart" | "page" = "chart")
   /* After the source refused for rate, nothing is asked of it until its pause ends — a refused minute is not spent twice. */
   const paused = ratePauseLeftMs("geckoterminal");
   if (paused > 0) return { ok: false, code: "RATE_LIMITED", reason: "The chart source is pausing after a refusal for rate; the last read is shown.", retryAfterMs: paused };
-  if (!takeCall(priority)) return { ok: false, code: "RATE_LIMITED", reason: "The chart source's minute budget is spent; the last read is shown." };
+  const wait = takeCall(priority);
+  if (wait > 0) return { ok: false, code: "RATE_LIMITED", reason: "The chart source's minute budget is spent; the last read is shown.", retryAfterMs: wait };
   let response: Response;
   try {
     response = await fetch(url, { headers: { accept: "application/json" }, signal: AbortSignal.timeout(8_000) });
@@ -219,8 +234,57 @@ export async function readSpotCandles(mint: string, timeframe: SpotTimeframe, pr
   const key = `${mint}:${timeframe}`;
   const hit = reads.get(key);
   if (hit && Date.now() - hit.readAt < TIMEFRAME_TTL_MS[timeframe]) return hit.value;
-  /* Every chart of this market and interval opened at once is one read. */
-  return once(`candles:${key}`, () => readSpotCandlesNow(mint, timeframe, priority));
+  /* Every chart of this market and interval opened at once is one read, and every instance shares its last
+     good bars through the platform's data cache: kept for the interval's own time, then served while the
+     next read runs behind them, and still served when that read is refused. Outside a Next request it reads as it is. */
+  return once(`candles:${key}`, async () => {
+    /* A market refused for what its bars showed says so, whatever copy the data cache still holds. */
+    const refused = noChart.get(key);
+    if (refused && Date.now() - refused.at < NO_CHART_TTL_MS) return { ok: false, code: refused.code, reason: NO_CHART_REASONS[refused.code] };
+    const seconds = Math.max(15, Math.round(TIMEFRAME_TTL_MS[timeframe] / 1000));
+    let answer: SpotCandlesRead | SpotCandlesFailure;
+    try {
+      answer = await sharedRead(["spot-candles", "v1", mint, timeframe], seconds, () => readSpotCandlesNow(mint, timeframe, priority), (value) => value.ok && !value.stale);
+    } catch {
+      /* The data cache itself failed: the read is made here. */
+      return readSpotCandlesNow(mint, timeframe, priority);
+    }
+    if (!answer.ok) return answer;
+    remember(key, answer);
+    /* The data cache hands back its old copy while it reads behind it: a copy past fresh is not taken for a new one —
+       the read is made here, and the copy (now this instance's) is served, stated stale, only if that read is refused
+       and the copy is younger than the interval's hold. */
+    if (Date.now() - Date.parse(answer.observedAt) > freshForMs(timeframe)) return readSpotCandlesNow(mint, timeframe, priority);
+    return agedRead(answer, timeframe, Date.now());
+  });
+}
+
+/** How long bars pass for fresh: two of their interval's cache times, never under a minute. */
+const freshForMs = (timeframe: SpotTimeframe): number => Math.max(60_000, 2 * TIMEFRAME_TTL_MS[timeframe]);
+
+/** A read kept in this instance's memory by the time it was read (another instance's too) — never as fresher than it is. */
+function remember(key: string, value: SpotCandlesRead): void {
+  const at = Date.parse(value.observedAt);
+  if (!Number.isFinite(at)) return;
+  const held = reads.get(key);
+  if (held && held.readAt >= at) return;
+  reads.delete(key);
+  reads.set(key, { value: { ...value, stale: false }, readAt: at });
+  while (reads.size > MAX_HELD_READS) {
+    const oldest = reads.keys().next().value;
+    if (oldest === undefined) break;
+    reads.delete(oldest);
+  }
+}
+
+/**
+ * Bars older than fresh (`freshForMs`) are stated stale, wherever they were kept: the chart says «Delayed» over them,
+ * not «Live».
+ */
+export function agedRead(read: SpotCandlesRead, timeframe: SpotTimeframe, now: number): SpotCandlesRead {
+  const at = Date.parse(read.observedAt);
+  const old = Number.isFinite(at) && now - at > freshForMs(timeframe);
+  return old && !read.stale ? { ...read, stale: true } : read;
 }
 
 async function readSpotCandlesNow(mint: string, timeframe: SpotTimeframe, priority: "chart" | "page"): Promise<SpotCandlesRead | SpotCandlesFailure> {
@@ -232,14 +296,16 @@ async function readSpotCandlesNow(mint: string, timeframe: SpotTimeframe, priori
   if (refused && now - refused.at < NO_CHART_TTL_MS) return { ok: false, code: refused.code, reason: NO_CHART_REASONS[refused.code] };
   const resolved = await resolveSpotPool(mint, priority);
   if (!resolved.ok) {
-    if (hit && now - hit.readAt < STALE_GRACE_MS) return { ...hit.value, stale: true };
+    /* The source blinked: the last bars stay, stated stale. A market that has no chart now (no pool, a quiet one) says so. */
+    const blink = resolved.code === "RATE_LIMITED" || resolved.code === "UNREACHABLE" || resolved.code === "REFUSED" || resolved.code === "MALFORMED";
+    if (blink && hit && now - hit.readAt < HELD_MS[timeframe]) return { ...hit.value, stale: true };
     return resolved;
   }
   const source = TIMEFRAME_SOURCE[timeframe];
   const url = `${BASE}/pools/${encodeURIComponent(resolved.pool.address)}/ohlcv/${source.path}?aggregate=${source.aggregate}&limit=${timeframe === "1d" ? DAILY_CANDLE_LIMIT : CANDLE_LIMIT}&currency=usd&token=${resolved.pool.side}`;
   const read = await getJson(url, priority);
   if (!read.ok) {
-    if (hit && now - hit.readAt < STALE_GRACE_MS) return { ...hit.value, stale: true };
+    if (hit && now - hit.readAt < HELD_MS[timeframe]) return { ...hit.value, stale: true };
     return read;
   }
   /* The source prices the raw base token; the page prices the scaled unit. */
@@ -269,7 +335,7 @@ async function readSpotCandlesNow(mint: string, timeframe: SpotTimeframe, priori
     stale: false,
     source: { label: "GeckoTerminal", url: "https://www.geckoterminal.com" },
   };
-  reads.set(key, { value, readAt: now });
+  remember(key, value);
   return value;
 }
 

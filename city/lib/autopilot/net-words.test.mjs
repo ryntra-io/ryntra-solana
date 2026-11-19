@@ -36,9 +36,10 @@ test("the share card prices the span after every fee: its «x» is honest too", 
   assert.equal(shareWorth({ ...NET, netRaw: null }), null);
 });
 
-test("the calm rhythm the card shows: one buy a day at the default pace", () => {
-  assert.deepEqual(rhythmOf("small", 1), { buys: 1, everyHours: 24, perTrade: 0.02, perDay: 0.1, days: 30 });
-  assert.equal(rhythmOf("small").buys, 5);
+test("the rhythm the card shows: a plan's own pace under her numbers, else her day over her trade", () => {
+  const hers = { perDay: 100_000_000n, perTrade: 20_000_000n, days: 30 };
+  assert.deepEqual(rhythmOf(hers, 1), { buys: 1, everyHours: 24, perTrade: 0.02, perDay: 0.1, days: 30 });
+  assert.equal(rhythmOf(hers).buys, 5);
 });
 
 test("no rate a day and no promise in the agent's words", () => {

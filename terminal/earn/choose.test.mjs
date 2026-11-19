@@ -148,6 +148,19 @@ test("filters — floors, type, coin, verified, step and base bands; a missing f
   assert.equal(city[0].act, "pro");
 });
 
+test("«Pool reward» — DLMM Pro's pools among the strategies: no floor a young pool cannot meet, a running reward named first", () => {
+  const pro = (address, over = {}) => ({ address, x: { mint: SOL, symbol: "SOL", decimals: 9 }, y: { mint: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v", symbol: "USDC", decimals: 6 }, solIsX: true, price: 140, feeBps: 25, tickSpacing: 10, tickId: 0, depthLamports: "10000000000", rewards: [], takesDeposits: true, ...over });
+  const reward = { mint: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v", symbol: "USDC", perDayRaw: "864000000", running: true };
+  const piers = [pro("Pro1111111111111111111111111111111111111111"), pro("Pro2222222222222222222222222222222222222222", { rewards: [reward] }), pro("Pro3333333333333333333333333333333333333333", { takesDeposits: false })];
+  const rows = chooseRows({ catalog: [pool()], harbor: [], addOpen: true, proPiers: piers, rows: [{ kind: "pro", address: piers[0].address, depthUsd: 1_400 }, { kind: "pro", address: piers[1].address, depthUsd: 1_400 }] });
+  const shown = filterRows(rows, strategyFilters("reward"));
+  assert.deepEqual(shown.map((row) => row.address).sort(), [piers[0].address, piers[1].address], "only DLMM Pro's pools that take a deposit; a shallow one is not hidden");
+  assert.equal(strategyPick(rows, "reward").address, piers[1].address, "the pool whose reward runs names the card");
+  assert.deepEqual(strategyPick(rows, "reward").reward, { perDay: "864", symbol: "USDC" });
+  assert.equal(rows.find((row) => row.type === "dlmm").reward ?? null, null, "a pool of DLMM has no reward line");
+  assert.equal(strategyPick(chooseRows({ catalog: [pool()], harbor: [], addOpen: true, proPiers: [], rows: [] }), "reward"), null, "no card without a DLMM Pro pool");
+});
+
 test("orders — a figure nobody stated goes last either way; strategies pick a pool that adds first", () => {
   const rows = chooseRows({
     catalog: [

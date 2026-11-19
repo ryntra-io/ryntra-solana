@@ -7,7 +7,7 @@ import type { LadderPoolInfo, LadderStatus, LiveLadder } from './ladder.ts';
 /**
  * The review stand of the ladder — fixtures for `ladder-shots.mjs` only: a SOL/USDC pool
  * at the city's SOL price on the network asked for, a review wallet's public address, and three ladders it placed —
- * one working, one whose bundle half-landed, one filled. On mainnet the stand carries the chain's terms and the cap
+ * one working, one whose bundle half-landed, one filled. On mainnet the stand carries the chain's terms
  * as the engine answers them. Public facts only: addresses and steps, never a key.
  */
 
@@ -16,9 +16,8 @@ export const REVIEW_POOL = 'DevPoo1SoLUSDCRev1ew11111111111111111111111';
 
 const order = (n: number) => `Order${String(n).padStart(3, '0')}Rev1ew1111111111111111111111111111`.slice(0, 44);
 
-/** Mainnet's terms as the engine reads them on the fork: rent per byte, priority per transaction; and the start cap. */
+/** Mainnet's terms as the engine reads them on the fork: rent per byte, priority per transaction. */
 export const MAINNET_TERMS = { rentPerByte: 6_960, priorityLamportsPerTx: 20_000 } as const;
-export const MAINNET_CAP = 100;
 
 export function poolAt(price: number, network: LadderNetwork = 'devnet'): LadderPoolInfo {
   const facts: LadderPool = { pool: REVIEW_POOL, binStep: 10, activeId: 0, baseIsX: true, baseMint: WRAPPED_SOL, quoteMint: network === 'mainnet' ? MAINNET_USDC : DEVNET_USDC, baseDecimals: 9, quoteDecimals: 6 };
@@ -35,7 +34,7 @@ export function poolAt(price: number, network: LadderNetwork = 'devnet'): Ladder
 
 export function statusAt(price: number, at: number, network: LadderNetwork = 'devnet'): LadderStatus {
   if (network === 'devnet') return { open: true, network, venue: { venue: 'dlmm', available: true }, pool: poolAt(price), at };
-  return { open: true, network, venue: { venue: 'dlmm', available: true }, pool: poolAt(price, network), terms: MAINNET_TERMS, maxUsd: MAINNET_CAP, at };
+  return { open: true, network, venue: { venue: 'dlmm', available: true }, pool: poolAt(price, network), terms: MAINNET_TERMS, maxUsd: null, at };
 }
 
 function placed(draft: BotDraft, leg: Parameters<typeof planLeg>[0], price: number, first: number, failFrom: number | null) {

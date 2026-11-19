@@ -173,12 +173,14 @@ export type ChartData = Readonly<{
   code: NoChart | null;
   /** Reads in a row that failed for this market and interval: the chart says it is unavailable only after a few. */
   misses: number;
+  /** The last failure was the source's own limit (the engine's 429): the bars come once it lets go. */
+  busy?: boolean;
 }>;
 
 /** The state of a market and interval before any answer: the bars it already had, only if they are this market's. */
 export function loading(mint: string, timeframe: Timeframe, before: ChartData | null): ChartData {
   const same = before && before.mint === mint && before.timeframe === timeframe ? before : null;
-  return { mint, timeframe, status: 'loading', last: same?.last ?? null, code: null, misses: same?.misses ?? 0 };
+  return { mint, timeframe, status: 'loading', last: same?.last ?? null, code: null, misses: same?.misses ?? 0, busy: same?.busy ?? false };
 }
 
 /**
@@ -186,17 +188,18 @@ export function loading(mint: string, timeframe: Timeframe, before: ChartData | 
  * ones and marks them stale, so the age under the chart counts from them.
  */
 export function settle(state: ChartData, read: CandlesRead): ChartData {
-  if (read.status === 'ready') return { ...state, status: 'ready', last: read, code: null, misses: 0 };
-  if (read.status === 'none') return { ...state, status: 'none', last: null, code: read.code, misses: 0 };
-  return { ...state, status: 'unavailable', last: state.last ? { ...state.last, stale: true } : null, misses: state.misses + 1 };
+  if (read.status === 'ready') return { ...state, status: 'ready', last: read, code: null, misses: 0, busy: false };
+  if (read.status === 'none') return { ...state, status: 'none', last: null, code: read.code, misses: 0, busy: false };
+  return { ...state, status: 'unavailable', last: state.last ? { ...state.last, stale: true } : null, misses: state.misses + 1, busy: read.reason === 'busy' };
 }
 
 /**
  * Whether the chart says «unavailable»: only with no bars to show and after `QUIET_MISSES` failed reads in a row. A
- * first read refused for rate (the engine's 429 when a phone opens the city) is tried again in silence — the frame
- * waits as it does for a first read.
+ * read refused for rate (the engine's 429: the source's limit is one for every person) is never «unavailable» — the
+ * bars come once the source lets go, so the frame keeps saying «Chart in a moment» and asks again after its
+ * `Retry-After`.
  */
-export const saysUnavailable = (data: ChartData): boolean => data.status === 'unavailable' && !data.last && data.misses >= QUIET_MISSES;
+export const saysUnavailable = (data: ChartData): boolean => data.status === 'unavailable' && !data.last && !data.busy && data.misses >= QUIET_MISSES;
 
 /** When to read again after this answer: the interval's cadence after an answer, the quiet retry after a failure. */
 export function nextReadMs(read: CandlesRead, misses: number, timeframe: Timeframe): number {

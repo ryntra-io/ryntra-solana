@@ -11,7 +11,11 @@ import { AMOUNT } from './words.ts';
 
 export type AmountProblem = Readonly<{ kind: 'format' | 'zero' | 'decimals' | 'balance'; text: string }>;
 
-export type Typed = Readonly<{ ok: true; amountRaw: string }> | Readonly<{ ok: false; problem: AmountProblem }>;
+/**
+ * `askRaw` on a refusal for the balance alone: the amount as typed, still a real amount — its price is shown beside the
+ * shortfall, never ordered.
+ */
+export type Typed = Readonly<{ ok: true; amountRaw: string }> | Readonly<{ ok: false; problem: AmountProblem; askRaw?: string }>;
 
 /** Longest text the field keeps: far more digits than any balance has. */
 const LONGEST = 24;
@@ -73,7 +77,7 @@ export function typedAmount(text: string, asset: Readonly<{ symbol: string; deci
   if (balance && BigInt(parsed.raw) > BigInt(balance.spendableRaw)) {
     const have = formatUnits(balance.spendableRaw, balance.decimals, 'down');
     const text = keepsFee ? w.upToRest(digits(have), asset.symbol) : w.tooMuch(digits(have), asset.symbol);
-    return { ok: false, problem: { kind: 'balance', text } };
+    return { ok: false, problem: { kind: 'balance', text }, askRaw: parsed.raw };
   }
   return { ok: true, amountRaw: parsed.raw };
 }

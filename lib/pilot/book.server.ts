@@ -90,7 +90,7 @@ export type JoinDeps = Readonly<{
   store: GuardStore;
   cluster: PilotNetwork;
   /** The mandate's row in the agent's book: its owner, its budget, when it joined. */
-  mandate: (policy: string) => Promise<Readonly<{ owner: string; preset: string; createdAt: number; status: string }> | null>;
+  mandate: (policy: string) => Promise<Readonly<{ owner: string; perDay: string; perTrade: string; createdAt: number; status: string }> | null>;
   /** A signature's fate: landed and paid by this wallet, when; null — not landed, failed, or another payer's. */
   landed: (signature: string, owner: string) => Promise<Readonly<{ at: number }> | null>;
   solUsd: () => Promise<number | null>;
@@ -112,12 +112,12 @@ export async function joinPilot(input: JoinInput, deps: JoinDeps): Promise<JoinR
 
   /* The trade: the mandate the agent works for, this wallet's, of the plan's budget. */
   let policy: string | null = null;
-  if (plan.preset) {
+  if (plan.budget) {
     if (!input.policy || !ADDRESS.test(input.policy)) return { ok: false, code: "REFUSED", reason: "The plan trades, so it names its mandate." };
     const row = await deps.mandate(input.policy).catch(() => undefined);
     if (row === undefined) return { ok: false, code: "UNAVAILABLE", reason: "The agent's book did not answer." };
     if (!row || row.owner !== input.owner) return { ok: false, code: "REFUSED", reason: "The agent does not work for this wallet's mandate." };
-    if (row.preset !== plan.preset) return { ok: false, code: "REFUSED", reason: "The mandate's budget is not the plan's." };
+    if (row.perDay !== plan.budget.perDay || row.perTrade !== plan.budget.perTrade) return { ok: false, code: "REFUSED", reason: "The mandate's budget is not the plan's." };
     if (!fresh(row.createdAt)) return { ok: false, code: "REFUSED", reason: "The mandate is not a new one." };
     policy = input.policy;
   } else if (input.policy) return { ok: false, code: "REFUSED", reason: "The plan trades nothing." };

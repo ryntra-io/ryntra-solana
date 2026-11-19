@@ -1,5 +1,5 @@
 import { earlyPick, launchFactsFrom, planText, type StrategyPlan } from '../../../lib/mandate/plans.ts';
-import type { BudgetPresetId } from '../../../lib/mandate/presets.ts';
+import type { AgentBudget } from '../../../lib/mandate/budget.ts';
 import type { RunResult } from '../../../lib/mandate/backtest.ts';
 
 /**
@@ -12,9 +12,9 @@ type Fetcher = (url: string, init?: RequestInit) => Promise<Response>;
 
 const isRun = (value: unknown): value is RunResult => typeof value === 'object' && value !== null && typeof (value as RunResult).bars === 'number' && typeof (value as RunResult).buys === 'number';
 
-/** The plan run on the coin's candles — on history, or since `since` on paper; null when the coin has none the city reads. */
-export async function readRun(input: Readonly<{ coin: string; plan: StrategyPlan; preset: BudgetPresetId; since?: number | null; bornAt?: number | null }>, fetcher: Fetcher = (url, init) => fetch(url, init)): Promise<RunResult | null> {
-  const query = new URLSearchParams({ coin: input.coin, plan: planText(input.plan), preset: input.preset });
+/** The plan run on the coin's candles, on the person's budget — on history, or since `since` on paper; null when the coin has none the city reads. */
+export async function readRun(input: Readonly<{ coin: string; plan: StrategyPlan; budget: AgentBudget; since?: number | null; bornAt?: number | null }>, fetcher: Fetcher = (url, init) => fetch(url, init)): Promise<RunResult | null> {
+  const query = new URLSearchParams({ coin: input.coin, plan: planText(input.plan), perDay: input.budget.perDay.toString(), perTrade: input.budget.perTrade.toString(), days: String(input.budget.days) });
   if (input.since) query.set('since', String(input.since));
   if (input.bornAt) query.set('born', String(input.bornAt));
   try {

@@ -1,4 +1,5 @@
 import type { EarnBinsAnswer, EarnBinsRent } from '../../../lib/earn-pools/bins.ts';
+import { placedFigure, placesFor, stepSignificant } from '../../ui/figures.ts';
 
 /**
  * A position's range, read for the screen: how many steps of the pool's price it takes each side, where its
@@ -84,6 +85,22 @@ export function stretchView(price: number, stepBps: number, half: number, bins: 
   const low = read(-half) ?? here * ratio ** -half;
   const high = read(half + 1) ?? here * ratio ** (half + 1);
   return { half, steps: half * 2 + 1, low, high, downPct: (1 - low / price) * 100, upPct: (high / price - 1) * 100 };
+}
+
+export type EdgeTexts = Readonly<{ low: string; now: string; high: string }>;
+
+/**
+ * A range's two edges and the price between them, the English way (`digits` makes them the screen's), to
+ * as many places as the pool's step needs (`stepFigure`: four significant figures at least, five for a step of 0.01 %),
+ * all three to the same places so they read in one column, and more while the two edges would still read alike —
+ * never «1.31 – 1.32» for a range of a third of a per cent, never «Min 1.31 = Now 1.31». The price is the pool's own,
+ * as the pool's head says it. A run of zeros is folded as the chart folds it (0.0₆1383).
+ */
+export function edgeTexts(low: number, high: number, now: number, stepBps: number | null): EdgeTexts {
+  const least = Math.min(...[low, now].filter((value) => value > 0 && Number.isFinite(value)));
+  let places = placesFor(Number.isFinite(least) ? least : high, stepSignificant(stepBps));
+  while (places < 14 && low > 0 && high > low && low.toFixed(places) === high.toFixed(places)) places += 1;
+  return { low: placedFigure(low, places), now: placedFigure(now, places), high: placedFigure(high, places) };
 }
 
 /* ── the pool's liquidity as bars ──────────────────────────────────────────────────────────────────────────────── */

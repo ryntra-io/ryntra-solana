@@ -2,7 +2,8 @@
 
 import { useEffect, useId, useState } from 'react';
 import { syncAgents } from '@/city/lib/bots/agents';
-import { MANDATE_NET, MANDATE_PRESETS, presetLimits, useMandate } from '@/city/lib/bots/mandate';
+import { budgetLimits, MANDATE_NET, useMandate } from '@/city/lib/bots/mandate';
+import { HANDY_SHARES, handyBudget, type AgentBudget } from '@/lib/mandate/budget';
 import { agentCoins, bookNow } from '@/city/lib/command/doors';
 import { agentFeeFigures } from '@/city/lib/bots/agent-fee';
 import { NOTE_YES_MS, noteLeftMs, saysNo } from '@/city/lib/bots/note-hold';
@@ -19,14 +20,15 @@ import s from './bots.module.css';
  * «Your agent» on top of the bots window's Start: the budget in one tap, the limits in one line, «Sign».
  * The person's wallet signs once and the agent trades by itself inside limits the chain holds; while it works, the
  * budget left and «Stop» — one more signature, the rest back to her wallet. Behind `NEXT_PUBLIC_RYNTRA_CITY_MANDATE`
- * (devnet, or mainnet with 0.1 SOL a day and the coin she picks); the signing loads on the tap (`mandate-sign.ts`).
+ * (devnet, or mainnet with the coin she picks); the budget is hers — shares of her own wallet beside it, no ceiling of
+ * Ryntra's; the signing loads on the tap (`mandate-sign.ts`).
  */
 export function AgentBudget() {
   const { w, lang } = useWords();
   const m = w.mandate;
   const connection = useWallet((st) => st.connection);
   const owner = connection?.address ?? null;
-  const preset = useMandate((st) => st.preset);
+  const budget = useMandate((st) => st.budget);
   const busy = useMandate((st) => st.busy);
   const note = useMandate((st) => st.note);
   const record = useMandate((st) => (owner ? st.records[owner] : undefined));
@@ -35,7 +37,8 @@ export function AgentBudget() {
   const [open, setOpen] = useState(false);
   const [picking, setPicking] = useState(false);
   const detailsId = useId();
-  const funds = useFundsShort(preset);
+  const funds = useFundsShort(budget);
+  const spendable = useWallet((st) => (st.holdingsRead === 'ready' && st.holdings && st.holdings.owner === owner ? (st.holdings.sol?.spendableRaw ?? null) : null));
 
   useEffect(() => {
     useMandate.getState().hydrate();
@@ -77,7 +80,7 @@ export function AgentBudget() {
   useEffect(() => {
     const said = useMandate.getState().note;
     if (said && saysNo(said.kind)) useMandate.getState().say(null);
-  }, [preset, coin]);
+  }, [budget, coin]);
 
   // The Trader's card in view, not yet at work — the agent's card on the first action's way.
   const shown = Boolean(MANDATE_NET) && !(record && status?.active);
@@ -87,7 +90,9 @@ export function AgentBudget() {
 
   if (!MANDATE_NET) return null;
   const working = Boolean(record && status?.active);
-  const limits = presetLimits(preset);
+  const limits = budget ? budgetLimits(budget) : null;
+  const handy = spendable && /^\d{1,20}$/u.test(spendable) ? HANDY_SHARES.map((share) => handyBudget(BigInt(spendable), share)).filter((b): b is AgentBudget => b !== null).filter((b, at, all) => all.findIndex((one) => one.perDay === b.perDay) === at) : [];
+  const same = (b: AgentBudget) => Boolean(budget) && b.perDay === budget!.perDay && b.perTrade === budget!.perTrade && b.days === budget!.days;
   const workingLimits = record ? { perTrade: Number(record.perTrade) / 1e9, perDay: Number(record.perDay) / 1e9 } : null;
   const left = status?.budgetLamports ? Number(status.budgetLamports) / 1e9 : null;
   const fee = agentFeeFigures(lang);
@@ -143,20 +148,23 @@ export function AgentBudget() {
               ))}
             </div>
           ) : null}
-          {MANDATE_PRESETS.length > 1 ? (
+          {handy.length ? (
             <div className={s.chips} role="radiogroup" aria-label={m.budget}>
-              {MANDATE_PRESETS.map((id) => (
-                <button key={id} type="button" role="radio" aria-checked={id === preset} className={id === preset ? s.chipOn : undefined} onClick={() => useMandate.getState().setPreset(id)}>
-                  {m.amount(sol(presetLimits(id).budget, lang))}
+              {handy.map((b) => (
+                <button key={b.perDay.toString()} type="button" role="radio" aria-checked={same(b)} className={same(b) ? s.chipOn : undefined} onClick={() => useMandate.getState().setBudget(b)}>
+                  {m.amount(sol(budgetLimits(b).perDay, lang))}
                 </button>
               ))}
             </div>
-          ) : (
-            <p className={s.agentFigure}>{m.amount(sol(limits.budget, lang))}</p>
-          )}
-          <p className={s.cost} data-live="">
-            <span>{m.limits(sol(limits.perTrade, lang), sol(limits.perDay, lang), limits.days)}</span>
-          </p>
+          ) : null}
+          {limits ? (
+            <>
+              <p className={s.agentFigure}>{m.amount(sol(limits.total, lang))}</p>
+              <p className={s.cost} data-live="">
+                <span>{m.limits(sol(limits.perTrade, lang), sol(limits.perDay, lang), limits.days)}</span>
+              </p>
+            </>
+          ) : null}
           <p className={s.cost} data-mandate-fee="">
             <span>{m.fee(fee.low, fee.high)}</span>
           </p>
@@ -166,7 +174,7 @@ export function AgentBudget() {
           ) : connection && funds.short && funds.about && busy === null ? (
             <AddSol about={funds.about} className={s.primary} lineClass={s.cost} />
           ) : (
-            <button type="button" className={s.primary} onClick={() => void sign()} disabled={busy !== null || (needsCoin && !picked && Boolean(connection))} aria-busy={busy === 'enable'} data-mandate-sign="">
+            <button type="button" className={s.primary} onClick={() => void sign()} disabled={busy !== null || (Boolean(connection) && (!budget || (needsCoin && !picked)))} aria-busy={busy === 'enable'} data-mandate-sign="">
               {busy === 'enable' ? m.signing : connection ? m.sign : m.connect}
             </button>
           )}

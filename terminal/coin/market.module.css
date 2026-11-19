@@ -1,0 +1,182 @@
+/* The bottom panel's market tables: the trades, the holders, the traders — dense rows of numbers in the
+   terminal's type; green a buy, red a sale. Colours are tokens; no corner of its own. */
+
+.scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--haze) transparent;
+}
+
+.table {
+  display: flex;
+  flex-direction: column;
+  width: max-content;
+  min-width: 100%;
+}
+
+.table[data-narrow] {
+  width: auto;
+}
+
+.table[data-narrow] .head,
+.table[data-narrow] .row {
+  column-gap: 8px;
+  padding: 0 12px;
+}
+
+.head,
+.row {
+  display: grid;
+  grid-template-columns: var(--cols);
+  align-items: center;
+  column-gap: 12px;
+  padding: 0 16px;
+}
+
+.head {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  height: 34px;
+  font-size: var(--type-micro);
+  font-weight: 600;
+  color: var(--dim);
+  background: var(--panel);
+  border-bottom: 1px solid var(--line);
+}
+
+.row {
+  min-height: 34px;
+  border-bottom: 1px solid var(--line);
+  font-size: var(--type-small);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  color: var(--ice);
+  transition: background-color 0.12s;
+}
+
+.row:hover {
+  background: var(--chosen);
+}
+
+.row[data-fresh] {
+  animation: lit 1.4s ease-out;
+}
+
+.row[data-side='buy'] {
+  --lit: color-mix(in srgb, var(--mint) 14%, transparent);
+}
+
+.row[data-side='sell'] {
+  --lit: color-mix(in srgb, var(--flare) 14%, transparent);
+}
+
+@keyframes lit {
+  from {
+    background: var(--lit);
+  }
+
+  to {
+    background: transparent;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .row[data-fresh] {
+    animation: none;
+  }
+}
+
+.side {
+  font-weight: 700;
+}
+
+.row[data-side='buy'] .side,
+.buyText {
+  color: var(--mint);
+}
+
+.row[data-side='sell'] .side,
+.sellText {
+  color: var(--flare);
+}
+
+.strong {
+  font-weight: 700;
+}
+
+.dim {
+  color: var(--dim);
+}
+
+.link {
+  color: inherit;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.link:hover {
+  color: var(--lilac);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.wallet {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.tag {
+  flex: none;
+  padding: 2px 6px;
+  border: 1px solid var(--line);
+  font-size: var(--type-micro);
+  font-weight: 600;
+  color: var(--soft);
+  white-space: nowrap;
+}
+
+.shareCell {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+}
+
+.shareBar {
+  height: 4px;
+  background: linear-gradient(90deg, var(--lilac) var(--share), var(--line) var(--share));
+}
+
+.net[data-tone='up'] {
+  color: var(--mint);
+}
+
+.net[data-tone='down'] {
+  color: var(--flare);
+}
+
+.caption {
+  flex: none;
+  margin: 0;
+  padding: 8px 16px 0;
+  font-size: var(--type-caption);
+  color: var(--dim);
+}
+
+.line {
+  display: grid;
+  flex: 1 1 auto;
+  place-items: center;
+  margin: 0;
+  padding: 24px 16px;
+  text-align: center;
+  font-size: var(--type-small);
+  font-weight: 600;
+  color: var(--dim);
+}

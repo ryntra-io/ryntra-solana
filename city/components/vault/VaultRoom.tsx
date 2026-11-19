@@ -94,7 +94,6 @@ export function VaultRoom() {
     if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) submit(event);
   };
 
-  const left = state?.me.limits;
 
   return (
     <section className={s.room} role="dialog" aria-label={w.vault}>
@@ -176,11 +175,6 @@ export function VaultRoom() {
               <span className={charCount(draft) > MAX_ATTEMPT_CHARS - 20 ? s.metaNear : undefined}>
                 {charCount(draft)}/{MAX_ATTEMPT_CHARS}
               </span>
-              {left && (
-                <span>
-                  {w.limits(left.minute.left, left.day.left)}
-                </span>
-              )}
             </div>
           </>
         )}

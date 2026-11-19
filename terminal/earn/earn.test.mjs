@@ -33,7 +33,7 @@ import {
   venueSolUsd,
   widthRisk,
 } from "./rows.ts";
-import { closeSheet, firstOffer, heldForm, heldNow, mayAdd, pick, place, sameTicket, ticketHeld, ticketStands, underWay, useTicket } from "./ticket.ts";
+import { closeSheet, firstOffer, heldForm, heldNow, mayAdd, onTab, pick, place, sameTicket, ticketHeld, ticketStands, underWay, useTicket } from "./ticket.ts";
 import { EARN, LEND_REFUSALS } from "./words.ts";
 
 /* The Earn screen's own logic: its rows from what the city's Earn reads, its sums and figures in both languages, the
@@ -249,6 +249,17 @@ test("the first offer: a pool that takes a deposit, else staking, else lending �
   assert.equal(mayAdd("closed", true), false);
 });
 
+test("each tab has its own ticket — a pool's never stands on staking, lending or the positions", () => {
+  assert.equal(onTab({ kind: "pool", address: "a" }, "pools"), true);
+  for (const tab of ["pro", "staking", "lending", "mine"]) assert.equal(onTab({ kind: "pool", address: "a" }, tab), false, `a pool's ticket on «${tab}»`);
+  assert.equal(onTab({ kind: "pro", address: "a" }, "pro"), true, "a DLMM Pro pool's add stands on DLMM Pro too");
+  assert.equal(onTab({ kind: "stake", lst: "jupsol" }, "staking"), true);
+  assert.equal(onTab({ kind: "stake", lst: "jupsol" }, "lending"), false);
+  assert.equal(onTab({ kind: "lend", asset: "USDC" }, "mine"), true, "a position's coin opens on «My positions»");
+  assert.equal(onTab({ kind: "position", address: "a", act: "claim" }, "pools"), false);
+  assert.equal(onTab(null, "pools"), false);
+});
+
 test("a position's two actions are one ticket; different things are not", () => {
   assert.equal(sameTicket({ kind: "position", address: "a", act: "claim" }, { kind: "position", address: "a", act: "exit" }), true);
   assert.equal(sameTicket({ kind: "pool", address: "a" }, { kind: "pro", address: "a" }), false);
@@ -270,9 +281,9 @@ beforeEach(() => {
 });
 
 test("a pool picked goes in front on the pool's own flow, and on a phone its sheet opens", () => {
-  assert.equal(pick({ kind: "pool", address: SOL_USDC.address }), true);
+  assert.equal(pick({ kind: "pool", address: SOL_USDC.address }, "pools"), true);
   assert.equal(usePier.getState().pool.address, SOL_USDC.address);
-  assert.deepEqual(useTicket.getState(), { picked: { kind: "pool", address: SOL_USDC.address }, sheet: true });
+  assert.deepEqual(useTicket.getState(), { picked: { kind: "pool", address: SOL_USDC.address }, on: "pools", sheet: true });
   assert.equal(closeSheet(), true);
   assert.equal(useTicket.getState().sheet, false);
   assert.deepEqual(useTicket.getState().picked, { kind: "pool", address: SOL_USDC.address }, "the sheet goes, the ticket stays");

@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { MANDATE_NET, useMandate, type MandateCoin } from '../bots/mandate.ts';
 import { AUTOPILOT_NET } from '../autopilot/flag.ts';
 import { readRun } from '../autopilot/runs.ts';
-import { calmPlan, type StrategyPlan } from '../../../lib/mandate/plans.ts';
+import { STEADY, type StrategyPlan } from '../../../lib/mandate/plans.ts';
 import { DEFAULT_RULES, planData, splitOf, type PilotPlanData, type PilotSplit } from '../../../lib/pilot/plan.ts';
 import type { PilotView } from '../../../lib/pilot/view.ts';
 import type { Who } from '../bots/mandate-sign.ts';
@@ -52,7 +52,7 @@ type PilotState = {
 const wantsOf = (ask: PilotAsk) => ({ solRaw: ask.solRaw ? BigInt(ask.solRaw) : 0n, usdcRaw: ask.usdcRaw ? BigInt(ask.usdcRaw) : 0n, named: ask.named });
 
 function planned(ask: PilotAsk, solUsd: number | null): Pick<PilotState, 'split' | 'plan'> {
-  const split = splitOf(wantsOf(ask), PILOT_NET, solUsd);
+  const split = splitOf(wantsOf(ask), solUsd);
   return { split, plan: split ? planData(split, DEFAULT_RULES) : null };
 }
 
@@ -83,8 +83,8 @@ export const usePilot = create<PilotState>((set, get) => ({
   },
 }));
 
-/** The trade's strategy: the one said, at the city's calm pace, or the steady one. */
-export const tradePlanOf = (ask: PilotAsk | null): StrategyPlan => calmPlan(ask?.plan ?? { id: 'steady', exit: null });
+/** The trade's strategy: the one said, or the steady one — its rhythm the budget's own numbers. */
+export const tradePlanOf = (ask: PilotAsk | null): StrategyPlan => ask?.plan ?? STEADY;
 
 /** The savings' rates now, per cent a year, from the engine's Earn read; null — not read. */
 async function readRates(fetcher: Fetcher): Promise<Readonly<{ usdc: number | null; sol: number | null }>> {
@@ -109,11 +109,11 @@ export async function startPaper(fetcher: Fetcher = (url, init) => fetch(url, in
   if (!st.split || !st.ask) return;
   usePilot.setState({ phase: 'paper', paper: null });
   const price = st.solUsd;
-  const trade = st.split.preset && st.coin ? await readRun({ coin: st.coin.mint, plan: tradePlanOf(st.ask), preset: st.split.preset }, fetcher) : null;
+  const trade = st.split.budget && st.coin ? await readRun({ coin: st.coin.mint, plan: tradePlanOf(st.ask), budget: st.split.budget }, fetcher) : null;
   const days = trade ? Math.max(1, Math.round((trade.toMs - trade.fromMs) / 86_400_000)) : 7;
   const rates = await readRates(fetcher);
   const legs = st.split.legs;
-  const tradeUsd = st.split.preset === null ? 0 : trade && price !== null ? (trade.heldSol + trade.gotSol - trade.spentSol) * price : null;
+  const tradeUsd = st.split.budget === null ? 0 : trade && price !== null ? (trade.heldSol + trade.gotSol - trade.spentSol) * price : null;
   const usdcUsd = Number(legs.save.usdcRaw) / 1e6;
   const solUsd = price === null ? null : (Number(legs.save.solRaw) / 1e9) * price;
   const saveUsd =
@@ -126,7 +126,7 @@ export async function startPaper(fetcher: Fetcher = (url, init) => fetch(url, in
 export async function goLive(who: Who): Promise<void> {
   const st = usePilot.getState();
   if (!st.split || !st.plan || !st.ask || st.phase === 'signing') return;
-  if (st.plan.preset && PILOT_NET === 'mainnet' && !st.coin) return usePilot.setState({ note: { kind: 'refused', at: Date.now() } });
+  if (st.plan.budget && PILOT_NET === 'mainnet' && !st.coin) return usePilot.setState({ note: { kind: 'refused', at: Date.now() } });
   usePilot.setState({ phase: 'signing', note: null });
   const sign = await import('./sign.ts');
   const result = await sign.goLive(who, { split: st.split, plan: st.plan, coin: st.coin, tradePlan: tradePlanOf(st.ask), said: st.ask.said, network: PILOT_NET }).catch(() => ({ kind: 'unreachable' as const }));

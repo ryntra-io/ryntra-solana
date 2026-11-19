@@ -23,7 +23,7 @@ import { poolAskOf } from './pool-ask.ts';
 export const CITY_POOL_SWITCH = process.env.NEXT_PUBLIC_RYNTRA_CITY_POOL_LAUNCH === 'open';
 
 /** The city's own word on mainnet: none. */
-export const CITY_POOL_MAINNET = false;
+export const CITY_POOL_MAINNET = true;
 
 /** Whether the door shows: the city's switch is open, and the network is the stand. */
 export function poolDoorOpen(network: Network | null, switchOpen: boolean = CITY_POOL_SWITCH, mainnetWord: boolean = CITY_POOL_MAINNET): boolean {

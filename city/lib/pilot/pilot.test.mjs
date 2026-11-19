@@ -10,6 +10,13 @@ import { readDollarAsk } from "../earn/dollar-read.ts";
 import { readPilotAsk } from "./read.ts";
 import { PILOT } from "./words.ts";
 import { pierFor } from "./sign.ts";
+import { agentNetworkOf, budgetFund } from "../../../lib/mandate/budget.ts";
+
+/* The review answers the plan's own trade budget — the record's caps, the vault's part and the agent's fees. */
+const reviewOf = (plan, record) => {
+  const b = { perDay: BigInt(plan.budget.perDay), perTrade: BigInt(plan.budget.perTrade), days: plan.budget.days };
+  return { record: { ...record, perDay: plan.budget.perDay, perTrade: plan.budget.perTrade }, transactions: ["T1"], fundLamports: budgetFund(b).toString(), networkLamports: agentNetworkOf(b).toString() };
+};
 import { planData, splitOf } from "../../../lib/pilot/plan.ts";
 
 const JUP = "JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN";
@@ -111,7 +118,7 @@ test("the pier the pool part goes to: the first SOL–USDC pier the Harbor lists
 
 test("«Go live · sign once»: every part built by its own door, one wallet prompt, each relayed by its own, the plan joined", async () => {
   const { goLive } = await import("./sign.ts");
-  const split = splitOf({ solRaw: 2_000_000_000n, usdcRaw: 100_000_000n, named: {} }, "mainnet", 150);
+  const split = splitOf({ solRaw: 2_000_000_000n, usdcRaw: 100_000_000n, named: {} }, 150);
   const plan = planData(split);
   const seen = [];
   const wire = (n) => Buffer.from([1, ...new Array(64).fill(0), n]).toString("base64");
@@ -119,7 +126,7 @@ test("«Go live · sign once»: every part built by its own door, one wallet pro
     const body = init?.body ? JSON.parse(init.body) : null;
     seen.push([url, body]);
     const json = (value, status = 200) => ({ ok: status < 400, status, json: async () => value });
-    if (url === "/api/bots/mandate/review") return json({ record: { owner: "OWNER", policy: "POLICY", settings: "S", vault: "V", budget: "B", perTrade: "1", perDay: "1", expiresAt: "1" }, transactions: ["T1"] });
+    if (url === "/api/bots/mandate/review") return json(reviewOf(plan, { owner: "OWNER", policy: "POLICY", settings: "S", vault: "V", budget: "B", expiresAt: "1" }));
     if (url === "/api/solana/earn/review") return json({ ticket: `t-${body.market.slice(0, 3)}`, transaction: { wireBase64: wire(body.market.startsWith("EPj") ? 2 : 3) } });
     if (url === "/api/city/earn/piers") return json({ pools: [{ kind: "dlmm", address: "PIER", binStepBps: 4, price: 150, x: { mint: "So11111111111111111111111111111111111111112", symbol: "SOL", decimals: 9 }, y: { mint: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v", symbol: "USDC", decimals: 6 } }] });
     if (url === "/api/city/earn/piers/zap") return json({ ticket: "t-zap", position: "POS", transactions: [{ wireBase64: wire(4) }, { wireBase64: wire(5) }] });
@@ -156,11 +163,11 @@ test("«Go live · sign once»: every part built by its own door, one wallet pro
 
 test("a part that could not be built stays in the wallet; the rest goes, the card says one part did not", async () => {
   const { goLive } = await import("./sign.ts");
-  const split = splitOf({ solRaw: 2_000_000_000n, usdcRaw: 100_000_000n, named: {} }, "mainnet", 150);
+  const split = splitOf({ solRaw: 2_000_000_000n, usdcRaw: 100_000_000n, named: {} }, 150);
   const plan = planData(split);
   const fetcher = async (url) => {
     const json = (value, status = 200) => ({ ok: status < 400, status, json: async () => value });
-    if (url === "/api/bots/mandate/review") return json({ record: { owner: "OWNER", policy: "POLICY" }, transactions: ["T1"] });
+    if (url === "/api/bots/mandate/review") return json(reviewOf(plan, { owner: "OWNER", policy: "POLICY" }));
     if (url === "/api/solana/earn/review") return json({ error: { code: "CLOSED" } }, 403);
     if (url === "/api/city/earn/piers") return json({ pools: [] });
     return json({ signatures: ["s"], status: "working" });
@@ -187,7 +194,7 @@ test("the daily report says the autopilot's week — on a day without a trade to
 
 test("the wallet holds what the plan moves — or the card says which, before the wallet is asked", async () => {
   const { walletShort, movesOf, SETUP_LAMPORTS, USDC_MINT } = await import("./wallet-check.ts");
-  const split = splitOf({ solRaw: 2_000_000_000n, usdcRaw: 100_000_000n, named: {} }, "mainnet", 150);
+  const split = splitOf({ solRaw: 2_000_000_000n, usdcRaw: 100_000_000n, named: {} }, 150);
   const moves = movesOf(split.legs, "mainnet");
   assert.equal(moves.solRaw, split.legs.trade.solRaw + split.legs.save.solRaw + split.legs.pool.solRaw + SETUP_LAMPORTS, "the reserve stays in the wallet");
   assert.equal(moves.usdcRaw, 100_000_000n);

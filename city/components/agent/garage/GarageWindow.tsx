@@ -2,7 +2,6 @@
 
 import { useEffect, useState, type ReactNode } from 'react';
 import { playTick } from '@/city/lib/audio/engine';
-import { ADVICE_PER_DAY } from '@/city/lib/agent/garage/budget';
 import type { MyTower } from '@/city/lib/agent/garage/mine';
 import type { Reminder } from '@/city/lib/agent/garage/reminders';
 import type { Change, Report } from '@/city/lib/agent/garage/report';
@@ -235,7 +234,6 @@ function Reminders({ reminders, now }: { reminders: readonly Reminder[]; now: nu
 function AdviceBlock({ advice, name }: { advice: AdviceState; name: string }) {
   const w = useWords(GARAGE);
   const [details, setDetails] = useState(false);
-  const left = useGarage((st) => st.answersLeft());
   if (advice.status === 'none') return null;
   if (advice.status === 'asking') {
     return (
@@ -281,10 +279,6 @@ function AdviceBlock({ advice, name }: { advice: AdviceState; name: string }) {
             <p key={line}>{line}</p>
           ))}
           <p className={s.fine}>{w.notSignal}</p>
-          <p className={s.fine}>{w.budgetsComing}</p>
-          <p className={s.fine} data-garage-left="">
-            {w.asksLeft(left, ADVICE_PER_DAY)}
-          </p>
         </div>
       )}
     </div>

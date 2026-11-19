@@ -415,7 +415,6 @@ export const REWARDS = words(
     cashback: 'Cashback',
     pending: 'Pending',
     credits: 'Assistant credits',
-    creditsLine: (free: number) => `+${free} free today`,
     unavailable: 'Not available now',
   },
   {
@@ -431,7 +430,6 @@ export const REWARDS = words(
     cashback: 'Кешбек',
     pending: 'Очікує',
     credits: 'Кредити помічника',
-    creditsLine: (free: number) => `+${free} безкоштовних сьогодні`,
     unavailable: 'Зараз недоступно',
   },
 );

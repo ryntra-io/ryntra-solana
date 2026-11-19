@@ -8,7 +8,7 @@
  */
 
 import { barsOf, paperRun, runPlan, runTimeframe, type RunResult } from "./backtest.ts";
-import { BUDGET_PRESETS, type BudgetPresetId } from "./presets.ts";
+import type { AgentBudget } from "./budget.ts";
 import type { StrategyPlan } from "./plans.ts";
 
 type Candles = (mint: string, timeframe: "5m" | "15m" | "1h") => Promise<Readonly<{ ok: true; candles: readonly Readonly<{ time: number; open: number; high: number; low: number; close: number }>[] }> | Readonly<{ ok: false }>>;
@@ -19,7 +19,7 @@ export type TestAnswer = Readonly<{ ok: true; mode: "history" | "paper"; timefra
 export const HISTORY_MIN_BARS = 24;
 
 export async function testPlan(
-  input: Readonly<{ coin: string; plan: StrategyPlan; preset: BudgetPresetId; since: number | null; bornAt: number | null; sells?: boolean }>,
+  input: Readonly<{ coin: string; plan: StrategyPlan; budget: AgentBudget; since: number | null; bornAt: number | null; sells?: boolean }>,
   deps: Readonly<{ candles?: Candles; now?: () => number }> = {},
 ): Promise<TestAnswer> {
   const now = (deps.now ?? Date.now)();
@@ -29,8 +29,8 @@ export async function testPlan(
   const answer = await read(input.coin, timeframe).catch(() => ({ ok: false as const }));
   if (!answer.ok) return { ok: false, code: "NO_HISTORY" };
   const bars = barsOf(answer.candles, barMs, now);
-  const preset = BUDGET_PRESETS[input.preset];
-  const budget = { perTrade: Number(preset.perTrade) / 1e9, perDay: Number(preset.perDay) / 1e9, days: preset.days };
+  /* The person's own numbers, as SOL. */
+  const budget = { perTrade: Number(input.budget.perTrade) / 1e9, perDay: Number(input.budget.perDay) / 1e9, days: input.budget.days };
   if (input.since !== null) {
     const paper = { plan: "", coin: input.coin, symbol: null, startedAt: input.since, bornAt: input.bornAt };
     return { ok: true, mode: "paper", timeframe, result: paperRun(input.plan, paper, bars, budget, now, { barMs, sells: input.sells ?? false }) };

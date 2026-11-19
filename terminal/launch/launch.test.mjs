@@ -32,7 +32,11 @@ import {
   signaturesOf,
   sniperOf,
   solOf,
+  showcase,
+  showcased,
 } from "./launch-view.ts";
+import { logoOf } from "../market/depth-view.ts";
+import { rudeName } from "./rude.ts";
 import { LAUNCH_SCREEN } from "./words.ts";
 
 /* The Launch screen stands on the city's launch as it is: its presets, its two formats' own terms, its readers and its
@@ -265,4 +269,62 @@ test("«My launches» are this wallet's coins: on the curve and in a pool, newes
   assert.equal(mine[1].migrated, true);
   assert.equal(mine[2].progressBps, 4200);
   assert.deepEqual(mineOf(rows, pools, null, NOW), [], "no wallet — no list");
+});
+
+/* ------------------------------------------------------------------ the launchpad */
+
+test("the words about the coin: a long line at once, a link once its field was left or a press went past", () => {
+  const long = { problems: { description: "TOO_LONG" }, hits: [] };
+  assert.deepEqual(problemOf(w, long, { has: true, bad: false }, false, null), { field: "description", words: w.descriptionLong });
+  const link = { problems: { x: "LINK" }, hits: [] };
+  assert.equal(problemOf(w, link, { has: true, bad: false }, false, null), null, "not while it is being typed");
+  assert.deepEqual(problemOf(w, link, { has: true, bad: false }, false, null, new Set(["x"])), { field: "x", words: w.linkX });
+  assert.deepEqual(problemOf(w, { problems: { telegram: "LINK" }, hits: [] }, { has: true, bad: false }, true, null), { field: "telegram", words: w.linkTelegram });
+  assert.deepEqual(problemOf(uk, { problems: { website: "LINK" }, hits: [] }, { has: true, bad: false }, true, null), { field: "website", words: uk.linkWebsite });
+  // A name comes first: the line about the coin waits behind it.
+  assert.equal(problemOf(w, { problems: { name: "OFFENSIVE", description: "TOO_LONG" }, hits: [] }, { has: true, bad: false }, false, null)?.field, "name");
+});
+
+test("a new coin's logo comes through the engine's icon proxy, never straight from its host", () => {
+  const mint = "8pHNdENvWpZgjmofHo3SK1vCLUcSkZWu74h9XaYwpump";
+  const icon = "https://static.datapi.jup.ag/token-icons/e5428d97.webp";
+  assert.equal(logoOf({ id: mint, icon }), `/api/spot/icon?mint=${mint}&u=${encodeURIComponent(icon)}`);
+  assert.equal(logoOf({ id: mint, icon: null }), null);
+  assert.equal(logoOf({ id: mint, icon: "http://example.com/a.png" }), null, "https only");
+  assert.equal(logoOf({ id: mint, icon: `https://example.com/${"a".repeat(600)}.png` }), null, "an address too long is no logo");
+});
+
+test("the showcase shows coins with a logo, a market cap and a decent name; crude, hateful, borrowed and risky ones are left out", () => {
+  const coin = (symbol, name = symbol, icon = "https://x.io/a.png") => ({ symbol, name, icon, mcap: 2400 });
+  assert.ok(showcased(coin("KITE", "Kite")));
+  assert.ok(!showcased(coin("KITE", "Kite", null)), "no logo, not shown");
+  assert.ok(!showcased({ ...coin("KITE", "Kite"), mcap: null }), "no market cap, not shown — never a dash");
+  assert.ok(!showcased({ ...coin("KITE", "Kite"), kept: true }), "a creator who keeps minting or freezing, not shown");
+  assert.ok(!showcased(coin("SOL", "Solana")), "a borrowed name, not shown");
+  assert.ok(!showcased({ ...coin("KITE", "Kite"), holders: 3 }), "a coin three people hold is a test or spam");
+  assert.ok(showcased({ ...coin("KITE", "Kite"), holders: 12 }));
+  for (const junk of [coin("******", "6 STARS"), coin("TEST", "test"), coin("AWD", "awd awd"), coin("SPON", "Sponsored"), coin("X", "X")]) assert.ok(!showcased(junk), junk.name);
+  for (const crude of ["COOM", "Freaky ah", "GoyTheftA", "Dih The Dog", "PAYPIG", "Findom", "Audashiddy", "Looksmax CATE", "FreakHouse", "Gooncoin", "Pedophile", "Orgasm", "Hentai", "Nipple", "CUMROCKET", "PEEPEE", "Pooping", "Shart", "Onlyfans", "DEEZ NUTS", "⚠ mayhem Bot trap ⚠", "VAGCITY", "VagcityCoin", "DIhcityCoin", "ROCKTARD", "Retardio", "\u202eRNZ", "\u202ekrowteNaroneZ", "Kite\u2067"]) assert.ok(rudeName(crude), crude);
+  // A crude word with «city» glued on, as on the live feed of 19.11 (VAGCITY, DIhcityCoin); a coin's own «city» stays.
+  for (const plain of ["DacityCoin", "Capacity", "Velocity", "Kite City", "Vague", "Savage", "Mustard", "Stardust", "Tardis"]) assert.ok(!rudeName(plain), plain);
+  // Borrowed anywhere in the name, a market cap nobody paid, a ticker of figures: not shown beside a launch.
+  for (const [symbol, name] of [["GTRUMP6", "GTATRUMP6"], ["GTAVI", "Official Grand Theft Auto VI"], ["GTA 6", "GTA VI"], ["GTA6", "Gay Theft Auto 6"], ["CLAUDEPAD", "Claude Pad"], ["MAGACITY", "MAGA CITY XLVII"], ["GFA", "Grand Faith Auto"], ["LEO500", "Leonida 500"], ["YOSHICOIN", "Yoshi Coin"], ["WKTT", "We Know The Truth"], ["34%", "Thirty four"], ["INTELAI", "Intel AI"], ["NVDAI", "Nvidia AI"]]) {
+    assert.ok(!showcased(coin(symbol, name)), name);
+  }
+  assert.ok(!showcased({ ...coin("KITE", "Kite"), mcap: 500 }), "a coin nobody paid for");
+  for (const plain of [coin("KITE", "Kite"), coin("MOTH", "Moth"), coin("SOWL", "Shadow Owl"), coin("MCH", "MoonChacha")]) assert.ok(showcased({ ...plain, holders: 12 }), plain.name);
+  // One row per ticker, in the list's own order, at most as many as asked.
+  const rows = [coin("DICE", "Dice"), coin("DICE", "Dice again"), coin("FART"), coin("KITE", "Kite"), coin("MOTH", "Moth")];
+  assert.deepEqual(showcase(rows, (row) => row, 2).map((row) => row.name), ["Dice", "Kite"]);
+  for (const crude of ["FART", "SHIT", "$FART", "ShitCoin", "fart_inu", "BabyFart", "F A R T", "s.h.i.t", "SH1T", "Mr Poo", "PORNHUB", "pussycat", "хуйня", "CYKA"]) {
+    assert.ok(rudeName(crude), crude);
+    assert.ok(!showcased(coin(crude)), crude);
+  }
+  assert.ok(rudeName("KITE", "Fart Machine"), "the name is read with the ticker");
+  // Ordinary words that hold a crude one stay.
+  for (const plain of ["Class", "Assassin", "Grape", "Torpedo", "Basement", "Cucumber", "Scattered", "Push It", "Pepe", "Bonk", "Dickens Inu", "Thorny"]) {
+    assert.ok(!rudeName(plain), plain);
+  }
+  // The market's own guard of hate words stands here too.
+  assert.ok(rudeName("HITLER"));
 });

@@ -35,6 +35,8 @@ export type EngineFailure = Readonly<{
   ownerLock?: Readonly<{ state: string; requestId: string; signature: string | null }> | null;
   /** The limits lane names the signature it relayed when its answer after the relay was not clear. */
   signature?: string;
+  /** A full request window: how long until the venue frees a slot, as the server read it. */
+  retryAfterMs?: number;
 }>;
 
 export type EngineResult<T> = Readonly<{ ok: true; value: T; status: number }> | Readonly<{ ok: false; failure: EngineFailure }>;
@@ -100,6 +102,7 @@ export async function postJson<T>(fetchImpl: FetchLike, url: string, payload: un
         message: typeof error.message === 'string' ? error.message : wordsNow(LINE).failed,
         ...(error.submitBoundary === 'NOT_CROSSED' ? { submitBoundary: 'NOT_CROSSED' as const } : {}),
         ...(typeof error.signature === 'string' ? { signature: error.signature } : {}),
+        ...(typeof error.retryAfterMs === 'number' && Number.isFinite(error.retryAfterMs) && error.retryAfterMs >= 0 ? { retryAfterMs: error.retryAfterMs } : {}),
         ownerLock: error.ownerLock ?? null,
       },
     };

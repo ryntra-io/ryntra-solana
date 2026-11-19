@@ -5,15 +5,17 @@
  * and a wallet's positions are the NFTs it holds (`holdings.ofWallet`). Both are indexed reads a public node may
  * refuse; a refusal is an error the route says — never an empty list.
  *
- * A pier is a pool of SOL against a coin Earn knows (`./coins.ts`). What a pier says of itself is only what the chain
+ * A pier is a pool of SOL against a coin Earn knows (`./coins.ts`) — or, where a deployment opened any pool, against any other coin, named from Jupiter's catalogue. What a pier says of itself is only what the chain
  * holds now: its price, its fee, how deep it is (the two reserves, said in SOL at its own price) and its reward's
  * emission. There are no «fees of the last day» here — nobody keeps that history for DLMM Pro yet, and it is not made up.
  */
 
 import { PublicKey, type Connection } from "@solana/web3.js";
 
-import { earnProCoins, pierPairOf, type EarnProCoin } from "./coins.ts";
-import type { EarnProNetwork } from "./gate.ts";
+import { fetchTokenCatalog } from "../solana/catalog.ts";
+import { isOffensiveName } from "../spot/offensive-names.ts";
+import { earnProCoins, pierPairOf, shortMint, type EarnProCoin } from "./coins.ts";
+import { earnProAnyPool, type EarnProNetwork } from "./gate.ts";
 import { earnProConnection, earnProVenue, CARE_RIGHTS, type DlmmProPool, type DlmmProVenue, type EarnIncome } from "./venue.server.ts";
 
 export type PierCoin = Readonly<{ mint: string; symbol: string; decimals: number }>;
@@ -75,10 +77,13 @@ export function lamportsOf(pier: Pick<ProPier, "solIsX" | "price" | "x" | "y">, 
   return Number.isFinite(sol) ? BigInt(Math.round(sol * 1e9)) : null;
 }
 
-function pierOf(pool: DlmmProPool, coins: readonly EarnProCoin[], reserves: Readonly<{ x: bigint | null; y: bigint | null }>): ProPier | null {
-  const pair = pierPairOf(coins, pool.tokenX.mint, pool.tokenY.mint);
+/** Names of the coins a network's piers are made of beyond the coins Earn knows; null — only the known ones. */
+type NameOf = ((mint: string) => string) | null;
+
+function pierOf(pool: DlmmProPool, coins: readonly EarnProCoin[], reserves: Readonly<{ x: bigint | null; y: bigint | null }>, nameOf: NameOf = null): ProPier | null {
+  const pair = pierPairOf(coins, pool.tokenX.mint, pool.tokenY.mint, nameOf);
   if (!pair) return null;
-  const symbolOf = (mint: string) => coins.find((coin) => coin.mint === mint)?.symbol ?? null;
+  const symbolOf = (mint: string) => coins.find((coin) => coin.mint === mint)?.symbol ?? (mint === pair.x.mint ? pair.x.symbol : mint === pair.y.mint ? pair.y.symbol : null);
   const base = {
     address: pool.address,
     x: { mint: pair.x.mint, symbol: pair.x.symbol, decimals: pool.tokenX.decimals },
@@ -98,7 +103,8 @@ function pierOf(pool: DlmmProPool, coins: readonly EarnProCoin[], reserves: Read
   };
 }
 
-async function reservesOf(connection: Pick<Connection, "getMultipleAccountsInfo">, pools: readonly DlmmProPool[]): Promise<ReadonlyMap<string, bigint | null>> {
+/** The vaults' amounts of pools, base units — 100 accounts a read; null where a vault did not read. */
+export async function reservesOf(connection: Pick<Connection, "getMultipleAccountsInfo">, pools: readonly DlmmProPool[]): Promise<ReadonlyMap<string, bigint | null>> {
   const addresses = [...new Set(pools.flatMap((pool) => [pool.tokenX.reserve, pool.tokenY.reserve]))];
   const out = new Map<string, bigint | null>();
   for (let start = 0; start < addresses.length; start += 100) {
@@ -112,12 +118,48 @@ async function reservesOf(connection: Pick<Connection, "getMultipleAccountsInfo"
   return out;
 }
 
-export type PierDeps = Readonly<{ env?: Readonly<Record<string, string | undefined>>; connection?: Connection; venue?: DlmmProVenue; now?: () => number; fresh?: boolean }>;
+/** `names` — the catalogue a deployment that opened any pool names the other coins from; a test or a rehearsal hands its own. */
+export type PierDeps = Readonly<{
+  env?: Readonly<Record<string, string | undefined>>;
+  connection?: Connection;
+  venue?: DlmmProVenue;
+  now?: () => number;
+  fresh?: boolean;
+  names?: (mints: readonly string[]) => Promise<Readonly<Record<string, Readonly<{ symbol: string | null; name: string | null }>>>>;
+}>;
+
+/** The longest ticker a pier carries — the contract's own bound; a longer one is cut: a name is a courtesy. */
+const SYMBOL_MAX = 10;
+
+/** Jupiter's names of mainnet's coins; nothing on devnet, and nothing where the catalogue did not answer. */
+async function catalogNames(network: EarnProNetwork, mints: readonly string[]): Promise<Readonly<Record<string, Readonly<{ symbol: string | null; name: string | null }>>>> {
+  if (network !== "mainnet" || mints.length === 0) return {};
+  /* The catalogue answers fifty coins a call. */
+  const chunks: string[][] = [];
+  for (let start = 0; start < mints.length; start += 50) chunks.push(mints.slice(start, start + 50));
+  const reads = await Promise.all(chunks.map((chunk) => fetchTokenCatalog(chunk, 6_000).catch(() => null)));
+  return Object.assign({}, ...reads.map((read) => (read && read.ok ? read.byMint : {})));
+}
+
+/**
+ * Where any pool is open: the other coins of the network's pools of SOL, named — the catalogue's ticker, else
+ * the start of the address — and the mints whose names carry a hate word, which make no pier (as on the Market). Null
+ * where only the coins Earn knows make piers.
+ */
+async function otherNames(network: EarnProNetwork, pools: readonly DlmmProPool[], coins: readonly EarnProCoin[], deps: PierDeps): Promise<Readonly<{ nameOf: (mint: string) => string; barred: ReadonlySet<string> }> | null> {
+  if (!earnProAnyPool(deps.env ?? process.env)) return null;
+  const known = new Set(coins.map((coin) => coin.mint));
+  const mints = [...new Set(pools.flatMap((pool) => [pool.tokenX.mint, pool.tokenY.mint]))].filter((mint) => !known.has(mint));
+  const names = await (deps.names ?? ((asked: readonly string[]) => catalogNames(network, asked)))(mints).catch(() => ({}) as Readonly<Record<string, Readonly<{ symbol: string | null; name: string | null }>>>);
+  const barred = new Set(mints.filter((mint) => isOffensiveName(names[mint]?.symbol, names[mint]?.name)));
+  return { nameOf: (mint) => names[mint]?.symbol?.trim().slice(0, SYMBOL_MAX) || shortMint(mint), barred };
+}
 
 /** The piers of a network, deepest first; kept a minute. Throws where the chain did not answer. */
 export async function readPiers(network: EarnProNetwork, deps: PierDeps = {}): Promise<Readonly<{ piers: readonly ProPier[]; at: number }>> {
   const now = deps.now?.() ?? Date.now();
-  const cacheKey = `${network}:${deps.connection ? "given" : "own"}`;
+  const any = earnProAnyPool(deps.env ?? process.env);
+  const cacheKey = `${network}:${any ? "any" : "known"}:${deps.connection ? "given" : "own"}`;
   const cached = deps.fresh || deps.connection ? undefined : kept.get(cacheKey);
   if (cached && now - cached.at < PIERS_FRESH_MS) return cached;
   const connection = deps.connection ?? earnProConnection(network);
@@ -125,25 +167,48 @@ export async function readPiers(network: EarnProNetwork, deps: PierDeps = {}): P
   const coins = earnProCoins(network, deps.env ?? process.env);
   const sol = coins.find((coin) => coin.kind === "sol")!;
   /* Every pier has SOL on one side: one read by the coin, not the whole program. */
-  const pools = (await venue.pools.list({ mint: sol.mint })).filter((pool) => pierPairOf(coins, pool.tokenX.mint, pool.tokenY.mint) !== null);
+  const withSol = await venue.pools.list({ mint: sol.mint });
+  const names = await otherNames(network, withSol, coins, deps);
+  const nameOf = names?.nameOf ?? null;
+  const pools = withSol.filter((pool) => pierPairOf(coins, pool.tokenX.mint, pool.tokenY.mint, nameOf) !== null && !names?.barred.has(pool.tokenX.mint) && !names?.barred.has(pool.tokenY.mint));
   const reserves = await reservesOf(connection, pools);
   const piers = pools
-    .flatMap((pool) => pierOf(pool, coins, { x: reserves.get(pool.tokenX.reserve) ?? null, y: reserves.get(pool.tokenY.reserve) ?? null }) ?? [])
+    .flatMap((pool) => pierOf(pool, coins, { x: reserves.get(pool.tokenX.reserve) ?? null, y: reserves.get(pool.tokenY.reserve) ?? null }, nameOf) ?? [])
     .sort((a, b) => Number(BigInt(b.depthLamports ?? "0") - BigInt(a.depthLamports ?? "0")));
   const answer = { piers, at: now };
   if (!deps.connection) kept.set(cacheKey, answer);
   return answer;
 }
 
-/** One pier, read now — for a Review, which never stands on a kept list. */
-export async function readPier(network: EarnProNetwork, address: string, deps: PierDeps = {}): Promise<Readonly<{ pier: ProPier; pool: DlmmProPool }> | null> {
+/**
+ * One pier, read now — for a Review, which never stands on a kept list. `served` — whether new money may go in here: a
+ * pool of a coin Earn knows, or, where any pool is open, of any other coin whose name bars nothing. For what
+ * takes money out, any pool of SOL is read as a pier whatever the switch says: a switch closed again, or a name barred
+ * later, never holds a position in. Null — no pool at the address, or no SOL on a side.
+ */
+export async function readPier(network: EarnProNetwork, address: string, deps: PierDeps = {}): Promise<Readonly<{ pier: ProPier; pool: DlmmProPool; served: boolean }> | null> {
+  const env = deps.env ?? process.env;
   const connection = deps.connection ?? earnProConnection(network);
-  const venue = deps.venue ?? earnProVenue(network, connection, deps.env ?? process.env);
+  const venue = deps.venue ?? earnProVenue(network, connection, env);
   const pool = await venue.pools.read(address);
   if (!pool) return null;
+  const coins = earnProCoins(network, env);
+  const sol = coins.find((coin) => coin.kind === "sol")!.mint;
+  /* A pool without SOL on a side is no pier for anything: nothing more is asked of it. */
+  if (pool.tokenX.mint !== sol && pool.tokenY.mint !== sol) return null;
+  const known = pierPairOf(coins, pool.tokenX.mint, pool.tokenY.mint) !== null;
+  let nameOf: NameOf = null;
+  let barred = false;
+  if (!known) {
+    const own = new Set(coins.map((coin) => coin.mint));
+    const mints = [pool.tokenX.mint, pool.tokenY.mint].filter((mint) => !own.has(mint));
+    const names = await (deps.names ?? ((asked: readonly string[]) => catalogNames(network, asked)))(mints).catch(() => ({}) as Readonly<Record<string, Readonly<{ symbol: string | null; name: string | null }>>>);
+    barred = mints.some((mint) => isOffensiveName(names[mint]?.symbol, names[mint]?.name));
+    nameOf = (mint) => (barred ? shortMint(mint) : names[mint]?.symbol?.trim().slice(0, SYMBOL_MAX) || shortMint(mint));
+  }
   const reserves = await reservesOf(connection, [pool]);
-  const pier = pierOf(pool, earnProCoins(network, deps.env ?? process.env), { x: reserves.get(pool.tokenX.reserve) ?? null, y: reserves.get(pool.tokenY.reserve) ?? null });
-  return pier ? { pier, pool } : null;
+  const pier = pierOf(pool, coins, { x: reserves.get(pool.tokenX.reserve) ?? null, y: reserves.get(pool.tokenY.reserve) ?? null }, nameOf);
+  return pier ? { pier, pool, served: known || (earnProAnyPool(env) && !barred) } : null;
 }
 
 export function boatOf(pier: ProPier, income: EarnIncome, cared: boolean): ProBoat {
@@ -167,22 +232,49 @@ export function boatOf(pier: ProPier, income: EarnIncome, cared: boolean): ProBo
   };
 }
 
-/** A wallet's boats at the network's piers. `agent` — the address a care is given to here, or null where none is. */
+/**
+ * A wallet's boats at the network's piers. `agent` — the address a care is given to here, or null where none is. A
+ * position in a pool of SOL that is no pier on the list (one opened while any pool was open) is read as its
+ * own pier: what a person holds is always shown, and always taken out.
+ */
 export async function readBoats(network: EarnProNetwork, owner: string, agent: string | null, deps: PierDeps = {}): Promise<readonly ProBoat[]> {
   const connection = deps.connection ?? earnProConnection(network);
   const venue = deps.venue ?? earnProVenue(network, connection, deps.env ?? process.env);
   const held = await venue.holdings.ofWallet(owner);
   if (held.positions.length === 0) return [];
   const { piers } = await readPiers(network, deps);
-  const byPool = new Map(piers.map((pier) => [pier.address, pier]));
+  const byPool = new Map<string, ProPier | null>(piers.map((pier) => [pier.address, pier]));
+  const positions = held.positions.slice(0, 24);
+  /* The pools of the list's piers at once; any other pool of SOL a position stands in, read once each, side by side and kept a minute. */
+  const others = [...new Set(positions.map((entry) => entry.pool).filter((pool) => !byPool.has(pool)))];
+  const read = await Promise.all(others.map((pool) => takeOutPier(network, pool, { ...deps, connection, venue })));
+  others.forEach((pool, index) => byPool.set(pool, read[index] ?? null));
   const boats: ProBoat[] = [];
-  for (const entry of held.positions.slice(0, 24)) {
+  for (const entry of positions) {
     const pier = byPool.get(entry.pool);
     if (!pier) continue;
     const [income, care] = await Promise.all([venue.earn.income({ pool: entry.pool, nftMint: entry.nftMint }), venue.earn.care({ pool: entry.pool, nftMint: entry.nftMint, owner, agent })]);
     boats.push(boatOf(pier, income, agent !== null && care.cares));
   }
   return boats;
+}
+
+/** Piers read for what a person holds outside the list — a pool and what it is made of change slowly: a minute each. */
+const TAKE_OUT_FRESH_MS = 60_000;
+const takeOutKept = new Map<string, Readonly<{ at: number; pier: ProPier | null }>>();
+
+async function takeOutPier(network: EarnProNetwork, address: string, deps: PierDeps): Promise<ProPier | null> {
+  const now = deps.now?.() ?? Date.now();
+  const key = `${network}:${address}`;
+  /* A read a test or a rehearsal hands its own chain to is never kept. */
+  const kept = deps.connection ? undefined : takeOutKept.get(key);
+  if (kept && now - kept.at < TAKE_OUT_FRESH_MS) return kept.pier;
+  const pier = (await readPier(network, address, deps))?.pier ?? null;
+  if (!deps.connection) {
+    if (takeOutKept.size >= 500) takeOutKept.delete(takeOutKept.keys().next().value!);
+    takeOutKept.set(key, { at: now, pier });
+  }
+  return pier;
 }
 
 export { CARE_RIGHTS };

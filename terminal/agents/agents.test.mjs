@@ -5,12 +5,12 @@ import test from "node:test";
 import { bookOf } from "../../city/lib/command/parse.ts";
 import { askLabel } from "../shell/ask-label.ts";
 import { ROWS_MAX } from "../../city/lib/command/parse.ts";
-import { EVERY_GATE, askRows, gatesFor, targetOf } from "../shell/ask-route.ts";
+import { EVERY_GATE, askHref, askRows, gatesFor, targetOf } from "../shell/ask-route.ts";
 import { engineGates } from "../shell/engine.ts";
 import { SHELVES, shelfOn } from "../shell/shelves.ts";
 import { budgetText, budgetUse, centsOf, daysLeft, lamportsTyped, resultShown, solPlain, usdShown } from "./figures.ts";
-import { agentCommand, agentRow, crewOpen, hireWay, readySentences } from "./read.ts";
-import { cardState, keeperRows, mandateLive, pastAgents, pilotRecord, pilotRow, todayOf, tradeHistory, traderRecords, traderRow, traderRows, traderState, workingRoles } from "./rows.ts";
+import { agentCommand, agentRow, crewOpen } from "./read.ts";
+import { keeperRows, mandateLive, pastAgents, pilotRecord, pilotRow, tradeHistory, traderRecords, traderRow, traderRows, traderState, workerPath } from "./rows.ts";
 
 /* The Agents screen stands on the city's own readers and the engine's own figures: a sentence that is a job for an
    agent opens the agent's card — never a trade window, never a signature — and «My agents» says only what was read. */
@@ -81,28 +81,17 @@ test("the agents open here follow the line's gates; the keeper and the launcher 
   const alone = gatesFor(ONLY("agents"), EVERY_GATE);
   assert.deepEqual(crewOpen(alone, false, true), { trader: true, pilot: true, keeper: false, launcher: false });
   assert.deepEqual(crewOpen(gatesFor(ONLY("agents"), { ...EVERY_GATE, agentTrade: false, pilot: false }), false, true), { trader: false, pilot: false, keeper: false, launcher: false });
-  assert.equal(hireWay("trader"), "here");
-  assert.equal(hireWay("pilot"), "here");
-  assert.equal(hireWay("keeper"), "earn");
-  assert.equal(hireWay("launcher"), "launch");
 });
 
-test("the ready sentences are the city's first sentences, each one the agent's own reader takes", () => {
-  const uk = readySentences("uk", BOOK, OPEN);
-  assert.deepEqual(uk.map((say) => say.key), ["trade", "dip", "launch"]);
-  assert.equal(uk[0].text, "Торгуй BONK на 0,1 SOL на день");
-  assert.equal(uk[2].text, "Запусти мені токен");
-  for (const say of [uk[0], uk[1]]) assert.equal(agentCommand(say.text, BOOK, NONE, EVERY_GATE, OPEN)?.kind, "autopilot", say.text);
-  assert.deepEqual(readySentences("en", BOOK, { ...OPEN, launcher: false }).map((say) => say.key), ["trade", "dip"]);
-  assert.deepEqual(readySentences("en", BOOK, { ...OPEN, trader: false, launcher: false }), []);
-});
 
 /* ------------------------------------------------------------------------------------------------ the header's line */
 
-test("the header's line puts the agent's job first and opens the Agents shelf with it", () => {
+test("the header's line puts a bot's job first and opens its own page under «Bots»", () => {
   const rows = askRows("Торгуй BONK на 0,1 SOL на день", BOOK, NONE, ALL, EVERY_GATE);
   assert.equal(rows[0].command.kind, "autopilot");
-  assert.deepEqual(rows[0].target, { shelf: "agents", mint: null });
+  assert.deepEqual(rows[0].target, { shelf: "agents", mint: null, path: "/bots/recurring" }, "a budget a day is Recurring buys — a bot");
+  assert.equal(askHref(rows[0].target, "live"), "/bots/recurring");
+  assert.equal(askHref(rows[0].target, "preview"), "/terminal/kit/agents", "the kit page has one preview a shelf");
   assert.equal(askLabel(rows[0].command, "uk"), "Торгувати з бюджетом на день");
   // Before: the same words opened the coin's own screen. That row still stands under the agent's.
   assert.ok(rows.some((row) => row.command.kind === "coin" && row.target.mint === BONK));
@@ -110,7 +99,17 @@ test("the header's line puts the agent's job first and opens the Agents shelf wi
   const hire = askRows("hire an agent", BOOK, NONE, ONLY("agents"), EVERY_GATE);
   assert.equal(hire[0].command.kind, "hire");
   assert.equal(askLabel(hire[0].command, "en"), "Hire an agent");
-  assert.equal(targetOf(hire[0].command).shelf, "agents");
+  assert.deepEqual(targetOf(hire[0].command), { shelf: "agents", mint: null }, "a hire of no one is the Agents screen's");
+  // A hire that names its worker goes where that worker is: the bots on their pages, the keeper on Earn, the launcher on Launch.
+  const hireOf = (role) => targetOf({ kind: "hire", ask: { said: "", role } });
+  assert.equal(hireOf("trader").path, "/bots/recurring");
+  assert.equal(hireOf("pilot").path, "/bots/autopilot");
+  assert.deepEqual(hireOf("keeper"), { shelf: "earn", mint: null });
+  assert.deepEqual(hireOf("launcher"), { shelf: "launch", mint: null });
+  // One plan for the whole budget is the money autopilot's page; a question is the analyst's, on the Agents screen.
+  const plan = askRows("Працюй з моїми 0,2 SOL: частину в скарбничку, частину торгуй, частину в пули", BOOK, NONE, ALL, EVERY_GATE)[0];
+  assert.deepEqual([plan.command.kind, plan.target.path], ["pilot", "/bots/autopilot"]);
+  assert.deepEqual(targetOf({ kind: "ask", question: "why?" }), { shelf: "agents", mint: null });
 });
 
 test("without the Agents shelf, or with the agent's engine shut, the line reads as it did", () => {
@@ -311,27 +310,12 @@ test("the keeper's rows are the pools it looks after today, each with its own «
   assert.deepEqual(keeperRows(null), []);
 });
 
-test("«Today» is the day's trades and the day's own result, each only from what was read", () => {
-  const trader = traderRow(RECORD, ACTIVE, VIEW, NOW);
-  const pilot = pilotRow({ status: "working", held: null, care: { weekUsd: 4.2 }, policy: "P" }, null);
-  const keeper = keeperRows([{ key: "a", pool: "P", status: "working", inRange: true, day: { claimedInY: 0.001, reinvestedInY: 0, rebalances: 1 } }]);
-  const rows = [trader, pilot, ...keeper];
-  assert.deepEqual(todayOf(rows), { trades: 3, raw: "4500000" });
-  assert.deepEqual(todayOf([]), { trades: null, raw: null });
-  assert.deepEqual(todayOf([pilot]), { trades: null, raw: null }, "the autopilot counts no day's trades: no «0 trades»");
-  assert.deepEqual(todayOf([traderRow(RECORD, ACTIVE, null, NOW)]), { trades: null, raw: null }, "a book not read yet: nothing to say");
-  assert.deepEqual(todayOf([pilot, ...keeper]), { trades: null, raw: "1000000" });
-  assert.deepEqual(workingRoles(rows), { trader: true, pilot: true, keeper: true, launcher: false });
+test("a bot at work is managed on its own page: Recurring buys and the money autopilot under «Bots», the keeper's pools on Earn", () => {
+  assert.equal(workerPath("trader"), "/bots/recurring");
+  assert.equal(workerPath("pilot"), "/bots/autopilot");
+  assert.equal(workerPath("keeper"), "/earn");
 });
 
-test("a card says: at work, coming, chosen, or hire — in that order", () => {
-  const none = { trader: false, pilot: false, keeper: false, launcher: false };
-  assert.equal(cardState("trader", OPEN, none, "trader"), "chosen");
-  assert.equal(cardState("pilot", OPEN, none, "trader"), "hire");
-  assert.equal(cardState("keeper", { ...OPEN, keeper: false }, none, "trader"), "soon");
-  assert.equal(cardState("keeper", { ...OPEN, keeper: false }, { ...none, keeper: true }, "trader"), "working", "an agent hired elsewhere still shows at work");
-  assert.equal(cardState("trader", OPEN, { ...none, trader: true }, "trader"), "working");
-});
 
 test("history is the books' own trades, each by what it is, newest first across the traders, and the mandates that are over", () => {
   const view = {
@@ -369,9 +353,11 @@ test("the wallet opens only from the screen's own buttons: every signing call st
     assert.match(before, /onPress=\{\(who\) =>/, `${call[1]} outside a press`);
   }
   const screen = source("./AgentsScreen.tsx");
-  assert.doesNotMatch(screen, /signTrade|goLive|tapEnable|tapStop|stopTrade|stopPilot|takeBack/, "a sentence fills the card; it never signs or stops");
-  // «Stop» is one tap on its row, one at a time; the stop itself is the city's own.
-  assert.match(screen, /const stop = \(row: MineRow\) => \{\s*if \(stopping\) return;/);
+  assert.doesNotMatch(screen, /signTrade|goLive|tapEnable|tapStop|stopTrade|stopPilot|takeBack|stopAgent/, "the Agents screen advises: it never signs or stops");
+  // «Stop» on a bot of the budget is one tap on its row, one at a time, on the bot's page; the stop itself is the city's own.
+  const bots = source("../bots/Budget.tsx");
+  assert.match(bots, /const stop = \(row: MineRow\) => \{\s*if \(stopping\) return;/);
+  assert.doesNotMatch(bots, /signTrade|goLive|tapEnable|tapStop/, "the bots' page signs only through the card's own press");
   assert.match(source("./useAgentsData.ts"), /if \(!connection \|\| !row\.stop \|\| useMandate\.getState\(\)\.busy\) return null;/);
   for (const file of ["./Mine.tsx", "./NewAgent.tsx"]) assert.doesNotMatch(source(file), /stopAgent|tapStop|takeBack/, `${file} stops nothing itself`);
 });
@@ -382,4 +368,30 @@ test("the practice kept in this browser shows only after hydration; the screen n
   assert.match(words, /It does not trade futures\./);
   assert.match(words, /На ф’ючерсах він не торгує\./);
   assert.doesNotMatch(words, /profit|прибут|заробиш|you will earn|x\d/i);
+});
+
+/* ------------------------------------------------------------------------------------------------ No ceiling */
+
+test("the new agent's budget is hers — the day, the trade and the term are her own fields; no ceiling, no preset", async () => {
+  const { AGENTS } = await import("./words.ts");
+  const card = readFileSync(new URL("./NewAgent.tsx", import.meta.url), "utf8");
+  assert.doesNotMatch(card, /PRESETS|presetFor|startsSmall|BUDGET_PRESETS|capped/u, "no budget of Ryntra's is offered or cut to");
+  assert.match(card, /label=\{w\.budgetDay\}/u);
+  assert.match(card, /label=\{w\.perTrade\}/u);
+  assert.match(card, /label=\{w\.term\}/u);
+  assert.match(card, /handyBudget\(spendRaw/u, "the handy values are shares of her own wallet");
+  assert.match(card, /w\.giveSum\(budgetText\(budgetTotal\(budget\)/u, "the action says what the signature takes");
+  // A field she empties stays hers: what follows from the day never writes over it (no «307 days» from «30» → «7»).
+  assert.match(card, /own\.current\.trade = true;/u);
+  assert.match(card, /own\.current\.days = true;/u);
+  assert.doesNotMatch(card, /own\.current\.(trade|days) = (trade|days) !== ''/u);
+  // The line before the signature breaks only between its parts.
+  assert.match(card, /\.split\(' · '\)/u);
+  // Before the signature, one line of her numbers and what stands under «the keys stay yours».
+  assert.equal(AGENTS.uk.terms("1"), "До 1 SOL на день · вивести не може · стоп будь-коли");
+  assert.equal(AGENTS.en.terms("1000"), "Up to 1000 SOL a day · it can’t withdraw · stop anytime");
+  for (const lang of ["en", "uk"]) {
+    assert.ok(AGENTS[lang].terms("0.125").length <= 64, lang);
+    assert.doesNotMatch(Object.values(AGENTS[lang]).filter((v) => typeof v === "string").join(" "), /BONK|PUMP|WIF|0[.,]1 SOL/u, lang);
+  }
 });

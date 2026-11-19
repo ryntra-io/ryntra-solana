@@ -21,7 +21,8 @@ import { DOCS_UPDATED } from "../lib/site/page-dates.ts";
 import { AWAITING_CITY, awaitingSources, CITY_PAGES } from "../city/lib/open/site-map.ts";
 import { hasUkAddress } from "../lib/site/localized.ts";
 import { HOMEPAGE_CATEGORY } from "../lib/site/homepage-copy.ts";
-import { DOC_IDS } from "../city/lib/docs/model.ts";
+/* The documentation's sections are the terminal's. */
+import { SECTION_IDS as DOC_IDS } from "./docs/_book/book.ts";
 import { DOC_PAGES } from "./docs/content/index.ts";
 import { METHODOLOGY_SUMMARY } from "./methodology/content.ts";
 

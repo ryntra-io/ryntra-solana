@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useId, useMemo, useRef, useState } from 'react';
+import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from 'react';
 import { DEPOSIT_MIN_USD, DEPOSIT_NETWORK_LABEL, DEPOSIT_NETWORKS, DEPOSIT_REFERENCE_USD, type DepositNetwork } from '@/lib/relay/deposit-address';
 import { explorerTxUrl } from '@/lib/solana/explorer';
 import { EVM_EXPLORER_TX } from '@/lib/swap/catalog';
@@ -10,18 +10,18 @@ import { digits, useWords } from '@/city/lib/i18n/dict';
 import { fieldText, fieldValue } from '@/city/lib/i18n/figures';
 import { cleanAmount, readAmount } from '@/city/lib/money/amount';
 import { formatAmount, formatUsd } from '@/city/lib/money/assets';
-import { bridgeEditable, etaWords, orderLine, orderPhase, orderWord, quoteFacts, readDestination } from '@/city/lib/money/bridge';
+import { arrivalCode, bridgeEditable, etaWords, orderLine, orderPhase, orderWord, quoteFacts, readDestination, type BridgeArrive, type BridgeCoin } from '@/city/lib/money/bridge';
 import { feeShort, feeWords, progressWords } from '@/city/lib/money/deposit';
 import { BRIDGE_WORDS } from '@/city/lib/money/words';
 import { grouped, short } from '@/city/lib/money/recipient';
-import { bridgeUsdc, useMoneyStore } from '@/city/lib/money/store';
-import { USDC } from '@/city/lib/trade/tiles';
+import { bridgeHolding, useMoneyStore } from '@/city/lib/money/store';
+import { SOL, USDC } from '@/city/lib/trade/tiles';
 import { useWallet } from '@/city/lib/trade/wallet';
 import { iconOf } from '@/terminal/coin/Ticket';
 import { ExplainBox, ExplainButton, Rows } from '@/terminal/coin/parts';
 import { connectWallet } from '@/terminal/shell/Wallet';
 import { useDismiss } from '@/terminal/shell/useDismiss';
-import { AmountField, CoinLogo, Figure, Icon, Kick, Panel, Quiet, Title, cx } from '@/terminal/ui';
+import { CoinLogo, Figure, Icon, Kick, Panel, Quiet, Title, amountText, cx } from '@/terminal/ui';
 import { BridgeGlyph } from './glyphs';
 import { LeadPress, MoneyGo } from './go';
 import { useSwapScreen, type Way } from './state';
@@ -41,6 +41,84 @@ const COPIED_MS = 2_000;
 const SOLANA_MARK = '/marks/networks/solana.svg';
 const markOf = (network: DepositNetwork) => `/marks/networks/${network}.svg`;
 const USDC_ICON = iconOf(USDC);
+
+/** A coin's logo by its ticker on either end: USDC, SOL, or a network's own coin (its network's mark). */
+function coinIcon(symbol: string): string | null {
+  if (symbol === 'USDC') return USDC_ICON;
+  if (symbol === 'SOL') return iconOf(SOL);
+  if (symbol === 'ETH') return markOf('ethereum');
+  if (symbol === 'BNB') return markOf('bnb');
+  if (symbol === 'POL') return markOf('polygon');
+  return null;
+}
+
+/**
+ * A coin of the bridge, chosen by its logo: a short menu of the ones this end may carry. A single coin is shown, not
+ * chosen.
+ */
+function CoinPick<T extends string>({ value, options, labelOf, label, onPick, disabled = false }: { value: T; options: readonly T[]; labelOf: (option: T) => string; label: string; onPick: (option: T) => void; disabled?: boolean }) {
+  const [open, setOpen] = useState(false);
+  const box = useRef<HTMLDivElement>(null);
+  useDismiss(open, box, () => setOpen(false));
+  useEffect(() => {
+    if (disabled) setOpen(false);
+  }, [disabled]);
+  const symbol = labelOf(value);
+  const face = (
+    <>
+      <CoinLogo src={coinIcon(symbol)} symbol={symbol} size="m" className={s.coinLogo} />
+      <span className={s.coinSymbol}>{symbol}</span>
+    </>
+  );
+  if (options.length < 2) return <span className={s.coin}>{face}</span>;
+  return (
+    <div className={t.anchor} ref={box}>
+      <button type="button" className={s.coin} onClick={() => setOpen((was) => !was)} disabled={disabled} aria-label={`${label}: ${symbol}`} aria-expanded={open}>
+        {face}
+        <Icon name="chevron" size="s" className={s.coinChevron} />
+      </button>
+      {open ? (
+        <div className={cx(t.menu, s.coinMenu)} role="menu" aria-label={label}>
+          {options.map((option) => (
+            <button
+              key={option}
+              type="button"
+              role="menuitemradio"
+              aria-checked={option === value}
+              className={t.menuRow}
+              onClick={() => {
+                setOpen(false);
+                onPick(option);
+              }}
+            >
+              <CoinLogo src={coinIcon(labelOf(option))} symbol={labelOf(option)} size="s" />
+              <span className={t.menuName}>{labelOf(option)}</span>
+            </button>
+          ))}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+/**
+ * A field of the bridge in the swap's own shape: its name and an aside over it, the figure and the coin in one row.
+ * `children` is the figure — typed, or read.
+ */
+function MoneyField({ label, aside, coin, children }: { label: string; aside: string; coin: ReactNode; children: ReactNode }) {
+  return (
+    <div className={s.big}>
+      <div className={s.bigHead}>
+        <Kick>{label}</Kick>
+        <span className={s.bigAside}>{aside}</span>
+      </div>
+      <div className={s.bigRow}>
+        {children}
+        {coin}
+      </div>
+    </div>
+  );
+}
 
 /**
  * The bridge: USDC between Solana and another network, both ways, on the money logic as it is (`city/lib/money/**`).
@@ -169,7 +247,7 @@ function Networks({ way, network, editable }: { way: Way; network: DepositNetwor
         {way === 'in' ? other : solana}
       </div>
       <button type="button" className={s.turn} onClick={() => useSwapScreen.setState({ way: way === 'in' ? 'out' : 'in' })} disabled={!editable} aria-label={w.turn} title={w.turn}>
-        <Icon name="swap" size="s" className={s.turnSign} />
+        <Icon name="swap" size="s" />
       </button>
       <div className={s.endSide}>
         <Kick>{w.toEnd}</Kick>
@@ -180,23 +258,31 @@ function Networks({ way, network, editable }: { way: Way; network: DepositNetwor
 }
 
 /** A coin field that is read, never typed: what arrives, or nothing yet. */
-function ReadField({ label, aside, value }: { label: string; aside: string; value: string }) {
+function ReadField({ label, aside, value, coin }: { label: string; aside: string; value: string | null; coin: ReactNode }) {
   return (
-    <div className={s.field}>
-      <div className={s.fieldHead}>
-        <Kick>{label}</Kick>
-        <span className={s.fieldAside}>{aside}</span>
-      </div>
-      <div className={s.fieldRow}>
-        <span className={s.got}>
-          <Figure value={value} className={value === '—' ? cx(s.gotFigure, s.gotNone) : s.gotFigure} />
-        </span>
-        <span className={s.pill}>
-          <CoinLogo src={USDC_ICON} symbol="USDC" size="s" />
-          USDC
-        </span>
-      </div>
-    </div>
+    <MoneyField label={label} aside={aside} coin={coin}>
+      <span className={s.bigOut}>
+        <span className={cx(s.bigAmount, value === null && s.bigNone)}>{value ?? '0'}</span>
+      </span>
+    </MoneyField>
+  );
+}
+
+/** A typed amount in the bridge's field. */
+function AmountInput({ value, onChange, label, disabled = false }: { value: string; onChange: (text: string) => void; label: string; disabled?: boolean }) {
+  return (
+    <input
+      className={s.bigAmount}
+      type="text"
+      inputMode="decimal"
+      autoComplete="off"
+      spellCheck={false}
+      placeholder="0"
+      aria-label={label}
+      value={fieldText(value)}
+      disabled={disabled}
+      onChange={(event) => onChange(cleanAmount(fieldValue(amountText(event.target.value))))}
+    />
   );
 }
 
@@ -265,7 +351,9 @@ function Into({ network }: { network: DepositNetwork }) {
 
   return (
     <>
-      <AmountField label={w.send} aside={w.from(label)} value={fieldText(amount)} onChange={(text) => setAmount(cleanAmount(fieldValue(text)))} asset={{ symbol: 'USDC', icon: USDC_ICON }} />
+      <MoneyField label={w.send} aside={w.from(label)} coin={<CoinPick value="USDC" options={['USDC']} labelOf={(x) => x} label={w.pickSend} onPick={() => {}} />}>
+        <AmountInput value={amount} onChange={setAmount} label={w.send} />
+      </MoneyField>
       {shown ? (
         <div className={s.address} aria-live="polite">
           <Kick>{sum ? w.sendTo(sum, label) : w.sendAny(label)}</Kick>
@@ -274,7 +362,7 @@ function Into({ network }: { network: DepositNetwork }) {
           </p>
         </div>
       ) : (
-        <ReadField label={w.get} aside={w.on('Solana')} value="—" />
+        <ReadField label={w.get} aside={w.on('Solana')} value={null} coin={<CoinPick value="USDC" options={['USDC']} labelOf={(x) => x} label={w.pickGet} onPick={() => {}} />} />
       )}
       <div className={s.grow} />
       {shown ? (
@@ -322,16 +410,18 @@ function OutOf({ network }: { network: DepositNetwork }) {
   const walletRead = useMoneyStore((st) => st.walletRead);
   const [details, setDetails] = useState(false);
   const detailsId = useId();
-  const usdc = bridgeUsdc(wallet);
+  const held = bridgeHolding(wallet, bridge.coin);
   const editable = bridgeEditable(bridge.phase);
+  const coin = bridge.coin;
 
-  // The money store prices the network on screen.
+  // The money store prices the network on screen — again whenever the two part (a wallet followed anew resets it).
+  const pricedOn = useMoneyStore((st) => st.bridge.network);
   useEffect(() => {
-    if (useMoneyStore.getState().bridge.network !== network) useMoneyStore.getState().setBridgeNetwork(network);
-  }, [network]);
+    if (pricedOn !== network) useMoneyStore.getState().setBridgeNetwork(network);
+  }, [network, pricedOn]);
 
   const destination = readDestination(bridge.to);
-  const amount = readAmount(bridge.amount, usdc ? { spendableRaw: usdc.spendableRaw, decimals: usdc.decimals, symbol: 'USDC' } : null);
+  const amount = readAmount(bridge.amount, held ? { spendableRaw: held.spendableRaw, decimals: held.decimals, symbol: coin } : null);
   const quote = bridge.quote?.body.quote ?? null;
   const facts = useMemo(() => (quote ? quoteFacts(quote) : null), [quote]);
   const priced = Boolean(facts && destination.ok && amount.ok && bridge.network === network);
@@ -341,7 +431,7 @@ function OutOf({ network }: { network: DepositNetwork }) {
     connected: Boolean(connection),
     walletRead,
     read: Boolean(wallet),
-    usdc: usdc ? usdc.spendableRaw : null,
+    usdc: held ? held.spendableRaw : null,
     destinationOk: destination.ok,
     amount: amount.ok ? 'ok' : amount.problem === 'OVER_BALANCE' ? 'over' : 'none',
     phase: bridge.phase,
@@ -354,9 +444,9 @@ function OutOf({ network }: { network: DepositNetwork }) {
     connect: w.connect,
     reading: m.readingBalancesNow,
     unread: m.balancesUnavailableShort,
-    noUsdc: m.noUsdc,
+    noUsdc: coin === 'USDC' ? m.noUsdc : w.noCoin(coin),
     address: m.enterAddressThere,
-    short: m.notEnoughUsdc,
+    short: coin === 'USDC' ? m.notEnoughUsdc : w.notEnough(coin),
     amount: m.enterAmount,
     pricing: m.gettingPrice,
     refused: w.moveTo(label),
@@ -377,19 +467,22 @@ function OutOf({ network }: { network: DepositNetwork }) {
   const ryntra = facts && facts.ryntraFee !== none ? `Ryntra ${digits(facts.ryntraFee.split(' · ')[0] ?? facts.ryntraFee)}` : null;
   const terms = facts && priced ? [etaWords(facts.etaSeconds), fee, ryntra].filter(Boolean).join(' · ') : null;
   const problem = bridge.to && !destination.ok ? destination.text : bridge.amount && !amount.ok && amount.problem !== 'EMPTY' ? amount.text : null;
-  const line = problem ? { tone: 'error', text: problem } : bridge.line;
+  // What the way loses, as the engine's own bands say it (`crossSwapImpactBand`): 2% and more is said before the press.
+  const loss = priced && quote?.priceImpactBps !== null && quote?.priceImpactBps !== undefined ? -quote.priceImpactBps : 0;
+  const impact = loss >= 200 ? { tone: loss >= 1_000 ? 'error' : 'warn', text: w.loss(digits((loss / 100).toFixed(1))) } : null;
+  const line = problem ? { tone: 'error', text: problem } : (bridge.line ?? impact);
 
   return (
     <>
-      <AmountField
+      <MoneyField
         label={w.send}
-        aside={usdc ? m.available(formatAmount(usdc.spendableRaw, usdc.decimals), 'USDC') : w.from('Solana')}
-        value={fieldText(bridge.amount)}
-        onChange={(text) => editable && useMoneyStore.getState().setBridgeAmount(cleanAmount(fieldValue(text)))}
-        asset={{ symbol: 'USDC', icon: USDC_ICON }}
-      />
-      <label className={s.field}>
-        <span className={s.fieldHead}>
+        aside={held ? m.available(formatAmount(held.spendableRaw, held.decimals), coin) : w.from('Solana')}
+        coin={<CoinPick<BridgeCoin> value={coin} options={['USDC', 'SOL']} labelOf={(x) => x} label={w.pickSend} disabled={!editable} onPick={(next) => useMoneyStore.getState().setBridgeCoin(next)} />}
+      >
+        <AmountInput value={bridge.amount} onChange={(text) => editable && useMoneyStore.getState().setBridgeAmount(text)} label={w.send} disabled={!editable} />
+      </MoneyField>
+      <label className={s.big}>
+        <span className={s.bigHead}>
           <Kick>{w.addressOn(label)}</Kick>
         </span>
         <input
@@ -404,7 +497,12 @@ function OutOf({ network }: { network: DepositNetwork }) {
           disabled={!editable}
         />
       </label>
-      <ReadField label={w.get} aside={w.on(label)} value={facts && priced ? digits(formatAmount(facts.minimumRaw, facts.decimals)) : '—'} />
+      <ReadField
+        label={w.get}
+        aside={w.on(label)}
+        value={facts && priced ? formatAmount(facts.minimumRaw, facts.decimals) : null}
+        coin={<CoinPick<BridgeArrive> value={bridge.arrive} options={['USDC', 'NATIVE']} labelOf={(x) => arrivalCode(network, x)} label={w.pickGet} disabled={!editable} onPick={(next) => useMoneyStore.getState().setBridgeArrive(next)} />}
+      />
       <div className={s.grow} />
       {refused ? (
         <div className={s.terms}>
@@ -423,8 +521,8 @@ function OutOf({ network }: { network: DepositNetwork }) {
         <ExplainBox id={detailsId}>
           <Rows
             rows={[
-              [m.youSend, `${digits(formatAmount(amount.raw, usdc?.decimals ?? 6))} USDC`],
-              [m.theyGetLeast, `${digits(formatAmount(facts.minimumRaw, facts.decimals))} ${facts.symbol}`],
+              [m.youSend, `${formatAmount(amount.raw, held?.decimals ?? 6)} ${coin}`],
+              [m.theyGetLeast, `${formatAmount(facts.minimumRaw, facts.decimals)} ${facts.symbol}`],
               [m.movingCosts, facts.providerUsd === null ? m.insideAmount : m.insideAmountOf(`≈ ${formatUsd(facts.providerUsd)}`)],
               [m.ryntraFee, digits(facts.ryntraFee)],
               [m.solanaFee, facts.networkUsd === null ? m.fewCentsSol : m.inSol(`≈ ${formatUsd(facts.networkUsd)}`)],
@@ -468,8 +566,8 @@ function Order() {
     <>
       <div className={t.result} role="status">
         <Kick className={phase === 'done' ? t.kickUp : phase === 'failed' ? t.kickDown : t.kickWarn}>{orderWord(phase)}</Kick>
-        <Figure value={digits(formatAmount(order.from.amountRaw, order.from.decimals))} unit="USDC" />
-        <span className={t.line}>{w.order(digits(formatAmount(order.from.amountRaw, order.from.decimals)), there)}</span>
+        <Figure value={formatAmount(order.from.amountRaw, order.from.decimals)} unit={order.from.symbol} />
+        <span className={t.line}>{w.order(formatAmount(order.from.amountRaw, order.from.decimals), order.from.symbol, there)}</span>
         {orderLine(phase) ? <span className={t.line}>{orderLine(phase)}</span> : null}
         {order.sourceTxHash ? (
           <a className={t.link} href={explorerTxUrl('mainnet', order.sourceTxHash)} target="_blank" rel="noreferrer">

@@ -1,0 +1,435 @@
+/* The head of the coin's desk: the coin as a picker, its price and move, the trader's figures, the links.
+   Pressable parts take their 4 px from coin.module.css; the picker is a menu — straight. Colours are tokens. */
+
+.head {
+  position: relative;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  min-width: 0;
+  height: 72px;
+  padding: 8px 16px;
+  border: 1px solid var(--glass-edge);
+  background: var(--glass);
+}
+
+.anchor {
+  position: relative;
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+}
+
+.names {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  min-width: 0;
+}
+
+.symRow {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--dim);
+}
+
+.sym {
+  font-family: var(--display);
+  font-size: var(--type-headline);
+  font-weight: 800;
+  line-height: 1;
+  color: var(--ice);
+}
+
+.name {
+  max-width: 220px;
+  overflow: hidden;
+  font-size: var(--type-caption);
+  color: var(--dim);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.vetted {
+  display: inline-flex;
+  flex: none;
+}
+
+.quote {
+  display: flex;
+  flex: none;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.price {
+  font-family: var(--display);
+  font-size: var(--type-figure);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  color: var(--ice);
+}
+
+.change {
+  font-size: var(--type-body);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.change[data-tone='up'] {
+  color: var(--mint);
+}
+
+.change[data-tone='down'] {
+  color: var(--flare);
+}
+
+/* The trader's figures: a word over a number, side by side, quiet rules between them. */
+.figures {
+  display: flex;
+  flex: 0 1 auto;
+  align-items: center;
+  gap: 0;
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+}
+
+.figure {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 0 16px;
+  border-left: 1px solid var(--line);
+  white-space: nowrap;
+}
+
+.figure dt {
+  font-size: var(--type-micro);
+  font-weight: 600;
+  color: var(--dim);
+}
+
+.figure dd {
+  margin: 0;
+  font-size: var(--type-body);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--ice);
+}
+
+.grow {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.links {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* ── the address behind «i» ────────────────────────────────────────────── */
+
+.pop {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 440px;
+  padding: 14px 16px;
+  border: 1px solid var(--edge);
+  background: var(--panel-up);
+  box-shadow: 0 18px 48px color-mix(in srgb, var(--ink-deep) 80%, transparent);
+}
+
+.popLabel {
+  font-size: var(--type-micro);
+  font-weight: 600;
+  color: var(--dim);
+}
+
+.addressRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.address {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-family: var(--ui);
+  font-size: var(--type-small);
+  color: var(--ice);
+}
+
+.popNote {
+  font-size: var(--type-caption);
+  color: var(--mint);
+}
+
+/* ── the picker ────────────────────────────────────────────────────────── */
+
+.picker {
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  width: min(660px, calc(100vw - 32px));
+  max-height: min(620px, calc(100dvh - 160px));
+  border: 1px solid var(--edge);
+  background: var(--panel-up);
+  box-shadow: 0 24px 64px color-mix(in srgb, var(--ink-deep) 80%, transparent);
+}
+
+.pickTop {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 14px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+/* The search across the picker's whole width. */
+.pickTop > label {
+  width: 100%;
+  max-width: none;
+}
+
+.kinds {
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.pickList {
+  flex: 1 1 auto;
+  min-height: 0;
+  margin: 0;
+  padding: 6px 0;
+  overflow-y: auto;
+  list-style: none;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--haze) transparent;
+}
+
+/* The columns' names, quiet, over the rows. */
+.pickCols {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr) minmax(110px, auto) minmax(96px, auto);
+  gap: 12px;
+  padding: 8px 14px 2px;
+  font-size: var(--type-micro);
+  font-weight: 600;
+  color: var(--dim);
+}
+
+.pickCols > span:nth-child(n + 3) {
+  text-align: right;
+}
+
+.pickRow {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr) minmax(110px, auto) minmax(96px, auto);
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 52px;
+  padding: 6px 14px;
+  text-align: left;
+  color: var(--ice);
+}
+
+li[aria-selected='true'] > .pickRow {
+  background: var(--chosen);
+}
+
+.pickHere {
+  box-shadow: inset 2px 0 0 var(--lilac);
+}
+
+.pickName {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.pickName b {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--type-body);
+  font-weight: 700;
+}
+
+.pickName b svg {
+  color: var(--mint);
+}
+
+.pickName span,
+.pickNum span:not(.change) {
+  overflow: hidden;
+  font-size: var(--type-caption);
+  color: var(--dim);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pickNum {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  font-variant-numeric: tabular-nums;
+}
+
+.pickNum b {
+  font-size: var(--type-small);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.pickNum .change {
+  font-size: var(--type-caption);
+}
+
+.pickLine {
+  margin: 0;
+  padding: 28px 16px;
+  text-align: center;
+  font-size: var(--type-small);
+  font-weight: 600;
+  color: var(--dim);
+}
+
+/* A narrower desk keeps the coin, the price and as many figures as fit; the rest wait for room. */
+@media (max-width: 1360px) {
+  .figure:nth-child(n + 4) {
+    display: none;
+  }
+}
+
+@media (max-width: 1180px) {
+  .figure:nth-child(n + 3) {
+    display: none;
+  }
+
+  .head {
+    flex-wrap: wrap;
+    height: auto;
+    min-height: 72px;
+  }
+
+  .vetted,
+  .name {
+    display: none;
+  }
+}
+
+/* ── the phone: the coin and its price on one line, the figures under it ── */
+
+@media (max-width: 767px) {
+  .head {
+    flex-wrap: wrap;
+    gap: 10px 12px;
+    height: auto;
+    padding: 10px 12px;
+  }
+
+  .sym {
+    font-size: var(--type-title);
+  }
+
+  .name {
+    max-width: 150px;
+  }
+
+  .vetted {
+    display: none;
+  }
+
+  .quote {
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+    margin-left: auto;
+  }
+
+  .price {
+    font-size: var(--type-headline);
+  }
+
+  .figures {
+    order: 3;
+    flex: 1 1 100%;
+    justify-content: space-between;
+  }
+
+  /* Seven kinds do not fit a phone's width: the row scrolls, and its edge fades so the next tab reads as «more»; room
+     after the last tab lets it scroll clear of the fade. */
+  .kinds {
+    padding-right: 32px;
+    mask-image: linear-gradient(to right, var(--ice) calc(100% - 32px), transparent);
+  }
+
+  .figure {
+    padding: 0 8px;
+  }
+
+  .figure:first-child {
+    padding-left: 0;
+    border-left: 0;
+  }
+
+  .figure:nth-child(n + 3) {
+    display: flex;
+  }
+
+  .figure dd {
+    font-size: var(--type-small);
+  }
+
+  .grow {
+    display: none;
+  }
+
+  .picker {
+    position: fixed;
+    top: 72px;
+    left: 8px;
+    right: 8px;
+    width: auto;
+    max-height: calc(100dvh - 72px - var(--tabbar) - 16px);
+  }
+
+  .pickRow,
+  .pickCols {
+    grid-template-columns: 36px minmax(0, 1fr) auto;
+  }
+
+  .pickRow > :last-child,
+  .pickCols > :last-child {
+    display: none;
+  }
+
+  .pop {
+    position: fixed;
+    top: 72px;
+    left: 8px;
+    right: 8px;
+    width: auto;
+  }
+}

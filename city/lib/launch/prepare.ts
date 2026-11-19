@@ -1,4 +1,4 @@
-import type { LaunchBuildRequest, LaunchBuildResponse, LaunchMetadataResponse, LaunchPresetView } from '../../../lib/api/v1/contract.ts';
+import type { LaunchBuildRequest, LaunchBuildResponse, LaunchMetadataRequest, LaunchMetadataResponse, LaunchPresetView } from '../../../lib/api/v1/contract.ts';
 import type { FeeShare } from '../../../lib/core/launch/fee-shares.ts';
 import { MAX_SIGNABLE_WINDOW_MS, MIN_WALLET_WINDOW_MS } from '../../../lib/solana/blockhash-life.ts';
 import type { Answer, LaunchEngine, Network } from './engine.ts';
@@ -20,7 +20,22 @@ import { sameShares } from './share.ts';
  *   engine's hourly allowance; the press always stores what it launches.
  */
 
-export type PrepFields = Readonly<{ name: string; symbol: string; picture: Readonly<{ base64: string }> }>;
+/**
+ * What a creator may say about the coin beside its name: a line about it and its links — the fields the
+ * engine's store already takes into the coin's metadata (`/api/v1/launch/metadata`), as typed; the engine trims them
+ * and makes the links whole by the same rules the form shows (`lib/launch/form.ts`).
+ */
+export type About = Readonly<{ description: string; website: string; x: string; telegram: string }>;
+
+export const NO_ABOUT: About = { description: '', website: '', x: '', telegram: '' };
+
+export type PrepFields = Readonly<{ name: string; symbol: string; picture: Readonly<{ base64: string }>; about?: About }>;
+
+/** The store's request for these fields: the name, the ticker, the picture, and what was said about the coin. */
+export function metadataBody(fields: PrepFields): LaunchMetadataRequest {
+  const about = fields.about ?? NO_ABOUT;
+  return { name: fields.name, symbol: fields.symbol, description: about.description, website: about.website, x: about.x, telegram: about.telegram, imageBase64: fields.picture.base64 };
+}
 
 /** Background stores a page asks for at most until a launch lands; every later store waits for a press. */
 export const BACKGROUND_STORES = 4;
@@ -41,9 +56,12 @@ function fingerprint(text: string): string {
   return `${text.length}:${hash.toString(16)}`;
 }
 
-/** The three fields as one key: the same name, ticker and picture are stored once. */
+/** The fields as one key: the same name, ticker, picture and words about the coin are stored once. */
 export function fieldsKey(fields: PrepFields): string {
-  return `${fields.name}\u0000${fields.symbol}\u0000${fingerprint(fields.picture.base64)}`;
+  const base = `${fields.name}\u0000${fields.symbol}\u0000${fingerprint(fields.picture.base64)}`;
+  const about = fields.about ?? NO_ABOUT;
+  const said = [about.description, about.website, about.x, about.telegram];
+  return said.some(Boolean) ? `${base}\u0000${said.join('\u0000')}` : base;
 }
 
 /**
@@ -132,7 +150,7 @@ export function createPrep(args: Readonly<{ engine: () => LaunchEngine; now?: ()
       if (background >= BACKGROUND_STORES) return null;
       background += 1;
     }
-    const promise = args.engine().metadata({ name: fields.name, symbol: fields.symbol, description: '', website: '', x: '', telegram: '', imageBase64: fields.picture.base64 });
+    const promise = args.engine().metadata(metadataBody(fields));
     const entry: { key: string; promise: Promise<Answer<LaunchMetadataResponse>>; answer: Answer<LaunchMetadataResponse> | null } = { key, promise, answer: null };
     stored = entry;
     emit();

@@ -75,7 +75,7 @@ for (const size of SIZES) {
     if (size.mobile) {
       await page.goto(`${base}/?lang=${lang}`, { waitUntil: "domcontentloaded" });
       await settle();
-      await page.locator("[data-terminal='mark']").tap();
+      await page.locator("[data-terminal='menu-button']").tap();
       await page.waitForSelector("[role='dialog'][aria-modal='true']", { timeout: 10_000 }).catch(() => {});
       await page.waitForTimeout(700);
       await shot("sheet");

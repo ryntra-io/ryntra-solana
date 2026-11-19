@@ -1,0 +1,4040 @@
+{
+ "chains": [
+  {
+   "id": 1,
+   "name": "ethereum",
+   "displayName": "Ethereum",
+   "vmType": "evm",
+   "depositEnabled": true,
+   "depositAddressEnabled": true,
+   "disabled": false,
+   "blockProductionLagging": false,
+   "httpRpcUrl": "https://ethereum.publicnode.com",
+   "explorerUrl": "https://etherscan.io",
+   "iconUrl": "https://assets.relay.link/icons/1/light.png",
+   "currency": {
+    "id": "eth",
+    "symbol": "ETH",
+    "name": "Ether",
+    "address": "0x0000000000000000000000000000000000000000",
+    "decimals": 18,
+    "supportsBridging": true
+   },
+   "featuredTokens": [
+    {
+     "id": "eth",
+     "symbol": "ETH",
+     "name": "Ether",
+     "address": "0x0000000000000000000000000000000000000000",
+     "decimals": 18,
+     "metadata": {
+      "logoURI": "https://assets.relay.link/icons/1/light.png"
+     }
+    },
+    {
+     "id": "usdc",
+     "symbol": "USDC",
+     "name": "USD Coin",
+     "address": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+     "decimals": 6,
+     "metadata": {
+      "logoURI": "https://coin-images.coingecko.com/coins/images/6319/large/usdc.png?1696506694"
+     }
+    },
+    {
+     "id": "usdt",
+     "symbol": "USDT",
+     "name": "Tether USD",
+     "address": "0xdac17f958d2ee523a2206206994597c13d831ec7",
+     "decimals": 6,
+     "metadata": {
+      "logoURI": "https://coin-images.coingecko.com/coins/images/39963/large/usdt.png?1724952731"
+     }
+    },
+    {
+     "id": "weth",
+     "symbol": "WETH",
+     "name": "Wrapped Ether",
+     "address": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+     "decimals": 18,
+     "metadata": {
+      "logoURI": "https://coin-images.coingecko.com/coins/images/39810/large/weth.png"
+     }
+    },
+    {
+     "id": "dai",
+     "symbol": "DAI",
+     "name": "Dai Stablecoin",
+     "address": "0x6b175474e89094c44da98b954eedeac495271d0f",
+     "decimals": 18,
+     "metadata": {
+      "logoURI": "https://coin-images.coingecko.com/coins/images/9956/large/Badge_Dai.png?1696509996"
+     }
+    }
+   ],
+   "contracts": {
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "multicaller": "0x0000000000002bdbf1bf3279983603ec279cc6df",
+    "onlyOwnerMulticaller": "0xb90ed4c123843cbfd66b11411ee7694ef37e6e72",
+    "relayReceiver": "0xa5f565650890fba1824ee0f21ebbbf660a179934",
+    "erc20Router": "0x0729e2a4716d9f7dd17858d5d504426d228697f7",
+    "approvalProxy": "0x5567954cd026cebfe486062cb75848e0f1c12e58",
+    "v3": {
+     "erc20Router": "0xb92fe925dc43a0ecde6c8b1a2709c170ec4fff4f",
+     "approvalProxy": "0xccc88a9d1b4ed6b0eaba998850414b24f1c315be"
+    },
+    "v3.2": {
+     "erc20Router": "0x0729e2a4716d9f7dd17858d5d504426d228697f7",
+     "approvalProxy": "0x5567954cd026cebfe486062cb75848e0f1c12e58"
+    }
+   },
+   "protocol": {
+    "v2": {
+     "chainId": "ethereum",
+     "depository": "0x4cd00e387622c35bddb9b4c962c136462338bc31"
+    }
+   }
+  },
+  {
+   "id": 10,
+   "name": "optimism",
+   "displayName": "Optimism",
+   "vmType": "evm",
+   "depositEnabled": true,
+   "depositAddressEnabled": true,
+   "disabled": false,
+   "blockProductionLagging": false,
+   "httpRpcUrl": "https://optimism.publicnode.com",
+   "explorerUrl": "https://optimistic.etherscan.io",
+   "iconUrl": "https://assets.relay.link/icons/10/light.png",
+   "currency": {
+    "id": "eth",
+    "symbol": "ETH",
+    "name": "Ether",
+    "address": "0x0000000000000000000000000000000000000000",
+    "decimals": 18,
+    "supportsBridging": true
+   },
+   "featuredTokens": [
+    {
+     "id": "eth",
+     "symbol": "ETH",
+     "name": "Ether",
+     "address": "0x0000000000000000000000000000000000000000",
+     "decimals": 18,
+     "metadata": {
+      "logoURI": "https://assets.relay.link/icons/1/light.png"
+     }
+    },
+    {
+     "id": "usdc",
+     "symbol": "USDC",
+     "name": "USD Coin",
+     "address": "0x0b2c639c533813f4aa9d7837caf62653d097ff85",
+     "decimals": 6,
+     "metadata": {
+      "logoURI": "https://ethereum-optimism.github.io/data/USDC/logo.png"
+     }
+    },
+    {
+     "id": "usdt",
+     "symbol": "USDT0",
+     "name": "USDT0",
+     "address": "0x01bff41798a0bcf287b996046ca68b395dbc1071",
+     "decimals": 6,
+     "metadata": {
+      "logoURI": "https://coin-images.coingecko.com/coins/images/53705/large/usdt0.jpg?1737086183"
+     }
+    },
+    {
+     "id": "weth",
+     "symbol": "WETH",
+     "name": "Wrapped Ether",
+     "address": "0x4200000000000000000000000000000000000006",
+     "decimals": 18,
+     "metadata": {
+      "logoURI": "https://coin-images.coingecko.com/coins/images/39810/large/weth.png"
+     }
+    },
+    {
+     "symbol": "OP",
+     "name": "Optimism",
+     "address": "0x4200000000000000000000000000000000000042",
+     "decimals": 18,
+     "metadata": {
+      "logoURI": "https://ethereum-optimism.github.io/data/OP/logo.png"
+     }
+    }
+   ],
+   "contracts": {
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "multicaller": "0x0000000000002bdbf1bf3279983603ec279cc6df",
+    "onlyOwnerMulticaller": "0xb90ed4c123843cbfd66b11411ee7694ef37e6e72",
+    "relayReceiver": "0xa5f565650890fba1824ee0f21ebbbf660a179934",
+    "erc20Router": "0x0729e2a4716d9f7dd17858d5d504426d228697f7",
+    "approvalProxy": "0x5567954cd026cebfe486062cb75848e0f1c12e58",
+    "v3": {
+     "erc20Router": "0xb92fe925dc43a0ecde6c8b1a2709c170ec4fff4f",
+     "approvalProxy": "0xccc88a9d1b4ed6b0eaba998850414b24f1c315be"
+    },
+    "v3.2": {
+     "erc20Router": "0x0729e2a4716d9f7dd17858d5d504426d228697f7",
+     "approvalProxy": "0x5567954cd026cebfe486062cb75848e0f1c12e58"
+    }
+   },
+   "protocol": {
+    "v2": {
+     "chainId": "optimism",
+     "depository": "0x4cd00e387622c35bddb9b4c962c136462338bc31"
+    }
+   }
+  },
+  {
+   "id": 25,
+   "name": "cronos",
+   "displayName": "Cronos",
+   "vmType": "evm",
+   "depositEnabled": true,
+   "depositAddressEnabled": true,
+   "disabled": false,
+   "blockProductionLagging": false,
+   "httpRpcUrl": "https://cronos.drpc.org",
+   "explorerUrl": "https://cronoscan.com",
+   "iconUrl": "https://assets.relay.link/icons/25/light.png",
+   "currency": {
+    "id": "cronos",
+    "symbol": "CRO",
+    "name": "Cronos",
+    "address": "0x0000000000000000000000000000000000000000",
+    "decimals": 18,
+    "supportsBridging": true
+   },
+   "featuredTokens": [
+    {
+     "id": "cronos",
+     "symbol": "CRO",
+     "name": "Cronos",
+     "address": "0x0000000000000000000000000000000000000000",
+     "decimals": 18,
+     "metadata": {
+      "logoURI": "https://assets.relay.link/icons/currencies/cro.png"
+     }
+    },
+    {
+     "id": "usdc",
+     "symbol": "USDC",
+     "name": "USD Coin",
+     "address": "0x3d7f2c478aafdb65542bcb44bceec05849999d2d",
+     "decimals": 6,
+     "metadata": {
+      "logoURI": "https://coin-images.coingecko.com/coins/images/6319/large/usdc.png?1696506694"
+     }
+    },
+    {
+     "symbol": "WCRO",
+     "name": "Wrapped CRO",
+     "address": "0x5c7f8a570d578ed84e63fdfa7b1ee72deae1ae23",
+     "decimals": 18,
+     "metadata": {
+      "logoURI": "https://assets.relay.link/icons/currencies/cro.png"
+     }
+    },
+    {
+     "id": "usdc.e-cronos",
+     "symbol": "USDC.e",
+     "name": "USDCoin (bridged)",
+     "address": "0xc21223249ca28397b4b6541dffaecc539bff0c59",
+     "decimals": 6,
+     "metadata": {
+      "logoURI": "https://ethereum-optimism.github.io/data/USDC/logo.png"
+     }
+    }
+   ],
+   "contracts": {
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "multicaller": "0xcd18f12c9424cb072c28137691c993ecb2f8b925",
+    "onlyOwnerMulticaller": "0xd8afcda5f4e509697cbf084482d3254d3b49b45b",
+    "relayReceiver": "0xc56043daac3a26ad451abc7610f04f53cc4412e5",
+    "erc20Router": "0x6328ea02d28131e58b28e55c6258258a30d90e05",
+    "approvalProxy": "0xe4dfbd5e6784db1058124e2c87554c0591f0fb7b",
+    "v3": {
+     "erc20Router": "0x9ef6d3c2f60d7b9008d74cab1fc0f899c957c819",
+     "approvalProxy": "0x8754bc615047de01228a7527b712806a71a8dc9a"
+    },
+    "v3.2": {
+     "erc20Router": "0x6328ea02d28131e58b28e55c6258258a30d90e05",
+     "approvalProxy": "0xe4dfbd5e6784db1058124e2c87554c0591f0fb7b"
+    }
+   },
+   "protocol": {
+    "v2": {
+     "chainId": "cronos",
+     "depository": "0x59916da825d2d2ec1bf878d71c88826f6633ecca"
+    }
+   }
+  },
+  {
+   "id": 56,
+   "name": "bsc",
+   "displayName": "BNB",
+   "vmType": "evm",
+   "depositEnabled": true,
+   "depositAddressEnabled": true,
+   "disabled": false,
+   "blockProductionLagging": false,
+   "httpRpcUrl": "https://bsc-rpc.publicnode.com",
+   "explorerUrl": "https://bscscan.com",
+   "iconUrl": "https://assets.relay.link/icons/56/light.png",
+   "currency": {
+    "id": "bnb",
+    "symbol": "BNB",
+    "name": "Binance Coin",
+    "address": "0x0000000000000000000000000000000000000000",
+    "decimals": 18,
+    "supportsBridging": true
+   },
+   "featuredTokens": [
+    {
+     "id": "bnb",
+     "symbol": "BNB",
+     "name": "Binance Coin",
+     "address": "0x0000000000000000000000000000000000000000",
+     "decimals": 18,
+     "metadata": {
+      "logoURI": "https://assets.relay.link/icons/currencies/bnb.png"
+     }
+    },
+    {
+     "id": "usdc",
+     "symbol": "USDC",
+     "name": "USDCoin",
+     "address": "0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d",
+     "decimals": 18,
+     "metadata": {
+      "logoURI": "https://ethereum-optimism.github.io/data/USDC/logo.png"
+     }
+    },
+    {
+     "id": "usdt",
+     "symbol": "USDT",
+     "name": "Tether USD",
+     "address": "0x55d398326f99059ff775485246999027b3197955",
+     "decimals": 18,
+     "metadata": {
+      "logoURI": "https://coin-images.coingecko.com/coins/images/39963/large/usdt.png?1724952731"
+     }
+    },
+    {
+     "symbol": "WBNB",
+     "name": "Wrapped BNB",
+     "address": "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
+     "decimals": 18,
+     "metadata": {
+      "logoURI": "https://raw.githubusercontent.com/Uniswap/assets/master/blockchains/smartchain/assets/0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c/logo.png"
+     }
+    }
+   ],
+   "contracts": {
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "multicaller": "0x0000000000002Bdbf1Bf3279983603Ec279CC6dF",
+    "onlyOwnerMulticaller": "0xb90ed4c123843cbfd66b11411ee7694ef37e6e72",
+    "relayReceiver": "0xa5f565650890fba1824ee0f21ebbbf660a179934",
+    "erc20Router": "0x0729e2a4716d9f7dd17858d5d504426d228697f7",
+    "approvalProxy": "0x5567954cd026cebfe486062cb75848e0f1c12e58",
+    "v3": {
+     "erc20Router": "0xb92fe925dc43a0ecde6c8b1a2709c170ec4fff4f",
+     "approvalProxy": "0xccc88a9d1b4ed6b0eaba998850414b24f1c315be"
+    },
+    "v3.2": {
+     "erc20Router": "0x0729e2a4716d9f7dd17858d5d504426d228697f7",
+     "approvalProxy": "0x5567954cd026cebfe486062cb75848e0f1c12e58"
+    }
+   },
+   "protocol": {
+    "v2": {
+     "chainId": "bnb",
+     "depository": "0x4cd00e387622c35bddb9b4c962c136462338bc31"
+    }
+   }
+  },
+  {
+   "id": 100,
+   "name": "gnosis",
+   "displayName": "Gnosis",
+   "vmType": "evm",
+   "depositEnabled": true,
+   "depositAddressEnabled": true,
+   "disabled": false,
+   "blockProductionLagging": false,
+   "httpRpcUrl": "https://rpc.gnosischain.com/",
+   "explorerUrl": "https://gnosisscan.io",
+   "iconUrl": "https://assets.relay.link/icons/100/light.png",
+   "currency": {
+    "id": "dai",
+    "symbol": "xDAI",
+    "name": "xDai",
+    "address": "0x0000000000000000000000000000000000000000",
+    "decimals": 18,
+    "supportsBridging": true
+   },
+   "featuredTokens": [
+    {
+     "id": "dai",
+     "symbol": "xDAI",
+     "name": "xDai",
+     "address": "0x0000000000000000000000000000000000000000",
+     "decimals": 18,
+     "metadata": {
+      "logoURI": "https://assets.relay.link/icons/currencies/xdai.png"
+     }
+    },
+    {
+     "id": "usdc",
+     "symbol": "USDC",
+     "name": "USD Coin",
+     "address": "0x2a22f9c3b484c3629090feed35f17ff8f88f76f0",
+     "decimals": 6,
+     "metadata": {
+      "logoURI": "https://ethereum-optimism.github.io/data/USDC/logo.png"
+     }
+    }
+   ],
+   "contracts": {
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "multicaller": "0x0000000000002Bdbf1Bf3279983603Ec279CC6dF",
+    "onlyOwnerMulticaller": "0xb90ed4c123843cbfd66b11411ee7694ef37e6e72",
+    "relayReceiver": "0xa5f565650890fba1824ee0f21ebbbf660a179934",
+    "erc20Router": "0x0729e2a4716d9f7dd17858d5d504426d228697f7",
+    "approvalProxy": "0x5567954cd026cebfe486062cb75848e0f1c12e58",
+    "v3": {
+     "erc20Router": "0xb92fe925dc43a0ecde6c8b1a2709c170ec4fff4f",
+     "approvalProxy": "0xccc88a9d1b4ed6b0eaba998850414b24f1c315be"
+    },
+    "v3.2": {
+     "erc20Router": "0x0729e2a4716d9f7dd17858d5d504426d228697f7",
+     "approvalProxy": "0x5567954cd026cebfe486062cb75848e0f1c12e58"
+    }
+   },
+   "protocol": {
+    "v2": {
+     "chainId": "gnosis",
+     "depository": "0x4cd00e387622c35bddb9b4c962c136462338bc31"
+    }
+   }
+  },
+  {
+   "id": 130,
+   "name": "unichain",
+   "displayName": "Unichain",
+   "vmType": "evm",
+   "depositEnabled": true,
+   "depositAddressEnabled": true,
+   "disabled": false,
+   "blockProductionLagging": false,
+   "httpRpcUrl": "https://mainnet.unichain.org",
+   "explorerUrl": "https://uniscan.xyz",
+   "iconUrl": "https://assets.relay.link/icons/130/light.png",
+   "currency": {
+    "id": "eth",
+    "symbol": "ETH",
+    "name": "Ether",
+    "address": "0x0000000000000000000000000000000000000000",
+    "decimals": 18,
+    "supportsBridging": true
+   },
+   "featuredTokens": [
+    {
+     "id": "eth",
+     "symbol": "ETH",
+     "name": "Ether",
+     "address": "0x0000000000000000000000000000000000000000",
+     "decimals": 18,
+     "metadata": {
+      "logoURI": "https://assets.relay.link/icons/1/light.png"
+     }
+    },
+    {
+     "id": "usdc",
+     "symbol": "USDC",
+     "name": "USDCoin",
+     "address": "0x078d782b760474a361dda0af3839290b0ef57ad6",
+     "decimals": 6,
+     "metadata": {
+      "logoURI": "https://ethereum-optimism.github.io/data/USDC/logo.png"
+     }
+    },
+    {
+     "symbol": "WETH",
+     "name": "Wrapped Ether",
+     "address": "0x4200000000000000000000000000000000000006",
+     "decimals": 18,
+     "metadata": {
+      "logoURI": "https://coin-images.coingecko.com/coins/images/39810/large/weth.png"
+     }
+    }
+   ],
+   "contracts": {
+    "multicall3": "",
+    "multicaller": "0xb0e22f8b026c5dc4b0bc33ef4c5d3231544aee3e",
+    "onlyOwnerMulticaller": "0x1766d01b0c79337642ced0aae63cae65889f6818",
+    "relayReceiver": "0x47eb64e17a6d2fd559b608695e6d308cced918dd",
+    "erc20Router": "0x0729e2a4716d9f7dd17858d5d504426d228697f7",
+    "approvalProxy": "0x5567954cd026cebfe486062cb75848e0f1c12e58",
+    "v3": {
+     "erc20Router": "0xb92fe925dc43a0ecde6c8b1a2709c170ec4fff4f",
+     "approvalProxy": "0xccc88a9d1b4ed6b0eaba998850414b24f1c315be"
+    },
+    "v3.2": {
+     "erc20Router": "0x0729e2a4716d9f7dd17858d5d504426d228697f7",
+     "approvalProxy": "0x5567954cd026cebfe486062cb75848e0f1c12e58"
+    }
+   },
+   "protocol": {
+    "v2": {
+     "chainId": "unichain",
+     "depository": "0x4cd00e387622c35bddb9b4c962c136462338bc31"
+    }
+   }
+  },
+  {
+   "id": 137,
+   "name": "polygon",
+   "displayName": "Polygon",
+   "vmType": "evm",
+   "depositEnabled": true,
+   "depositAddressEnabled": true,
+   "disabled": false,
+   "blockProductionLagging": false,
+   "httpRpcUrl": "https://polygon-bor-rpc.publicnode.com",
+   "explorerUrl": "https://polygonscan.com",
+   "iconUrl": "https://assets.relay.link/icons/137/light.png",
+   "currency": {
+    "id": "matic",
+    "symbol": "POL",
+    "name": "POL",
+    "address": "0x0000000000000000000000000000000000000000",
+    "decimals": 18,
+    "supportsBridging": false
+   },
+   "featuredTokens": [
+    {
+     "id": "matic",
+     "symbol": "POL",
+     "name": "POL",
+     "address": "0x0000000000000000000000000000000000000000",
+     "decimals": 18,
+     "metadata": {
+      "logoURI": "https://assets.coingecko.com/coins/images/4713/thumb/matic-token-icon.png?1624446912"
+     }
+    },
+    {
+     "id": "usdc",
+     "symbol": "USDC",
+     "name": "USD Coin",
+     "address": "0x3c499c542cef5e3811e1192ce70d8cc03d5c3359",
+     "decimals": 6,
+     "metadata": {
+      "logoURI": "https://ethereum-optimism.github.io/data/USDC/logo.png"
+     }
+    },
+    {
+     "id": "usdt",
+     "symbol": "USDT",
+     "name": "Tether USD",
+     "address": "0xc2132d05d31c914a87c6611c10748aeb04b58e8f",
+     "decimals": 6,
+     "metadata": {
+      "logoURI": "https://coin-images.coingecko.com/coins/images/39963/large/usdt.png?1724952731"
+     }
+    },
+    {
+     "symbol": "WPOL",
+     "name": "Wrapped POL",
+     "address": "0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270",
+     "decimals": 18,
+     "metadata": {
+      "logoURI": "https://assets.coingecko.com/coins/images/4713/thumb/matic-token-icon.png?1624446912"
+     }
+    }
+   ],
+   "contracts": {
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "multicaller": "0x0000000000002Bdbf1Bf3279983603Ec279CC6dF",
+    "onlyOwnerMulticaller": "0xb90ed4c123843cbfd66b11411ee7694ef37e6e72",
+    "relayReceiver": "0xa5f565650890fba1824ee0f21ebbbf660a179934",
+    "erc20Router": "0x0729e2a4716d9f7dd17858d5d504426d228697f7",
+    "approvalProxy": "0x5567954cd026cebfe486062cb75848e0f1c12e58",
+    "v3": {
+     "erc20Router": "0xb92fe925dc43a0ecde6c8b1a2709c170ec4fff4f",
+     "approvalProxy": "0xccc88a9d1b4ed6b0eaba998850414b24f1c315be"
+    },
+    "v3.2": {
+     "erc20Router": "0x0729e2a4716d9f7dd17858d5d504426d228697f7",
+     "approvalProxy": "0x5567954cd026cebfe486062cb75848e0f1c12e58"
+    }
+   },
+   "protocol": {
+    "v2": {
+     "chainId": "polygon",
+     "depository": "0x4cd00e387622c35bddb9b4c962c136462338bc31"
+    }
+   }
+  },
+  {
+   "id": 143,
+   "name": "monad",
+   "displayName": "Monad",
+   "vmType": "evm",
+   "depositEnabled": true,
+   "depositAddressEnabled": true,
+   "disabled": false,
+   "blockProductionLagging": false,
+   "httpRpcUrl": "https://rpc3.monad.xyz",
+   "explorerUrl": "https://monadvision.com",
+   "iconUrl": "https://assets.relay.link/icons/143/light.png",
+   "currency": {
+    "id": "mon",
+    "symbol": "MON",
+    "name": "Monad",
+    "address": "0x0000000000000000000000000000000000000000",
+    "decimals": 18,
+    "supportsBridging": true
+   },
+   "featuredTokens": [
+    {
+     "id": "mon",
+     "symbol": "MON",
+     "name": "Monad",
+     "address": "0x0000000000000000000000000000000000000000",
+     "decimals": 18,
+     "metadata": {
+      "logoURI": "https://assets.coingecko.com/coins/images/38927/large/monad.jpg"
+     }
+    },
+    {
+     "id": "usdc",
+     "symbol": "USDC",
+     "name": "USD Coin",
+     "address": "0x754704bc059f8c67012fed69bc8a327a5aafb603",
+     "decimals": 6,
+     "metadata": {
+      "logoURI": "https://coin-images.coingecko.com/coins/images/6319/large/usdc.png?1696506694"
+     }
+    },
+    {
+     "id": "usdt",
+     "symbol": "USDT0",
+     "name": "USDT0",
+     "address": "0xe7cd86e13ac4309349f30b3435a9d337750fc82d",
+     "decimals": 6,
+     "metadata": {
+      "logoURI": "https://coin-images.coingecko.com/coins/images/53705/large/usdt0.jpg?1737086183"
+     }
+    },
+    {
+     "symbol": "WMON",
+     "name": "Wrapped Monad",
+     "address": "0x3bd359c1119da7da1d913d1c4d2b7c461115433a",
+     "decimals": 18,
+     "metadata": {
+      "logoURI": "https://assets.coingecko.com/coins/images/38927/large/monad.jpg"
+     }
+    }
+   ],
+   "contracts": {
+    "multicall3": "",
+    "multicaller": "",
+    "onlyOwnerMulticaller": "",
+    "relayReceiver": "0xf17902d51fdff7bf50aacc78d6bb399baf88b479",
+    "erc20Router": "0x0729e2a4716d9f7dd17858d5d504426d228697f7",
+    "approvalProxy": "0x5567954cd026cebfe486062cb75848e0f1c12e58",
+    "v3": {
+     "erc20Router": "0xb92fe925dc43a0ecde6c8b1a2709c170ec4fff4f",
+     "approvalProxy": "0xccc88a9d1b4ed6b0eaba998850414b24f1c315be"
+    },
+    "v3.2": {
+     "erc20Router": "0x0729e2a4716d9f7dd17858d5d504426d228697f7",
+     "approvalProxy": "0x5567954cd026cebfe486062cb75848e0f1c12e58"
+    }
+   },
+   "protocol": {
+    "v2": {
+     "chainId": "monad",
+     "depository": "0x4cd00e387622c35bddb9b4c962c136462338bc31"
+    }
+   }
+  },
+  {
+   "id": 146,
+   "name": "sonic",
+   "displayName": "Sonic",
+   "vmType": "evm",
+   "depositEnabled": true,
+   "depositAddressEnabled": true,
+   "disabled": false,
+   "blockProductionLagging": false,
+   "httpRpcUrl": "https://rpc.soniclabs.com",
+   "explorerUrl": "https://sonicscan.org",
+   "iconUrl": "https://assets.relay.link/icons/146/light.png",
+   "currency": {
+    "id": "s",
+    "symbol": "S",
+    "name": "S",
+    "address": "0x0000000000000000000000000000000000000000",
+    "decimals": 18,
+    "supportsBridging": false
+   },
+   "featuredTokens": [
+    {
+     "id": "s",
+     "symbol": "S",
+     "name": "S",
+     "address": "0x0000000000000000000000000000000000000000",
+     "decimals": 18,
+     "metadata": {
+      "logoURI": "https://assets.relay.link/icons/currencies/s.png"
+     }
+    },
+    {
+     "id": "usdc",
+     "symbol": "USDC",
+     "name": "USD Coin",
+     "address": "0x29219dd400f2bf60e5a23d13be72b486d4038894",
+     "decimals": 6,
+     "metadata": {
+      "logoURI": "https://ethereum-optimism.github.io/data/USDC/logo.png"
+     }
+    },
+    {
+     "symbol": "wS",
+     "name": "Wrapped Sonic",
+     "address": "0x039e2fb66102314ce7b64ce5ce3e5183bc94ad38",
+     "decimals": 18,
+     "metadata": {
+      "logoURI": "https://coin-images.coingecko.com/coins/images/52857/large/wrapped_sonic.png?1734536585"
+     }
+    }
+   ],
+   "contracts": {
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "multicaller": "0xe2035a0d568dec7f37b3267823cd9c919e744594",
+    "onlyOwnerMulticaller": "0xb90ed4c123843cbfd66b11411ee7694ef37e6e72",
+    "relayReceiver": "0x7f4babd2c7d35221e72ab67ea72cba99573a0089",
+    "erc20Router": "0x0729e2a4716d9f7dd17858d5d504426d228697f7",
+    "approvalProxy": "0x5567954cd026cebfe486062cb75848e0f1c12e58",
+    "v3": {
+     "erc20Router": "0xb92fe925dc43a0ecde6c8b1a2709c170ec4fff4f",
+     "approvalProxy": "0xccc88a9d1b4ed6b0eaba998850414b24f1c315be"
+    },
+    "v3.2": {
+     "erc20Router": "0x0729e2a4716d9f7dd17858d5d504426d228697f7",
+     "approvalProxy": "0x5567954cd026cebfe486062cb75848e0f1c12e58"
+    }
+   },
+   "protocol": {
+    "v2": {
+     "chainId": "sonic",
+     "depository": "0x4cd00e387622c35bddb9b4c962c136462338bc31"
+    }
+   }
+  },
+  {
+   "id": 169,
+   "name": "manta-pacific",
+   "displayName": "Manta Pacific",
+   "vmType": "evm",
+   "depositEnabled": true,
+   "depositAddressEnabled": true,
+   "disabled": false,
+   "blockProductionLagging": false,
+   "httpRpcUrl": "https://pacific-rpc.manta.network/http",
+   "explorerUrl": "https://pacific-explorer.manta.network",
+   "iconUrl": "https://assets.relay.link/icons/169/light.png",
+   "currency": {
+    "id": "eth",
+    "symbol": "ETH",
+    "name": "Ether",
+    "address": "0x0000000000000000000000000000000000000000",
+    "decimals": 18,
+    "supportsBridging": true
+   },
+   "featuredTokens": [
+    {
+     "id": "eth",
+     "symbol": "ETH",
+     "name": "Ether",
+     "address": "0x0000000000000000000000000000000000000000",
+     "decimals": 18,
+     "metadata": {
+      "logoURI": "https://assets.relay.link/icons/1/light.png"
+     }
+    }
+   ],
+   "contracts": {
+    "multicall3": "",
+    "multicaller": "0x3db750fd20d09f7988b7331f412a516c524caf13",
+    "onlyOwnerMulticaller": "0x41381231d1913e4c1b1c6329f6a125a46866eef6",
+    "relayReceiver": "0xd71e5c1d217d12855b37fe60299273aad91d6cec",
+    "erc20Router": "0x0729e2a4716d9f7dd17858d5d504426d228697f7",
+    "approvalProxy": "0x5567954cd026cebfe486062cb75848e0f1c12e58",
+    "v3": {
+     "erc20Router": "0xb92fe925dc43a0ecde6c8b1a2709c170ec4fff4f",
+     "approvalProxy": "0xccc88a9d1b4ed6b0eaba998850414b24f1c315be"
+    },
+    "v3.2": {
+     "erc20Router": "0x0729e2a4716d9f7dd17858d5d504426d228697f7",
+     "approvalProxy": "0x5567954cd026cebfe486062cb75848e0f1c12e58"
+    }
+   },
+   "protocol": {
+    "v2": {
+     "chainId": "manta",
+     "depository": "0x4cd00e387622c35bddb9b4c962c136462338bc31"
+    }
+   }
+  },
+  {
+   "id": 196,
+   "name": "xlayer",
+   "displayName": "X Layer",
+   "vmType": "evm",
+   "depositEnabled": true,
+   "depositAddressEnabled": true,
+   "disabled": false,
+   "blockProductionLagging": false,
+   "httpRpcUrl": "https://rpc.xlayer.tech",
+   "explorerUrl": "https://xlayerscan.com",
+   "iconUrl": "https://assets.relay.link/icons/196/light.png",
+   "currency": {
+    "id": "okb",
+    "symbol": "OKB",
+    "name": "OKB",
+    "address": "0x0000000000000000000000000000000000000000",
+    "decimals": 18,
+    "supportsBridging": false
+   },
+   "featuredTokens": [
+    {
+     "id": "okb",
+     "symbol": "OKB",
+     "name": "OKB",
+     "address": "0x0000000000000000000000000000000000000000",
+     "decimals": 18,
+     "metadata": {
+      "logoURI": "https://assets.relay.link/icons/currencies/okb.png"
+     }
+    },
+    {
+     "id": "usdc",
+     "symbol": "USDC",
+     "name": "USD Coin",
+     "address": "0xb6ceceab302e2e4948951ee7843fc24e92933061",
+     "decimals": 6,
+     "metadata": {
+      "logoURI": "https://assets.relay.link/icons/currencies/usdc.png"
+     }
+    }
+   ],
+   "contracts": {
+    "multicall3": "",
+    "multicaller": "",
+    "onlyOwnerMulticaller": "",
+    "relayReceiver": "",
+    "erc20Router": "0x0729e2a4716d9f7dd17858d5d504426d228697f7",
+    "approvalProxy": "0x5567954cd026cebfe486062cb75848e0f1c12e58",
+    "v3": {
+     "erc20Router": "0xb92fe925dc43a0ecde6c8b1a2709c170ec4fff4f",
+     "approvalProxy": "0xccc88a9d1b4ed6b0eaba998850414b24f1c315be"
+    },
+    "v3.2": {
+     "erc20Router": "0x0729e2a4716d9f7dd17858d5d504426d228697f7",
+     "approvalProxy": "0x5567954cd026cebfe486062cb75848e0f1c12e58"
+    }
+   },
+   "protocol": {
+    "v2": {
+     "chainId": "xlayer",
+     "depository": "0x4cd00e387622c35bddb9b4c962c136462338bc31"
+    }
+   }
+  },
+  {
+   "id": 288,
+   "name": "boba",
+   "displayName": "Boba Network",
+   "vmType": "evm",
+   "depositEnabled": true,
+   "depositAddressEnabled": true,
+   "disabled": false,
+   "blockProductionLagging": false,
+   "httpRpcUrl": "https://mainnet.boba.network",
+   "explorerUrl": "https://bobascan.com",
+   "iconUrl": "https://assets.relay.link/icons/288/light.png",
+   "currency": {
+    "id": "eth",
+    "symbol": "ETH",
+    "name": "Ether",
+    "address": "0x0000000000000000000000000000000000000000",
+    "decimals": 18,
+    "supportsBridging": true
+   },
+   "featuredTokens": [
+    {
+     "id": "eth",
+     "symbol": "ETH",
+     "name": "Ether",
+     "address": "0x0000000000000000000000000000000000000000",
+     "decimals": 18,
+     "metadata": {
+      "logoURI": "https://assets.relay.link/icons/1/light.png"
+     }
+    },
+    {
+     "symbol": "WETH",
+     "name": "Wrapped Ether",
+     "address": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead0000",
+     "decimals": 18,
+     "metadata": {
+      "logoURI": "https://coin-images.coingecko.com/coins/images/39717/large/WETH.PNG?1723732087"
+     }
+    }
+   ],
+   "contracts": {
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "multicaller": "0xB0E22F8B026c5dc4b0Bc33eF4C5d3231544aEE3e",
+    "onlyOwnerMulticaller": "0xb90ed4c123843cbfd66b11411ee7694ef37e6e72",
+    "relayReceiver": "0xa06e1351e2fd2d45b5d35633ca7ecf328684a109",
+    "erc20Router": "0x0729e2a4716d9f7dd17858d5d504426d228697f7",
+    "approvalProxy": "0x5567954cd026cebfe486062cb75848e0f1c12e58",
+    "v3": {
+     "erc20Router": "0xb92fe925dc43a0ecde6c8b1a2709c170ec4fff4f",
+     "approvalProxy": "0xccc88a9d1b4ed6b0eaba998850414b24f1c315be"
+    },
+    "v3.2": {
+     "erc20Router": "0x0729e2a4716d9f7dd17858d5d504426d228697f7",
+     "approvalProxy": "0x5567954cd026cebfe486062cb75848e0f1c12e58"
+    }
+   },
+   "protocol": {
+    "v2": {
+     "chainId": "boba",
+     "depository": "0x4cd00e387622c35bddb9b4c962c136462338bc31"
+    }
+   }
+  },
+  {
+   "id": 324,
+   "name": "zksync",
+   "displayName": "zkSync Era",
+   "vmType": "evm",
+   "depositEnabled": true,
+   "depositAddressEnabled": true,
+   "disabled": false,
+   "blockProductionLagging": false,
+   "httpRpcUrl": "https://mainnet.era.zksync.io",
+   "explorerUrl": "https://explorer.zksync.io",
+   "iconUrl": "https://assets.relay.link/icons/324/light.png",
+   "currency": {
+    "id": "eth",
+    "symbol": "ETH",
+    "name": "Ether",
+    "address": "0x0000000000000000000000000000000000000000",
+    "decimals": 18,
+    "supportsBridging": true
+   },
+   "featuredTokens": [
+    {
+     "id": "eth",
+     "symbol": "ETH",
+     "name": "Ether",
+     "address": "0x0000000000000000000000000000000000000000",
+     "decimals": 18,
+     "metadata": {
+      "logoURI": "https://assets.relay.link/icons/1/light.png"
+     }
+    },
+    {
+     "symbol": "WETH",
+     "name": "Wrapped Ether",
+     "address": "0x5aea5775959fbc2557cc8789bc1bf90a239d9a91",
+     "decimals": 18,
+     "metadata": {
+      "logoURI": "https://coin-images.coingecko.com/coins/images/39810/large/weth.png"
+     }
+    }
+   ],
+   "contracts": {
+    "multicall3": "0xf9cda624fbc7e059355ce98a31693d299facd963",
+    "multicaller": "",
+    "onlyOwnerMulticaller": "0xef4cc35e976886480837ca4fa88161187f5822da",
+    "relayReceiver": "0xebd1e414ebb98522cfd932104ba41fac10a4ef35",
+    "erc20Router": "0x0729e2a4716d9f7dd17858d5d504426d228697f7",
+    "approvalProxy": "0x5567954cd026cebfe486062cb75848e0f1c12e58",
+    "v3": {
+     "erc20Router": "0xb92fe925dc43a0ecde6c8b1a2709c170ec4fff4f",
+     "approvalProxy": "0xccc88a9d1b4ed6b0eaba998850414b24f1c315be"
+    },
+    "v3.2": {
+     "erc20Router": "0x0729e2a4716d9f7dd17858d5d504426d228697f7",
+     "approvalProxy": "0x5567954cd026cebfe486062cb75848e0f1c12e58"
+    }
+   },
+   "protocol": {
+    "v2": {
+     "chainId": "zksync",
+     "depository": "0x4cd00e387622c35bddb9b4c962c136462338bc31"
+    }
+   }
+  },
+  {
+   "id": 360,
+   "name": "shape",
+   "displayName": "Shape",
+   "vmType": "evm",
+   "depositEnabled": true,
+   "depositAddressEnabled": true,
+   "disabled": false,
+   "blockProductionLagging": false,
+   "httpRpcUrl": "https://mainnet.shape.network",
+   "explorerUrl": "https://shapescan.xyz",
+   "iconUrl": "https://assets.relay.link/icons/360/light.png",
+   "currency": {
+    "id": "eth",
+    "symbol": "ETH",
+    "name": "Ether",
+    "address": "0x0000000000000000000000000000000000000000",
+    "decimals": 18,
+    "supportsBridging": true
+   },
+   "featuredTokens": [
+    {
+     "id": "eth",
+     "symbol": "ETH",
+     "name": "Ether",
+     "address": "0x0000000000000000000000000000000000000000",
+     "decimals": 18,
+     "metadata": {
+      "logoURI": "https://assets.relay.link/icons/1/light.png"
+     }
+    },
+    {
+     "symbol": "WETH",
+     "name": "Wrapped Ether",
+     "address": "0x4200000000000000000000000000000000000006",
+     "decimals": 18,
+     "metadata": {
+      "logoURI": "https://coin-images.coingecko.com/coins/images/102172931/large/weth.jpg?1776672546"
+     }
+    }
+   ],
+   "contracts": {
+    "multicall3": "",
+    "multicaller": "0x0000000000002bdbf1bf3279983603ec279cc6df",
+    "onlyOwnerMulticaller": "0xb90ed4c123843cbfd66b11411ee7694ef37e6e72",
+    "relayReceiver": "0x7f4babd2c7d35221e72ab67ea72cba99573a0089",
+    "erc20Router": "0x0729e2a4716d9f7dd17858d5d504426d228697f7",
+    "approvalProxy": "0x5567954cd026cebfe486062cb75848e0f1c12e58",
+    "v3": {
+     "erc20Router": "0xb92fe925dc43a0ecde6c8b1a2709c170ec4fff4f",
+     "approvalProxy": "0xccc88a9d1b4ed6b0eaba998850414b24f1c315be"
+    },
+    "v3.2": {
+     "erc20Router": "0x0729e2a4716d9f7dd17858d5d504426d228697f7",
+     "approvalProxy": "0x5567954cd026cebfe486062cb75848e0f1c12e58"
+    }
+   },
+   "protocol": {
+    "v2": {
+     "chainId": "shape",
+     "depository": "0x4cd00e387622c35bddb9b4c962c136462338bc31"
+    }
+   }
+  },
+  {
+   "id": 480,
+   "name": "world-chain",
+   "displayName": "World Chain",
+   "vmType": "evm",
+   "depositEnabled": true,
+   "depositAddressEnabled": true,
+   "disabled": false,
+   "blockProductionLagging": false,
+   "httpRpcUrl": "https://worldchain-mainnet.gateway.tenderly.co",
+   "explorerUrl": "https://worldscan.org",
+   "iconUrl": "https://assets.relay.link/icons/480/light.png",
+   "currency": {
+    "id": "eth",
+    "symbol": "ETH",
+    "name": "Ether",
+    "address": "0x0000000000000000000000000000000000000000",
+    "decimals": 18,
+    "supportsBridging": true
+   },
+   "featuredTokens": [
+    {
+     "id": "eth",
+     "symbol": "ETH",
+     "name": "Ether",
+     "address": "0x0000000000000000000000000000000000000000",
+     "decimals": 18,
+     "metadata": {
+      "logoURI": "https://assets.relay.link/icons/1/light.png"
+     }
+    },
+    {
+     "id": "usdc",
+     "symbol": "USDC",
+     "name": "USDC",
+     "address": "0x79a02482a880bce3f13e09da970dc34db4cd24d1",
+     "decimals": 6,
+     "metadata": {
+      "logoURI": "https://assets.relay.link/icons/currencies/usdc.png"
+     }
+    },
+    {
+     "symbol": "WETH",
+     "name": "Wrapped Ether",
+     "address": "0x4200000000000000000000000000000000000006",
+     "decimals": 18,
+     "metadata": {
+      "logoURI": "https://coin-images.coingecko.com/coins/images/39810/large/weth.png"
+     }
+    }
+   ],
+   "contracts": {
+    "multicall3": "",
+    "multicaller": "0xfdfb8ae5d2f22a6c3ca37aba03af3d68afc2da68",
+    "onlyOwnerMulticaller": "0xb90ed4c123843cbfd66b11411ee7694ef37e6e72",
+    "relayReceiver": "0xa06e1351e2fd2d45b5d35633ca7ecf328684a109",
+    "erc20Router": "0x0729e2a4716d9f7dd17858d5d504426d228697f7",
+    "approvalProxy": "0x5567954cd026cebfe486062cb75848e0f1c12e58",
+    "v3": {
+     "erc20Router": "0xb92fe925dc43a0ecde6c8b1a2709c170ec4fff4f",
+     "approvalProxy": "0xccc88a9d1b4ed6b0eaba998850414b24f1c315be"
+    },
+    "v3.2": {
+     "erc20Router": "0x0729e2a4716d9f7dd17858d5d504426d228697f7",
+     "approvalProxy": "0x5567954cd026cebfe486062cb75848e0f1c12e58"
+    }
+   },
+   "protocol": {
+    "v2": {
+     "chainId": "worldchain",
+     "depository": "0x4cd00e387622c35bddb9b4c962c136462338bc31"
+    }
+   }
+  },
+  {
+   "id": 747,
+   "name": "flow-evm",
+   "displayName": "Flow EVM",
+   "vmType": "evm",
+   "depositEnabled": true,
+   "depositAddressEnabled": true,
+   "disabled": false,
+   "blockProductionLagging": false,
+   "httpRpcUrl": "https://mainnet.evm.nodes.onflow.org",
+   "explorerUrl": "https://evm.flowscan.io",
+   "iconUrl": "https://assets.relay.link/icons/747/light.png",
+   "currency": {
+    "id": "flow",
+    "symbol": "FLOW",
+    "name": "FLOW Token",
+    "address": "0x0000000000000000000000000000000000000000",
+    "decimals": 18,
+    "supportsBridging": true
+   },
+   "featuredTokens": [
+    {
+     "id": "flow",
+     "symbol": "FLOW",
+     "name": "FLOW Token",
+     "address": "0x0000000000000000000000000000000000000000",
+     "decimals": 18,
+     "metadata": {
+      "logoURI": "https://assets.relay.link/icons/currencies/flow.png"
+     }
+    },
+    {
+     "id": "usdc",
+     "symbol": "USDC",
+     "name": "Bridged USDC (Stargate)",
+     "address": "0xf1815bd50389c46847f0bda824ec8da914045d14",
+     "decimals": 6,
+     "metadata": {
+      "logoURI": "https://s2.coinmarketcap.com/static/img/coins/64x64/18852.png"
+     }
+    },
+    {
+     "symbol": "WFLOW",
+     "name": "Wrapped Flow",
+     "address": "0xd3bf53dac106a0290b0483ecbc89d40fcc961f3e",
+     "decimals": 18,
+     "metadata": {
+      "logoURI": "https://assets.relay.link/icons/currencies/flow.png"
+     }
+    }
+   ],
+   "contracts": {
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "multicaller": "0xad7912d17cfb9158d05f534d7f7da25a33976455",
+    "onlyOwnerMulticaller": "0x8fb09b51ee3bf5208074b9a6ff284282b2e7e1e4",
+    "relayReceiver": "0xb4528b01af9c92f49435f88890a82b0b0ce90479",
+    "erc20Router": "0x0729e2a4716d9f7dd17858d5d504426d228697f7",
+    "approvalProxy": "0x5567954cd026cebfe486062cb75848e0f1c12e58",
+    "v3": {
+     "erc20Router": "0xb92fe925dc43a0ecde6c8b1a2709c170ec4fff4f",
+     "approvalProxy": "0xccc88a9d1b4ed6b0eaba998850414b24f1c315be"
+    },
+    "v3.2": {
+     "erc20Router": "0x0729e2a4716d9f7dd17858d5d504426d228697f7",
+     "approvalProxy": "0x5567954cd026cebfe486062cb75848e0f1c12e58"
+    }
+   },
+   "protocol": {
+    "v2": {
+     "chainId": "flow",
+     "depository": "0x4cd00e387622c35bddb9b4c962c136462338bc31"
+    }
+   }
+  },
+  {
+   "id": 988,
+   "name": "stable",
+   "displayName": "Stable",
+   "vmType": "evm",
+   "depositEnabled": true,
+   "depositAddressEnabled": true,
+   "disabled": false,
+   "blockProductionLagging": false,
+   "httpRpcUrl": "https://rpc.stable.xyz",
+   "explorerUrl": "https://stablescan.xyz",
+   "iconUrl": "https://assets.relay.link/icons/988/light.png",
+   "currency": {
+    "id": "gusdt",
+    "symbol": "gUSDT",
+    "name": "gUSDT",
+    "address": "0x0000000000000000000000000000000000000000",
+    "decimals": 18,
+    "supportsBridging": false
+   },
+   "featuredTokens": [
+    {
+     "id": "usdt",
+     "symbol": "USDT0",
+     "name": "USDT0",
+     "address": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+     "decimals": 6,
+     "metadata": {
+      "logoURI": "https://coin-images.coingecko.com/coins/images/39963/large/usdt.png?1724952731"
+     }
+    }
+   ],
+   "contracts": {
+    "multicall3": "",
+    "multicaller": "",
+    "onlyOwnerMulticaller": "",
+    "relayReceiver": "0xac4615ffec9dbf5efe28db0f98f0011e6df0dabd",
+    "erc20Router": "0x0729e2a4716d9f7dd17858d5d504426d228697f7",
+    "approvalProxy": "0x5567954cd026cebfe486062cb75848e0f1c12e58",
+    "v3": {
+     "erc20Router": "0xb92fe925dc43a0ecde6c8b1a2709c170ec4fff4f",
+     "approvalProxy": "0xccc88a9d1b4ed6b0eaba998850414b24f1c315be"
+    },
+    "v3.2": {
+     "erc20Router": "0x0729e2a4716d9f7dd17858d5d504426d228697f7",
+     "approvalProxy": "0x5567954cd026cebfe486062cb75848e0f1c12e58"
+    }
+   },
+   "protocol": {
+    "v2": {
+     "chainId": "stable",
+     "depository": "0x4cd00e387622c35bddb9b4c962c136462338bc31"
+    }
+   }
+  },
+  {
+   "id": 999,
+   "name": "hyperevm",
+   "displayName": "HyperEVM",
+   "vmType": "evm",
+   "depositEnabled": true,
+   "depositAddressEnabled": true,
+   "disabled": false,
+   "blockProductionLagging": false,
+   "httpRpcUrl": "https://rpc.hyperliquid.xyz/evm",
+   "explorerUrl": "https://hyperevmscan.io",
+   "iconUrl": "https://assets.relay.link/icons/999/light.png",
+   "currency": {
+    "id": "hype",
+    "symbol": "HYPE",
+    "name": "HYPE",
+    "address": "0x0000000000000000000000000000000000000000",
+    "decimals": 18,
+    "supportsBridging": true
+   },
+   "featuredTokens": [
+    {
+     "id": "hype",
+     "symbol": "HYPE",
+     "name": "HYPE",
+     "address": "0x0000000000000000000000000000000000000000",
+     "decimals": 18,
+     "metadata": {
+      "logoURI": "https://assets.coingecko.com/coins/images/50882/standard/hyperliquid.jpg?1729431300"
+     }
+    },
+    {
+     "id": "usdc",
+     "symbol": "USDC",
+     "name": "USDC",
+     "address": "0xb88339cb7199b77e23db6e890353e22632ba630f",
+     "decimals": 6,
+     "metadata": {
+      "logoURI": "https://coin-images.coingecko.com/coins/images/6319/large/usdc.png?1696506694"
+     }
+    },
+    {
+     "id": "usdt",
+     "symbol": "USD₮0",
+     "name": "USD₮0",
+     "address": "0xb8ce59fc3717ada4c02eadf9682a9e934f625ebb",
+     "decimals": 6,
+     "metadata": {
+      "logoURI": "https://coin-images.coingecko.com/coins/images/53705/large/usdt0.jpg?1737086183"
+     }
+    },
+    {
+     "symbol": "WHYPE",
+     "name": "Wrapped HYPE",
+     "address": "0x5555555555555555555555555555555555555555",
+     "decimals": 18,
+     "metadata": {
+      "logoURI": "https://coin-images.coingecko.com/coins/images/54469/large/_UP3jBsi_400x400.jpg?1739905920"
+     }
+    }
+   ],
+   "contracts": {
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "multicaller": "0x6355d84b39b9a2c49a94a079ec66694612994080",
+    "onlyOwnerMulticaller": "0xad330c234598452891f64701f3c01a2682bde6dd",
+    "relayReceiver": "0xd71e5c1d217d12855b37fe60299273aad91d6cec",
+    "erc20Router": "0x0729e2a4716d9f7dd17858d5d504426d228697f7",
+    "approvalProxy": "0x5567954cd026cebfe486062cb75848e0f1c12e58",
+    "v3": {
+     "erc20Router": "0xb92fe925dc43a0ecde6c8b1a2709c170ec4fff4f",
+     "approvalProxy": "0xccc88a9d1b4ed6b0eaba998850414b24f1c315be"
+    },
+    "v3.2": {
+     "erc20Router": "0x0729e2a4716d9f7dd17858d5d504426d228697f7",
+     "approvalProxy": "0x5567954cd026cebfe486062cb75848e0f1c12e58"
+    }
+   },
+   "protocol": {
+    "v2": {
+     "chainId": "hyperevm",
+     "depository": "0x4cd00e387622c35bddb9b4c962c136462338bc31"
+    }
+   }
+  },
+  {
+   "id": 1088,
+   "name": "metis",
+   "displayName": "Metis",
+   "vmType": "evm",
+   "depositEnabled": true,
+   "depositAddressEnabled": true,
+   "disabled": false,
+   "blockProductionLagging": false,
+   "httpRpcUrl": "https://metis-rpc.publicnode.com",
+   "explorerUrl": "https://explorer.metis.io",
+   "iconUrl": "https://assets.relay.link/icons/1088/light.png",
+   "currency": {
+    "id": "metis",
+    "symbol": "METIS",
+    "name": "METIS",
+    "address": "0x0000000000000000000000000000000000000000",
+    "decimals": 18,
+    "supportsBridging": false
+   },
+   "featuredTokens": [
+    {
+     "id": "metis",
+     "symbol": "METIS",
+     "name": "METIS",
+     "address": "0x0000000000000000000000000000000000000000",
+     "decimals": 18,
+     "metadata": {
+      "logoURI": "https://assets.coingecko.com/coins/images/15595/standard/Metis_Black_Bg.png?1702968192"
+     }
+    }
+   ],
+   "contracts": {
+    "multicall3": "",
+    "multicaller": "0xcd18f12c9424cb072c28137691c993ecb2f8b925",
+    "onlyOwnerMulticaller": "0xd8afcda5f4e509697cbf084482d3254d3b49b45b",
+    "relayReceiver": "0xc56043daac3a26ad451abc7610f04f53cc4412e5",
+    "erc20Router": "0x6328ea02d28131e58b28e55c6258258a30d90e05",
+    "approvalProxy": "0xe4dfbd5e6784db1058124e2c87554c0591f0fb7b",
+    "v3": {
+     "erc20Router": "0x9ef6d3c2f60d7b9008d74cab1fc0f899c957c819",
+     "approvalProxy": "0x8754bc615047de01228a7527b712806a71a8dc9a"
+    },
+    "v3.2": {
+     "erc20Router": "0x6328ea02d28131e58b28e55c6258258a30d90e05",
+     "approvalProxy": "0xe4dfbd5e6784db1058124e2c87554c0591f0fb7b"
+    }
+   },
+   "protocol": {
+    "v2": {
+     "chainId": "metis",
+     "depository": "0x59916da825d2d2ec1bf878d71c88826f6633ecca"
+    }
+   }
+  },
+  {
+   "id": 1337,
+   "name": "hyperliquid",
+   "displayName": "Hyperliquid",
+   "vmType": "hypevm",
+   "depositEnabled": true,
+   "depositAddressEnabled": true,
+   "disabled": false,
+   "blockProductionLagging": false,
+   "httpRpcUrl": "https://api.hyperliquid.xyz",
+   "explorerUrl": "https://app.hyperliquid.xyz/explorer",
+   "iconUrl": "https://assets.relay.link/icons/1337/light.png",
+   "currency": {
+    "id": "usdc",
+    "symbol": "USDC",
+    "name": "USDC (Perps)",
+    "address": "0x00000000000000000000000000000000",
+    "decimals": 8,
+    "supportsBridging": true
+   },
+   "featuredTokens": [
+    {
+     "id": "usdc",
+     "symbol": "USDC",
+     "name": "USDC (Perps)",
+     "address": "0x00000000000000000000000000000000",
+     "decimals": 8,
+     "metadata": {
+      "logoURI": "https://ethereum-optimism.github.io/data/USDC/logo.png"
+     }
+    },
+    {
+     "id": "usde",
+     "symbol": "USDe",
+     "name": "USDe (Spot)",
+     "address": "0x2e6d84f2d7ca82e6581e03523e4389f7",
+     "decimals": 2,
+     "metadata": {
+      "logoURI": "https://assets.coingecko.com/coins/images/33613/standard/usde.png?1733810059"
+     }
+    },
+    {
+     "symbol": "USDC",
+     "name": "USDC (Spot)",
+     "address": "0x6d1e7cde53ba9467b783cb7c530ce054",
+     "decimals": 8,
+     "metadata": {
+      "logoURI": "https://ethereum-optimism.github.io/data/USDC/logo.png"
+     }
+    }
+   ],
+   "contracts": {
+    "multicall3": "",
+    "multicaller": "",
+    "onlyOwnerMulticaller": "",
+    "relayReceiver": "",
+    "erc20Router": "",
+    "approvalProxy": "",
+    "v3": {
+     "erc20Router": "",
+     "approvalProxy": ""
+    },
+    "v3.2": {
+     "erc20Router": "",
+     "approvalProxy": ""
+    }
+   },
+   "protocol": {
+    "v2": {
+     "chainId": "hyperliquid",
+     "depository": "0x66cf0aace1b4e562593bec10ec7868fba9932224"
+    }
+   }
+  },
+  {
+   "id": 1868,
+   "name": "soneium",
+   "displayName": "Soneium",
+   "vmType": "evm",
+   "depositEnabled": true,
+   "depositAddressEnabled": true,
+   "disabled": false,
+   "blockProductionLagging": false,
+   "httpRpcUrl": "https://rpc.soneium.org/",
+   "explorerUrl": "https://soneium.blockscout.com",
+   "iconUrl": "https://assets.relay.link/icons/1868/light.png",
+   "currency": {
+    "id": "eth",
+    "symbol": "ETH",
+    "name": "Ether",
+    "address": "0x0000000000000000000000000000000000000000",
+    "decimals": 18,
+    "supportsBridging": true
+   },
+   "featuredTokens": [
+    {
+     "id": "eth",
+     "symbol": "ETH",
+     "name": "Ether",
+     "address": "0x0000000000000000000000000000000000000000",
+     "decimals": 18,
+     "metadata": {
+      "logoURI": "https://assets.relay.link/icons/1/light.png"
+     }
+    },
+    {
+     "id": "usdc",
+     "symbol": "USDC.e",
+     "name": "Bridged USDC (Soneium)",
+     "address": "0xba9986d2381edf1da03b0b9c1f8b00dc4aacc369",
+     "decimals": 6,
+     "metadata": {
+      "logoURI": "https://ethereum-optimism.github.io/data/USDC/logo.png"
+     }
+    },
+    {
+     "symbol": "WETH",
+     "name": "Wrapped Ether",
+     "address": "0x4200000000000000000000000000000000000006",
+     "decimals": 18,
+     "metadata": {
+      "logoURI": "https://coin-images.coingecko.com/coins/images/39810/large/weth.png"
+     }
+    }
+   ],
+   "contracts": {
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "multicaller": "0xe2035a0d568dec7f37b3267823cd9c919e744594",
+    "onlyOwnerMulticaller": "0xb90ed4c123843cbfd66b11411ee7694ef37e6e72",
+    "relayReceiver": "0x7f4babd2c7d35221e72ab67ea72cba99573a0089",
+    "erc20Router": "0x0729e2a4716d9f7dd17858d5d504426d228697f7",
+    "approvalProxy": "0x5567954cd026cebfe486062cb75848e0f1c12e58",
+    "v3": {
+     "erc20Router": "0xb92fe925dc43a0ecde6c8b1a2709c170ec4fff4f",
+     "approvalProxy": "0xccc88a9d1b4ed6b0eaba998850414b24f1c315be"
+    },
+    "v3.2": {
+     "erc20Router": "0x0729e2a4716d9f7dd17858d5d504426d228697f7",
+     "approvalProxy": "0x5567954cd026cebfe486062cb75848e0f1c12e58"
+    }
+   },
+   "protocol": {
+    "v2": {
+     "chainId": "soneium",
+     "depository": "0x4cd00e387622c35bddb9b4c962c136462338bc31"
+    }
+   }
+  },
+  {
+   "id": 2020,
+   "name": "ronin",
+   "displayName": "Ronin",
+   "vmType": "evm",
+   "depositEnabled": true,
+   "depositAddressEnabled": true,
+   "disabled": false,
+   "blockProductionLagging": false,
+   "httpRpcUrl": "https://api.roninchain.com/rpc",
+   "explorerUrl": "https://explorer.roninchain.com",
+   "iconUrl": "https://assets.relay.link/icons/2020/light.png",
+   "currency": {
+    "id": "ron",
+    "symbol": "RON",
+    "name": "RON",
+    "address": "0x0000000000000000000000000000000000000000",
+    "decimals": 18,
+    "supportsBridging": true
+   },
+   "featuredTokens": [
+    {
+     "id": "ron",
+     "symbol": "RON",
+     "name": "RON",
+     "address": "0x0000000000000000000000000000000000000000",
+     "decimals": 18,
+     "metadata": {
+      "logoURI": "https://assets.relay.link/icons/currencies/ron.png"
+     }
+    },
+    {
+     "id": "usdc",
+     "symbol": "USDC",
+     "name": "USD Coin",
+     "address": "0x0b7007c13325c48911f73a2dad5fa5dcbf808adc",
+     "decimals": 6,
+     "metadata": {
+      "logoURI": "https://ethereum-optimism.github.io/data/USDC/logo.png"
+     }
+    },
+    {
+     "symbol": "WRON",
+     "name": "Wrapped Ronin",
+     "address": "0xe514d9deb7966c8be0ca922de8a064264ea6bcd4",
+     "decimals": 18,
+     "metadata": {
+      "logoURI": "https://coin-images.coingecko.com/coins/images/20009/large/photo_2024-04-06_22-52-24.jpg?1712415367"
+     }
+    }
+   ],
+   "contracts": {
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "multicaller": "0x000000000022d473030f116ddee9f6b43ac78ba3",
+    "onlyOwnerMulticaller": "0xb90ed4c123843cbfd66b11411ee7694ef37e6e72",
+    "relayReceiver": "0x7f4babd2c7d35221e72ab67ea72cba99573a0089",
+    "erc20Router": "0x0729e2a4716d9f7dd17858d5d504426d228697f7",
+    "approvalProxy": "0x5567954cd026cebfe486062cb75848e0f1c12e58",
+    "v3": {
+     "erc20Router": "0xb92fe925dc43a0ecde6c8b1a2709c170ec4fff4f",
+     "approvalProxy": "0xccc88a9d1b4ed6b0eaba998850414b24f1c315be"
+    },
+    "v3.2": {
+     "erc20Router": "0x0729e2a4716d9f7dd17858d5d504426d228697f7",
+     "approvalProxy": "0x5567954cd026cebfe486062cb75848e0f1c12e58"
+    }
+   },
+   "protocol": {
+    "v2": {
+     "chainId": "ronin",
+     "depository": "0x4cd00e387622c35bddb9b4c962c136462338bc31"
+    }
+   }
+  },
+  {
+   "id": 2741,
+   "name": "abstract",
+   "displayName": "Abstract",
+   "vmType": "evm",
+   "depositEnabled": true,
+   "depositAddressEnabled": true,
+   "disabled": false,
+   "blockProductionLagging": false,
+   "httpRpcUrl": "https://api.mainnet.abs.xyz",
+   "explorerUrl": "https://abscan.org",
+   "iconUrl": "https://assets.relay.link/icons/2741/light.png",
+   "currency": {
+    "id": "eth",
+    "symbol": "ETH",
+    "name": "Ether",
+    "address": "0x0000000000000000000000000000000000000000",
+    "decimals": 18,
+    "supportsBridging": true
+   },
+   "featuredTokens": [
+    {
+     "id": "eth",
+     "symbol": "ETH",
+     "name": "Ether",
+     "address": "0x0000000000000000000000000000000000000000",
+     "decimals": 18,
+     "metadata": {
+      "logoURI": "https://assets.relay.link/icons/1/light.png"
+     }
+    },
+    {
+     "id": "usdc",
+     "symbol": "USDC",
+     "name": "USD Coin",
+     "address": "0x84a71ccd554cc1b02749b35d22f684cc8ec987e1",
+     "decimals": 6,
+     "metadata": {
+      "logoURI": "https://ethereum-optimism.github.io/data/USDC/logo.png"
+     }
+    },
+    {
+     "id": "",
+     "symbol": "WETH",
+     "name": "Wrapped Ether",
+     "address": "0x3439153eb7af838ad19d56e1571fbd09333c2809",
+     "decimals": 18,
+     "metadata": {
+      "logoURI": "https://coin-images.coingecko.com/coins/images/39810/large/weth.png"
+     }
+    }
+   ],
+   "contracts": {
+    "multicall3": "0xf9cda624fbc7e059355ce98a31693d299facd963",
+    "multicaller": "0xc6ee4f68126da8d707f875d3ff854445e5aa7cb3",
+    "onlyOwnerMulticaller": "0xfbeb05d2db2427d293524a98770df0d11292ecb4",
+    "relayReceiver": "0x634e831ce6d460c2cd5067af98d6452eb280e374",
+    "erc20Router": "0x0729e2a4716d9f7dd17858d5d504426d228697f7",
+    "approvalProxy": "0x5567954cd026cebfe486062cb75848e0f1c12e58",
+    "v3": {
+     "erc20Router": "0xb92fe925dc43a0ecde6c8b1a2709c170ec4fff4f",
+     "approvalProxy": "0xccc88a9d1b4ed6b0eaba998850414b24f1c315be"
+    },
+    "v3.2": {
+     "erc20Router": "0x0729e2a4716d9f7dd17858d5d504426d228697f7",
+     "approvalProxy": "0x5567954cd026cebfe486062cb75848e0f1c12e58"
+    }
+   },
+   "protocol": {
+    "v2": {
+     "chainId": "abstract",
+     "depository": "0x4cd00e387622c35bddb9b4c962c136462338bc31"
+    }
+   }
+  },
+  {
+   "id": 2818,
+   "name": "morph",
+   "displayName": "Morph",
+   "vmType": "evm",
+   "depositEnabled": true,
+   "depositAddressEnabled": true,
+   "disabled": false,
+   "blockProductionLagging": false,
+   "httpRpcUrl": "https://rpc-quicknode.morphl2.io",
+   "explorerUrl": "https://explorer.morphl2.io",
+   "iconUrl": "https://assets.relay.link/icons/2818/light.png",
+   "currency": {
+    "id": "eth",
+    "symbol": "ETH",
+    "name": "Ether",
+    "address": "0x0000000000000000000000000000000000000000",
+    "decimals": 18,
+    "supportsBridging": true
+   },
+   "featuredTokens": [
+    {
+     "id": "eth",
+     "symbol": "ETH",
+     "name": "Ether",
+     "address": "0x0000000000000000000000000000000000000000",
+     "decimals": 18,
+     "metadata": {
+      "logoURI": "https://assets.relay.link/icons/1/light.png"
+     }
+    }
+   ],
+   "contracts": {
+    "multicall3": "",
+    "multicaller": "0x6355d84b39b9a2c49a94a079ec66694612994080",
+    "onlyOwnerMulticaller": "0xad330c234598452891f64701f3c01a2682bde6dd",
+    "relayReceiver": "0xd71e5c1d217d12855b37fe60299273aad91d6cec",
+    "erc20Router": "0x0729e2a4716d9f7dd17858d5d504426d228697f7",
+    "approvalProxy": "0x5567954cd026cebfe486062cb75848e0f1c12e58",
+    "v3": {
+     "erc20Router": "0xb92fe925dc43a0ecde6c8b1a2709c170ec4fff4f",
+     "approvalProxy": "0xccc88a9d1b4ed6b0eaba998850414b24f1c315be"
+    },
+    "v3.2": {
+     "erc20Router": "0x0729e2a4716d9f7dd17858d5d504426d228697f7",
+     "approvalProxy": "0x5567954cd026cebfe486062cb75848e0f1c12e58"
+    }
+   },
+   "protocol": {
+    "v2": {
+     "chainId": "morph",
+     "depository": "0x4cd00e387622c35bddb9b4c962c136462338bc31"
+    }
+   }
+  },
+  {
+   "id": 4217,
+   "name": "tempo",
+   "displayName": "Tempo",
+   "vmType": "evm",
+   "depositEnabled": true,
+   "depositAddressEnabled": true,
+   "disabled": false,
+   "blockProductionLagging": false,
+   "httpRpcUrl": "https://rpc.mainnet.tempo.xyz",
+   "explorerUrl": "https://explore.tempo.xyz",
+   "iconUrl": "https://assets.relay.link/icons/4217/light.png",
+   "currency": {
+    "id": "usd",
+    "symbol": "USD",
+    "name": "USD",
+    "address": "0x0000000000000000000000000000000000000000",
+    "decimals": 18,
+    "supportsBridging": false
+   },
+   "featuredTokens": [
+    {
+     "id": "usdc",
+     "symbol": "USDC",
+     "name": "USD Coin",
+     "address": "0x20c000000000000000000000b9537d11c60e8b50",
+     "decimals": 6,
+     "metadata": {
+      "logoURI": "https://assets.relay.link/icons/currencies/usdc.png"
+     }
+    },
+    {
+     "id": "usdt",
+     "symbol": "USDT0",
+     "name": "USDT0",
+     "address": "0x20c00000000000000000000014f22ca97301eb73",
+     "decimals": 6,
+     "metadata": {
+      "logoURI": "https://coin-images.coingecko.com/coins/images/53705/large/usdt0.jpg?1737086183"
+     }
+    },
+    {
+     "id": "pathusd",
+     "symbol": "PathUSD",
+     "name": "Path USD",
+     "address": "0x20c0000000000000000000000000000000000000",
+     "decimals": 6,
+     "metadata": {
+      "logoURI": "https://assets.relay.link/icons/currencies/pathUSD.png"
+     }
+    },
+    {
+     "id": "ousd",
+     "symbol": "OUSD",
+     "name": "OpenUSD",
+     "address": "0x20c0000000000000000000006a37da5c996874be",
+     "decimals": 6,
+     "metadata": {
+      "logoURI": "https://token-metadata.bridge.xyz/images/ousd.svg"
+     }
+    }
+   ],
+   "contracts": {
+    "multicall3": "",
+    "multicaller": "",
+    "onlyOwnerMulticaller": "",
+    "relayReceiver": "",
+    "erc20Router": "0x0729e2a4716d9f7dd17858d5d504426d228697f7",
+    "approvalProxy": "0x5567954cd026cebfe486062cb75848e0f1c12e58",
+    "v3": {
+     "erc20Router": "0xb92fe925dc43a0ecde6c8b1a2709c170ec4fff4f",
+     "approvalProxy": "0xccc88a9d1b4ed6b0eaba998850414b24f1c315be"
+    },
+    "v3.2": {
+     "erc20Router": "0x0729e2a4716d9f7dd17858d5d504426d228697f7",
+     "approvalProxy": "0x5567954cd026cebfe486062cb75848e0f1c12e58"
+    }
+   },
+   "protocol": {
+    "v2": {
+     "chainId": "tempo",
+     "depository": "0x4cd00e387622c35bddb9b4c962c136462338bc31"
+    }
+   }
+  },
+  {
+   "id": 4326,
+   "name": "megaeth",
+   "displayName": "MegaETH",
+   "vmType": "evm",
+   "depositEnabled": true,
+   "depositAddressEnabled": true,
+   "disabled": false,
+   "blockProductionLagging": false,
+   "httpRpcUrl": "https://mainnet.megaeth.com/rpc",
+   "explorerUrl": "https://megaeth.blockscout.com",
+   "iconUrl": "https://assets.relay.link/icons/4326/light.png",
+   "currency": {
+    "id": "eth",
+    "symbol": "ETH",
+    "name": "Ether",
+    "address": "0x0000000000000000000000000000000000000000",
+    "decimals": 18,
+    "supportsBridging": true
+   },
+   "featuredTokens": [
+    {
+     "id": "eth",
+     "symbol": "ETH",
+     "name": "Ether",
+     "address": "0x0000000000000000000000000000000000000000",
+     "decimals": 18,
+     "metadata": {
+      "logoURI": "https://assets.relay.link/icons/1/light.png"
+     }
+    },
+    {
+     "id": "usdt",
+     "symbol": "USDT",
+     "name": "USDT",
+     "address": "0xb8ce59fc3717ada4c02eadf9682a9e934f625ebb",
+     "decimals": 6,
+     "metadata": {
+      "logoURI": "https://coin-images.coingecko.com/coins/images/39963/large/usdt.png?1724952731"
+     }
+    },
+    {
+     "symbol": "WETH",
+     "name": "Wrapped Ether",
+     "address": "0x4200000000000000000000000000000000000006",
+     "decimals": 18,
+     "metadata": {
+      "logoURI": "https://coin-images.coingecko.com/coins/images/102171886/large/weth.png?1770258060"
+     }
+    },
+    {
+     "id": "usdm",
+     "symbol": "USDm",
+     "name": "MegaUSD (USDm)",
+     "address": "0xfafddbb3fc7688494971a79cc65dca3ef82079e7",
+     "decimals": 18,
+     "metadata": {
+      "logoURI": "https://assets.relay.link/icons/currencies/usdm.png"
+     }
+    }
+   ],
+   "contracts": {
+    "multicall3": "",
+    "multicaller": "",
+    "onlyOwnerMulticaller": "",
+    "relayReceiver": "0xac4615ffec9dbf5efe28db0f98f0011e6df0dabd",
+    "erc20Router": "0x0729e2a4716d9f7dd17858d5d504426d228697f7",
+    "approvalProxy": "0x5567954cd026cebfe486062cb75848e0f1c12e58",
+    "v3": {
+     "erc20Router": "0xb92fe925dc43a0ecde6c8b1a2709c170ec4fff4f",
+     "approvalProxy": "0xccc88a9d1b4ed6b0eaba998850414b24f1c315be"
+    },
+    "v3.2": {
+     "erc20Router": "0x0729e2a4716d9f7dd17858d5d504426d228697f7",
+     "approvalProxy": "0x5567954cd026cebfe486062cb75848e0f1c12e58"
+    }
+   },
+   "protocol": {
+    "v2": {
+     "chainId": "megaeth",
+     "depository": "0x4cd00e387622c35bddb9b4c962c136462338bc31"
+    }
+   }
+  },
+  {
+   "id": 4663,
+   "name": "robinhood",
+   "displayName": "Robinhood Chain",
+   "vmType": "evm",
+   "depositEnabled": true,
+   "depositAddressEnabled": true,
+   "disabled": false,
+   "blockProductionLagging": false,
+   "httpRpcUrl": "https://rpc.mainnet.chain.robinhood.com",
+   "explorerUrl": "https://robin.etherscan.io",
+   "iconUrl": "https://assets.relay.link/icons/4663/light.png",
+   "currency": {
+    "id": "eth",
+    "symbol": "ETH",
+    "name": "Ether",
+    "address": "0x0000000000000000000000000000000000000000",
+    "decimals": 18,
+    "supportsBridging": true
+   },
+   "featuredTokens": [
+    {
+     "id": "eth",
+     "symbol": "ETH",
+     "name": "Ether",
+     "address": "0x0000000000000000000000000000000000000000",
+     "decimals": 18,
+     "metadata": {
+      "logoURI": "https://assets.relay.link/icons/1/light.png"
+     }
+    },
+    {
+     "symbol": "WETH",
+     "name": "WETH",
+     "address": "0x0bd7d308f8e1639fab988df18a8011f41eacad73",
+     "decimals": 18,
+     "metadata": {
+      "logoURI": "https://coin-images.coingecko.com/coins/images/102174283/large/weth-robinhood.jpeg?1782924507"
+     }
+    },
+    {
+     "id": "usdg",
+     "symbol": "USDG",
+     "name": "Global Dollar",
+     "address": "0x5fc5360d0400a0fd4f2af552add042d716f1d168",
+     "decimals": 6,
+     "metadata": {
+      "logoURI": "https://assets.coingecko.com/coins/images/51281/standard/GDN_USDG_Token_200x200.png"
+     }
+    }
+   ],
+   "contracts": {
+    "multicall3": "0xcA11bde05977b3631167028862bE2a173976CA11",
+    "multicaller": "",
+    "onlyOwnerMulticaller": "",
+    "relayReceiver": "",
+    "erc20Router": "0x0729e2a4716d9f7dd17858d5d504426d228697f7",
+    "approvalProxy": "0x5567954cd026cebfe486062cb75848e0f1c12e58",
+    "v3": {
+     "erc20Router": "0xb92fe925dc43a0ecde6c8b1a2709c170ec4fff4f",
+     "approvalProxy": "0xccc88a9d1b4ed6b0eaba998850414b24f1c315be"
+    },
+    "v3.2": {
+     "erc20Router": "0x0729e2a4716d9f7dd17858d5d504426d228697f7",
+     "approvalProxy": "0x5567954cd026cebfe486062cb75848e0f1c12e58"
+    }
+   },
+   "protocol": {
+    "v2": {
+     "chainId": "robinhood",
+     "depository": "0x4cd00e387622c35bddb9b4c962c136462338bc31"
+    }
+   }
+  },
+  {
+   "id": 5000,
+   "name": "mantle",
+   "displayName": "Mantle",
+   "vmType": "evm",
+   "depositEnabled": true,
+   "depositAddressEnabled": true,
+   "disabled": false,
+   "blockProductionLagging": false,
+   "httpRpcUrl": "https://rpc.mantle.xyz",
+   "explorerUrl": "https://mantlescan.xyz",
+   "iconUrl": "https://assets.relay.link/icons/5000/light.png",
+   "currency": {
+    "id": "mnt",
+    "symbol": "MNT",
+    "name": "MNT",
+    "address": "0x0000000000000000000000000000000000000000",
+    "decimals": 18,
+    "supportsBridging": false
+   },
+   "featuredTokens": [
+    {
+     "id": "mnt",
+     "symbol": "MNT",
+     "name": "MNT",
+     "address": "0x0000000000000000000000000000000000000000",
+     "decimals": 18,
+     "metadata": {
+      "logoURI": "https://assets.relay.link/icons/currencies/mnt.png"
+     }
+    },
+    {
+     "id": "usdc",
+     "symbol": "USDC",
+     "name": "USD Coin",
+     "address": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+     "decimals": 6,
+     "metadata": {
+      "logoURI": "https://ethereum-optimism.github.io/data/USDC/logo.png"
+     }
+    },
+    {
+     "id": "usdt",
+     "symbol": "USDT0",
+     "name": "USDT0",
+     "address": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+     "decimals": 6,
+     "metadata": {
+      "logoURI": "https://coin-images.coingecko.com/coins/images/53705/large/usdt0.jpg?1737086183"
+     }
+    }
+   ],
+   "contracts": {
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "multicaller": "0x0000000000002bdbf1bf3279983603ec279cc6df",
+    "onlyOwnerMulticaller": "0x49015fbfd51aa67c369afa01c0d808b58c9c590e",
+    "relayReceiver": "0xf366da269047a06a7275a933c6d653409bd6de5e",
+    "erc20Router": "0x6328ea02d28131e58b28e55c6258258a30d90e05",
+    "approvalProxy": "0xe4dfbd5e6784db1058124e2c87554c0591f0fb7b",
+    "v3": {
+     "erc20Router": "0x9ef6d3c2f60d7b9008d74cab1fc0f899c957c819",
+     "approvalProxy": "0x8754bc615047de01228a7527b712806a71a8dc9a"
+    },
+    "v3.2": {
+     "erc20Router": "0x6328ea02d28131e58b28e55c6258258a30d90e05",
+     "approvalProxy": "0xe4dfbd5e6784db1058124e2c87554c0591f0fb7b"
+    }
+   },
+   "protocol": {
+    "v2": {
+     "chainId": "mantle",
+     "depository": "0x59916da825d2d2ec1bf878d71c88826f6633ecca"
+    }
+   }
+  },
+  {
+   "id": 5031,
+   "name": "somnia",
+   "displayName": "Somnia",
+   "vmType": "evm",
+   "depositEnabled": true,
+   "depositAddressEnabled": true,
+   "disabled": false,
+   "blockProductionLagging": false,
+   "httpRpcUrl": "https://api.infra.mainnet.somnia.network",
+   "explorerUrl": "https://explorer.somnia.network",
+   "iconUrl": "https://assets.relay.link/icons/5031/light.png",
+   "currency": {
+    "id": "somi",
+    "symbol": "SOMI",
+    "name": "Somnia",
+    "address": "0x0000000000000000000000000000000000000000",
+    "decimals": 18,
+    "supportsBridging": true
+   },
+   "featuredTokens": [
+    {
+     "id": "somi",
+     "symbol": "SOMI",
+     "name": "Somnia",
+     "address": "0x0000000000000000000000000000000000000000",
+     "decimals": 18,
+     "metadata": {
+      "logoURI": "https://assets.relay.link/icons/currencies/somi.png"
+     }
+    }
+   ],
+   "contracts": {
+    "multicall3": "",
+    "multicaller": "",
+    "onlyOwnerMulticaller": "",
+    "relayReceiver": "0xbf05bdaff9b80cf511f89069410af2d7b1897471",
+    "erc20Router": "0x0729e2a4716d9f7dd17858d5d504426d228697f7",
+    "approvalProxy": "0x5567954cd026cebfe486062cb75848e0f1c12e58",
+    "v3": {
+     "erc20Router": "0xb92fe925dc43a0ecde6c8b1a2709c170ec4fff4f",
+     "approvalProxy": "0xccc88a9d1b4ed6b0eaba998850414b24f1c315be"
+    },
+    "v3.2": {
+     "erc20Router": "0x0729e2a4716d9f7dd17858d5d504426d228697f7",
+     "approvalProxy": "0x5567954cd026cebfe486062cb75848e0f1c12e58"
+    }
+   },
+   "protocol": {
+    "v2": {
+     "chainId": "somnia",
+     "depository": "0x4cd00e387622c35bddb9b4c962c136462338bc31"
+    }
+   }
+  },
+  {
+   "id": 8453,
+   "name": "base",
+   "displayName": "Base",
+   "vmType": "evm",
+   "depositEnabled": true,
+   "depositAddressEnabled": true,
+   "disabled": false,
+   "blockProductionLagging": false,
+   "httpRpcUrl": "https://base.drpc.org",
+   "explorerUrl": "https://basescan.org",
+   "iconUrl": "https://assets.relay.link/icons/8453/light.png",
+   "currency": {
+    "id": "eth",
+    "symbol": "ETH",
+    "name": "Ether",
+    "address": "0x0000000000000000000000000000000000000000",
+    "decimals": 18,
+    "supportsBridging": true
+   },
+   "featuredTokens": [
+    {
+     "id": "eth",
+     "symbol": "ETH",
+     "name": "Ether",
+     "address": "0x0000000000000000000000000000000000000000",
+     "decimals": 18,
+     "metadata": {
+      "logoURI": "https://assets.relay.link/icons/1/light.png"
+     }
+    },
+    {
+     "id": "usdc",
+     "symbol": "USDC",
+     "name": "USD Coin",
+     "address": "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",
+     "decimals": 6,
+     "metadata": {
+      "logoURI": "https://coin-images.coingecko.com/coins/images/6319/large/usdc.png?1696506694"
+     }
+    },
+    {
+     "id": "usdt",
+     "symbol": "USDT",
+     "name": "Tether USD",
+     "address": "0xfde4c96c8593536e31f229ea8f37b2ada2699bb2",
+     "decimals": 6,
+     "metadata": {
+      "logoURI": "https://coin-images.coingecko.com/coins/images/39963/large/usdt.png?1724952731"
+     }
+    },
+    {
+     "id": "weth",
+     "symbol": "WETH",
+     "name": "Wrapped Ether",
+     "address": "0x4200000000000000000000000000000000000006",
+     "decimals": 18,
+     "metadata": {
+      "logoURI": "https://coin-images.coingecko.com/coins/images/39810/large/weth.png"
+     }
+    },
+    {
+     "id": "degen",
+     "symbol": "DEGEN",
+     "name": "Degen",
+     "address": "0x4ed4e862860bed51a9570b96d89af5e1b0efefed",
+     "decimals": 18,
+     "metadata": {
+      "logoURI": "https://coin-images.coingecko.com/coins/images/34515/large/android-chrome-512x512.png?1706198225"
+     }
+    }
+   ],
+   "contracts": {
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "multicaller": "0x0000000000002bdbf1bf3279983603ec279cc6df",
+    "onlyOwnerMulticaller": "0xb90ed4c123843cbfd66b11411ee7694ef37e6e72",
+    "relayReceiver": "0xa5f565650890fba1824ee0f21ebbbf660a179934",
+    "erc20Router": "0x0729e2a4716d9f7dd17858d5d504426d228697f7",
+    "approvalProxy": "0x5567954cd026cebfe486062cb75848e0f1c12e58",
+    "v3": {
+     "erc20Router": "0xb92fe925dc43a0ecde6c8b1a2709c170ec4fff4f",
+     "approvalProxy": "0xccc88a9d1b4ed6b0eaba998850414b24f1c315be"
+    },
+    "v3.2": {
+     "erc20Router": "0x0729e2a4716d9f7dd17858d5d504426d228697f7",
+     "approvalProxy": "0x5567954cd026cebfe486062cb75848e0f1c12e58"
+    }
+   },
+   "protocol": {
+    "v2": {
+     "chainId": "base",
+     "depository": "0x4cd00e387622c35bddb9b4c962c136462338bc31"
+    }
+   }
+  },
+  {
+   "id": 9745,
+   "name": "plasma",
+   "displayName": "Plasma",
+   "vmType": "evm",
+   "depositEnabled": true,
+   "depositAddressEnabled": true,
+   "disabled": false,
+   "blockProductionLagging": false,
+   "httpRpcUrl": "https://rpc.plasma.to",
+   "explorerUrl": "https://plasmascan.to",
+   "iconUrl": "https://assets.relay.link/icons/9745/light.png",
+   "currency": {
+    "id": "xpl",
+    "symbol": "XPL",
+    "name": "XPL",
+    "address": "0x0000000000000000000000000000000000000000",
+    "decimals": 18,
+    "supportsBridging": true
+   },
+   "featuredTokens": [
+    {
+     "id": "xpl",
+     "symbol": "XPL",
+     "name": "XPL",
+     "address": "0x0000000000000000000000000000000000000000",
+     "decimals": 18,
+     "metadata": {
+      "logoURI": "https://assets.coingecko.com/coins/images/66489/large/Plasma-symbol-green-1.png?1755142558"
+     }
+    },
+    {
+     "id": "usdt",
+     "symbol": "USD₮0",
+     "name": "USD₮0",
+     "address": "0xb8ce59fc3717ada4c02eadf9682a9e934f625ebb",
+     "decimals": 6,
+     "metadata": {
+      "logoURI": "https://coin-images.coingecko.com/coins/images/53705/large/usdt0.jpg?1737086183"
+     }
+    },
+    {
+     "id": "",
+     "symbol": "WXPL",
+     "name": "Wrapped XPL",
+     "address": "0x6100e367285b01f48d07953803a2d8dca5d19873",
+     "decimals": 18,
+     "metadata": {
+      "logoURI": "https://assets.coingecko.com/coins/images/66489/large/Plasma-symbol-green-1.png?1755142558"
+     }
+    }
+   ],
+   "contracts": {
+    "multicall3": "",
+    "multicaller": "",
+    "onlyOwnerMulticaller": "",
+    "relayReceiver": "0xf17902d51fdff7bf50aacc78d6bb399baf88b479",
+    "erc20Router": "0x0729e2a4716d9f7dd17858d5d504426d228697f7",
+    "approvalProxy": "0x5567954cd026cebfe486062cb75848e0f1c12e58",
+    "v3": {
+     "erc20Router": "0xb92fe925dc43a0ecde6c8b1a2709c170ec4fff4f",
+     "approvalProxy": "0xccc88a9d1b4ed6b0eaba998850414b24f1c315be"
+    },
+    "v3.2": {
+     "erc20Router": "0x0729e2a4716d9f7dd17858d5d504426d228697f7",
+     "approvalProxy": "0x5567954cd026cebfe486062cb75848e0f1c12e58"
+    }
+   },
+   "protocol": {
+    "v2": {
+     "chainId": "plasma",
+     "depository": "0x4cd00e387622c35bddb9b4c962c136462338bc31"
+    }
+   }
+  },
+  {
+   "id": 33139,
+   "name": "apechain",
+   "displayName": "ApeChain",
+   "vmType": "evm",
+   "depositEnabled": true,
+   "depositAddressEnabled": true,
+   "disabled": false,
+   "blockProductionLagging": false,
+   "httpRpcUrl": "https://apechain.calderachain.xyz/http",
+   "explorerUrl": "https://apescan.io",
+   "iconUrl": "https://assets.relay.link/icons/33139/light.png",
+   "currency": {
+    "id": "ape",
+    "symbol": "APE",
+    "name": "ApeCoin",
+    "address": "0x0000000000000000000000000000000000000000",
+    "decimals": 18,
+    "supportsBridging": true
+   },
+   "featuredTokens": [
+    {
+     "id": "ape",
+     "symbol": "APE",
+     "name": "ApeCoin",
+     "address": "0x0000000000000000000000000000000000000000",
+     "decimals": 18,
+     "metadata": {
+      "logoURI": "https://assets.relay.link/icons/currencies/ape.png"
+     }
+    },
+    {
+     "symbol": "WAPE",
+     "name": "Wrapped ApeCoin",
+     "address": "0x48b62137edfa95a428d35c09e44256a739f6b557",
+     "decimals": 18,
+     "metadata": {
+      "logoURI": "https://assets.coingecko.com/coins/images/24383/large/APECOIN.png?1756551529"
+     }
+    },
+    {
+     "symbol": "USDC.e",
+     "name": "Bridged USDC (Stargate)",
+     "address": "0xf1815bd50389c46847f0bda824ec8da914045d14",
+     "decimals": 6,
+     "metadata": {
+      "logoURI": "https://token-media.defined.fi/33139_0xf1815bd50389c46847f0bda824ec8da914045d14_small.png"
+     }
+    }
+   ],
+   "contracts": {
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "multicaller": "0x0000000000002bdbf1bf3279983603ec279cc6df",
+    "onlyOwnerMulticaller": "0xb90ed4c123843cbfd66b11411ee7694ef37e6e72",
+    "relayReceiver": "0xa06e1351e2fd2d45b5d35633ca7ecf328684a109",
+    "erc20Router": "0x0729e2a4716d9f7dd17858d5d504426d228697f7",
+    "approvalProxy": "0x5567954cd026cebfe486062cb75848e0f1c12e58",
+    "v3": {
+     "erc20Router": "0xb92fe925dc43a0ecde6c8b1a2709c170ec4fff4f",
+     "approvalProxy": "0xccc88a9d1b4ed6b0eaba998850414b24f1c315be"
+    },
+    "v3.2": {
+     "erc20Router": "0x0729e2a4716d9f7dd17858d5d504426d228697f7",
+     "approvalProxy": "0x5567954cd026cebfe486062cb75848e0f1c12e58"
+    }
+   },
+   "protocol": {
+    "v2": {
+     "chainId": "apechain",
+     "depository": "0x4cd00e387622c35bddb9b4c962c136462338bc31"
+    }
+   }
+  },
+  {
+   "id": 34443,
+   "name": "mode",
+   "displayName": "Mode",
+   "vmType": "evm",
+   "depositEnabled": true,
+   "depositAddressEnabled": true,
+   "disabled": false,
+   "blockProductionLagging": false,
+   "httpRpcUrl": "https://mainnet.mode.network/",
+   "explorerUrl": "https://explorer.mode.network",
+   "iconUrl": "https://assets.relay.link/icons/34443/light.png",
+   "currency": {
+    "id": "eth",
+    "symbol": "ETH",
+    "name": "Ether",
+    "address": "0x0000000000000000000000000000000000000000",
+    "decimals": 18,
+    "supportsBridging": true
+   },
+   "featuredTokens": [
+    {
+     "id": "eth",
+     "symbol": "ETH",
+     "name": "Ether",
+     "address": "0x0000000000000000000000000000000000000000",
+     "decimals": 18,
+     "metadata": {
+      "logoURI": "https://assets.relay.link/icons/1/light.png"
+     }
+    },
+    {
+     "symbol": "WETH",
+     "name": "Wrapped Ether",
+     "address": "0x4200000000000000000000000000000000000006",
+     "decimals": 18,
+     "metadata": {
+      "logoURI": "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2/logo.png"
+     }
+    }
+   ],
+   "contracts": {
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "multicaller": "0x0000000000002Bdbf1Bf3279983603Ec279CC6dF",
+    "onlyOwnerMulticaller": "0xb90ed4c123843cbfd66b11411ee7694ef37e6e72",
+    "relayReceiver": "0xa06e1351e2fd2d45b5d35633ca7ecf328684a109",
+    "erc20Router": "0x0729e2a4716d9f7dd17858d5d504426d228697f7",
+    "approvalProxy": "0x5567954cd026cebfe486062cb75848e0f1c12e58",
+    "v3": {
+     "erc20Router": "0xb92fe925dc43a0ecde6c8b1a2709c170ec4fff4f",
+     "approvalProxy": "0xccc88a9d1b4ed6b0eaba998850414b24f1c315be"
+    },
+    "v3.2": {
+     "erc20Router": "0x0729e2a4716d9f7dd17858d5d504426d228697f7",
+     "approvalProxy": "0x5567954cd026cebfe486062cb75848e0f1c12e58"
+    }
+   },
+   "protocol": {
+    "v2": {
+     "chainId": "mode",
+     "depository": "0x4cd00e387622c35bddb9b4c962c136462338bc31"
+    }
+   }
+  },
+  {
+   "id": 42018,
+   "name": "mythos",
+   "displayName": "Mythos",
+   "vmType": "evm",
+   "depositEnabled": true,
+   "depositAddressEnabled": true,
+   "disabled": false,
+   "blockProductionLagging": false,
+   "httpRpcUrl": "https://mythos-mainnet.g.alchemy.com/public/",
+   "explorerUrl": "https://mythos-mainnet.explorer.alchemy.com",
+   "iconUrl": "https://assets.relay.link/icons/42018/light.png",
+   "currency": {
+    "id": "eth",
+    "symbol": "ETH",
+    "name": "Ether",
+    "address": "0x0000000000000000000000000000000000000000",
+    "decimals": 18,
+    "supportsBridging": true
+   },
+   "featuredTokens": [
+    {
+     "id": "eth",
+     "symbol": "ETH",
+     "name": "Ether",
+     "address": "0x0000000000000000000000000000000000000000",
+     "decimals": 18,
+     "metadata": {
+      "logoURI": "https://assets.relay.link/icons/1/light.png"
+     }
+    },
+    {
+     "id": "usdc",
+     "symbol": "USDC.e",
+     "name": "Bridged USDC (Mythos)",
+     "address": "0x0685b38c8228f595688dec1d7c69d036b3ee52d7",
+     "decimals": 6,
+     "metadata": {
+      "logoURI": "https://assets.relay.link/icons/currencies/usdc.png"
+     }
+    }
+   ],
+   "contracts": {
+    "multicall3": "",
+    "multicaller": "",
+    "onlyOwnerMulticaller": "",
+    "relayReceiver": "0xac4615ffec9dbf5efe28db0f98f0011e6df0dabd",
+    "erc20Router": "0x0729e2a4716d9f7dd17858d5d504426d228697f7",
+    "approvalProxy": "0x5567954cd026cebfe486062cb75848e0f1c12e58",
+    "v3": {
+     "erc20Router": "0xb92fe925dc43a0ecde6c8b1a2709c170ec4fff4f",
+     "approvalProxy": "0xccc88a9d1b4ed6b0eaba998850414b24f1c315be"
+    },
+    "v3.2": {
+     "erc20Router": "0x0729e2a4716d9f7dd17858d5d504426d228697f7",
+     "approvalProxy": "0x5567954cd026cebfe486062cb75848e0f1c12e58"
+    }
+   },
+   "protocol": {
+    "v2": {
+     "chainId": "mythos",
+     "depository": "0x4cd00e387622c35bddb9b4c962c136462338bc31"
+    }
+   }
+  },
+  {
+   "id": 42161,
+   "name": "arbitrum",
+   "displayName": "Arbitrum",
+   "vmType": "evm",
+   "depositEnabled": true,
+   "depositAddressEnabled": true,
+   "disabled": false,
+   "blockProductionLagging": false,
+   "httpRpcUrl": "https://arbitrum-one.publicnode.com",
+   "explorerUrl": "https://arbiscan.io",
+   "iconUrl": "https://assets.relay.link/icons/42161/light.png",
+   "currency": {
+    "id": "eth",
+    "symbol": "ETH",
+    "name": "Ether",
+    "address": "0x0000000000000000000000000000000000000000",
+    "decimals": 18,
+    "supportsBridging": true
+   },
+   "featuredTokens": [
+    {
+     "id": "eth",
+     "symbol": "ETH",
+     "name": "Ether",
+     "address": "0x0000000000000000000000000000000000000000",
+     "decimals": 18,
+     "metadata": {
+      "logoURI": "https://assets.relay.link/icons/1/light.png"
+     }
+    },
+    {
+     "id": "usdc",
+     "symbol": "USDC",
+     "name": "USD Coin",
+     "address": "0xaf88d065e77c8cc2239327c5edb3a432268e5831",
+     "decimals": 6,
+     "metadata": {
+      "logoURI": "https://ethereum-optimism.github.io/data/USDC/logo.png"
+     }
+    },
+    {
+     "id": "usdt",
+     "symbol": "USDT",
+     "name": "Tether USD",
+     "address": "0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9",
+     "decimals": 6,
+     "metadata": {
+      "logoURI": "https://coin-images.coingecko.com/coins/images/39963/large/usdt.png?1724952731"
+     }
+    },
+    {
+     "id": "weth",
+     "symbol": "WETH",
+     "name": "Wrapped Ether",
+     "address": "0x82af49447d8a07e3bd95bd0d56f35241523fbab1",
+     "decimals": 18,
+     "metadata": {
+      "logoURI": "https://coin-images.coingecko.com/coins/images/39810/large/weth.png"
+     }
+    }
+   ],
+   "contracts": {
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "multicaller": "0x0000000000002bdbf1bf3279983603ec279cc6df",
+    "onlyOwnerMulticaller": "0xb90ed4c123843cbfd66b11411ee7694ef37e6e72",
+    "relayReceiver": "0xa5f565650890fba1824ee0f21ebbbf660a179934",
+    "erc20Router": "0x0729e2a4716d9f7dd17858d5d504426d228697f7",
+    "approvalProxy": "0x5567954cd026cebfe486062cb75848e0f1c12e58",
+    "v3": {
+     "erc20Router": "0xb92fe925dc43a0ecde6c8b1a2709c170ec4fff4f",
+     "approvalProxy": "0xccc88a9d1b4ed6b0eaba998850414b24f1c315be"
+    },
+    "v3.2": {
+     "erc20Router": "0x0729e2a4716d9f7dd17858d5d504426d228697f7",
+     "approvalProxy": "0x5567954cd026cebfe486062cb75848e0f1c12e58"
+    }
+   },
+   "protocol": {
+    "v2": {
+     "chainId": "arbitrum",
+     "depository": "0x4cd00e387622c35bddb9b4c962c136462338bc31"
+    }
+   }
+  },
+  {
+   "id": 42220,
+   "name": "celo",
+   "displayName": "Celo",
+   "vmType": "evm",
+   "depositEnabled": true,
+   "depositAddressEnabled": true,
+   "disabled": false,
+   "blockProductionLagging": false,
+   "httpRpcUrl": "https://forno.celo.org",
+   "explorerUrl": "https://celoscan.io",
+   "iconUrl": "https://assets.relay.link/icons/42220/light.png",
+   "currency": {
+    "id": "celo",
+    "symbol": "CELO",
+    "name": "CELO",
+    "address": "0x0000000000000000000000000000000000000000",
+    "decimals": 18,
+    "supportsBridging": false
+   },
+   "featuredTokens": [
+    {
+     "id": "celo",
+     "symbol": "CELO",
+     "name": "CELO",
+     "address": "0x0000000000000000000000000000000000000000",
+     "decimals": 18,
+     "metadata": {
+      "logoURI": "https://raw.githubusercontent.com/ubeswap/default-token-list/master/assets/asset_CELO.png"
+     }
+    },
+    {
+     "id": "usdc",
+     "symbol": "USDC",
+     "name": "USDCoin",
+     "address": "0xceba9300f2b948710d2653dd7b07f33a8b32118c",
+     "decimals": 6,
+     "metadata": {
+      "logoURI": "https://coin-images.coingecko.com/coins/images/6319/large/usdc.png?1696506694"
+     }
+    }
+   ],
+   "contracts": {
+    "multicall3": "",
+    "multicaller": "0x233efb8d94e4e3b6ba5cd7bac008d2c33900d1d5",
+    "onlyOwnerMulticaller": "0xb90ed4c123843cbFD66b11411Ee7694eF37E6E72",
+    "relayReceiver": "0x7f4babd2c7d35221e72ab67ea72cba99573a0089",
+    "erc20Router": "0x0729e2a4716d9f7dd17858d5d504426d228697f7",
+    "approvalProxy": "0x5567954cd026cebfe486062cb75848e0f1c12e58",
+    "v3": {
+     "erc20Router": "0xb92fe925dc43a0ecde6c8b1a2709c170ec4fff4f",
+     "approvalProxy": "0xccc88a9d1b4ed6b0eaba998850414b24f1c315be"
+    },
+    "v3.2": {
+     "erc20Router": "0x0729e2a4716d9f7dd17858d5d504426d228697f7",
+     "approvalProxy": "0x5567954cd026cebfe486062cb75848e0f1c12e58"
+    }
+   },
+   "protocol": {
+    "v2": {
+     "chainId": "celo",
+     "depository": "0x4cd00e387622c35bddb9b4c962c136462338bc31"
+    }
+   }
+  },
+  {
+   "id": 43114,
+   "name": "avalanche",
+   "displayName": "Avalanche",
+   "vmType": "evm",
+   "depositEnabled": true,
+   "depositAddressEnabled": true,
+   "disabled": false,
+   "blockProductionLagging": false,
+   "httpRpcUrl": "https://api.avax.network/ext/bc/C/rpc",
+   "explorerUrl": "https://snowtrace.io",
+   "iconUrl": "https://assets.relay.link/icons/43114/light.png",
+   "currency": {
+    "id": "avax",
+    "symbol": "AVAX",
+    "name": "Avax",
+    "address": "0x0000000000000000000000000000000000000000",
+    "decimals": 18,
+    "supportsBridging": false
+   },
+   "featuredTokens": [
+    {
+     "id": "avax",
+     "symbol": "AVAX",
+     "name": "Avax",
+     "address": "0x0000000000000000000000000000000000000000",
+     "decimals": 18,
+     "metadata": {
+      "logoURI": "https://raw.githubusercontent.com/Uniswap/assets/master/blockchains/avalanchec/assets/0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7/logo.png"
+     }
+    },
+    {
+     "id": "usdc",
+     "symbol": "USDC",
+     "name": "USD Coin",
+     "address": "0xb97ef9ef8734c71904d8002f8b6bc66dd9c48a6e",
+     "decimals": 6,
+     "metadata": {
+      "logoURI": "https://ethereum-optimism.github.io/data/USDC/logo.png"
+     }
+    },
+    {
+     "symbol": "WAVAX",
+     "name": "Wrapped AVAX",
+     "address": "0xb31f66aa3c1e785363f0875a1b74e27b85fd66c7",
+     "decimals": 18,
+     "metadata": {
+      "logoURI": "https://raw.githubusercontent.com/Uniswap/assets/master/blockchains/avalanchec/assets/0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7/logo.png"
+     }
+    }
+   ],
+   "contracts": {
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "multicaller": "0x0000000000002Bdbf1Bf3279983603Ec279CC6dF",
+    "onlyOwnerMulticaller": "0xb90ed4c123843cbFD66b11411Ee7694eF37E6E72",
+    "relayReceiver": "0xa5f565650890fba1824ee0f21ebbbf660a179934",
+    "erc20Router": "0x0729e2a4716d9f7dd17858d5d504426d228697f7",
+    "approvalProxy": "0x5567954cd026cebfe486062cb75848e0f1c12e58",
+    "v3": {
+     "erc20Router": "0xb92fe925dc43a0ecde6c8b1a2709c170ec4fff4f",
+     "approvalProxy": "0xccc88a9d1b4ed6b0eaba998850414b24f1c315be"
+    },
+    "v3.2": {
+     "erc20Router": "0x0729e2a4716d9f7dd17858d5d504426d228697f7",
+     "approvalProxy": "0x5567954cd026cebfe486062cb75848e0f1c12e58"
+    }
+   },
+   "protocol": {
+    "v2": {
+     "chainId": "avalanche",
+     "depository": "0x4cd00e387622c35bddb9b4c962c136462338bc31"
+    }
+   }
+  },
+  {
+   "id": 48900,
+   "name": "zircuit",
+   "displayName": "Zircuit",
+   "vmType": "evm",
+   "depositEnabled": true,
+   "depositAddressEnabled": true,
+   "disabled": false,
+   "blockProductionLagging": false,
+   "httpRpcUrl": "https://mainnet.zircuit.com",
+   "explorerUrl": "https://explorer.zircuit.com",
+   "iconUrl": "https://assets.relay.link/icons/48900/light.png",
+   "currency": {
+    "id": "eth",
+    "symbol": "ETH",
+    "name": "Ether",
+    "address": "0x0000000000000000000000000000000000000000",
+    "decimals": 18,
+    "supportsBridging": true
+   },
+   "featuredTokens": [
+    {
+     "id": "eth",
+     "symbol": "ETH",
+     "name": "Ether",
+     "address": "0x0000000000000000000000000000000000000000",
+     "decimals": 18,
+     "metadata": {
+      "logoURI": "https://assets.relay.link/icons/1/light.png"
+     }
+    }
+   ],
+   "contracts": {
+    "multicall3": "",
+    "multicaller": "0xad7912d17cfb9158d05f534d7f7da25a33976455",
+    "onlyOwnerMulticaller": "0x8fb09b51ee3bf5208074b9a6ff284282b2e7e1e4",
+    "relayReceiver": "0xb4528b01af9c92f49435f88890a82b0b0ce90479",
+    "erc20Router": "0x0729e2a4716d9f7dd17858d5d504426d228697f7",
+    "approvalProxy": "0x5567954cd026cebfe486062cb75848e0f1c12e58",
+    "v3": {
+     "erc20Router": "0xb92fe925dc43a0ecde6c8b1a2709c170ec4fff4f",
+     "approvalProxy": "0xccc88a9d1b4ed6b0eaba998850414b24f1c315be"
+    },
+    "v3.2": {
+     "erc20Router": "0x0729e2a4716d9f7dd17858d5d504426d228697f7",
+     "approvalProxy": "0x5567954cd026cebfe486062cb75848e0f1c12e58"
+    }
+   },
+   "protocol": {
+    "v2": {
+     "chainId": "zircuit",
+     "depository": "0x4cd00e387622c35bddb9b4c962c136462338bc31"
+    }
+   }
+  },
+  {
+   "id": 57073,
+   "name": "ink",
+   "displayName": "Ink",
+   "vmType": "evm",
+   "depositEnabled": true,
+   "depositAddressEnabled": true,
+   "disabled": false,
+   "blockProductionLagging": false,
+   "httpRpcUrl": "https://ink.drpc.org",
+   "explorerUrl": "https://explorer.inkonchain.com",
+   "iconUrl": "https://assets.relay.link/icons/57073/light.png",
+   "currency": {
+    "id": "eth",
+    "symbol": "ETH",
+    "name": "Ether",
+    "address": "0x0000000000000000000000000000000000000000",
+    "decimals": 18,
+    "supportsBridging": true
+   },
+   "featuredTokens": [
+    {
+     "id": "eth",
+     "symbol": "ETH",
+     "name": "Ether",
+     "address": "0x0000000000000000000000000000000000000000",
+     "decimals": 18,
+     "metadata": {
+      "logoURI": "https://assets.relay.link/icons/1/light.png"
+     }
+    },
+    {
+     "id": "usdc",
+     "symbol": "USDC",
+     "name": "USDC",
+     "address": "0x2d270e6886d130d724215a266106e6832161eaed",
+     "decimals": 6,
+     "metadata": {
+      "logoURI": "https://assets.relay.link/icons/currencies/usdc.png"
+     }
+    },
+    {
+     "id": "usdt",
+     "symbol": "USDT0",
+     "name": "Tether USDT",
+     "address": "0x0200c29006150606b650577bbe7b6248f58470c1",
+     "decimals": 6,
+     "metadata": {
+      "logoURI": "https://assets.relay.link/icons/currencies/usdt.png"
+     }
+    },
+    {
+     "symbol": "WETH",
+     "name": "Wrapped Ether",
+     "address": "0x4200000000000000000000000000000000000006",
+     "decimals": 18,
+     "metadata": {
+      "logoURI": "https://coin-images.coingecko.com/coins/images/52918/large/weth_2.jpg?1734684690"
+     }
+    }
+   ],
+   "contracts": {
+    "multicall3": "",
+    "multicaller": "0xe2035a0d568dec7f37b3267823cd9c919e744594",
+    "onlyOwnerMulticaller": "0xb90ed4c123843cbfd66b11411ee7694ef37e6e72",
+    "relayReceiver": "0x7f4babd2c7d35221e72ab67ea72cba99573a0089",
+    "erc20Router": "0x0729e2a4716d9f7dd17858d5d504426d228697f7",
+    "approvalProxy": "0x5567954cd026cebfe486062cb75848e0f1c12e58",
+    "v3": {
+     "erc20Router": "0xb92fe925dc43a0ecde6c8b1a2709c170ec4fff4f",
+     "approvalProxy": "0xccc88a9d1b4ed6b0eaba998850414b24f1c315be"
+    },
+    "v3.2": {
+     "erc20Router": "0x0729e2a4716d9f7dd17858d5d504426d228697f7",
+     "approvalProxy": "0x5567954cd026cebfe486062cb75848e0f1c12e58"
+    }
+   },
+   "protocol": {
+    "v2": {
+     "chainId": "ink",
+     "depository": "0x4cd00e387622c35bddb9b4c962c136462338bc31"
+    }
+   }
+  },
+  {
+   "id": 59144,
+   "name": "linea",
+   "displayName": "Linea",
+   "vmType": "evm",
+   "depositEnabled": true,
+   "depositAddressEnabled": true,
+   "disabled": false,
+   "blockProductionLagging": false,
+   "httpRpcUrl": "https://rpc.linea.build",
+   "explorerUrl": "https://lineascan.build",
+   "iconUrl": "https://assets.relay.link/icons/59144/light.png",
+   "currency": {
+    "id": "eth",
+    "symbol": "ETH",
+    "name": "Ether",
+    "address": "0x0000000000000000000000000000000000000000",
+    "decimals": 18,
+    "supportsBridging": true
+   },
+   "featuredTokens": [
+    {
+     "id": "eth",
+     "symbol": "ETH",
+     "name": "Ether",
+     "address": "0x0000000000000000000000000000000000000000",
+     "decimals": 18,
+     "metadata": {
+      "logoURI": "https://assets.relay.link/icons/1/light.png"
+     }
+    },
+    {
+     "id": "usdc",
+     "symbol": "USDC",
+     "name": "USD Coin",
+     "address": "0x176211869ca2b568f2a7d4ee941e073a821ee1ff",
+     "decimals": 6,
+     "metadata": {
+      "logoURI": "https://coin-images.coingecko.com/coins/images/31270/large/USDC-icon.png?1696530094"
+     }
+    },
+    {
+     "symbol": "WETH",
+     "name": "Wrapped Ether",
+     "address": "0xe5d7c2a44ffddf6b295a15c148167daaaf5cf34f",
+     "decimals": 18,
+     "metadata": {
+      "logoURI": "https://coin-images.coingecko.com/coins/images/39810/large/weth.png"
+     }
+    },
+    {
+     "id": "usdt",
+     "symbol": "USDT",
+     "name": "Tether USD",
+     "address": "0xa219439258ca9da29e9cc4ce5596924745e12b93",
+     "decimals": 6,
+     "metadata": {
+      "logoURI": "https://coin-images.coingecko.com/coins/images/31271/large/usdt.jpeg?1696530095"
+     }
+    }
+   ],
+   "contracts": {
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "multicaller": "0x0000000000002Bdbf1Bf3279983603Ec279CC6dF",
+    "onlyOwnerMulticaller": "0xb90ed4c123843cbfd66b11411ee7694ef37e6e72",
+    "relayReceiver": "0x00000000aa467eba42a3d604b3d74d63b2b6c6cb",
+    "erc20Router": "0x6328ea02d28131e58b28e55c6258258a30d90e05",
+    "approvalProxy": "0xe4dfbd5e6784db1058124e2c87554c0591f0fb7b",
+    "v3": {
+     "erc20Router": "0x9ef6d3c2f60d7b9008d74cab1fc0f899c957c819",
+     "approvalProxy": "0x8754bc615047de01228a7527b712806a71a8dc9a"
+    },
+    "v3.2": {
+     "erc20Router": "0x6328ea02d28131e58b28e55c6258258a30d90e05",
+     "approvalProxy": "0xe4dfbd5e6784db1058124e2c87554c0591f0fb7b"
+    }
+   },
+   "protocol": {
+    "v2": {
+     "chainId": "linea",
+     "depository": "0x59916da825d2d2ec1bf878d71c88826f6633ecca"
+    }
+   }
+  },
+  {
+   "id": 60808,
+   "name": "bob",
+   "displayName": "BOB",
+   "vmType": "evm",
+   "depositEnabled": true,
+   "depositAddressEnabled": true,
+   "disabled": false,
+   "blockProductionLagging": false,
+   "httpRpcUrl": "https://rpc.gobob.xyz/",
+   "explorerUrl": "https://explorer.gobob.xyz",
+   "iconUrl": "https://assets.relay.link/icons/60808/light.png",
+   "currency": {
+    "id": "eth",
+    "symbol": "ETH",
+    "name": "Ether",
+    "address": "0x0000000000000000000000000000000000000000",
+    "decimals": 18,
+    "supportsBridging": true
+   },
+   "featuredTokens": [
+    {
+     "id": "eth",
+     "symbol": "ETH",
+     "name": "Ether",
+     "address": "0x0000000000000000000000000000000000000000",
+     "decimals": 18,
+     "metadata": {
+      "logoURI": "https://assets.relay.link/icons/1/light.png"
+     }
+    }
+   ],
+   "contracts": {
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "multicaller": "0x0000000000002Bdbf1Bf3279983603Ec279CC6dF",
+    "onlyOwnerMulticaller": "0xb90ed4c123843cbfd66b11411ee7694ef37e6e72",
+    "relayReceiver": "0x00000000aa467eba42a3d604b3d74d63b2b6c6cb",
+    "erc20Router": "0x0729e2a4716d9f7dd17858d5d504426d228697f7",
+    "approvalProxy": "0x5567954cd026cebfe486062cb75848e0f1c12e58",
+    "v3": {
+     "erc20Router": "0xb92fe925dc43a0ecde6c8b1a2709c170ec4fff4f",
+     "approvalProxy": "0xccc88a9d1b4ed6b0eaba998850414b24f1c315be"
+    },
+    "v3.2": {
+     "erc20Router": "0x0729e2a4716d9f7dd17858d5d504426d228697f7",
+     "approvalProxy": "0x5567954cd026cebfe486062cb75848e0f1c12e58"
+    }
+   },
+   "protocol": {
+    "v2": {
+     "chainId": "bob",
+     "depository": "0x4cd00e387622c35bddb9b4c962c136462338bc31"
+    }
+   }
+  },
+  {
+   "id": 80094,
+   "name": "berachain",
+   "displayName": "Berachain",
+   "vmType": "evm",
+   "depositEnabled": true,
+   "depositAddressEnabled": true,
+   "disabled": false,
+   "blockProductionLagging": false,
+   "httpRpcUrl": "https://rpc.berachain.com/",
+   "explorerUrl": "https://beratrail.io",
+   "iconUrl": "https://assets.relay.link/icons/80094/light.png",
+   "currency": {
+    "id": "bera",
+    "symbol": "BERA",
+    "name": "BERA Token",
+    "address": "0x0000000000000000000000000000000000000000",
+    "decimals": 18,
+    "supportsBridging": false
+   },
+   "featuredTokens": [
+    {
+     "id": "bera",
+     "symbol": "BERA",
+     "name": "BERA Token",
+     "address": "0x0000000000000000000000000000000000000000",
+     "decimals": 18,
+     "metadata": {
+      "logoURI": "https://assets.relay.link/icons/currencies/bera.png"
+     }
+    },
+    {
+     "id": "usdc",
+     "symbol": "USDC",
+     "name": "USD Coin",
+     "address": "0x549943e04f40284185054145c6e4e9568c1d3241",
+     "decimals": 6,
+     "metadata": {
+      "logoURI": "https://ethereum-optimism.github.io/data/USDC/logo.png"
+     }
+    },
+    {
+     "symbol": "WBERA",
+     "name": "Wrapped Bera",
+     "address": "0x6969696969696969696969696969696969696969",
+     "decimals": 18,
+     "metadata": {
+      "logoURI": "https://coin-images.coingecko.com/coins/images/54219/large/BERA_%282%29.png?1738848488"
+     }
+    }
+   ],
+   "contracts": {
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "multicaller": "0x6355d84b39b9a2c49a94a079ec66694612994080",
+    "onlyOwnerMulticaller": "0xb90ed4c123843cbfd66b11411ee7694ef37e6e72",
+    "relayReceiver": "0x7f4babd2c7d35221e72ab67ea72cba99573a0089",
+    "erc20Router": "0x0729e2a4716d9f7dd17858d5d504426d228697f7",
+    "approvalProxy": "0x5567954cd026cebfe486062cb75848e0f1c12e58",
+    "v3": {
+     "erc20Router": "0xb92fe925dc43a0ecde6c8b1a2709c170ec4fff4f",
+     "approvalProxy": "0xccc88a9d1b4ed6b0eaba998850414b24f1c315be"
+    },
+    "v3.2": {
+     "erc20Router": "0x0729e2a4716d9f7dd17858d5d504426d228697f7",
+     "approvalProxy": "0x5567954cd026cebfe486062cb75848e0f1c12e58"
+    }
+   },
+   "protocol": {
+    "v2": {
+     "chainId": "berachain",
+     "depository": "0x4cd00e387622c35bddb9b4c962c136462338bc31"
+    }
+   }
+  },
+  {
+   "id": 97477,
+   "name": "doma",
+   "displayName": "Doma",
+   "vmType": "evm",
+   "depositEnabled": true,
+   "depositAddressEnabled": true,
+   "disabled": false,
+   "blockProductionLagging": false,
+   "httpRpcUrl": "https://doma.drpc.org",
+   "explorerUrl": "https://explorer.doma.xyz",
+   "iconUrl": "https://assets.relay.link/icons/97477/light.png",
+   "currency": {
+    "id": "eth",
+    "symbol": "ETH",
+    "name": "Ether",
+    "address": "0x0000000000000000000000000000000000000000",
+    "decimals": 18,
+    "supportsBridging": true
+   },
+   "featuredTokens": [
+    {
+     "id": "eth",
+     "symbol": "ETH",
+     "name": "Ether",
+     "address": "0x0000000000000000000000000000000000000000",
+     "decimals": 18,
+     "metadata": {
+      "logoURI": "https://assets.relay.link/icons/1/light.png"
+     }
+    },
+    {
+     "id": "usdc",
+     "symbol": "USDC.e",
+     "name": "Bridged USDC (Stargate)",
+     "address": "0x31eef89d5215c305304a2fa5376a1f1b6c5dc477",
+     "decimals": 6,
+     "metadata": {
+      "logoURI": "https://assets.relay.link/icons/currencies/usdc.png"
+     }
+    },
+    {
+     "symbol": "WETH",
+     "name": "Wrapped Ether",
+     "address": "0x4200000000000000000000000000000000000006",
+     "decimals": 18,
+     "metadata": {
+      "logoURI": "https://coin-images.coingecko.com/coins/images/102174446/large/eth.png?1783684309"
+     }
+    }
+   ],
+   "contracts": {
+    "multicall3": "",
+    "multicaller": "",
+    "onlyOwnerMulticaller": "",
+    "relayReceiver": "0x787ff2840f10e23b79388e29377d4a16e223cd89",
+    "erc20Router": "0x0729e2a4716d9f7dd17858d5d504426d228697f7",
+    "approvalProxy": "0x5567954cd026cebfe486062cb75848e0f1c12e58",
+    "v3": {
+     "erc20Router": "0xb92fe925dc43a0ecde6c8b1a2709c170ec4fff4f",
+     "approvalProxy": "0xccc88a9d1b4ed6b0eaba998850414b24f1c315be"
+    },
+    "v3.2": {
+     "erc20Router": "0x0729e2a4716d9f7dd17858d5d504426d228697f7",
+     "approvalProxy": "0x5567954cd026cebfe486062cb75848e0f1c12e58"
+    }
+   },
+   "protocol": {
+    "v2": {
+     "chainId": "doma",
+     "depository": "0x4cd00e387622c35bddb9b4c962c136462338bc31"
+    }
+   }
+  },
+  {
+   "id": 98866,
+   "name": "plume",
+   "displayName": "Plume",
+   "vmType": "evm",
+   "depositEnabled": true,
+   "depositAddressEnabled": true,
+   "disabled": false,
+   "blockProductionLagging": false,
+   "httpRpcUrl": "https://rpc.plume.org",
+   "explorerUrl": "https://explorer.plume.org",
+   "iconUrl": "https://assets.relay.link/icons/98866/light.png",
+   "currency": {
+    "id": "plume",
+    "symbol": "PLUME",
+    "name": "PLUME",
+    "address": "0x0000000000000000000000000000000000000000",
+    "decimals": 18,
+    "supportsBridging": true
+   },
+   "featuredTokens": [
+    {
+     "id": "plume",
+     "symbol": "PLUME",
+     "name": "PLUME",
+     "address": "0x0000000000000000000000000000000000000000",
+     "decimals": 18,
+     "metadata": {
+      "logoURI": "https://assets.coingecko.com/coins/images/53623/standard/plume-token.png?1736896935"
+     }
+    },
+    {
+     "symbol": "WPLUME",
+     "name": "WPLUME",
+     "address": "0xea237441c92cae6fc17caaf9a7acb3f953be4bd1",
+     "decimals": 18,
+     "metadata": {
+      "logoURI": "https://assets.coingecko.com/coins/images/53623/standard/plume-token.png"
+     }
+    },
+    {
+     "id": "plumeusd",
+     "symbol": "pUSD",
+     "name": "pUSD",
+     "address": "0xdddd73f5df1f0dc31373357beac77545dc5a6f3f",
+     "decimals": 6,
+     "metadata": {
+      "logoURI": "https://cdn.prod.website-files.com/670fc97cba6a0b3f2e579538/676e9b2d7b188175ad742137_Token.svg"
+     }
+    }
+   ],
+   "contracts": {
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "multicaller": "0xe2035a0d568dec7f37b3267823cd9c919e744594",
+    "onlyOwnerMulticaller": "0xb90ed4c123843cbfd66b11411ee7694ef37e6e72",
+    "relayReceiver": "0x7f4babd2c7d35221e72ab67ea72cba99573a0089",
+    "erc20Router": "0x0729e2a4716d9f7dd17858d5d504426d228697f7",
+    "approvalProxy": "0x5567954cd026cebfe486062cb75848e0f1c12e58",
+    "v3": {
+     "erc20Router": "0xb92fe925dc43a0ecde6c8b1a2709c170ec4fff4f",
+     "approvalProxy": "0xccc88a9d1b4ed6b0eaba998850414b24f1c315be"
+    },
+    "v3.2": {
+     "erc20Router": "0x0729e2a4716d9f7dd17858d5d504426d228697f7",
+     "approvalProxy": "0x5567954cd026cebfe486062cb75848e0f1c12e58"
+    }
+   },
+   "protocol": {
+    "v2": {
+     "chainId": "plume",
+     "depository": "0x4cd00e387622c35bddb9b4c962c136462338bc31"
+    }
+   }
+  },
+  {
+   "id": 99901,
+   "name": "elysium",
+   "displayName": "Elysium",
+   "vmType": "evm",
+   "depositEnabled": true,
+   "depositAddressEnabled": true,
+   "disabled": false,
+   "blockProductionLagging": false,
+   "httpRpcUrl": "https://rpc.elysium.kinetiq.xyz",
+   "explorerUrl": "https://elysium.kinetiq.xyz/explorer",
+   "iconUrl": "https://assets.relay.link/icons/99901/light.png",
+   "currency": {
+    "id": "hype",
+    "symbol": "HYPE",
+    "name": "HYPE",
+    "address": "0x0000000000000000000000000000000000000000",
+    "decimals": 18,
+    "supportsBridging": false
+   },
+   "featuredTokens": [
+    {
+     "id": "hype",
+     "symbol": "HYPE",
+     "name": "HYPE",
+     "address": "0x0000000000000000000000000000000000000000",
+     "decimals": 18,
+     "metadata": {
+      "logoURI": "https://assets.coingecko.com/coins/images/50882/standard/hyperliquid.jpg?1729431300"
+     }
+    },
+    {
+     "id": "usdc",
+     "symbol": "USDC",
+     "name": "USDC",
+     "address": "0xb47c4c8f73f009cc0c0d3f92b388d13e293f0b65",
+     "decimals": 6,
+     "metadata": {
+      "logoURI": "https://assets.relay.link/icons/currencies/usdc.png"
+     }
+    }
+   ],
+   "contracts": {
+    "multicall3": "",
+    "multicaller": "",
+    "onlyOwnerMulticaller": "",
+    "relayReceiver": "",
+    "erc20Router": "0x0729e2a4716d9f7dd17858d5d504426d228697f7",
+    "approvalProxy": "0x5567954cd026cebfe486062cb75848e0f1c12e58",
+    "v3": {
+     "erc20Router": "0xb92fe925dc43a0ecde6c8b1a2709c170ec4fff4f",
+     "approvalProxy": "0xccc88a9d1b4ed6b0eaba998850414b24f1c315be"
+    },
+    "v3.2": {
+     "erc20Router": "0x0729e2a4716d9f7dd17858d5d504426d228697f7",
+     "approvalProxy": "0x5567954cd026cebfe486062cb75848e0f1c12e58"
+    }
+   },
+   "protocol": {
+    "v2": {
+     "chainId": "elysium",
+     "depository": "0x4cd00e387622c35bddb9b4c962c136462338bc31"
+    }
+   }
+  },
+  {
+   "id": 534352,
+   "name": "scroll",
+   "displayName": "Scroll",
+   "vmType": "evm",
+   "depositEnabled": true,
+   "depositAddressEnabled": true,
+   "disabled": false,
+   "blockProductionLagging": false,
+   "httpRpcUrl": "https://rpc.scroll.io/",
+   "explorerUrl": "https://scrollscan.com",
+   "iconUrl": "https://assets.relay.link/icons/534352/light.png",
+   "currency": {
+    "id": "eth",
+    "symbol": "ETH",
+    "name": "Ether",
+    "address": "0x0000000000000000000000000000000000000000",
+    "decimals": 18,
+    "supportsBridging": true
+   },
+   "featuredTokens": [
+    {
+     "id": "eth",
+     "symbol": "ETH",
+     "name": "Ether",
+     "address": "0x0000000000000000000000000000000000000000",
+     "decimals": 18,
+     "metadata": {
+      "logoURI": "https://assets.relay.link/icons/1/light.png"
+     }
+    },
+    {
+     "symbol": "WETH",
+     "name": "Wrapped Ether",
+     "address": "0x5300000000000000000000000000000000000004",
+     "decimals": 18,
+     "metadata": {
+      "logoURI": "https://coin-images.coingecko.com/coins/images/39810/large/weth.png"
+     }
+    }
+   ],
+   "contracts": {
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "multicaller": "0x0000000000002Bdbf1Bf3279983603Ec279CC6dF",
+    "onlyOwnerMulticaller": "0xb90ed4c123843cbfd66b11411ee7694ef37e6e72",
+    "relayReceiver": "0x00000000aa467eba42a3d604b3d74d63b2b6c6cb",
+    "erc20Router": "0x0729e2a4716d9f7dd17858d5d504426d228697f7",
+    "approvalProxy": "0x5567954cd026cebfe486062cb75848e0f1c12e58",
+    "v3": {
+     "erc20Router": "0xb92fe925dc43a0ecde6c8b1a2709c170ec4fff4f",
+     "approvalProxy": "0xccc88a9d1b4ed6b0eaba998850414b24f1c315be"
+    },
+    "v3.2": {
+     "erc20Router": "0x0729e2a4716d9f7dd17858d5d504426d228697f7",
+     "approvalProxy": "0x5567954cd026cebfe486062cb75848e0f1c12e58"
+    }
+   },
+   "protocol": {
+    "v2": {
+     "chainId": "scroll",
+     "depository": "0x4cd00e387622c35bddb9b4c962c136462338bc31"
+    }
+   }
+  },
+  {
+   "id": 537724,
+   "name": "xrp",
+   "displayName": "XRP",
+   "vmType": "xrpvm",
+   "depositEnabled": true,
+   "depositAddressEnabled": true,
+   "disabled": false,
+   "blockProductionLagging": false,
+   "httpRpcUrl": "https://xrplcluster.com/",
+   "explorerUrl": "https://xrpscan.com",
+   "iconUrl": "https://assets.relay.link/icons/537724/light.png",
+   "currency": {
+    "id": "xrp",
+    "symbol": "XRP",
+    "name": "XRP",
+    "address": "xrp",
+    "decimals": 6,
+    "supportsBridging": true
+   },
+   "featuredTokens": [
+    {
+     "id": "xrp",
+     "symbol": "XRP",
+     "name": "XRP",
+     "address": "xrp",
+     "decimals": 6,
+     "metadata": {
+      "logoURI": "https://assets.relay.link/icons/currencies/xrp.png"
+     }
+    }
+   ],
+   "contracts": {
+    "multicall3": "",
+    "multicaller": "",
+    "onlyOwnerMulticaller": "",
+    "relayReceiver": "",
+    "erc20Router": "",
+    "approvalProxy": "",
+    "v3": {
+     "erc20Router": "",
+     "approvalProxy": ""
+    },
+    "v3.2": {
+     "erc20Router": "",
+     "approvalProxy": ""
+    }
+   },
+   "protocol": {
+    "v2": {
+     "chainId": "xrp",
+     "depository": "rJBdWA9p5KwBoqSQTyMdg3UHLsJVzGVu5m"
+    }
+   }
+  },
+  {
+   "id": 685689,
+   "name": "gensyn",
+   "displayName": "Gensyn",
+   "vmType": "evm",
+   "depositEnabled": true,
+   "depositAddressEnabled": true,
+   "disabled": false,
+   "blockProductionLagging": false,
+   "httpRpcUrl": "https://gensyn-mainnet.g.alchemy.com/public",
+   "explorerUrl": "https://gensyn-mainnet.explorer.alchemy.com",
+   "iconUrl": "https://assets.relay.link/icons/685689/light.png",
+   "currency": {
+    "id": "eth",
+    "symbol": "ETH",
+    "name": "Ether",
+    "address": "0x0000000000000000000000000000000000000000",
+    "decimals": 18,
+    "supportsBridging": true
+   },
+   "featuredTokens": [
+    {
+     "id": "eth",
+     "symbol": "ETH",
+     "name": "Ether",
+     "address": "0x0000000000000000000000000000000000000000",
+     "decimals": 18,
+     "metadata": {
+      "logoURI": "https://assets.relay.link/icons/1/light.png"
+     }
+    },
+    {
+     "id": "usdc",
+     "symbol": "USDC",
+     "name": "USDC",
+     "address": "0x5b32c997211621d55a89cc5abaf1cc21f3a6ddf5",
+     "decimals": 6,
+     "metadata": {
+      "logoURI": "https://static.optimism.io/data/USDC/logo.png"
+     }
+    },
+    {
+     "id": "ai",
+     "symbol": "AI",
+     "name": "Gensyn",
+     "address": "0x4e742319f6b0fec4afa504fc8ed3ceab0fb751a2",
+     "decimals": 18,
+     "metadata": {
+      "logoURI": "https://coin-images.coingecko.com/coins/images/71027/large/gensyn.png"
+     }
+    }
+   ],
+   "contracts": {
+    "multicall3": "",
+    "multicaller": "",
+    "onlyOwnerMulticaller": "",
+    "relayReceiver": "",
+    "erc20Router": "0x0729e2a4716d9f7dd17858d5d504426d228697f7",
+    "approvalProxy": "0x5567954cd026cebfe486062cb75848e0f1c12e58",
+    "v3": {
+     "erc20Router": "0xb92fe925dc43a0ecde6c8b1a2709c170ec4fff4f",
+     "approvalProxy": "0xccc88a9d1b4ed6b0eaba998850414b24f1c315be"
+    },
+    "v3.2": {
+     "erc20Router": "0x0729e2a4716d9f7dd17858d5d504426d228697f7",
+     "approvalProxy": "0x5567954cd026cebfe486062cb75848e0f1c12e58"
+    }
+   },
+   "protocol": {
+    "v2": {
+     "chainId": "gensyn",
+     "depository": "0x4cd00e387622c35bddb9b4c962c136462338bc31"
+    }
+   }
+  },
+  {
+   "id": 747474,
+   "name": "katana",
+   "displayName": "Katana",
+   "vmType": "evm",
+   "depositEnabled": true,
+   "depositAddressEnabled": true,
+   "disabled": false,
+   "blockProductionLagging": false,
+   "httpRpcUrl": "https://rpc.katana.network",
+   "explorerUrl": "https://explorer.katanarpc.com",
+   "iconUrl": "https://assets.relay.link/icons/747474/light.png",
+   "currency": {
+    "id": "eth",
+    "symbol": "ETH",
+    "name": "Ether",
+    "address": "0x0000000000000000000000000000000000000000",
+    "decimals": 18,
+    "supportsBridging": true
+   },
+   "featuredTokens": [
+    {
+     "id": "eth",
+     "symbol": "ETH",
+     "name": "Ether",
+     "address": "0x0000000000000000000000000000000000000000",
+     "decimals": 18,
+     "metadata": {
+      "logoURI": "https://assets.relay.link/icons/1/light.png"
+     }
+    },
+    {
+     "id": "usdc",
+     "symbol": "USDC",
+     "name": "Vault Bridge USDC",
+     "address": "0x203a662b0bd271a6ed5a60edfbd04bfce608fd36",
+     "decimals": 6,
+     "metadata": {
+      "logoURI": "https://assets.katana.network/icons/usdc.svg"
+     }
+    },
+    {
+     "id": "usdt",
+     "symbol": "USDT",
+     "name": "Vault Bridge USDT",
+     "address": "0x2dca96907fde857dd3d816880a0df407eeb2d2f2",
+     "decimals": 6,
+     "metadata": {
+      "logoURI": "https://assets.katana.network/icons/usdt.svg"
+     }
+    },
+    {
+     "symbol": "wETH",
+     "name": "Vault Bridge ETH",
+     "address": "0xee7d8bcfb72bc1880d0cf19822eb0a2e6577ab62",
+     "decimals": 18,
+     "metadata": {
+      "logoURI": "https://assets.katana.network/icons/eth.svg"
+     }
+    }
+   ],
+   "contracts": {
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "multicaller": "0xe1bb31c20dbfdb28bafa0bd098671483d7975475",
+    "onlyOwnerMulticaller": "0xb59943c3ada8cd2256048d4583ab773ab3500ffa",
+    "relayReceiver": "0x9ff28846cd0640ba4aac04d3ebbe651cac5fe609",
+    "erc20Router": "0x0729e2a4716d9f7dd17858d5d504426d228697f7",
+    "approvalProxy": "0x5567954cd026cebfe486062cb75848e0f1c12e58",
+    "v3": {
+     "erc20Router": "0xb92fe925dc43a0ecde6c8b1a2709c170ec4fff4f",
+     "approvalProxy": "0xccc88a9d1b4ed6b0eaba998850414b24f1c315be"
+    },
+    "v3.2": {
+     "erc20Router": "0x0729e2a4716d9f7dd17858d5d504426d228697f7",
+     "approvalProxy": "0x5567954cd026cebfe486062cb75848e0f1c12e58"
+    }
+   },
+   "protocol": {
+    "v2": {
+     "chainId": "katana",
+     "depository": "0x4cd00e387622c35bddb9b4c962c136462338bc31"
+    }
+   }
+  },
+  {
+   "id": 3586256,
+   "name": "lighter",
+   "displayName": "Lighter",
+   "vmType": "lvm",
+   "depositEnabled": true,
+   "depositAddressEnabled": false,
+   "disabled": false,
+   "blockProductionLagging": false,
+   "httpRpcUrl": "https://mainnet.zklighter.elliot.ai",
+   "explorerUrl": "https://lighter.exchange/explorer",
+   "iconUrl": "https://assets.relay.link/icons/3586256/light.png",
+   "currency": {
+    "id": "usdc",
+    "symbol": "USDC (Perp)",
+    "name": "USD Coin (Perp)",
+    "address": "0",
+    "decimals": 6,
+    "supportsBridging": true
+   },
+   "featuredTokens": [
+    {
+     "id": "usdc",
+     "symbol": "USDC (Perp)",
+     "name": "USD Coin (Perp)",
+     "address": "0",
+     "decimals": 6,
+     "metadata": {
+      "logoURI": "https://ethereum-optimism.github.io/data/USDC/logo.png"
+     }
+    }
+   ],
+   "contracts": {
+    "multicall3": "",
+    "multicaller": "",
+    "onlyOwnerMulticaller": "",
+    "relayReceiver": "",
+    "erc20Router": "",
+    "approvalProxy": "",
+    "v3": {
+     "erc20Router": "",
+     "approvalProxy": ""
+    },
+    "v3.2": {
+     "erc20Router": "",
+     "approvalProxy": ""
+    }
+   },
+   "protocol": {
+    "v2": {
+     "chainId": "lighter",
+     "depository": "731033"
+    }
+   }
+  },
+  {
+   "id": 7777777,
+   "name": "zora",
+   "displayName": "Zora",
+   "vmType": "evm",
+   "depositEnabled": true,
+   "depositAddressEnabled": true,
+   "disabled": false,
+   "blockProductionLagging": false,
+   "httpRpcUrl": "https://rpc.zora.energy",
+   "explorerUrl": "https://explorer.zora.energy",
+   "iconUrl": "https://assets.relay.link/icons/7777777/light.png",
+   "currency": {
+    "id": "eth",
+    "symbol": "ETH",
+    "name": "Ether",
+    "address": "0x0000000000000000000000000000000000000000",
+    "decimals": 18,
+    "supportsBridging": true
+   },
+   "featuredTokens": [
+    {
+     "id": "eth",
+     "symbol": "ETH",
+     "name": "Ether",
+     "address": "0x0000000000000000000000000000000000000000",
+     "decimals": 18,
+     "metadata": {
+      "logoURI": "https://assets.relay.link/icons/1/light.png"
+     }
+    },
+    {
+     "id": "usdc",
+     "symbol": "USDzC",
+     "name": "USD Coin (Bridged from Ethereum)",
+     "address": "0xcccccccc7021b32ebb4e8c08314bd62f7c653ec4",
+     "decimals": 6,
+     "metadata": {
+      "logoURI": "https://coin-images.coingecko.com/coins/images/68896/large/images.png?1756907677"
+     }
+    },
+    {
+     "symbol": "WETH",
+     "name": "Wrapped Ether",
+     "address": "0x4200000000000000000000000000000000000006",
+     "decimals": 18,
+     "metadata": {
+      "logoURI": "https://coin-images.coingecko.com/coins/images/39810/large/weth.png"
+     }
+    }
+   ],
+   "contracts": {
+    "multicall3": "0xca11bde05977b3631167028862be2a173976ca11",
+    "multicaller": "0x0000000000002bdbf1bf3279983603ec279cc6df",
+    "onlyOwnerMulticaller": "0xb90ed4c123843cbfd66b11411ee7694ef37e6e72",
+    "relayReceiver": "0xa5f565650890fba1824ee0f21ebbbf660a179934",
+    "erc20Router": "0x0729e2a4716d9f7dd17858d5d504426d228697f7",
+    "approvalProxy": "0x5567954cd026cebfe486062cb75848e0f1c12e58",
+    "v3": {
+     "erc20Router": "0xb92fe925dc43a0ecde6c8b1a2709c170ec4fff4f",
+     "approvalProxy": "0xccc88a9d1b4ed6b0eaba998850414b24f1c315be"
+    },
+    "v3.2": {
+     "erc20Router": "0x0729e2a4716d9f7dd17858d5d504426d228697f7",
+     "approvalProxy": "0x5567954cd026cebfe486062cb75848e0f1c12e58"
+    }
+   },
+   "protocol": {
+    "v2": {
+     "chainId": "zora",
+     "depository": "0x4cd00e387622c35bddb9b4c962c136462338bc31"
+    }
+   }
+  },
+  {
+   "id": 8253038,
+   "name": "bitcoin",
+   "displayName": "Bitcoin",
+   "vmType": "bvm",
+   "depositEnabled": true,
+   "depositAddressEnabled": true,
+   "disabled": false,
+   "blockProductionLagging": false,
+   "httpRpcUrl": "https://mempool.space",
+   "explorerUrl": "https://mempool.space",
+   "iconUrl": "https://assets.relay.link/icons/8253038/light.png",
+   "currency": {
+    "id": "btc",
+    "symbol": "BTC",
+    "name": "Bitcoin",
+    "address": "bc1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqmql8k8",
+    "decimals": 8,
+    "supportsBridging": true
+   },
+   "featuredTokens": [
+    {
+     "id": "btc",
+     "symbol": "BTC",
+     "name": "Bitcoin",
+     "address": "bc1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqmql8k8",
+     "decimals": 8,
+     "metadata": {
+      "logoURI": "https://assets.relay.link/icons/currencies/btc.png"
+     }
+    }
+   ],
+   "contracts": {
+    "multicall3": "",
+    "multicaller": "",
+    "onlyOwnerMulticaller": "",
+    "relayReceiver": "",
+    "erc20Router": "",
+    "approvalProxy": "",
+    "v3": {
+     "erc20Router": "",
+     "approvalProxy": ""
+    },
+    "v3.2": {
+     "erc20Router": "",
+     "approvalProxy": ""
+    }
+   },
+   "protocol": {
+    "v2": {
+     "chainId": "bitcoin",
+     "depository": "bc1qzmtn0q92ayejt2hpffvlktcpmyy7vvsd06sefu"
+    }
+   }
+  },
+  {
+   "id": 9286185,
+   "name": "eclipse",
+   "displayName": "Eclipse",
+   "vmType": "svm",
+   "depositEnabled": true,
+   "depositAddressEnabled": false,
+   "disabled": false,
+   "blockProductionLagging": false,
+   "httpRpcUrl": "https://mainnetbeta-rpc.eclipse.xyz",
+   "explorerUrl": "https://eclipsescan.xyz",
+   "iconUrl": "https://assets.relay.link/icons/9286185/light.png",
+   "currency": {
+    "id": "eth",
+    "symbol": "ETH",
+    "name": "Ether",
+    "address": "11111111111111111111111111111111",
+    "decimals": 9,
+    "supportsBridging": true
+   },
+   "featuredTokens": [
+    {
+     "id": "eth",
+     "symbol": "ETH",
+     "name": "Ether",
+     "address": "11111111111111111111111111111111",
+     "decimals": 9,
+     "metadata": {
+      "logoURI": "https://assets.relay.link/icons/1/light.png"
+     }
+    }
+   ],
+   "contracts": {
+    "multicall3": "",
+    "multicaller": "",
+    "onlyOwnerMulticaller": "",
+    "relayReceiver": "",
+    "erc20Router": "",
+    "approvalProxy": "",
+    "v3": {
+     "erc20Router": "",
+     "approvalProxy": ""
+    },
+    "v3.2": {
+     "erc20Router": "",
+     "approvalProxy": ""
+    }
+   },
+   "protocol": {
+    "v2": {
+     "chainId": "eclipse",
+     "depository": "99vQwtBwYtrqqD9YSXbdum3KBdxPAVxYTaQ3cfnJSrN2",
+     "depositoryVault": "7uTT8Xi5RWXzy7h9XL244GRgEycDYDhLjr3ZyNdXi8pZ"
+    }
+   }
+  },
+  {
+   "id": 224235520,
+   "name": "ton",
+   "displayName": "TON",
+   "vmType": "tonvm",
+   "depositEnabled": true,
+   "depositAddressEnabled": true,
+   "disabled": false,
+   "blockProductionLagging": false,
+   "httpRpcUrl": "https://toncenter.com/api/v2/jsonRPC",
+   "explorerUrl": "https://tonviewer.com",
+   "iconUrl": "https://assets.relay.link/icons/224235520/light.png",
+   "currency": {
+    "id": "ton",
+    "symbol": "GRAM",
+    "name": "Gram",
+    "address": "EQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAM9c",
+    "decimals": 9,
+    "supportsBridging": true
+   },
+   "featuredTokens": [],
+   "contracts": {
+    "multicall3": "",
+    "multicaller": "",
+    "onlyOwnerMulticaller": "",
+    "relayReceiver": "",
+    "erc20Router": "",
+    "approvalProxy": "",
+    "v3": {
+     "erc20Router": "",
+     "approvalProxy": ""
+    },
+    "v3.2": {
+     "erc20Router": "",
+     "approvalProxy": ""
+    }
+   },
+   "protocol": {
+    "v2": {
+     "chainId": "ton",
+     "depository": "EQCrdGsDTqA2t6xRR4N6V4J705F7w_VQbUdHnofsh-8lVIPs"
+    }
+   }
+  },
+  {
+   "id": 548123634,
+   "name": "robinhood-lighter",
+   "displayName": "Robinhood Lighter",
+   "vmType": "lvm",
+   "depositEnabled": true,
+   "depositAddressEnabled": false,
+   "disabled": false,
+   "blockProductionLagging": false,
+   "httpRpcUrl": "https://api.rh.lighter.xyz",
+   "explorerUrl": "https://api.rh.lighter.xyz",
+   "iconUrl": "https://assets.relay.link/icons/548123634/light.png",
+   "currency": {
+    "id": "usdg",
+    "symbol": "USDG",
+    "name": "USDG",
+    "address": "0",
+    "decimals": 6,
+    "supportsBridging": true
+   },
+   "featuredTokens": [
+    {
+     "id": "usdg",
+     "symbol": "USDG",
+     "name": "USDG",
+     "address": "0",
+     "decimals": 6,
+     "metadata": {
+      "logoURI": "https://assets.relay.link/icons/currencies/usdg.png"
+     }
+    }
+   ],
+   "contracts": {
+    "multicall3": "",
+    "multicaller": "",
+    "onlyOwnerMulticaller": "",
+    "relayReceiver": "",
+    "erc20Router": "",
+    "approvalProxy": "",
+    "v3": {
+     "erc20Router": "",
+     "approvalProxy": ""
+    },
+    "v3.2": {
+     "erc20Router": "",
+     "approvalProxy": ""
+    }
+   },
+   "protocol": {
+    "v2": {
+     "chainId": "robinhood-lighter",
+     "depository": "33627"
+    }
+   }
+  },
+  {
+   "id": 728126428,
+   "name": "tron",
+   "displayName": "Tron",
+   "vmType": "tvm",
+   "depositEnabled": true,
+   "depositAddressEnabled": true,
+   "disabled": false,
+   "blockProductionLagging": false,
+   "httpRpcUrl": "https://api.trongrid.io/jsonrpc",
+   "explorerUrl": "https://tronscan.org/#",
+   "iconUrl": "https://assets.relay.link/icons/728126428/light.png",
+   "currency": {
+    "id": "trx",
+    "symbol": "TRX",
+    "name": "TRX",
+    "address": "T9yD14Nj9j7xAB4dbGeiX9h8unkKHxuWwb",
+    "decimals": 6,
+    "supportsBridging": true
+   },
+   "featuredTokens": [
+    {
+     "id": "trx",
+     "symbol": "TRX",
+     "name": "TRX",
+     "address": "T9yD14Nj9j7xAB4dbGeiX9h8unkKHxuWwb",
+     "decimals": 6,
+     "metadata": {
+      "logoURI": "https://assets.relay.link/icons/currencies/trx.png"
+     }
+    },
+    {
+     "id": "usdt",
+     "symbol": "USDT",
+     "name": "Tether USD",
+     "address": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+     "decimals": 6,
+     "metadata": {
+      "logoURI": "https://static.tronscan.org/production/logo/usdtlogo.png"
+     }
+    }
+   ],
+   "contracts": {
+    "multicall3": "",
+    "multicaller": "",
+    "onlyOwnerMulticaller": "",
+    "relayReceiver": "",
+    "erc20Router": "",
+    "approvalProxy": "",
+    "v3": {
+     "erc20Router": "",
+     "approvalProxy": ""
+    },
+    "v3.2": {
+     "erc20Router": "",
+     "approvalProxy": ""
+    }
+   },
+   "protocol": {
+    "v2": {
+     "chainId": "tron",
+     "depository": "TXtEs6t2oUWQsNos7m68gbHdE9Q5n6x2oN"
+    }
+   }
+  },
+  {
+   "id": 792703809,
+   "name": "solana",
+   "displayName": "Solana",
+   "vmType": "svm",
+   "depositEnabled": true,
+   "depositAddressEnabled": true,
+   "disabled": false,
+   "blockProductionLagging": false,
+   "httpRpcUrl": "https://api.mainnet-beta.solana.com",
+   "explorerUrl": "https://solscan.io",
+   "iconUrl": "https://assets.relay.link/icons/792703809/light.png",
+   "currency": {
+    "id": "sol",
+    "symbol": "SOL",
+    "name": "Solana",
+    "address": "11111111111111111111111111111111",
+    "decimals": 9,
+    "supportsBridging": true
+   },
+   "featuredTokens": [
+    {
+     "id": "sol",
+     "symbol": "SOL",
+     "name": "Solana",
+     "address": "11111111111111111111111111111111",
+     "decimals": 9,
+     "metadata": {
+      "logoURI": "https://upload.wikimedia.org/wikipedia/en/b/b9/Solana_logo.png"
+     }
+    },
+    {
+     "id": "usdc",
+     "symbol": "USDC",
+     "name": "USD Coin",
+     "address": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+     "decimals": 6,
+     "metadata": {
+      "logoURI": "https://coin-images.coingecko.com/coins/images/6319/large/usdc.png?1696506694"
+     }
+    },
+    {
+     "id": "usdt",
+     "symbol": "USDT",
+     "name": "USDT",
+     "address": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB",
+     "decimals": 6,
+     "metadata": {
+      "logoURI": "https://coin-images.coingecko.com/coins/images/325/large/Tether.png?1696501661"
+     }
+    }
+   ],
+   "contracts": {
+    "multicall3": "",
+    "multicaller": "",
+    "onlyOwnerMulticaller": "",
+    "relayReceiver": "",
+    "erc20Router": "",
+    "approvalProxy": "",
+    "v3": {
+     "erc20Router": "",
+     "approvalProxy": ""
+    },
+    "v3.2": {
+     "erc20Router": "",
+     "approvalProxy": ""
+    }
+   },
+   "protocol": {
+    "v2": {
+     "chainId": "solana",
+     "depository": "99vQwtBwYtrqqD9YSXbdum3KBdxPAVxYTaQ3cfnJSrN2",
+     "depositoryVault": "7uTT8Xi5RWXzy7h9XL244GRgEycDYDhLjr3ZyNdXi8pZ"
+    }
+   }
+  }
+ ]
+}

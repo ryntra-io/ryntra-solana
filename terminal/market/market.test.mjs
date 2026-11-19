@@ -166,58 +166,52 @@ test("a dip's price is a little under the market, written as a person would type
   assert.equal(dipPrice(Number.NaN), null);
 });
 
-test("the first screen's promise: the agent's three sentences over the list, each read as what it says", () => {
+test("the first screen's promise: the agent's three sentences, each read as what it says, none with a sum", () => {
   const snapshot = JSON.parse(readFileSync(new URL("../../city/lib/market/snapshot.json", import.meta.url), "utf8"));
   const book = bookOf(snapshot.towers);
   const every = () => true;
   const gates = { trade: true, spot: true, money: true, earn: true, launch: true, instruct: false, agentTrade: true, agentLaunch: true };
-  assert.deepEqual(HERO, ["tradeDaily", "launch", "earn"]);
+  assert.deepEqual(HERO, ["scout", "tradeDaily", "launch"]);
   for (const lang of ["en", "uk"]) {
     const w = MARKET[lang];
     const kind = (text) => askRows(text, book, { subject: null }, every, gates)[0]?.command.kind ?? null;
     const hero = [
-      { id: "tradeDaily", text: w.sayTradeDaily("BONK", lang === "uk" ? "0,1" : "0.1") },
+      { id: "scout", text: w.sayScout },
+      { id: "tradeDaily", text: w.sayTradeDaily("JUP") },
       { id: "launch", text: w.sayLaunch },
-      { id: "earn", text: w.sayEarn("SOL") },
     ];
     assert.deepEqual(readySentences(hero, kind, HERO.length).map((s) => s.id), HERO, lang);
+    // An example names no sum.
+    for (const s of hero) assert.ok(!/\d/.test(s.text), `${lang}: ${s.text}`);
     // Agents shut: the trading sentence is not offered; the rest still are.
     const shut = (text) => askRows(text, book, { subject: null }, every, { ...gates, agentTrade: false })[0]?.command.kind ?? null;
     assert.ok(!readySentences(hero, shut, HERO.length).some((s) => s.id === "tradeDaily"), lang);
-    // One line on the money, short: the budget, the fee, the stop, the keys — never a paragraph.
-    const terms = w.heroTerms(lang === "uk" ? "0,1" : "0.1", "0,1", "1");
-    assert.ok(terms.length <= 80, `${lang}: ${terms}`);
-    assert.match(terms, lang === "uk" ? /стоп будь-коли.*ключі в тебе/ : /stop anytime.*keys stay yours/);
-    assert.ok(w.heroTitle.length <= 40, lang);
   }
+  assert.equal(MARKET.uk.sayTradeDaily("JUP"), "Торгуй JUP щодня");
+  assert.equal(MARKET.uk.sayScout, "Знаходь нові монети за мене");
 });
 
-test("«Trade … with 0.1 SOL a day» names BONK when the agent offers it, else its first coin", () => {
-  assert.equal(heroCoin([{ symbol: "PUMP" }, { symbol: "Bonk" }]).symbol, "Bonk");
-  assert.equal(heroCoin([{ symbol: "PUMP" }, { symbol: "JUP" }]).symbol, "PUMP");
+test("«Trade … with 0.1 SOL a day» names JUP, else MET — never another coin (decision 108)", () => {
+  assert.equal(heroCoin([{ symbol: "PUMP" }, { symbol: "Bonk" }, { symbol: "JUP" }]).symbol, "JUP");
+  assert.equal(heroCoin([{ symbol: "PUMP" }, { symbol: "MET" }]).symbol, "MET");
+  assert.equal(heroCoin([{ symbol: "PUMP" }, { symbol: "Bonk" }]), null);
   assert.equal(heroCoin([]), null);
 });
 
 test("the home page draws the agent's promise first, then the market's depth, and the promise never asks for a wallet", () => {
   const screen = readFileSync(new URL("./MarketScreen.tsx", import.meta.url), "utf8");
-  assert.ok(screen.indexOf("<HomeHero") < screen.indexOf("<DepthMarket"), "the promise stands over the market");
+  // Decision 109: the agent's panel, the five doors, the Pulse, then the table.
+  const at = ["<HomeHero", "<Tiles", "<Pulse", "<DepthMarket"].map((part) => screen.indexOf(part));
+  assert.ok(at.every((i) => i > 0) && at.every((i, n) => n === 0 || i > at[n - 1]), "the agent's panel, the doors, the Pulse, the table — in that order");
   const hero = readFileSync(new URL("./HomeHero.tsx", import.meta.url), "utf8");
   assert.ok(!/connectWallet|cityAccount/.test(hero), "the promise never asks for a wallet: the shelf's card does, once the person decided");
   assert.ok(hero.includes("funnelSay('agent_hint')"));
   assert.ok(hero.includes("funnelSay('agent_said')"));
 });
 
-test("the agent's sentence and the money line name the same day's budget, the engine's own", async () => {
-  const { BUDGET_PRESETS, PRESETS_ON } = await import("../../lib/mandate/presets.ts");
-  const { budgetText } = await import("../agents/figures.ts");
-  for (const net of ["mainnet", "devnet"]) {
-    const perDay = BUDGET_PRESETS[PRESETS_ON[net][0]].perDay;
-    for (const lang of ["en", "uk"]) {
-      const said = budgetText(perDay, lang);
-      assert.ok(MARKET[lang].sayTradeDaily("BONK", said).includes(`${said} SOL`), `${net}/${lang}`);
-      assert.ok(MARKET[lang].heroTerms(said, "0,1", "1").startsWith(`${said} SOL`), `${net}/${lang}`);
-    }
-  }
+test("the panel names no budget of ours, in a sentence or in its line", () => {
   const hero = readFileSync(new URL("./HomeHero.tsx", import.meta.url), "utf8");
-  assert.ok(/sayTradeDaily\(traded\.symbol, perDay\)/.test(hero) && /heroTerms\(budgetText\(FIRST_BUDGET/.test(hero), "both read FIRST_BUDGET");
+  assert.ok(!/FIRST_BUDGET|budgetText|perDay|heroTerms\(/.test(hero), "no sum in the panel");
+  assert.ok(hero.includes("m.heroSafe"), "the one line on the money: the budget is the person's");
+  for (const lang of ["en", "uk"]) assert.ok(MARKET[lang].heroSafe.length <= 64 && !/\d/.test(MARKET[lang].heroSafe), lang);
 });

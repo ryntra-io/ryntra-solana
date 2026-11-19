@@ -26,12 +26,22 @@ export const BACKPACK_DOWNLOAD_URL = "https://backpack.app/downloads";
 
 /** The link that opens `pageUrl` inside Solflare's in-app browser (its universal link «browse», answered 200 on 2026-10-20). */
 export function solflareBrowseUrl(pageUrl: string, origin: string): string {
-  return `https://solflare.com/ul/v1/browse/${encodeURIComponent(pageUrl)}?ref=${encodeURIComponent(origin)}`;
+  return `https://solflare.com/ul/v1/browse/${encodeURIComponent(withoutFragment(pageUrl))}?ref=${encodeURIComponent(origin)}`;
 }
 
-/** The link that opens `pageUrl` inside Phantom's in-app browser. */
+/**
+ * The page's address without its `#fragment`. A fragment is the browser's own — it never reaches a server — and a page
+ * may keep a secret there (a private link's one-time key). Handing the whole address to a wallet's universal link would
+ * put that secret into another site's address, so the fragment is always left behind.
+ */
+export function withoutFragment(pageUrl: string): string {
+  const at = pageUrl.indexOf("#");
+  return at < 0 ? pageUrl : pageUrl.slice(0, at);
+}
+
+/** The link that opens `pageUrl` inside Phantom's in-app browser — without its fragment (`withoutFragment`). */
 export function phantomBrowseUrl(pageUrl: string, origin: string): string {
-  return `https://phantom.app/ul/browse/${encodeURIComponent(pageUrl)}?ref=${encodeURIComponent(origin)}`;
+  return `https://phantom.app/ul/browse/${encodeURIComponent(withoutFragment(pageUrl))}?ref=${encodeURIComponent(origin)}`;
 }
 
 /**

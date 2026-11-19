@@ -7,7 +7,7 @@ import { earlyDoorOpen, type EarlyBounds } from './early.ts';
 import type { Answer, LaunchEngine, Network } from './engine.ts';
 import type { LaunchFields, Phase, Signer } from './flow.ts';
 import { cityLaunchOpen } from './gate.ts';
-import { FIELDS_REFUSED } from './prepare.ts';
+import { FIELDS_REFUSED, metadataBody } from './prepare.ts';
 import { BUILD_AGED, BUILD_UNEXPECTED, CITY_CLOSED, EARLY_PARTIAL, WALLET_REFUSED } from './refusal.ts';
 import { REFUSAL_WORDS } from './words.ts';
 
@@ -52,7 +52,7 @@ export async function runEarlyAccess(args: Readonly<{
   let ahead = args.stored ? await args.stored : null;
   if (ahead?.ok && (ahead.data.name !== fields.name || ahead.data.symbol !== fields.symbol)) ahead = null;
   if (ahead && !ahead.ok && !FIELDS_REFUSED.has(ahead.code)) ahead = null;
-  const stored = ahead ?? (await engine.metadata({ name: fields.name, symbol: fields.symbol, description: '', website: '', x: '', telegram: '', imageBase64: fields.picture.base64 }));
+  const stored = ahead ?? (await engine.metadata(metadataBody(fields)));
   if (!stored.ok) return fail(stored.code, stored.message);
   const check = args.check ?? (await import('./early-check.ts')).checkEarly;
 

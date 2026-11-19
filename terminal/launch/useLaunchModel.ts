@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { create } from 'zustand';
 import type { LaunchPresetView } from '@/lib/api/v1/contract';
 import { LAUNCH_PRESETS } from '@/lib/core/venues/meteora-dbc/presets';
 import { checkLaunchForm, type FormCheck } from '@/lib/launch/form';
@@ -12,7 +13,7 @@ import { pictureRefused, runLaunch, type Phase } from '@/city/lib/launch/flow';
 import { cityLaunchOpen, cityPresets } from '@/city/lib/launch/gate';
 import { POOL_DEFAULT, poolDoorOpen, usePool, type PoolChoice, type PoolListed } from '@/city/lib/launch/pool';
 import { POOL_HALF_WAY, runPoolLaunch } from '@/city/lib/launch/pool-flow';
-import { FIELDS_REFUSED, fieldsKey, type PrepFields } from '@/city/lib/launch/prepare';
+import { FIELDS_REFUSED, NO_ABOUT, fieldsKey, type About, type PrepFields } from '@/city/lib/launch/prepare';
 import { cityShieldOpen, shieldServed } from '@/city/lib/launch/shield';
 import { tickerAfterName } from '@/city/lib/launch/ticker';
 import { useWallet } from '@/city/lib/trade/wallet';
@@ -30,6 +31,18 @@ const SIMULATE_AFTER_MS = 2_500;
 const SIMULATIONS_MAX = 3;
 
 export type Connection = Readonly<{ wallet: string; address: string }>;
+
+/**
+ * The words about the new coin — its line and its links — beside the district's draft of its name, ticker and
+ * picture: `typed` as the person types them, `left` as of the last field they left, `touched` the fields they left.
+ */
+const useAbout = create<{ typed: About; left: About; touched: ReadonlySet<string> }>(() => ({ typed: NO_ABOUT, left: NO_ABOUT, touched: new Set() }));
+
+/** The words about the coin as the engine reads them: the line trimmed, each link whole or none. */
+function cleanAboutOf(check: FormCheck): About {
+  const { description, links } = check.clean;
+  return { description, website: links.website ?? '', x: links.x ?? '', telegram: links.telegram ?? '' };
+}
 
 /**
  * The Launch screen's state, on the city's launch logic as it is: the district's store for the draft, the phase and the
@@ -54,9 +67,15 @@ export function useLaunchModel() {
 
   const [attempted, setAttempted] = useState(false);
   const [pictureBad, setPictureBad] = useState(false);
+  // What the creator says about the coin: its line and links — kept while the person walks the terminal.
+  const about = useAbout((st) => st.typed);
+  const left = useAbout((st) => st.left);
+  const touched = useAbout((st) => st.touched);
   const [poolCost, setPoolCost] = useState<string | null>(null);
   const [curveSigned, setCurveSigned] = useState<string | null>(null);
   const busy = useRef(false);
+  // Which taking-up of a half-way launch is the latest: an answer for an earlier one is let go.
+  const resumed = useRef(0);
   const simulations = useRef<Readonly<{ count: number; last: string | null }>>({ count: 0, last: null });
 
   // The engine's presets, once for the page: the district's own read, without the city's feed, towers and moments.
@@ -72,16 +91,26 @@ export function useLaunchModel() {
   const working = phase !== null && phase.step !== 'failed' && phase.step !== 'done' && phase.step !== 'pooled';
   const settled = phase?.step === 'done' || phase?.step === 'pooled';
 
-  const check: FormCheck = useMemo(() => checkLaunchForm({ name: draft.name, symbol: draft.symbol, description: '', website: '', x: '', telegram: '' }), [draft.name, draft.symbol]);
+  const check: FormCheck = useMemo(() => checkLaunchForm({ name: draft.name, symbol: draft.symbol, ...about }), [draft.name, draft.symbol, about]);
   const symbol = check.clean.symbol;
   const fieldsValid = Object.keys(check.problems).length === 0;
-  const fields = useMemo<PrepFields | null>(() => (fieldsValid && draft.picture ? { name: check.clean.name, symbol, picture: draft.picture } : null), [fieldsValid, check.clean.name, symbol, draft.picture]);
+  // The words about the coin go to the store as the engine reads them: the line trimmed, each link whole or none.
+  const cleanAbout = useMemo<About>(() => cleanAboutOf(check), [check]);
+  /** What a press stores and launches: the fields as they stand now. */
+  const pressFields = useMemo<PrepFields | null>(() => (fieldsValid && draft.picture ? { name: check.clean.name, symbol, picture: draft.picture, about: cleanAbout } : null), [fieldsValid, check.clean.name, symbol, draft.picture, cleanAbout]);
+  // What is made ready in the background: the words about the coin as of the last field the person left — a line being
+  // typed spends none of the engine's hourly stores and builds; leaving the field (or pressing) hands it over.
+  const leftAbout = useMemo<About | null>(() => {
+    const read = checkLaunchForm({ name: draft.name, symbol: draft.symbol, ...left });
+    return Object.keys(read.problems).length === 0 ? cleanAboutOf(read) : null;
+  }, [draft.name, draft.symbol, left]);
+  const fields = useMemo<PrepFields | null>(() => (pressFields && leftAbout ? { ...pressFields, about: leftAbout } : null), [pressFields, leftAbout]);
   const key = useMemo(() => (fields ? fieldsKey(fields) : null), [fields]);
   const answer = key !== null && stored?.key === key ? stored.answer : null;
   const storedOk = answer?.ok === true;
   const refusedFailure = answer && !answer.ok && FIELDS_REFUSED.has(answer.code) ? { code: answer.code, stage: 'before' as const, message: answer.message, token: null } : null;
   const refused: Shown | null = refusedFailure ? { field: pictureRefused(refusedFailure) ? 'picture' : 'name', words: refusalOf(w, refusedFailure, null, null).what } : null;
-  const problem = problemOf(w, check, { has: draft.picture !== null, bad: pictureBad }, attempted, refused);
+  const problem = problemOf(w, check, { has: draft.picture !== null, bad: pictureBad }, attempted, refused, touched);
   const valid = fieldsValid && draft.picture !== null && refused === null;
   const newPicture = refusedFailure !== null && pictureRefused(refusedFailure);
 
@@ -131,6 +160,9 @@ export function useLaunchModel() {
     setPictureBad(!picture);
     if (picture) setDraft({ picture });
   };
+  const setAbout = (next: Partial<About>) => useAbout.setState((st) => ({ typed: { ...st.typed, ...next } }));
+  /** A field about the coin left: its link may now be said wrong, and the words go to the background's store. */
+  const leave = (field: keyof About) => useAbout.setState((st) => ({ left: st.typed, touched: st.touched.has(field) ? st.touched : new Set([...st.touched, field]) }));
   const chooseFormat = (next: Format) => usePool.getState().setChoice(next === 'pool' ? (choice ?? POOL_DEFAULT) : null);
   const setChoice = (next: PoolChoice) => usePool.getState().setChoice(next);
   const chooseShield = (on: boolean) => useLaunch.getState().choosePreset(on ? 'protected' : 'classic');
@@ -151,19 +183,19 @@ export function useLaunchModel() {
   const launch = async () => {
     setAttempted(true);
     if (busy.current || working || !open || !connection || !preset || !network) return;
-    if (!half && (!valid || !fields)) return;
+    if (!half && (!valid || !pressFields)) return;
     busy.current = true;
     try {
       const signer = (await launchWallet()).signer(connection);
       const prep = launchPrep();
-      const coin = { name: check.clean.name, symbol: check.clean.symbol, picture: draft.picture ?? { base64: '', url: '' } };
+      const coin = { name: check.clean.name, symbol: check.clean.symbol, picture: draft.picture ?? { base64: '', url: '' }, about: cleanAbout };
       if (half || (format === 'pool' && choice)) {
-        const result = await runPoolLaunch({ engine: launchEngine(), pool: await launchPoolEngine(), signer, fields: coin, network, choice: choice ?? POOL_DEFAULT, resume: half, onPhase, poolSwitch, stored: half || !fields ? null : prep.store(fields) });
+        const result = await runPoolLaunch({ engine: launchEngine(), pool: await launchPoolEngine(), signer, fields: coin, network, choice: choice ?? POOL_DEFAULT, resume: half, onPhase, poolSwitch, stored: half || !pressFields ? null : prep.store(pressFields) });
         if (result.step === 'pooled') poolLanded(result.pooled, connection.address);
         return;
       }
-      if (!fields) return;
-      const result = await runLaunch({ engine: launchEngine(), signer, fields: coin, preset, network, onPhase, stored: prep.store(fields), takePrebuilt: prep.take });
+      if (!pressFields) return;
+      const result = await runLaunch({ engine: launchEngine(), signer, fields: coin, preset, network, onPhase, stored: prep.store(pressFields), takePrebuilt: prep.take });
       if (result.step === 'done') prep.reset();
     } finally {
       busy.current = false;
@@ -176,7 +208,20 @@ export function useLaunchModel() {
    */
   const resume = (listed: PoolListed) => {
     if (busy.current || working) return;
-    usePool.getState().setChoice({ ...POOL_DEFAULT, pair: listed.pair });
+    const asked = (resumed.current += 1);
+    // The launch's own opening, never the form's «in 15 minutes»: the card counts down to the time its pool was made for.
+    usePool.getState().setChoice({ ...POOL_DEFAULT, pair: listed.pair, at: listed.opensAt });
+    // Whether its ladder is there is the launch's own record (the list does not say it): read once, the form follows it.
+    void launchPoolEngine()
+      .then((engine) => engine.view(listed.mint))
+      .then((view) => {
+        const now = usePool.getState().choice;
+        // Only for the launch still taken up, and only while nobody touched the form since.
+        if (asked !== resumed.current || !view.ok || !now || now.at !== listed.opensAt) return;
+        if (useLaunch.getState().phase?.step !== 'failed') return;
+        usePool.getState().setChoice({ ...now, ladder: view.data.ladder !== null });
+      })
+      .catch(() => {});
     setDraft({ name: listed.name, symbol: listed.symbol });
     setPoolCost(null);
     useLaunch.getState().setPhase({ step: 'failed', failure: { code: POOL_HALF_WAY, stage: 'send', message: '', token: listed.mint } });
@@ -188,14 +233,17 @@ export function useLaunchModel() {
   const forget = () => {
     setAttempted(false);
     setPictureBad(false);
+    useAbout.setState({ touched: new Set() });
     setPoolCost(null);
     setCurveSigned(null);
   };
   const another = () => {
+    resumed.current += 1;
     simulations.current = { count: 0, last: null };
     launchPrep().reset();
     usePool.getState().setChoice(null);
     setDraft({ name: '', symbol: '', picture: null } satisfies Draft);
+    useAbout.setState({ typed: NO_ABOUT, left: NO_ABOUT });
     forget();
     clearPhase();
   };
@@ -231,6 +279,9 @@ export function useLaunchModel() {
     costSimulated: format === 'curve' ? curveCost !== null : poolCost !== null,
     setName,
     setSymbol,
+    about,
+    setAbout,
+    leave,
     choosePicture,
     chooseFormat,
     setChoice,

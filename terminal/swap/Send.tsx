@@ -109,8 +109,8 @@ function Form({ owner }: { owner: string | null }) {
           {send.resumed.state === 'CHECKING' ? m.resumeChecking : send.resumed.state === 'LANDED' ? m.resumeLanded : send.resumed.state === 'FAILED' ? m.resumeFailed : m.resumeUnknown}
         </p>
       ) : null}
-      <label className={s.field}>
-        <span className={s.fieldHead}>
+      <label className={s.big}>
+        <span className={s.bigHead}>
           <Kick>{m.to}</Kick>
         </span>
         <input

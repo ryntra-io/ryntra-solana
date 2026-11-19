@@ -1,0 +1,614 @@
+/* The Bridge page stands on the one template (Page, PageHead, ActionBody — the form's panel and
+   «My transfers» beside it). The form's fields are the Swap's own (`swap.module.css`); here only what the Bridge adds:
+   a coin with its network, the networks and coins to pick, where the money lands, the transfer on its way and a deposit
+   address. No corner, colour or page size of its own: the kit's and the tokens'. */
+
+/* ── a coin with its network: the logo with the network's mark on it, the ticker over the network ───────────────── */
+
+/* Laid over the Swap sheet's own coin button, which keeps its corner and colours. */
+.coin.coin {
+  min-width: 0;
+  max-width: 230px;
+  height: 60px;
+  padding: 0 12px 0 8px;
+  text-align: left;
+}
+
+.coin:disabled {
+  opacity: 0.6;
+}
+
+.mark {
+  position: relative;
+  flex: none;
+  width: 36px;
+  height: 36px;
+}
+
+.mark > :first-child {
+  width: 36px;
+  height: 36px;
+}
+
+.markS,
+.markS > :first-child {
+  width: 30px;
+  height: 30px;
+}
+
+.badge.badge {
+  position: absolute;
+  right: -3px;
+  bottom: -3px;
+  width: 17px;
+  height: 17px;
+  font-size: 9px;
+  box-shadow: 0 0 0 2px var(--panel-up);
+}
+
+.coinNames {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.coinNames > b {
+  overflow: hidden;
+  font-size: var(--type-action);
+  font-weight: 700;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.coinNames > span {
+  overflow: hidden;
+  font-size: var(--type-body);
+  color: var(--soft);
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.max {
+  margin-left: 10px;
+  padding: 2px 4px;
+  font-size: var(--type-body);
+  font-weight: 700;
+  color: var(--lilac);
+}
+
+.max:hover {
+  color: var(--ice);
+}
+
+.aside {
+  display: inline-flex;
+  align-items: center;
+  font-size: var(--type-base);
+  color: var(--soft);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.turnRow {
+  display: flex;
+  justify-content: center;
+  margin: -14px 0;
+  position: relative;
+  z-index: 1;
+}
+
+.turnRow > button {
+  background: var(--panel-up);
+  border: 1px solid var(--glass-edge);
+}
+
+/* ── where the money lands ─────────────────────────────────────────────── */
+
+.land {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 44px;
+  padding: 0 4px;
+  font-size: var(--type-base);
+  color: var(--soft);
+}
+
+.land b {
+  font-weight: 600;
+  color: var(--ice);
+  font-variant-numeric: tabular-nums;
+}
+
+.landWho {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.link {
+  flex: none;
+  font-size: var(--type-body);
+  font-weight: 600;
+  color: var(--lilac);
+}
+
+.link:hover {
+  color: var(--ice);
+}
+
+.addressBox {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Laid over the Swap sheet's search field, which keeps its corner. */
+.address.address {
+  flex: none;
+  width: 100%;
+  height: 52px;
+  font-size: var(--type-base);
+  font-variant-numeric: tabular-nums;
+}
+
+.address[aria-invalid='true'] {
+  border-color: var(--flare);
+}
+
+.warn {
+  margin: 0;
+  font-size: var(--type-body);
+  color: var(--warm);
+}
+
+.error {
+  margin: 0;
+  font-size: var(--type-body);
+  color: var(--flare);
+}
+
+/* ── the networks and coins to pick, in the panel's place ──────────────── */
+
+.pick {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 0;
+}
+
+.pickHead {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.pickBody {
+  display: grid;
+  grid-template-columns: 210px minmax(0, 1fr);
+  gap: 12px;
+  min-height: 0;
+}
+
+.nets {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  padding-right: 12px;
+  border-right: 1px solid var(--line);
+}
+
+.netList {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 470px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.net {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 44px;
+  padding: 6px 8px;
+  font-size: var(--type-base);
+  font-weight: 600;
+  color: var(--soft);
+  text-align: left;
+  transition: background-color 0.15s, color 0.15s;
+}
+
+.net:hover {
+  color: var(--ice);
+  background: var(--chosen);
+}
+
+.net[aria-pressed='true'] {
+  color: var(--ice);
+  background: var(--chosen);
+  box-shadow: inset 2px 0 0 var(--lilac);
+}
+
+.net > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.netFind.netFind {
+  flex: none;
+  height: 40px;
+  font-size: var(--type-body);
+}
+
+.coins {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.coinList {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 470px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.count {
+  font-size: var(--type-body);
+  color: var(--soft);
+  font-variant-numeric: tabular-nums;
+}
+
+.listKick {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 22px;
+}
+
+/* ── a wallet to connect ───────────────────────────────────────────────── */
+
+.wallets {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Laid over the Swap sheet's coin button: a wallet is pressed like a coin. */
+.wallet.wallet {
+  justify-content: flex-start;
+  width: 100%;
+  height: 60px;
+  padding: 0 14px;
+  font-size: var(--type-lead);
+}
+
+.wallet > img {
+  width: 32px;
+  height: 32px;
+}
+
+/* ── the transfer on its way ───────────────────────────────────────────── */
+
+.trip {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px 20px;
+  background: var(--well);
+  border: 1px solid var(--line);
+}
+
+.tripSide {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.tripSide b {
+  font-family: var(--display);
+  font-size: var(--type-headline);
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
+
+.tripSide span {
+  font-size: var(--type-body);
+  color: var(--soft);
+}
+
+.tripArrow {
+  flex: none;
+  color: var(--dim);
+}
+
+.steps {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.step {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  min-height: 52px;
+  font-size: var(--type-lead);
+  color: var(--dim);
+}
+
+.step[data-at='done'] {
+  color: var(--ice);
+}
+
+.step[data-at='now'] {
+  color: var(--ice);
+  font-weight: 650;
+}
+
+.dot {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: 1px solid var(--glass-edge);
+}
+
+.step[data-at='done'] .dot {
+  color: var(--ink);
+  background: var(--mint);
+  border-color: var(--mint);
+}
+
+.step[data-at='now'] .dot {
+  border-color: var(--lilac);
+  box-shadow: 0 0 0 4px var(--edge-soft);
+}
+
+.step[data-at='now'] .dot::after {
+  content: '';
+  width: 8px;
+  height: 8px;
+  background: var(--lilac);
+  animation: beat 1.2s ease-in-out infinite;
+}
+
+@keyframes beat {
+  50% {
+    opacity: 0.3;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .step[data-at='now'] .dot::after {
+    animation: none;
+  }
+}
+
+.stepLink {
+  font-size: var(--type-body);
+  font-weight: 600;
+  color: var(--lilac);
+}
+
+.stepLink:hover {
+  color: var(--ice);
+}
+
+.verdict {
+  margin: 0;
+  font-size: var(--type-lead);
+  font-weight: 650;
+}
+
+.verdict[data-tone='up'] {
+  color: var(--mint);
+}
+
+.verdict[data-tone='warn'] {
+  color: var(--amber);
+}
+
+.verdict[data-tone='down'] {
+  color: var(--flare);
+}
+
+/* ── a deposit address: the exact amount, the code and the address ─────── */
+
+.deposit {
+  display: grid;
+  grid-template-columns: 168px minmax(0, 1fr);
+  gap: 20px;
+  align-items: center;
+  padding: 20px;
+  background: var(--well);
+  border: 1px solid var(--line);
+}
+
+.qr {
+  width: 168px;
+  height: 168px;
+  padding: 8px;
+  background: var(--ice);
+}
+
+.depositText {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
+.depositAmount {
+  margin: 0;
+  font-family: var(--display);
+  font-size: var(--type-title-l);
+  font-weight: 650;
+  line-height: 1.25;
+}
+
+.depositAddress {
+  margin: 0;
+  font-size: var(--type-base);
+  line-height: 1.5;
+  color: var(--ice);
+  word-break: break-all;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── «My transfers» ────────────────────────────────────────────────────── */
+
+.side {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
+.moves {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.move {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 60px;
+  padding: 8px 6px;
+  color: inherit;
+  text-align: left;
+  border-bottom: 1px solid var(--line);
+  transition: background-color 0.15s;
+}
+
+.move:hover {
+  background: var(--chosen);
+}
+
+.pair {
+  display: inline-flex;
+}
+
+.pair > * + * {
+  margin-left: -8px;
+  box-shadow: 0 0 0 2px var(--panel);
+}
+
+.moveNames {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+/* The amount and the two coins wrap rather than lose a letter: a label is never cut. */
+.moveNames > b {
+  font-size: var(--type-base);
+  font-weight: 650;
+  overflow-wrap: anywhere;
+  font-variant-numeric: tabular-nums;
+}
+
+.moveNames > span {
+  font-size: var(--type-body);
+  color: var(--soft);
+}
+
+.moveState {
+  font-size: var(--type-body);
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+.moveState[data-tone='up'] {
+  color: var(--mint);
+}
+
+.moveState[data-tone='warn'] {
+  color: var(--amber);
+}
+
+.moveState[data-tone='down'] {
+  color: var(--flare);
+}
+
+.blank {
+  margin: 0;
+  padding: 18px 6px;
+  font-size: var(--type-base);
+  color: var(--soft);
+}
+
+/* ── a phone: one column from edge to edge ─────────────────────────────── */
+
+@media (max-width: 767px) {
+  .coin {
+    max-width: 170px;
+    height: 52px;
+  }
+
+  .pickBody {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .nets {
+    padding-right: 0;
+    border-right: 0;
+  }
+
+  .netList {
+    flex-direction: row;
+    max-height: none;
+    overflow-x: auto;
+    overflow-y: hidden;
+    gap: 6px;
+    padding-bottom: 4px;
+  }
+
+  .net {
+    flex: none;
+    width: auto;
+    border: 1px solid var(--glass-edge);
+  }
+
+  .net[aria-pressed='true'] {
+    box-shadow: none;
+    border-color: var(--chosen-edge);
+  }
+
+  .coinList {
+    max-height: 52vh;
+  }
+
+  .deposit {
+    grid-template-columns: minmax(0, 1fr);
+    justify-items: center;
+    text-align: center;
+  }
+}

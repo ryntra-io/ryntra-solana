@@ -1,5 +1,5 @@
 import type { LaunchMarketRow, LaunchPresetView } from '../../lib/api/v1/contract.ts';
-import type { FieldProblem, FormCheck } from '../../lib/launch/form.ts';
+import { LINK_KINDS, type FieldProblem, type FormCheck, type LinkKind } from '../../lib/launch/form.ts';
 import { bookOf, parse, type Command } from '../../city/lib/command/parse.ts';
 import { wordsNow, type Same } from '../../city/lib/i18n/dict.ts';
 import { POOL_FEE, POOL_LADDER, POOL_SPLIT, phaseAt, poolChoiceOf, type PoolChoice, type PoolListed } from '../../city/lib/launch/pool.ts';
@@ -9,6 +9,8 @@ import { sameOriginImage } from '../../city/lib/launch/towers.ts';
 import { REFUSAL_WORDS } from '../../city/lib/launch/words.ts';
 import type { Tower } from '../../city/lib/market/types.ts';
 import { listed } from '../market/market-view.ts';
+import { launchNameHits } from '../../lib/core/launch/moderation.ts';
+import { rudeName } from './rude.ts';
 import type { LAUNCH_SCREEN } from './words.ts';
 
 /**
@@ -101,14 +103,15 @@ export function dayOf(at: number, now: number): 'today' | 'tomorrow' | 'later' {
 
 /* ------------------------------------------------------------------ the form */
 
-export type Field = 'name' | 'symbol' | 'picture';
+export type Field = 'name' | 'symbol' | 'picture' | 'description' | LinkKind;
 export type Shown = Readonly<{ field: Field; words: string }>;
 
 /**
  * The first thing to fix, in one line — the city's own order: a bad or borrowed name at once, an empty field only after
- * the first press, then the picture, then the engine's own refusal of the stored picture or name.
+ * the first press, then the picture, then the words about the coin — a link once its field was left or pressed past
+ * (`touched`), never while it is being typed —, then the engine's own refusal of the stored picture or name.
  */
-export function problemOf(w: W, check: Pick<FormCheck, 'problems' | 'hits'>, picture: Readonly<{ has: boolean; bad: boolean }>, attempted: boolean, refused: Shown | null): Shown | null {
+export function problemOf(w: W, check: Pick<FormCheck, 'problems' | 'hits'>, picture: Readonly<{ has: boolean; bad: boolean }>, attempted: boolean, refused: Shown | null, touched: ReadonlySet<string> = new Set()): Shown | null {
   const words = (field: 'name' | 'symbol', problem: FieldProblem): string => {
     if (problem === 'BORROWED') return w.readsAs(check.hits.find((hit) => hit.field === field)?.label ?? w.aKnownName);
     if (problem === 'OFFENSIVE') return field === 'name' ? w.anotherName : w.anotherTicker;
@@ -122,7 +125,66 @@ export function problemOf(w: W, check: Pick<FormCheck, 'problems' | 'hits'>, pic
   }
   if (picture.bad) return { field: 'picture', words: w.pictureKind };
   if (attempted && !picture.has) return { field: 'picture', words: w.pictureNeeded };
+  if (check.problems.description) return { field: 'description', words: w.descriptionLong };
+  for (const kind of LINK_KINDS) {
+    if (check.problems[kind] && (attempted || touched.has(kind))) return { field: kind, words: kind === 'x' ? w.linkX : kind === 'telegram' ? w.linkTelegram : w.linkWebsite };
+  }
   return refused;
+}
+
+/* ------------------------------------------------------------------ the showcase */
+
+/** What the Launch screen reads of a new coin to decide whether it stands in its lists. */
+export type Showcased = Readonly<{ symbol: string; name: string; icon: string | null; mcap: number | null; holders?: number | null; kept?: boolean }>;
+
+/** The fewest people holding a new coin for it to stand beside a launch: below it, a list is mostly tests and spam. */
+export const SHOWCASE_HOLDERS = 5;
+/** The least market cap, dollars, of a coin the showcase shows: below it a coin is a test nobody bought. */
+export const SHOWCASE_MCAP_USD = 1_000;
+
+/* Names the showcase leaves out as borrowed beside the form's own list: a game, a studio, an assistant, an «official», a
+   politician's slogan, a tech company. */
+const BORROWED = ['gta', 'grandtheftauto', 'theftauto', 'leonida', 'vicecity', 'rockstar', 'nintendo', 'mario', 'yoshi', 'pikachu', 'pokemon', 'claude', 'openai', 'chatgpt', 'intel', 'nvidia', 'tesla', 'spacex', 'official', 'maga', 'wwgwga', 'weknowthetruth'];
+/* «Grand … Auto», whatever stands between. */
+const BORROWED_GAME = /grand\p{L}{0,12}auto/u;
+
+/* Names that are a test or an advert, never a coin: «test», «awd awd», «asdf», «Sponsored». */
+const JUNK = /^(?:test(?:ing)?\d*|awd(?:\s*awd)*|asdf+|qwe(?:rty)?|sponsored|promo|ad|scam|rug|honeypot|airdrop)$/i;
+
+/**
+ * Whether a new coin stands in the Launch screen's lists: the screen shows what a launch looks like beside the
+ * others, so only a coin with a logo of its own, a market cap of at least $1K and a few people holding it (where the
+ * list says how many), a ticker of letters, no test or advert for a name, whose creator gave up minting and freezing
+ * (`kept` — either right kept), and whose name and ticker are neither crude nor hateful (`rude.ts`) nor borrowed from a
+ * known brand or person (the form's own `launchNameHits`). The market's own lists are not changed.
+ */
+export function showcased(coin: Showcased): boolean {
+  if (coin.icon === null || coin.mcap === null || coin.mcap < SHOWCASE_MCAP_USD || coin.kept === true) return false;
+  if (coin.holders !== undefined && (coin.holders ?? 0) < SHOWCASE_HOLDERS) return false;
+  // A ticker of signs or figures alone («******», «34%») or a test or an advert is not a coin to show.
+  if ((coin.symbol.match(/\p{L}/gu) ?? []).length < 2) return false;
+  if (JUNK.test(coin.symbol.trim().replace(/^\$+/, '')) || JUNK.test(coin.name.trim())) return false;
+  if (rudeName(coin.symbol, coin.name)) return false;
+  // Borrowed anywhere in the name — here a false match only hides a coin.
+  const glued = `${coin.symbol} ${coin.name}`.toLowerCase().replace(/[^\p{L}]+/gu, '');
+  if (BORROWED.some((word) => glued.includes(word)) || BORROWED_GAME.test(glued)) return false;
+  return launchNameHits({ name: coin.name, symbol: coin.symbol }).length === 0;
+}
+
+/** The coins that stand in a list, in their order, at most `max`, one per ticker. */
+export function showcase<T>(coins: readonly T[], read: (coin: T) => Showcased, max: number): T[] {
+  const seen = new Set<string>();
+  const out: T[] = [];
+  for (const coin of coins) {
+    const said = read(coin);
+    if (!showcased(said)) continue;
+    const ticker = said.symbol.trim().replace(/^\$+/, '').toUpperCase();
+    if (seen.has(ticker)) continue;
+    seen.add(ticker);
+    out.push(coin);
+    if (out.length >= max) break;
+  }
+  return out;
 }
 
 /* ------------------------------------------------------------------ the agent's sentence */

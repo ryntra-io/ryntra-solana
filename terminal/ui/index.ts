@@ -3,6 +3,7 @@
  * (docs/terminal/design/2026-11-16/). A screen takes its parts from here and writes no colour, face or size of its own.
  */
 export { Panel, type PanelTone } from './Panel';
+export { Page, PageHead, ActionBody, type PageKind } from './Page';
 export { Action, Quiet, QuietLink } from './buttons';
 export { Title, Kick, Figure } from './Type';
 export { Tabs, Segment, type TabItem, type SegmentItem } from './Tabs';
@@ -16,6 +17,6 @@ export { SayLine } from './SayLine';
 export { Info } from './Info';
 export { Search } from './Search';
 export { CoinLogo, coinIcon } from './CoinLogo';
-export { priceText, usdText, changeText, changeTone, amountOf } from './figures';
+export { priceText, usdText, sumText, changeText, changeTone, amountOf, foldZeros, stepFigure } from './figures';
 export { Icon, type IconName } from './icons';
 export { cx } from './cx';

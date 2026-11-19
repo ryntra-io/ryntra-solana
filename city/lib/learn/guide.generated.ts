@@ -1301,15 +1301,7 @@ export const GUIDE: Guide = {
     [
      {
       "t": "s",
-      "v": "Check the limits — "
-     },
-     {
-      "t": "i",
-      "v": "≤ 0.02 SOL a trade · 0.1 SOL a day · 30 days"
-     },
-     {
-      "t": "s",
-      "v": " — and "
+      "v": "Write your own budget — how much a day, how much a trade, for how many days — and "
      },
      {
       "t": "b",
@@ -1337,39 +1329,19 @@ export const GUIDE: Guide = {
    ],
    "inside": [
     {
-     "heading": "The limits, today on mainnet",
+     "heading": "The limits",
      "blocks": [
       {
        "k": "ul",
        "items": [
         [
          {
-          "t": "s",
-          "v": "Budget "
-         },
-         {
           "t": "b",
-          "v": "0.1 SOL a day"
+          "v": "Your own numbers"
          },
          {
           "t": "s",
-          "v": ", at most "
-         },
-         {
-          "t": "b",
-          "v": "0.02 SOL a trade"
-         },
-         {
-          "t": "s",
-          "v": ", for "
-         },
-         {
-          "t": "b",
-          "v": "30 days"
-         },
-         {
-          "t": "s",
-          "v": "."
+          "v": ": how much a day, how much a trade and for how many days — any you choose; Ryntra sets no ceiling."
          }
         ],
         [
@@ -1459,19 +1431,11 @@ export const GUIDE: Guide = {
         [
          {
           "t": "s",
-          "v": "Budgets: "
+          "v": "Budgets: your numbers and the trade and term that follow from them, in "
          },
          {
           "t": "c",
-          "v": "BUDGET_PRESETS"
-         },
-         {
-          "t": "s",
-          "v": " in "
-         },
-         {
-          "t": "c",
-          "v": "lib/mandate/presets.ts"
+          "v": "lib/mandate/budget.ts"
          },
          {
           "t": "s",
@@ -1678,13 +1642,7 @@ export const GUIDE: Guide = {
       [
        {
         "t": "s",
-        "v": "Bigger budgets are coming; they open step by step."
-       }
-      ],
-      [
-       {
-        "t": "s",
-        "v": "An agent can lose money. Start small; the limits are there so a mistake stays small."
+        "v": "An agent can lose money. The budget is yours to choose — the limits you sign are the most it can ever spend."
        }
       ]
      ]
@@ -4989,15 +4947,7 @@ export const GUIDE: Guide = {
     [
      {
       "t": "s",
-      "v": "Перевір ліміти — "
-     },
-     {
-      "t": "i",
-      "v": "≤ 0,02 SOL за угоду · 0,1 SOL на день · 30 днів"
-     },
-     {
-      "t": "s",
-      "v": " — і натисни "
+      "v": "Впиши свій бюджет — скільки на день, скільки за угоду й на скільки днів — і натисни "
      },
      {
       "t": "b",
@@ -5025,39 +4975,19 @@ export const GUIDE: Guide = {
    ],
    "inside": [
     {
-     "heading": "Ліміти — сьогодні в mainnet",
+     "heading": "Ліміти",
      "blocks": [
       {
        "k": "ul",
        "items": [
         [
          {
-          "t": "s",
-          "v": "Бюджет "
-         },
-         {
           "t": "b",
-          "v": "0,1 SOL на день"
+          "v": "Твої власні числа"
          },
          {
           "t": "s",
-          "v": ", щонайбільше "
-         },
-         {
-          "t": "b",
-          "v": "0,02 SOL за угоду"
-         },
-         {
-          "t": "s",
-          "v": ", на "
-         },
-         {
-          "t": "b",
-          "v": "30 днів"
-         },
-         {
-          "t": "s",
-          "v": "."
+          "v": ": скільки на день, скільки за угоду й на скільки днів — будь-які; стелі від Ryntra немає."
          }
         ],
         [
@@ -5147,19 +5077,11 @@ export const GUIDE: Guide = {
         [
          {
           "t": "s",
-          "v": "Бюджети: "
+          "v": "Бюджети: твої числа, а ліміт угоди й строк, що з них випливають, — у "
          },
          {
           "t": "c",
-          "v": "BUDGET_PRESETS"
-         },
-         {
-          "t": "s",
-          "v": " у "
-         },
-         {
-          "t": "c",
-          "v": "lib/mandate/presets.ts"
+          "v": "lib/mandate/budget.ts"
          },
          {
           "t": "s",
@@ -5366,13 +5288,7 @@ export const GUIDE: Guide = {
       [
        {
         "t": "s",
-        "v": "Більші бюджети — скоро; вони відкриваються крок за кроком."
-       }
-      ],
-      [
-       {
-        "t": "s",
-        "v": "Агент може втратити гроші. Починай з малого; ліміти існують для того, щоб помилка лишалася малою."
+        "v": "Агент може втратити гроші. Бюджет обираєш ти — ліміти, які ти підписуєш, — це найбільше, що він може витратити."
        }
       ]
      ]

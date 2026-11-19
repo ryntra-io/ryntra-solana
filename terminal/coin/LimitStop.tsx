@@ -16,6 +16,8 @@ import { useWallet } from '@/city/lib/trade/wallet';
 import { crossesMarket, distanceFromMarketPercent, limitAmounts, TRIGGER_V1_MIN_ORDER_USD, typedPrice } from '@/lib/solana/limits/model';
 import { Action, AmountField, Figure, Kick, Quiet, Shares } from '@/terminal/ui';
 import { ExplainBox, ExplainButton, LONG_LABEL, Rows, TxLink, bare, connectOrPick } from './parts';
+import { zerosText } from './tiny';
+import { payLogo } from './staples';
 import { WalletPick } from './WalletPick';
 import { TICKET } from './words';
 import s from './ticket.module.css';
@@ -161,15 +163,16 @@ function SpotFields({ tower, choice, mode, onTopUp }: { tower: TowerRef; choice:
           aside={market?.key === key && market.status === 'error' ? w.noMarketPrice : undefined}
           value={fieldText(price)}
           onChange={(text) => setPrice(fieldValue(text))}
-          placeholder={fieldText(marketPrice !== null ? typedPrice(marketPrice) : '0')}
-          asset={{ symbol: unit, icon: null }}
+          placeholder={fieldText(marketPrice !== null ? zerosText(marketPrice, typedPrice) : '0')}
+          asset={{ symbol: unit, icon: payLogo(choice.pay) }}
         />
       </fieldset>
       {marketPrice !== null ? (
         <div className={s.priceRow}>
           <span className={s.distance}>{distance !== null && Number.isFinite(distance) && !crosses && !wrongSide ? distanceWords(distance, w) : null}</span>
           <Quiet size="s" disabled={!idle} aria-label={w.useMarketPrice(digits(typedPrice(marketPrice)), unit)} onClick={() => setPrice(typedPrice(marketPrice))}>
-            {w.marketAt(digits(typedPrice(marketPrice)))}
+            {/* A tiny price as the chart writes it: its zeros counted, not a row of them. */}
+            {w.marketAt(digits(zerosText(marketPrice, typedPrice)))}
           </Quiet>
         </div>
       ) : null}

@@ -143,6 +143,17 @@ function priced(token: PortfolioToken, prices: PriceRead): PortfolioToken {
   return { ...token, symbol, usd: unitsOf(token.amountRaw, token.decimals) * known.usd };
 }
 
+/**
+ * A row's name from its coins: what it holds, supplies or borrows — never a fee or a reward, which is the same coin
+ * again («SOL–SOL» for a pool whose other coin has no symbol). A coin without a symbol leaves the name unsaid: the
+ * screen names it from the market, never by a guess here.
+ */
+function labelOf(tokens: readonly PortfolioToken[]): string | null {
+  const principal = tokens.filter((t) => t.role === "held" || t.role === "supplied" || t.role === "borrowed").slice(0, 2);
+  if (!principal.length || principal.some((t) => !t.symbol)) return null;
+  return principal.map((t) => t.symbol).join("–");
+}
+
 /** A row with its coins priced, its value and its earnings counted in dollars and in SOL. */
 export function valued(position: PortfolioPosition, prices: PriceRead, solUsd: number | null): PortfolioPosition {
   if (position.state === "unread") return position;
@@ -154,7 +165,7 @@ export function valued(position: PortfolioPosition, prices: PriceRead, solUsd: n
   return {
     ...position,
     platform: bounded(position.platform, 64),
-    label: bounded(position.label ?? tokens.map((t) => t.symbol).filter(Boolean).slice(0, 2).join("–"), 80),
+    label: bounded(position.label ?? labelOf(tokens), 80),
     tokens: tokens.map((t) => (t.usd === null ? t : { ...t, usd: usdRound(t.usd) })),
     value: { usd: usdRound(usd), sol: position.value.sol ?? solOf(usd, solUsd) },
     earned: earnedUsd === null && earnedSol === null ? null : { usd: usdRound(earnedUsd), sol: earnedSol },

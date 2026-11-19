@@ -18,6 +18,9 @@ export const useFrame = create<FrameState>(() => ({ panel: null }));
  */
 export const PHONE_HEAD = 'terminal-phone-head';
 
+/** The phone's menu sheet, as its button names it. */
+export const MENU_SHEET = 'terminal-menu';
+
 export function openPanel(panel: FramePanel): void {
   useFrame.setState({ panel });
 }

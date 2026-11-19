@@ -26,7 +26,7 @@ import { envKey } from "../launch/signer/env.server.ts";
 import { KMS_KEY_VERSION, kmsEndpoint, kmsKeySigner, kmsPublicAddress, kmsTokenSource, type Fetch, type KmsAccess } from "../launch/signer/gcp-kms.server.ts";
 import type { KeySigner } from "../launch/signer/signer.server.ts";
 import { resolveJupiterSwapEndpoint } from "../solana/quotes.ts";
-import { planOfEntry, readEntry, registerMandate, TRADES_KEPT, type BookEntry, type BookStatus, type OpenGate, type RegisterResult } from "./book.server.ts";
+import { fundOf, networkOf as networkRawOf, planOfEntry, readEntry, registerMandate, TRADES_KEPT, type BookEntry, type BookStatus, type OpenGate, type RegisterResult } from "./book.server.ts";
 import { isFrozen } from "./freeze.server.ts";
 import { missionOf, reconcile, tradeState, type Books, type Mission, type TradeState } from "./mission.ts";
 import { earlyRefusal, launchFactsFrom, planText, STEADY, type LaunchFacts, type StrategyPlan } from "./plans.ts";
@@ -39,7 +39,6 @@ import { earnedWithSales } from "./sale.ts";
 import { boughtOf, readSales, runSalePass, saleVenueOf, salesView, walletHolding, type SalesView } from "./sale.server.ts";
 import { dayOf, DAY_MS, type AgentDay } from "./report.ts";
 import { netOf, type AgentNet } from "./net.ts";
-import { BUDGET_PRESETS } from "./presets.ts";
 import { resultOf, steadyRhythm, type AgentResult, type PauseReason, type StrategyId } from "./strategy.ts";
 import { agentJournal, markUnread, receivedIn, runAgentPass, type PassLine, type Venue } from "./tick.server.ts";
 import { TOKEN_2022_PROGRAM_ID, readCoin } from "./token-2022.ts";
@@ -245,8 +244,8 @@ export type ViewSpans = Readonly<{ now: number; since?: number | null }>;
 /** Ryntra's fee on selling the coin back, the table's rate; null — not read (the highest rate is counted). */
 export type ViewCosts = Readonly<{ exitBps: number | null }>;
 
-/** The SOL she put in for the agent's network fees with this mandate's budget (`./presets.ts`). */
-export const networkOf = (entry: Pick<BookEntry, "preset">): string => (BUDGET_PRESETS[entry.preset]?.agentFee ?? 0n).toString();
+/** The SOL she put in for the agent's network fees with this mandate's budget (`./book.server.ts`). */
+export const networkOf = (entry: Pick<BookEntry, "preset" | "networkRaw">): string => networkRawOf(entry).toString();
 
 /** What the chain and her switch say now — the vault's budget left, the policy, her «Freeze»; null fields — not read. */
 export type ViewNow = Readonly<{ frozen: boolean | null; leftRaw: bigint | null; live: boolean | null }>;
@@ -258,7 +257,7 @@ export function missionView(entry: BookEntry, chain: ViewNow, now: number): Read
     mission: missionOf({ status: entry.status, pausedBy: entry.pausedBy ?? null, frozen: chain.frozen === true, live: chain.live, trades: entry.trades, perTrade: BigInt(entry.record.perTrade), perDay: BigInt(entry.record.perDay), expiresAt: BigInt(entry.record.expiresAt), pace: planOfEntry(entry).pace ?? null, budgetLeft: chain.leftRaw, now }),
     /* A switch not read is shown as it last was — off; the agent itself never buys on a switch it could not read. */
     frozen: chain.frozen === true,
-    books: reconcile({ budgetRaw: BUDGET_PRESETS[entry.preset]?.budget ?? 0n, leftRaw: chain.leftRaw, trades: entry.trades, full: entry.trades.length >= TRADES_KEPT, closed }),
+    books: reconcile({ budgetRaw: fundOf(entry), leftRaw: chain.leftRaw, trades: entry.trades, full: entry.trades.length >= TRADES_KEPT, closed }),
   };
 }
 

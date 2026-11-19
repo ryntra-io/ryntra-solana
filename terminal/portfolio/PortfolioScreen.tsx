@@ -1,6 +1,8 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, type ReactNode } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useCallback, useEffect, useId, useMemo, useRef, useState, type RefObject } from 'react';
 import { digits, useWords } from '@/city/lib/i18n/dict';
 import { useLang } from '@/city/lib/i18n/lang';
 import { flowLive } from '@/city/lib/money/flag';
@@ -9,16 +11,18 @@ import { useMoneyStore } from '@/city/lib/money/store';
 import { useTrade, type CoinRef } from '@/city/lib/trade/store';
 import { useWallet } from '@/city/lib/trade/wallet';
 import { ticketFree } from '@/terminal/coin/ticket-rules';
+import { forwardOf, moneyHref } from '@/terminal/money/money-view';
 import { sumText } from '@/terminal/earn/rows';
+import { partOf, useAddressTail } from '@/terminal/shell/address';
 import { openPanel } from '@/terminal/shell/frame';
-import { Split } from '@/terminal/shell/Split';
 import { useAskHere } from '@/terminal/shell/useAskHere';
 import { NARROW, useNarrow } from '@/terminal/shell/useNarrow';
 import { connectWallet } from '@/terminal/shell/Wallet';
 import { SHELF_WORDS } from '@/terminal/shell/words';
 import { Recent } from '@/terminal/swap/Recent';
-import { turnMoney as showMoney, useSwapScreen } from '@/terminal/swap/state';
-import { Action, Chip, Icon, Panel, Quiet, Title } from '@/terminal/ui';
+import { turnMoney as showMoney } from '@/terminal/swap/state';
+import { ExplainBox, ExplainButton } from '@/terminal/coin/parts';
+import { Action, ActionBody, Chip, Icon, Kick, Page, PageHead, Panel, Quiet, QuietLink } from '@/terminal/ui';
 import { ActPanel, ActSheet } from './Acts';
 import { addressOf, collectable, exitLines, exitable, mintOf, primaryOf, shortAddress, type ActionId } from './all-view';
 import { ALL } from './all-words';
@@ -50,9 +54,8 @@ function closable(act: Act | null): boolean {
   return mayClose({ trade: act.kind === 'trade', phase: card.phase, held: card.held, moneyBusy: useMoney.getState().busy });
 }
 
-/** What a panel leaves behind as it goes: a transfer hands the Swap screen its bridge back, a clean and an exit forget their result. */
+/** What a panel leaves behind as it goes: a clean and an exit forget their result. */
 function settle(act: Act | null): void {
-  if (act?.kind === 'send') showMoney('bridge');
   if (act?.kind === 'clean') settleClean();
   if (act?.kind === 'exit') settleExit();
 }
@@ -158,14 +161,6 @@ export function PortfolioScreen() {
     },
     [],
   );
-  // A transfer's panel closed by its own control turns the Swap screen's money panel back to the bridge: it goes here too.
-  useEffect(
-    () =>
-      useSwapScreen.subscribe((now, before) => {
-        if (before.money === 'send' && now.money !== 'send' && usePortfolioScreen.getState().act?.kind === 'send') setAct(null);
-      }),
-    [],
-  );
   // What ends on this screen — a trade, a transfer, a bridge, a clean, an exit — shows in the groups and in «Recent» at once.
   const landed = data.landed;
   useEffect(() => {
@@ -200,20 +195,21 @@ export function PortfolioScreen() {
     if (now && !closable(now)) return;
     if (next.kind === 'trade') pickTrade(next.coin, next.side);
     else if (next.kind === 'topUp') showMoney('bridge', 'in');
-    else if (next.kind === 'send') showMoney('send');
-    else if (now?.kind === 'send') showMoney('bridge');
     if (now?.kind === 'clean' && next.kind !== 'clean') settleClean();
     setAct(next);
     // A desk shows the panel beside the groups: it is brought into view.
     if (!window.matchMedia(NARROW).matches) requestAnimationFrame(() => document.getElementById(ACT_ID)?.scrollIntoView({ block: 'nearest', behavior: 'smooth' }));
   }, []);
-  const topUp = useCallback(() => open(deposit ? { kind: 'topUp' } : { kind: 'receive' }), [open, deposit]);
+  const router = useRouter();
+  // With no deposit from another network, «Top up» is the wallet's own address — the «Receive» of «Money».
+  const topUp = useCallback(() => (deposit ? open({ kind: 'topUp' }) : router.push(moneyHref('receive', sends))), [open, deposit, router, sends]);
   const trade = useCallback((coin: CoinAsk, side: 'buy' | 'sell') => open({ kind: 'trade', coin: { id: coin.mint, symbol: coin.symbol, name: coin.name, icon: coin.icon }, side }), [open]);
   const connect = useCallback(() => {
     // A phone's wallet lives in the frame's own sheet.
     if (window.matchMedia(NARROW).matches) openPanel('sheet');
     connectWallet();
   }, []);
+  useMoneyForward(act, sends);
   const groups = data.groups;
   /** The exit's panel: for everything, or — from a row — with only that row switched on. */
   const exit = useCallback(
@@ -259,54 +255,75 @@ export function PortfolioScreen() {
   const price = { usd: traded?.price ?? null, dayPct: act?.kind === 'trade' ? (data.coin(act.coin.id)?.dayPct ?? null) : null };
   const panel = act ? <ActPanel act={act} data={data} onClose={closeAct} onTopUp={topUp} price={price} /> : null;
   const held = data.read === 'ready' && data.sum !== null && !data.sum.empty;
-  const money = own && held ? <MoneyActions amber={act === null && primary === 'topUp'} deposit={deposit} sends={sends} busy={busy} onOpen={open} onTopUp={topUp} /> : null;
-  const side = panel && !narrow ? (
-    <div id={ACT_ID}>{panel}</div>
-  ) : own ? (
-    <div className={a.side}>
-      <PrivatePanel />
-      <div ref={recent}>
-        <Recent title={m.recent} edge />
-      </div>
-    </div>
+  const money = own && held ? <MoneyActions amber={act === null && primary === 'topUp'} sends={sends} busy={busy} onTopUp={topUp} /> : null;
+  // The side column holds only the panel the person opened (QA 19.11: the private balance and «Recent» kept a column of
+  // their own, and the tables beside them were cramped). The lists take the page's whole width; under them the history,
+  // and the private balance at the foot — on a phone too. Both come with the wallet's read, never before it: the menu's
+  // «History» (`#history`) finds its place once the page above it stands (`usePlaceOnArrival`).
+  const side = panel && !narrow ? <div id={ACT_ID}>{panel}</div> : null;
+  const foot = (
+    <>
+      <History own={own} address={address} place={recent} />
+      {own ? <PrivatePanel /> : null}
+    </>
+  );
+
+  // One page for every section: the name and the wallet shown at the head, another wallet's address and the
+  // money's own actions on the right; then the total, the three actions and the groups in the action column, and in the
+  // side column the panel the person opened — or the private balance and the recent activity.
+  const whose = watch ? (
+    <span className={a.whose}>
+      <span className={a.whoseAddress} translate="no" title={watch}>
+        {shortAddress(watch)}
+      </span>
+      <Chip>{w.viewOnly}</Chip>
+      <Quiet size="s" aria-label={w.closeWatch} onClick={() => setWatch(null)}>
+        <Icon name="close" size="s" />
+      </Quiet>
+    </span>
   ) : null;
+  const deskMark =
+    address || money ? (
+      <>
+        {address ? <AddressField small onShow={setWatch} /> : null}
+        {money}
+      </>
+    ) : null;
 
   return (
-    <>
-      <div className={a.head} ref={top}>
-        <Title>{names.portfolio}</Title>
-        {watch ? (
-          <span className={a.whose}>
-            <span className={a.whoseAddress} translate="no" title={watch}>
-              {shortAddress(watch)}
-            </span>
-            <Chip>{w.viewOnly}</Chip>
-            <Quiet size="s" aria-label={w.closeWatch} onClick={() => setWatch(null)}>
-              <Icon name="close" size="s" />
-            </Quiet>
-          </span>
-        ) : null}
-        <span className={a.grow} />
-        {address ? <AddressField small onShow={setWatch} /> : null}
-        {money ? <div className={a.deskOnly}>{money}</div> : null}
+    <Page>
+      <div ref={top}>
+        <PageHead title={names.portfolio} tabs={whose ?? (own && owner ? <WalletChip address={owner} /> : null)} mark={deskMark} />
       </div>
+      {/* A phone: the page's head shows no mark — the other wallet's address stands right under it. */}
+      {address ? (
+        <div className={a.phoneOnly}>
+          <AddressField small onShow={setWatch} />
+        </div>
+      ) : null}
 
       {!address ? (
-        <Welcome onShow={setWatch} onConnect={connect} />
+        <ActionBody>
+          <Welcome onShow={setWatch} onConnect={connect} />
+        </ActionBody>
       ) : data.read === 'reading' ? (
-        <Bones label={w.reading} busy />
+        <ActionBody>
+          <Bones label={w.reading} busy />
+        </ActionBody>
       ) : data.read === 'failed' ? (
-        <Panel pad="l" edge label={w.unread}>
-          <div className={a.blank}>
-            <p className={a.blankLine}>{w.unread}</p>
-            <Quiet disabled={data.rereading} onClick={data.reread}>
-              {w.again}
-            </Quiet>
-          </div>
-        </Panel>
+        <ActionBody>
+          <Panel pad="l" edge label={w.unread}>
+            <div className={a.blank}>
+              <p className={a.blankLine}>{w.unread}</p>
+              <Quiet disabled={data.rereading} onClick={data.reread}>
+                {w.again}
+              </Quiet>
+            </div>
+          </Panel>
+        </ActionBody>
       ) : !held ? (
-        <Beside side={panel && !narrow ? <div id={ACT_ID}>{panel}</div> : null} label={m.actions}>
-          <Panel tone={act === null ? 'hi' : 'base'} pad="l" gap={16} edge label={w.total} className={a.emptyPanel}>
+        <ActionBody side={side} sideLabel={panel ? m.actions : m.recent}>
+          <Panel tone={act === null ? 'hi' : 'base'} pad="l" gap={16} edge label={w.total}>
             <p className={a.blankLine}>{own ? m.emptyLine : w.emptyLine}</p>
             {own ? (
               <div className={a.money}>
@@ -321,12 +338,10 @@ export function PortfolioScreen() {
                     {m.topUp}
                   </Quiet>
                 )}
-                {deposit ? (
-                  <Quiet onClick={() => open({ kind: 'receive' })}>
-                    <Glyph name="receive" />
-                    {m.receive}
-                  </Quiet>
-                ) : null}
+                <QuietLink href={moneyHref('receive', sends)}>
+                  <Glyph name="receive" />
+                  {m.receive}
+                </QuietLink>
               </div>
             ) : owner === null ? (
               <Action size="m" full={false} onClick={connect}>
@@ -334,27 +349,30 @@ export function PortfolioScreen() {
               </Action>
             ) : null}
           </Panel>
-        </Beside>
+          {foot}
+        </ActionBody>
       ) : (
         <>
-          <TotalPanel data={data} />
-          <ActionBar
-            offers={offers}
-            primary={barPrimary}
-            own={own}
-            busy={busy}
-            tail={
-              owner === null ? (
-                <Action size="m" full={false} onClick={connect}>
-                  {w.connect}
-                </Action>
-              ) : undefined
-            }
-          />
-          {money ? <div className={a.phoneOnly}>{money}</div> : null}
-          <Beside side={side} label={panel ? m.actions : m.recent}>
+          <ActionBody side={side} sideLabel={panel ? m.actions : m.recent}>
+            <TotalPanel data={data} />
+            {/* A phone: the wallet's own money right under its total, as a wallet app keeps it. */}
+            {money ? <div className={a.phoneOnly}>{<MoneyActions amber={act === null && primary === 'topUp'} sends={sends} busy={busy} onTopUp={topUp} phone />}</div> : null}
+            <ActionBar
+              offers={offers}
+              primary={barPrimary}
+              own={own}
+              busy={busy}
+              tail={
+                owner === null ? (
+                  <Action size="m" full={false} onClick={connect}>
+                    {w.connect}
+                  </Action>
+                ) : undefined
+              }
+            />
             <Groups data={data} own={own} narrow={narrow} door={door} risk={risk} cleanRead={cleanRead} agents={agents} onTrade={trade} onCollect={(id) => exit('collect', id)} onExit={(id) => exit('exit', id)} onClean={() => open({ kind: 'clean' })} />
-          </Beside>
+            {foot}
+          </ActionBody>
           {own ? <ThumbBar offers={offers} primary={barPrimary} busy={busy} /> : owner === null ? <ThumbBar offers={offers} primary={null} busy={busy} connect={connect} /> : null}
         </>
       )}
@@ -364,27 +382,60 @@ export function PortfolioScreen() {
           {panel}
         </ActSheet>
       ) : null}
-    </>
-  );
-}
-
-/** The screen's column with the side column beside it — the frame's own split — or alone, where there is nothing to stand beside it. */
-function Beside({ side, label, children }: { side: ReactNode; label: string; children: ReactNode }) {
-  if (!side) return <>{children}</>;
-  return (
-    <Split id="portfolio" label={label} phone="stack" side={side}>
-      {children}
-    </Split>
+    </Page>
   );
 }
 
 /**
- * «Top up», «Send», «Receive» — the wallet's own money. Quiet beside the three actions; «Top up» is the amber one only
- * when nothing else on the screen is. Each opens only where its way is open; with no deposit from another network,
- * «Top up» is the wallet's own address.
+ * «Send» and «Receive» are «Money»'s now: an address that still asks the Portfolio for their panel — the old
+ * menu's `?act=send`, the agent's «send …», the Swap's old tab — leads on to the same tab of «Money» in one step, the
+ * address replaced, so «Back» never returns to a screen that only passed it on. What a sentence wrote into the
+ * transfer stays written: it is the money logic's own state.
  */
-function MoneyActions({ amber, deposit, sends, busy, onOpen, onTopUp }: { amber: boolean; deposit: boolean; sends: boolean; busy: boolean; onOpen: (act: Act) => void; onTopUp: () => void }) {
+function useMoneyForward(act: Act | null, sends: boolean): void {
+  const router = useRouter();
+  const asked = partOf(useAddressTail(), 'act');
+  const kind = act?.kind ?? null;
+  useEffect(() => {
+    const to = forwardOf(asked, sends) ?? forwardOf(kind, sends);
+    if (!to) return;
+    if (kind === 'send' || kind === 'receive') setAct(null);
+    router.replace(to);
+  }, [asked, kind, sends, router]);
+}
+
+/**
+ * «Top up», «Send», «Receive» — the wallet's own money. Quiet beside the three actions; «Top up» is the amber one only
+ * when nothing else on the screen is. «Send» and «Receive» lead to «Money»; «Send» only where money may move.
+ */
+function MoneyActions({ amber, sends, busy, onTopUp, phone = false }: { amber: boolean; sends: boolean; busy: boolean; onTopUp: () => void; phone?: boolean }) {
   const w = useWords(PORTFOLIO);
+  if (phone) {
+    return (
+      <div className={a.moneyRow} role="group" aria-label={w.actions}>
+        <button type="button" className={a.moneyKey} data-amber={amber ? '' : undefined} disabled={busy} onClick={onTopUp}>
+          <span className={a.moneyMark}>
+            <Glyph name="plus" />
+          </span>
+          {w.topUp}
+        </button>
+        {sends ? (
+          <Link href={moneyHref('send', sends)} className={a.moneyKey}>
+            <span className={a.moneyMark}>
+              <Glyph name="send" />
+            </span>
+            {w.send}
+          </Link>
+        ) : null}
+        <Link href={moneyHref('receive', sends)} className={a.moneyKey}>
+          <span className={a.moneyMark}>
+            <Glyph name="receive" />
+          </span>
+          {w.receive}
+        </Link>
+      </div>
+    );
+  }
   const label = (
     <>
       <Glyph name="plus" />
@@ -403,17 +454,61 @@ function MoneyActions({ amber, deposit, sends, busy, onOpen, onTopUp }: { amber:
         </Quiet>
       )}
       {sends ? (
-        <Quiet disabled={busy} onClick={() => onOpen({ kind: 'send' })}>
+        <QuietLink href={moneyHref('send', sends)}>
           <Glyph name="send" />
           {w.send}
-        </Quiet>
+        </QuietLink>
       ) : null}
-      {deposit ? (
-        <Quiet disabled={busy} onClick={() => onOpen({ kind: 'receive' })}>
-          <Glyph name="receive" />
-          {w.receive}
-        </Quiet>
-      ) : null}
+      <QuietLink href={moneyHref('receive', sends)}>
+        <Glyph name="receive" />
+        {w.receive}
+      </QuietLink>
+    </div>
+  );
+}
+
+/**
+ * The connected wallet at the page's head on a phone, where the frame's own head has no room for it: its address, and a
+ * tap opens the wallet's sheet.
+ */
+function WalletChip({ address }: { address: string }) {
+  const w = useWords(PORTFOLIO);
+  return (
+    <button type="button" className={a.walletChip} aria-label={w.wallet} onClick={() => openPanel('sheet')}>
+      <i className={a.walletDot} aria-hidden="true" />
+      <span translate="no">{shortAddress(address)}</span>
+    </button>
+  );
+}
+
+/**
+ * «History» — where the menu's «History» leads (`#history`): the wallet's swaps, transfers and bridges made in Ryntra,
+ * newest first, the engine's own ledger as «Recent» reads it. Another wallet's history from the chain is not read yet:
+ * it says so in one line, and how it works waits behind «i».
+ */
+function History({ own, address, place }: { own: boolean; address: string | null; place: RefObject<HTMLDivElement | null> }) {
+  const w = useWords(PORTFOLIO);
+  const [how, setHow] = useState(false);
+  const howId = useId();
+  return (
+    <div ref={place} id="history" className={a.history}>
+      {own ? (
+        <Recent title={w.history} edge />
+      ) : (
+        <Panel pad="none" edge label={w.history}>
+          <div className={a.historyHead}>
+            <Kick>{w.history}</Kick>
+            <span className={a.grow} />
+            <ExplainButton label={w.historyInfo} open={how} controls={howId} onToggle={() => setHow((was) => !was)} />
+          </div>
+          {how ? (
+            <div className={a.groupNote}>
+              <ExplainBox id={howId}>{w.historyText}</ExplainBox>
+            </div>
+          ) : null}
+          <p className={a.historyLine}>{address ? w.historyOther : w.historyConnect}</p>
+        </Panel>
+      )}
     </div>
   );
 }

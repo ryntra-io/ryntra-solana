@@ -309,8 +309,6 @@ export async function buildLadder(
     network?: LadderNetwork;
     pools: readonly string[] | null;
     quotes: readonly string[];
-    /** The most the ladder may place, dollars; null — no cap. */
-    maxUsd?: number | null;
   }>,
   deps: Readonly<{ connection?: Connection; now?: number; findPool?: PoolFinder }> = {},
 ): Promise<LadderBuilt | LadderFailure> {
@@ -335,9 +333,8 @@ export async function buildLadder(
     if (!plan || issues.length) return { ok: false, code: "PLAN_REFUSED", reason: issues.join(",") || "steps" };
     plans.push(plan);
   }
+  /* No sum of Ryntra's on a ladder: it places what the person asked and holds. */
   const amountUsd = plans.reduce((sum, plan) => sum + legUsd(plan.side, plan.totalRaw, pool.activePrice, pool.facts), 0);
-  const maxUsd = args.maxUsd ?? null;
-  if (maxUsd !== null && !(amountUsd <= maxUsd + 1e-9)) return { ok: false, code: "OVER_LIMIT", reason: `A ladder places up to $${maxUsd} for now.` };
   const chunks = plans.flatMap((plan) => chunkRungs(plan.rungs).map((rungs) => ({ plan, rungs })));
   if (chunks.length > keys.length) return { ok: false, code: "NOT_ENOUGH_ORDER_KEYS", reason: `The ladder needs ${chunks.length} order accounts.` };
 

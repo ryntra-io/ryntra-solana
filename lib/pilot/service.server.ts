@@ -101,7 +101,7 @@ export function joinDeps(gate: Extract<PilotGate, { open: true }>, store: GuardS
     cluster: gate.mandate.network,
     mandate: async (policy) => {
       const entry = await readEntry(store, policy, gate.mandate.network);
-      return entry ? { owner: entry.record.owner, preset: entry.preset, createdAt: entry.createdAt, status: entry.status } : null;
+      return entry ? { owner: entry.record.owner, perDay: entry.record.perDay, perTrade: entry.record.perTrade, createdAt: entry.createdAt, status: entry.status } : null;
     },
     landed: async (signature, owner) => {
       const read = await connection.getTransaction(signature, { commitment: "confirmed", maxSupportedTransactionVersion: 0 });

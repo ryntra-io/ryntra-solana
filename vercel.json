@@ -28,6 +28,7 @@
     { "path": "/api/cron/agent-report", "schedule": "7 * * * *" },
     { "path": "/api/cron/partner-payouts", "schedule": "20 */6 * * *" },
     { "path": "/api/cron/demand-week", "schedule": "43 5 * * 1" },
-    { "path": "/api/cron/agent-care", "schedule": "*/10 * * * *" }
+    { "path": "/api/cron/agent-care", "schedule": "*/10 * * * *" },
+    { "path": "/api/cron/agent-ladders", "schedule": "*/10 * * * *" }
   ]
 }

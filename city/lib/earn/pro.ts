@@ -1,4 +1,6 @@
 import type { EarnProPier, EarnProPosition, EarnProReviewResponse } from '../../../lib/api/v1/contract.ts';
+import { GRID_MAX_RANGES, gridFault, gridRanges } from '../../../lib/core/liquidity-grid.ts';
+import { earnProCoins } from '../../../lib/earn-pro/coins.ts';
 import type { Holdings } from '../trade/wallet.ts';
 import { PIER_GOALS, PIER_STYLES, STYLE_HALF, solShort, unitsShort, zapFit, zapMax, type PierGoal, type PierStyle } from './pier.ts';
 import { lamportsFromText } from './saver.ts';
@@ -27,9 +29,12 @@ export type ProReview = EarnProReviewResponse;
 export type ProSummary = EarnProReviewResponse['summary'];
 export type ProAction = EarnProReviewResponse['action'];
 
-/** The least and the most one opening takes — the engine's own (`lib/earn-pro/actions.server.ts`), said before the Review. */
+/**
+ * The least one opening takes — the engine's own (`lib/earn-pro/actions.server.ts`), said before the Review. The most is
+ * gone: `PRO_MAX_LAMPORTS` stays only for the frozen city window, which never hears it now.
+ */
 export const PRO_MIN_LAMPORTS = 50_000_000n;
-export const PRO_MAX_LAMPORTS = 10_000_000_000n;
+export const PRO_MAX_LAMPORTS = 10n ** 30n;
 /** SOL kept aside for the position's rent (it comes back when the position is closed) and the network. */
 export const PRO_RESERVE_LAMPORTS = 60_000_000n;
 /** The stops a care may be given: how far under the price now the agent takes everything out; 0 — none. */
@@ -37,6 +42,27 @@ export const PRO_STOPS = [0, 10, 25] as const;
 export type ProStop = (typeof PRO_STOPS)[number];
 
 export { PIER_GOALS as PRO_GOALS, PIER_STYLES as PRO_STYLES };
+
+/**
+ * The terminal's switch for a position in any pool of SOL (MET/SOL and the like), not only against the coins
+ * Earn checked: `NEXT_PUBLIC_RYNTRA_EARN_PRO_ANY_POOL=open` (exactly). The server's own switch
+ * (`RYNTRA_EARN_PRO_ANY_POOL`) decides what it serves; this one, whether a screen offers it.
+ */
+export const EARN_PRO_ANY_POOL_OPEN = process.env.NEXT_PUBLIC_RYNTRA_EARN_PRO_ANY_POOL === 'open';
+
+/** Whether a pier's other coin is one Earn checked — USDC, a staked SOL: there an agent may look after a position. */
+export function proKnown(pier: ProPier): boolean {
+  const other = proOther(pier).mint;
+  return earnProCoins('mainnet').some((coin) => coin.mint === other && coin.kind !== 'sol');
+}
+
+/**
+ * Whether a screen offers a new position in a pier: a pier of a coin Earn checked always; any other where the terminal's
+ * switch is open. Devnet's stand is offered as served. A position already held is shown wherever it is, whatever this says.
+ */
+export function proOffered(pier: ProPier, network: 'devnet' | 'mainnet', anyOpen: boolean = EARN_PRO_ANY_POOL_OPEN): boolean {
+  return network === 'devnet' || anyOpen || proKnown(pier);
+}
 
 /** The pier's other coin — the one that is not SOL. */
 export const proOther = (pier: ProPier) => (pier.solIsX ? pier.y : pier.x);
@@ -90,17 +116,36 @@ export type ProChoice = Readonly<{
   key: string | null;
 }>;
 
-/** What the card stands on for a typed amount of SOL: whether it is one, within the engine's bounds, and held with the SOL kept aside. */
-export function proChoice(pier: ProPier, style: PierStyle, goal: PierGoal, typed: string, holdings: Holdings | null, owner: string | null): ProChoice {
+/** How many ranges a grid of one's own takes at a width — the engine's own count (`lib/core/liquidity-grid.ts`). */
+export const proShapeRanges = (shape: readonly number[], style: PierStyle): number => gridRanges(shape, STYLE_HALF[style]);
+
+/**
+ * Why a grid of one's own is not one the engine builds — `format`: not 32 columns of 0 to 8 cells; `sides`:
+ * not painted on both sides of the price; `detail`: more ranges at this width than a position of one's own takes —
+ * or null where it is. The engine refuses the same grids, by the same rule.
+ */
+export function proShapeFault(shape: readonly number[], style: PierStyle): 'format' | 'sides' | 'detail' | null {
+  const fault = gridFault(shape);
+  if (fault) return fault;
+  return proShapeRanges(shape, style) > GRID_MAX_RANGES ? 'detail' : null;
+}
+
+export const proShapeBuilds = (shape: readonly number[], style: PierStyle): boolean => proShapeFault(shape, style) === null;
+
+/**
+ * What the card stands on for a typed amount of SOL: whether it is one, within the engine's bounds, and held with the
+ * SOL kept aside. `shape` — the person's own grid in place of the goal: it names the Review's key, and a grid
+ * the engine does not build asks for no Review (the ticket says why).
+ */
+export function proChoice(pier: ProPier, style: PierStyle, goal: PierGoal, typed: string, holdings: Holdings | null, owner: string | null, shape: readonly number[] | null = null): ProChoice {
   const lamports = lamportsFromText(typed);
   const held = zapMax(holdings, PRO_RESERVE_LAMPORTS);
-  const max = held === null ? null : held < PRO_MAX_LAMPORTS ? held : PRO_MAX_LAMPORTS;
+  const max = held;
   let problem: ProProblem | null = null;
   if (!lamports) problem = 'format';
   else if (lamports < PRO_MIN_LAMPORTS) problem = 'min';
-  else if (lamports > PRO_MAX_LAMPORTS) problem = 'max';
   else if (!zapFit(lamports, holdings, PRO_RESERVE_LAMPORTS)) problem = 'sol';
-  const key = owner && lamports && !problem ? `pro:open:${owner}:${pier.address}:${style}:${goal}:${lamports}` : null;
+  const key = owner && lamports && !problem && !(shape && !proShapeBuilds(shape, style)) ? `pro:open:${owner}:${pier.address}:${style}:${shape ? `custom-${shape.join('')}` : goal}:${lamports}` : null;
   return { lamports, problem, max, key };
 }
 

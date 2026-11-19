@@ -1,0 +1,418 @@
+/* The grid: a terminal with a chart — the page's kind «desk». The coin's chart with the grid over it
+   takes the working width and most of the window's height, the form stands on its right the chart's whole height, the
+   person's grids under both the whole width (as a grid bot stands at Binance, OKX, Pionex and KuCoin). Colours, faces
+   and sizes are the terminal's variables; corners are the kit's — nothing here names a colour or a corner of its own. */
+
+/* ── the desk ──────────────────────────────────────────────────────────── */
+
+.desk {
+  /* The chart's row: most of the window's height, and never lower than the form beside it — the row grows with it. */
+  --grid-chart: max(600px, 64dvh);
+
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 360px;
+  grid-template-rows: minmax(var(--grid-chart), auto) auto;
+  grid-template-areas:
+    'chart form'
+    'mine mine';
+  gap: 20px;
+  min-width: 0;
+}
+
+.deskChart,
+.deskForm {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+
+.deskChart {
+  grid-area: chart;
+}
+
+/* The form the chart's whole height: its panel stretches, its fields stay at the top. */
+.deskForm {
+  grid-area: form;
+}
+
+.deskChart > *,
+.deskForm > * {
+  flex: 1 1 auto;
+}
+
+.deskMine {
+  grid-area: mine;
+  min-width: 0;
+}
+
+/* A wide desk gives the form its full measure; the chart keeps everything else. */
+@media (min-width: 1680px) {
+  .desk {
+    grid-template-columns: minmax(0, 1fr) 400px;
+  }
+}
+
+/* A narrow desk (a tablet, a small window): the chart the whole width on top, the form and the grids side by side under
+   it — the form keeps a form's measure, never the chart's width. */
+@media (min-width: 768px) and (max-width: 1099px) {
+  .desk {
+    --grid-chart: max(480px, 56dvh);
+
+    grid-template-columns: 360px minmax(0, 1fr);
+    grid-template-rows: minmax(var(--grid-chart), auto) auto;
+    grid-template-areas:
+      'chart chart'
+      'form mine';
+  }
+
+  .deskMine {
+    align-self: start;
+  }
+}
+
+/* ── the chart ─────────────────────────────────────────────────────────── */
+
+.chartPanel {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* The chart's head: the coin the grid stands on — its logo, ticker, price and day, where its grid rests; a tap opens
+   the coin list. */
+.chartHead {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 48px;
+  padding: 0 16px;
+  text-align: left;
+  color: var(--ice);
+  border-bottom: 1px solid var(--line);
+  transition: background-color 0.15s;
+}
+
+.chartHead:hover {
+  background: var(--chosen);
+}
+
+.chartHead > svg {
+  margin-left: auto;
+  color: var(--dim);
+}
+
+.headSymbol {
+  font-family: var(--display);
+  font-size: var(--type-base);
+  font-weight: 800;
+  font-stretch: 125%;
+}
+
+.headPrice {
+  font-family: var(--display);
+  font-size: var(--type-base);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.headUp,
+.headDown,
+.headFlat {
+  font-size: var(--type-small);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.headUp {
+  color: var(--mint);
+}
+
+.headDown {
+  color: var(--flare);
+}
+
+.headFlat {
+  color: var(--soft);
+}
+
+.chart {
+  position: relative;
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+
+.chartWait {
+  flex: 1 1 auto;
+  background: var(--panel);
+}
+
+/* The band's light between its two edges, placed by the chart's own lines (`useBand` in Grid.tsx). */
+.bandShade {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--flare) 7%, transparent), color-mix(in srgb, var(--violet) 5%, transparent) 50%, color-mix(in srgb, var(--mint) 7%, transparent));
+  border-block: 1px solid color-mix(in srgb, var(--lilac) 30%, transparent);
+}
+
+.bandShade[hidden] {
+  display: none;
+}
+
+/* An edge's grip: a short bar on the band's edge, a finger's height of place around it; placed by `useBand`. */
+.grip {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 2;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 72px;
+  height: 16px;
+  margin-top: -8px;
+  cursor: ns-resize;
+  touch-action: none;
+  outline: none;
+}
+
+.grip[data-placed] {
+  display: flex;
+}
+
+.gripLine {
+  display: block;
+  width: 40px;
+  height: 4px;
+  background: var(--lilac);
+  box-shadow: 0 0 0 1px var(--ink-deep);
+  transition: width 0.15s, background-color 0.15s;
+}
+
+.grip:hover .gripLine,
+.grip:focus-visible .gripLine,
+.grip[data-moving] .gripLine {
+  width: 56px;
+  background: var(--ice);
+}
+
+/* The coin's venue beside it in the list: DLMM Pro lit, DLMM quiet, no pool dim. */
+.venue {
+  flex: none;
+  padding: 2px 6px;
+  font-size: var(--type-micro);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--soft);
+  border: 1px solid var(--glass-edge);
+  white-space: nowrap;
+}
+
+.venue[data-venue='pro'] {
+  color: var(--lilac);
+  border-color: var(--edge);
+  background: color-mix(in srgb, var(--violet) 14%, transparent);
+}
+
+.venue[data-venue='none'] {
+  color: var(--dim);
+  border-color: var(--line);
+}
+
+/* «No pool» and its quiet «Why» on one line; the reason opens in place under it. */
+.noPool {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+}
+
+.why {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 4px;
+  min-height: 28px;
+  font-size: var(--type-small);
+  font-weight: 600;
+  color: var(--soft);
+  transition: color 0.15s;
+}
+
+.why:hover {
+  color: var(--ice);
+}
+
+.why[aria-expanded='true'] svg {
+  transform: rotate(180deg);
+}
+
+.whyText {
+  margin: 0;
+  font-size: var(--type-small);
+  font-weight: 500;
+  line-height: 1.45;
+  color: var(--soft);
+}
+
+/* ── the form ──────────────────────────────────────────────────────────── */
+
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.levelsHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.levelsCount {
+  font-family: var(--num);
+  font-size: var(--type-title);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--ice);
+}
+
+/* The levels in a line: a mark for each, buys mint, sells flare, the price white. */
+.strip {
+  display: block;
+  width: 100%;
+  height: 20px;
+}
+
+.buy {
+  stroke: var(--mint);
+  stroke-width: 2;
+}
+
+.sell {
+  stroke: var(--flare);
+  stroke-width: 2;
+}
+
+.skip {
+  stroke: var(--dim);
+  stroke-width: 1;
+  stroke-dasharray: 2 2;
+}
+
+.now {
+  stroke: var(--ice);
+  stroke-width: 1.5;
+}
+
+.fill {
+  fill: var(--mint);
+}
+
+.threeUp {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+/* One figure of the form in small: a tile's frame, a smaller number, its name on one line at a form's narrowest. */
+.stat {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  padding: 10px 12px;
+  background: color-mix(in srgb, var(--ink-deep) 55%, transparent);
+  border: 1px solid var(--line);
+}
+
+.statLabel {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The line before the signature and its «i» on one row. */
+.costRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+}
+
+/* ── the person's grids ────────────────────────────────────────────────── */
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  border-top: 1px solid var(--line);
+}
+
+/* One grid: a block of the panel with a line between them — never a panel in the panel. */
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px 20px 20px;
+  border-right: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.mini {
+  display: block;
+  width: 100%;
+  height: 72px;
+  background: var(--well);
+}
+
+.cardSteps {
+  display: flex;
+  gap: 8px;
+}
+
+.cardSteps > * {
+  flex: 1 1 0;
+}
+
+/* ── a phone ───────────────────────────────────────────────────────────── */
+
+@media (max-width: 767px) {
+  /* A phone: the chart on top, the form under it as a sheet, the grids under that. */
+  .desk {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .chartWait {
+    min-height: 420px;
+  }
+
+  /* The form is a sheet under the chart: a line and a handle on its top edge. */
+  .sheet {
+    border-top: 2px solid var(--glass-edge);
+  }
+
+  .cards {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .card {
+    padding: 14px 16px 16px;
+    border-right: 0;
+  }
+
+  .threeUp {
+    gap: 8px;
+  }
+}

@@ -33,7 +33,7 @@ export async function POST(request: Request) {
     if (!admitted.ok) return liquidityFailure(403, admitted.code, 'The Harbor takes no new money from this wallet now.', door.rate);
     if (input.request.position) return liquidityFailure(400, 'BAD_REQUEST', 'The city opens new positions only.', door.rate);
     const record = await readPoolRecord('dlmm', input.request.pool, { meteora: { timeoutMs: 4_000 } });
-    const check = checkPierAdd(input.request, record.pool, admitted.ceilingUsd);
+    const check = checkPierAdd(input.request, record.pool);
     if (!check.ok) return liquidityFailure(403, check.code, 'This add is outside what the Harbor takes.', door.rate);
     mints = { pool: input.request.pool, x: record.pool!.x.mint, y: record.pool!.y.mint };
   } else if (!admitPierExit(owner, process.env)) {

@@ -1386,6 +1386,13 @@
  * instance; public, the edge keeps an answer for 30 seconds. No new error code. A client that does not show it needs no
  * release.
  *
+ * **1.101.0 — the Market as the navigator.** Additive: every coin of `/api/v1/market/depth` carries its
+ * logo (verified or not), `stable`, `launchpad`, `venue` and `copyOf`; «trending» is the window's real trading without
+ * stocks or currencies.
+ *
+ * **1.102.0 — the Market by kind of asset.** Additive: `?kind=` (all · meme · crypto · stock ·
+ * preipo), `coins[].kind` and the answer's `kind`. No new error code. A client that does not show it needs no release.
+ *
  * **1.98.0 — everything in Solana (the terminal's «Портфель», 2026-11-17; 1.95.0, once held for it, stays unused).** Additive: one route.
  * `GET /api/v1/portfolio?owner=` — what a wallet holds across Solana, outside Ryntra too, in one model: the wallet's
  * coins and liquid staking tokens (Helius DAS where the node is Helius, else the token accounts), native stake accounts
@@ -1580,7 +1587,7 @@ import { EXIT_ACTIONS, EXIT_MODES, EXIT_TARGETS } from "../../portfolio/exit/mod
 import { EXIT_RELAY_STATES, EXIT_SKIP_REASONS, EXIT_STEP_KINDS } from "../../portfolio/exit/steps.ts";
 
 export const API_MAJOR = 1;
-export const API_CONTRACT_VERSION = "1.100.0";
+export const API_CONTRACT_VERSION = "1.103.0";
 export const API_HEADER = "X-Ryntra-API";
 export const API_VERSION_HEADER = "X-Ryntra-API-Version";
 export const NETWORK = "solana:mainnet";
@@ -15952,6 +15959,11 @@ const EarnProWire = z.string().min(80).max(4_096).regex(/^[A-Za-z0-9+/]+=*$/);
 const EarnProSignature = z.string().regex(/^[1-9A-HJ-NP-Za-km-z]{64,88}$/);
 
 export const EARN_PRO_GOALS = ["even", "near", "edges"] as const;
+/** 1.103.0: what an opening is built from — a goal, or `custom`: the person's own painted grid. */
+export const EARN_PRO_OPEN_GOALS = [...EARN_PRO_GOALS, "custom"] as const;
+/** 1.103.0: a painted grid — 32 columns, 16 under the price and 16 over it, each 0 to 8 cells. */
+export const EARN_PRO_SHAPE_COLUMNS = 32;
+export const EARN_PRO_SHAPE_LEVELS = 8;
 export const EARN_PRO_STYLES = ["calm", "balanced", "dense"] as const;
 export const EARN_PRO_STOP_PCTS = [0, 10, 25] as const;
 
@@ -16011,9 +16023,23 @@ export type EarnProPositionsResponse = z.infer<typeof EarnProPositionsResponseSc
 /**
  * 1.92.0: `POST /api/v1/earn/pro/review` — one action of the wallet's. `open` names a goal, a width and SOL in
  * lamports (0.05 to 10 SOL); `care_on` the stop, percent under the price now (0 — none); the rest the position.
+ * 1.103.0: `open` may name the goal `custom` with `columns` — the person's own grid, painted on both sides of the price; any other goal takes no `columns`. Served where the deployment opened it, else `EARN_PRO_CLOSED`.
  */
 export const EarnProReviewRequestSchema = z.discriminatedUnion("action", [
-  z.object({ action: z.literal("open"), owner: Address, pool: Address, goal: z.enum(EARN_PRO_GOALS), style: z.enum(EARN_PRO_STYLES), lamports: EarnProRaw }).strict(),
+  z
+    .object({
+      action: z.literal("open"),
+      owner: Address,
+      pool: Address,
+      goal: z.enum(EARN_PRO_OPEN_GOALS),
+      style: z.enum(EARN_PRO_STYLES),
+      lamports: EarnProRaw,
+      columns: z.array(z.number().int().min(0).max(EARN_PRO_SHAPE_LEVELS)).length(EARN_PRO_SHAPE_COLUMNS).optional(),
+    })
+    .strict()
+    /* `columns` with `custom` and only with it, painted on both sides of the price — as the server reads it. */
+    .refine((open) => (open.goal === "custom") === (open.columns !== undefined), { message: "`columns` goes with the goal `custom`, and only with it.", path: ["columns"] })
+    .refine((open) => !open.columns || (open.columns.slice(0, EARN_PRO_SHAPE_COLUMNS / 2).some((cells) => cells > 0) && open.columns.slice(EARN_PRO_SHAPE_COLUMNS / 2).some((cells) => cells > 0)), { message: "A grid is painted on both sides of the price.", path: ["columns"] }),
   z.object({ action: z.enum(["compound", "collect", "leave", "close", "care_off"]), owner: Address, pool: Address, nftMint: Address }).strict(),
   z.object({ action: z.literal("care_on"), owner: Address, pool: Address, nftMint: Address, stopPct: z.union([z.literal(0), z.literal(10), z.literal(25)]) }).strict(),
 ]);
@@ -16284,7 +16310,7 @@ export const MarketDepthCoinSchema = z
     id: Address,
     symbol: z.string().min(1).max(24),
     name: z.string().min(1).max(64),
-    /** Only a verified coin's logo; a coin nobody vetted is drawn by its letter. */
+    /** 1.101.0: every coin's logo as Jupiter lists it (https), verified or not; before, only a verified coin's. */
     icon: z.string().url().max(400).nullable(),
     price: z.number().positive().nullable(),
     mcap: DepthNumber,
@@ -16293,6 +16319,16 @@ export const MarketDepthCoinSchema = z
     organic: DepthNumber,
     verified: z.boolean(),
     stock: z.boolean(),
+    /** 1.101.0: pegged to a currency (Jupiter's `stable` tag, or a currency's ticker by its peg with a price that stood still). */
+    stable: z.boolean(),
+    /** 1.102.0: what the coin is — a meme, a crypto coin, a listed company's stock, a private company's token before its IPO. */
+    kind: z.enum(["meme", "crypto", "stock", "preipo"]),
+    /** 1.101.0: the launchpad the coin was born on, by the name people know it by; null — none named. */
+    launchpad: z.string().min(1).max(40).nullable(),
+    /** 1.101.0: the launch program among the three the Market names; null — none of them. */
+    venue: z.enum(["pump", "meteora-dbc", "launchlab"]).nullable(),
+    /** 1.101.0: the known name or verified coin an unverified coin borrows; null — none, or verified. */
+    copyOf: z.string().min(1).max(64).nullable(),
     bornAt: Iso.nullable(),
     mint: DepthRight,
     freeze: DepthRight,
@@ -16306,6 +16342,8 @@ export type MarketDepthCoin = z.infer<typeof MarketDepthCoinSchema>;
 export const MarketDepthResponseSchema = z
   .object({
     list: z.enum(["trending", "fresh", "gainers", "losers", "traded", "stocks", "saved"]),
+    /** 1.102.0: the kind the list was read for; «all» is the memes and the crypto together. */
+    kind: z.enum(["all", "meme", "crypto", "stock", "preipo"]),
     window: z.enum(["5m", "1h", "6h", "24h"]),
     coins: z.array(MarketDepthCoinSchema).max(50),
     readAt: Iso,

@@ -2719,6 +2719,7 @@ export type LaunchWindowsResponse = {
 
 export type MarketDepthResponse = {
   readonly list: "trending" | "fresh" | "gainers" | "losers" | "traded" | "stocks" | "saved";
+  readonly kind: "all" | "meme" | "crypto" | "stock" | "preipo";
   readonly window: "5m" | "1h" | "6h" | "24h";
   readonly coins: readonly ({
     readonly id: string;
@@ -2732,6 +2733,11 @@ export type MarketDepthResponse = {
     readonly organic: number | null;
     readonly verified: boolean;
     readonly stock: boolean;
+    readonly stable: boolean;
+    readonly kind: "meme" | "crypto" | "stock" | "preipo";
+    readonly launchpad: string | null;
+    readonly venue: "pump" | "meteora-dbc" | "launchlab" | null;
+    readonly copyOf: string | null;
     readonly bornAt: string | null;
     readonly mint: "on" | "off" | null;
     readonly freeze: "on" | "off" | null;
@@ -4469,6 +4475,7 @@ export type ParamsOf = {
   readonly readMarketDepth: {
     readonly list?: "trending" | "fresh" | "gainers" | "losers" | "traded" | "stocks" | "saved";
     readonly window?: "5m" | "1h" | "6h" | "24h";
+    readonly kind?: "all" | "meme" | "crypto" | "stock" | "preipo";
     readonly mints?: string;
   };
   readonly readPaymentPage: {

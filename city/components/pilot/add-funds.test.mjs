@@ -47,5 +47,5 @@ test("a wallet that cannot fund the plan reads no sum: the line that is true and
   assert.match(card, /import \{ legsOf, legsUsd, PILOT_PARTS, type PilotPart, type PilotPlanData \} from '@\/lib\/pilot\/plan';/u);
   // The way on is still there, and practice under it.
   assert.match(card, /\{short && MONEY_OPEN \? \(/u);
-  assert.match(card, /<Press label=\{w\.live\}[^\n]*disabled=\{Boolean\(\(split\.preset && PILOT_NET === 'mainnet' && !coin\) \|\| short\)\}/u);
+  assert.match(card, /<Press label=\{w\.live\}[^\n]*disabled=\{Boolean\(\(split\.budget && PILOT_NET === 'mainnet' && !coin\) \|\| short\)\}/u);
 });

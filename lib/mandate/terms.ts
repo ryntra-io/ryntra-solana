@@ -25,14 +25,16 @@
  * as in every devnet trade, Ryntra's fee is the transfer just before the pool's swap, from the budget — the coin sold — into
  * Ryntra's account of that coin, the table's share of the same size; through Jupiter it stays in what she receives.
  *
- * New agents start small (decision 95 (a)): the starter caps below bound what a stolen agent key could ever take in a
- * day. Raising them is the person's own, separate choice.
+ * The caps are the person's own: any day's cap, trade cap and term she signs
+ * (`./budget.ts`); no starter cap of Ryntra's stands under them. What a stolen agent key could take in a day is the day's
+ * cap she wrote, and only through Jupiter into her own wallet.
  */
 
 import { getAssociatedTokenAddressSync } from "@solana/spl-token";
 import { PublicKey } from "@solana/web3.js";
 
 import { AGENT_FEE_CEILING_BPS, FEE_TRANSFER_TAG, agentFeeAccount, agentFeeRaw } from "./fee.ts";
+import { DAYS_MAX } from "./budget.ts";
 import { USDC_MINTS, isTokenProgram } from "./token-2022.ts";
 import { NATIVE_MINT, TOKEN_PROGRAM_ID, type AccountConstraint, type DataConstraint, type InstructionConstraint, type ProgramInteractionPolicy } from "./ssa.ts";
 
@@ -67,20 +69,6 @@ export const BUDGET_TOKENS: readonly BudgetToken[] = Object.freeze([
 
 export const budgetToken = (mint: PublicKey): BudgetToken | null => BUDGET_TOKENS.find((token) => token.mint.equals(mint)) ?? null;
 
-export type Caps = Readonly<{ perTrade: bigint; perDay: bigint; days: number }>;
-
-/** What a new agent may hold: small enough that a stolen key takes at most a day's starter cap. */
-export const STARTER_CAPS: Readonly<Record<BudgetToken["symbol"], Caps>> = Object.freeze({
-  SOL: { perTrade: 100_000_000n, perDay: 500_000_000n, days: 30 },
-  USDC: { perTrade: 10_000_000n, perDay: 50_000_000n, days: 30 },
-});
-
-/** The ceiling of a raised mandate — the person's own choice, made separately from the first signature. */
-export const RAISED_CAPS: Readonly<Record<BudgetToken["symbol"], Caps>> = Object.freeze({
-  SOL: { perTrade: 1_000_000_000n, perDay: 5_000_000_000n, days: 90 },
-  USDC: { perTrade: 100_000_000n, perDay: 500_000_000n, days: 90 },
-});
-
 export type Venue = Readonly<{ kind: "jupiter" }> | Readonly<{ kind: "dlmm"; pool: PublicKey }>;
 
 /**
@@ -108,8 +96,6 @@ export type MandateTerms = Readonly<{
   expiresAt: bigint;
   venue: Venue;
   fixedBuy?: FixedBuy | undefined;
-  /** The person raised the caps herself; absent — the starter caps hold. */
-  raised?: boolean | undefined;
   /** The budget is a coin she sells; absent — SOL or USDC she spends. */
   budgetCoin?: BudgetCoin | undefined;
 }>;
@@ -140,9 +126,13 @@ function saleRefusal(terms: MandateTerms, coin: BudgetCoin, nowSeconds: bigint):
   if (fixed.amountIn <= 0n || fixed.amountIn > terms.perTrade) return "a sale is within the trade cap";
   if (fixed.minOut <= 0n) return "a sale names its floor";
   if (!Number.isInteger(terms.slippageBps) || terms.slippageBps < 1 || terms.slippageBps > SLIPPAGE_MAX_BPS) return "slippage is at most 1 %";
+  return termRefusal(terms, nowSeconds);
+}
+
+/** The term's own bound: it ends in the future, within `DAYS_MAX` days — a bound on the date, not on money. */
+function termRefusal(terms: Pick<MandateTerms, "expiresAt">, nowSeconds: bigint): string | null {
   if (terms.expiresAt <= nowSeconds) return "the mandate ends in the future";
-  const days = (terms.raised ? RAISED_CAPS : STARTER_CAPS).SOL.days;
-  if (terms.expiresAt - nowSeconds > BigInt(days) * 86_400n) return `the mandate lasts at most ${days} days`;
+  if (terms.expiresAt - nowSeconds > BigInt(DAYS_MAX) * 86_400n) return `the mandate lasts at most ${DAYS_MAX} days`;
   return null;
 }
 
@@ -152,14 +142,11 @@ export function termsRefusal(terms: MandateTerms, nowSeconds: bigint): string | 
   const token = budgetToken(terms.budgetMint);
   if (!token) return "the budget is SOL or USDC";
   if (terms.human.equals(terms.agent)) return "the agent's key is not the person's wallet";
-  const caps = (terms.raised ? RAISED_CAPS : STARTER_CAPS)[token.symbol];
   if (terms.perTrade <= 0n || terms.perDay <= 0n) return "the caps are above zero";
   if (terms.perTrade > terms.perDay) return "a trade is at most the day's cap";
-  if (terms.perTrade > caps.perTrade) return terms.raised ? "the trade cap is above the raised ceiling" : "a new agent starts with a smaller trade cap";
-  if (terms.perDay > caps.perDay) return terms.raised ? "the day's cap is above the raised ceiling" : "a new agent starts with a smaller day's cap";
   if (!Number.isInteger(terms.slippageBps) || terms.slippageBps < 1 || terms.slippageBps > SLIPPAGE_MAX_BPS) return "slippage is at most 1 %";
-  if (terms.expiresAt <= nowSeconds) return "the mandate ends in the future";
-  if (terms.expiresAt - nowSeconds > BigInt(caps.days) * 86_400n) return `the mandate lasts at most ${caps.days} days`;
+  const term = termRefusal(terms, nowSeconds);
+  if (term) return term;
   const fixed = terms.fixedBuy;
   if (fixed) {
     if (fixed.amountIn <= 0n || fixed.amountIn > terms.perTrade) return "a regular buy is within the trade cap";

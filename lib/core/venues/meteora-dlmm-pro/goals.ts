@@ -12,14 +12,22 @@
  * is the one range it always merges into, and the two that thin or thicken are drawn in at most seven steps. Seven
  * ranges and the pool's two sides fit one transaction with the deposit (`REHEARSAL.md` §12: up to 15 do).
  *
+ * A fourth way stands beside the three goals (Meteora's «Create New Strategy»): **a shape of the person's
+ * own** — a grid of 32 columns, 16 under the price and 16 over it, each painted 0 to 8 cells tall. The width stays the
+ * person's choice of the same three: the 16 columns of a side are laid over that side's steps (`customPlanOf`).
+ *
  * Pure: no I/O, no clock, no SDK.
  */
 
 import type { ShapeRequest, ShapeStrategy } from "./shapes.server.ts";
+import { GRID_CELL_WEIGHT, GRID_COLUMNS, GRID_LEVELS, GRID_MAX_RANGES, GRID_SIDE, bestLayout, gridFault, gridWeights } from "../../liquidity-grid.ts";
 import { MAX_TICK_ID, MIN_TICK_ID, alignTickDown } from "./ticks.ts";
 
 export const EARN_GOALS = ["even", "near", "edges"] as const;
 export type EarnGoal = (typeof EARN_GOALS)[number];
+/** What an opening may be built from: one of the three goals, or the person's own painted shape. */
+export const CUSTOM_GOAL = "custom" as const;
+export type OpenGoal = EarnGoal | typeof CUSTOM_GOAL;
 
 export const EARN_STYLES = ["calm", "balanced", "dense"] as const;
 export type EarnStyle = (typeof EARN_STYLES)[number];
@@ -35,9 +43,38 @@ export const GOAL_MAX_RANGES: Readonly<Record<EarnGoal, number>> = { even: 1, ne
 
 export const isEarnGoal = (value: unknown): value is EarnGoal => typeof value === "string" && (EARN_GOALS as readonly string[]).includes(value);
 export const isEarnStyle = (value: unknown): value is EarnStyle => typeof value === "string" && (EARN_STYLES as readonly string[]).includes(value);
+export const isOpenGoal = (value: unknown): value is OpenGoal => value === CUSTOM_GOAL || isEarnGoal(value);
+
+/* ── a shape of the person's own ─────────────────────────────────────────────────────────────────────────────── */
+
+/* The grid's own rule is one for the ticket and the venue (`lib/core/liquidity-grid.ts`); here it is named for the venue. */
+export const SHAPE_SIDE_COLUMNS = GRID_SIDE;
+export const SHAPE_COLUMNS = GRID_COLUMNS;
+export const SHAPE_LEVELS = GRID_LEVELS;
+/** The program's weight of one painted cell: the proportions painted are the proportions built (the SDK rescales nothing under 255). */
+export const SHAPE_CELL_WEIGHT = GRID_CELL_WEIGHT;
+/** The most ranges a shape of one's own takes: it opens with its deposit in one transaction, and is never coarsened behind the person's back. */
+export const CUSTOM_MAX_RANGES = GRID_MAX_RANGES;
+
+/**
+ * Whether a value is a painted grid the engine builds: 32 whole numbers from 0 to 8, with paint on both sides of the
+ * price. A shape on one side alone holds one coin only, and an opening paid in SOL alone swaps for both.
+ */
+export const isShapeColumns = (value: unknown): value is readonly number[] => gridFault(value) === null;
+
+/**
+ * The weight of every tick a painted grid stands on, on a pool at `tickCurrentId` with a width of `style`: the step
+ * the price stands in, and the style's steps each side of it. Ticks past the program's first or last are left out.
+ */
+export function shapeWeightsOf(columns: readonly number[], style: EarnStyle, pool: Readonly<{ tickSpacing: number; tickCurrentId: number }>): readonly Readonly<{ tickId: number; weight: number }>[] {
+  const spacing = pool.tickSpacing;
+  const first = Math.ceil(MIN_TICK_ID / spacing) * spacing;
+  const last = Math.floor(MAX_TICK_ID / spacing) * spacing - spacing;
+  return gridWeights(columns, STYLE_STEPS[style], alignTickDown(pool.tickCurrentId, spacing), spacing).filter((tick) => tick.tickId >= first && tick.tickId <= last);
+}
 
 export type GoalPlan = Readonly<{
-  goal: EarnGoal;
+  goal: OpenGoal;
   style: EarnStyle;
   shape: ShapeRequest;
   maxRanges: number;
@@ -47,6 +84,8 @@ export type GoalPlan = Readonly<{
   /** The same as a share of the price, basis points: how far down and how far up the price may go before the position stops earning. */
   downBps: number;
   upBps: number;
+  /** For a shape of one's own: the ranges its weights take, laid the way that takes fewer. */
+  ranges?: number;
 }>;
 
 /** How far a move of `ticks` ticks takes the price, basis points of the price; a tick is a ten-thousandth. */
@@ -79,6 +118,44 @@ export function goalPlanOf(goal: EarnGoal, style: EarnStyle, pool: Readonly<{ ti
     downBps: -bpsOfTicks(minTickId - pool.tickCurrentId),
     upBps: bpsOfTicks(tickUpperId - pool.tickCurrentId),
   };
+}
+
+/**
+ * The shape a painted grid asks for: the SDK's own Custom shape over the ticks it paints (`shapeWeightsOf`), from the
+ * first painted tick to the last — the range the position earns in. Its weights are laid the way that takes fewer
+ * ranges — side by side for a jagged shape, stacked for a hill (`bestLayout`); `ranges` says how many, and a plan that
+ * needs more than `CUSTOM_MAX_RANGES` is refused by the opening rather than coarsened. Null where the grid is not one
+ * the engine builds, or where the program's last ticks leave nothing painted on a side of the price.
+ */
+export function customPlanOf(columns: readonly number[], style: EarnStyle, pool: Readonly<{ tickSpacing: number; tickCurrentId: number }>): GoalPlan | null {
+  const spacing = pool.tickSpacing;
+  if (!Number.isInteger(spacing) || spacing < 1 || !Number.isInteger(pool.tickCurrentId) || !isShapeColumns(columns) || !isEarnStyle(style)) return null;
+  const here = alignTickDown(pool.tickCurrentId, spacing);
+  const weights = shapeWeightsOf(columns, style, pool);
+  const painted = weights.filter((tick) => tick.weight > 0);
+  if (!painted.some((tick) => tick.tickId < here) || !painted.some((tick) => tick.tickId > here)) return null;
+  const minTickId = painted[0]!.tickId;
+  const maxTickId = painted[painted.length - 1]!.tickId;
+  const tickUpperId = maxTickId + spacing;
+  const inside = weights.filter((tick) => tick.tickId >= minTickId && tick.tickId <= maxTickId);
+  const best = bestLayout(inside, spacing);
+  return {
+    goal: CUSTOM_GOAL,
+    style,
+    shape: { strategy: "custom", minTickId, maxTickId, weights: inside, layout: best.layout },
+    maxRanges: CUSTOM_MAX_RANGES,
+    ranges: best.ranges,
+    tickLowerId: minTickId,
+    tickUpperId,
+    downBps: -bpsOfTicks(minTickId - pool.tickCurrentId),
+    upBps: bpsOfTicks(tickUpperId - pool.tickCurrentId),
+  };
+}
+
+/** The plan of an opening: a goal's, or a painted grid's (`columns`, only with the person's own shape). */
+export function openPlanOf(goal: OpenGoal, style: EarnStyle, pool: Readonly<{ tickSpacing: number; tickCurrentId: number }>, columns: readonly number[] | null = null): GoalPlan | null {
+  if (goal === CUSTOM_GOAL) return columns ? customPlanOf(columns, style, pool) : null;
+  return columns ? null : goalPlanOf(goal, style, pool);
 }
 
 /**

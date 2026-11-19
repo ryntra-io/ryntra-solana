@@ -1,0 +1,74 @@
+[
+ {
+  "chainId": 8453,
+  "address": "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",
+  "symbol": "USDC",
+  "name": "USD Coin",
+  "decimals": 6,
+  "vmType": "evm",
+  "metadata": {
+   "logoURI": "https://coin-images.coingecko.com/coins/images/6319/large/usdc.png?1696506694",
+   "verified": true
+  }
+ },
+ {
+  "chainId": 8453,
+  "address": "0xcbb7c0000ab88b473b1f5afd9ef808440eed33bf",
+  "symbol": "cbBTC",
+  "name": "Coinbase Wrapped BTC",
+  "decimals": 8,
+  "vmType": "evm",
+  "metadata": {
+   "logoURI": "https://coin-images.coingecko.com/coins/images/40143/large/cbbtc.webp?1726136727",
+   "verified": true
+  }
+ },
+ {
+  "chainId": 8453,
+  "address": "0x0000000000000000000000000000000000000000",
+  "symbol": "ETH",
+  "name": "Ether",
+  "decimals": 18,
+  "vmType": "evm",
+  "metadata": {
+   "logoURI": "https://assets.relay.link/icons/1/light.png",
+   "verified": true
+  }
+ },
+ {
+  "chainId": 8453,
+  "address": "0xb200000000000000000000397293cb8cda9a10c5",
+  "symbol": "SNDKc",
+  "name": "Sandisk Corporation",
+  "decimals": 8,
+  "vmType": "evm",
+  "metadata": {
+   "logoURI": "https://coin-images.coingecko.com/coins/images/102178283/large/sndk-200.png?1789234014",
+   "verified": false
+  }
+ },
+ {
+  "chainId": 8453,
+  "address": "0xb2000000000000000000004884b426556b92883d",
+  "symbol": "MSTRc",
+  "name": "Strategy Inc.",
+  "decimals": 8,
+  "vmType": "evm",
+  "metadata": {
+   "logoURI": "https://coin-images.coingecko.com/coins/images/102178282/large/mstr-200.png?1789233935",
+   "verified": false
+  }
+ },
+ {
+  "chainId": 8453,
+  "address": "0xb20000000000000000000078ee7ce2fe4908108c",
+  "symbol": "NVDAc",
+  "name": "NVIDIA Corporation",
+  "decimals": 8,
+  "vmType": "evm",
+  "metadata": {
+   "logoURI": "https://coin-images.coingecko.com/coins/images/102175596/large/nvda_200x200.png?1787068801",
+   "verified": false
+  }
+ }
+]

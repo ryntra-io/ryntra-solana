@@ -1,86 +1,146 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import Link from 'next/link';
+import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import type { LaunchMarketRow } from '@/lib/api/v1/contract';
 import { num } from '@/city/lib/i18n/dict';
 import { useLang } from '@/city/lib/i18n/lang';
 import { launchEngine, launchPoolEngine, poolDoorHere, useLaunch } from '@/city/lib/launch/district';
 import { pct } from '@/city/lib/launch/format';
-import { poolOpensAt, usePool } from '@/city/lib/launch/pool';
+import { POOL_AFTER, poolOpensAt, usePool } from '@/city/lib/launch/pool';
 import { connectOrPick } from '@/terminal/coin/parts';
 import { WalletPick } from '@/terminal/coin/WalletPick';
 import { coinHref } from '@/terminal/shell/shelves';
 import { useMarket } from '@/terminal/shell/useMarket';
-import { Cell, Chip, CoinCell, Kick, ListRow, Panel, Quiet, Table, TableHead, TableRow, Tile, coinIcon, usdText } from '@/terminal/ui';
-import { usdShort } from './Form';
-import { Glyph } from './glyphs';
-import { ageOf, ageText, clockLeft, freshLaunches, measured, mineOf, sniperOf, type Mine } from './launch-view';
+import { Action, Cell, Chip, CoinCell, Kick, ListRow, Panel, Quiet, Table, TableHead, TableRow, usdText } from '@/terminal/ui';
+import { usdShort, useWhen } from './Form';
+import { Glyph, type GlyphName } from './glyphs';
+import { logoOf } from '@/terminal/market/depth-view';
+import { LADDER, ageOf, ageText, clockLeft, freshLaunches, measured, mineOf, showcase, type Mine } from './launch-view';
 import type { LaunchModel } from './useLaunchModel';
 import { useSeconds } from './useSeconds';
 import l from './launch.module.css';
 
+/** The links a coin's card shows, as their marks: X, Telegram, the website. */
+const LINK_MARKS: readonly (readonly ['x' | 'telegram' | 'website', GlyphName])[] = [
+  ['x', 'x'],
+  ['telegram', 'telegram'],
+  ['website', 'globe'],
+];
+
 /**
- * «How people see it»: the new coin's card as the market will show it — its picture, ticker and name, when trading
- * opens (counted down) or where its curve moves to a pool, what the first buyers pay, and its liquidity locked.
+ * «How people see it»: the new coin as the Spot and the Market will show it — its picture large and round,
+ * its ticker and name, its line and links, its way to a pool or its opening counted down, the liquidity locked; then its
+ * row as the Market lists it. Until it has a picture, the brand's own light stands in its place — never a letter.
  */
 export function Preview({ m }: { m: LaunchModel }) {
   const { w } = m;
-  useLang();
+  const lang = useLang();
   const now = useSeconds();
+  const when = useWhen(m);
   const pooled = m.phase?.step === 'pooled' ? m.phase.pooled : null;
   const opensAt = pooled ? pooled.opensAt : m.format === 'pool' && m.choice && now !== null ? poolOpensAt(m.choice, now) : null;
   const symbol = m.symbol || w.tickerPlaceholder;
   const name = m.check.clean.name || w.namePlaceholder;
-  const sniper = sniperOf(m.format, m.preset);
+  const picture = m.draft.picture?.url ?? null;
+  const about = m.check.clean.description;
+  const links = LINK_MARKS.filter(([kind]) => m.check.clean.links[kind] !== null);
+  const pool = m.format === 'pool' || pooled !== null;
+  // With the take-profit ladder, part of the supply stays the creator's: the card says how much is locked, and no «fair».
+  const ladder = !pooled && m.format === 'pool' && m.choice?.ladder === true;
+  // Before the coin is in its pool its opening is the wait the creator chose; once there, a clock counts down to it.
+  const wait = !pooled && m.format === 'pool' && m.choice && m.choice.at === null ? ([w.in15, w.in1h, w.in6h][POOL_AFTER.indexOf(m.choice.after)] ?? null) : null;
   return (
-    <Panel gap={12} label={w.seen} className={l.preview}>
-      <Kick>{w.seen}</Kick>
-      <div className={l.seenCoin} data-empty={m.symbol ? undefined : ''}>
-        <CoinLogoPicture src={m.draft.picture?.url ?? null} symbol={symbol} />
-        <span className={l.seenNames}>
-          <span className={l.seenSym}>${symbol}</span>
-          <span className={l.seenName}>{name}</span>
-        </span>
-        <Chip tone="ok">{w.fair}</Chip>
+    <Panel pad="none" label={w.seen} className={l.preview}>
+      <div className={l.banner} data-empty={picture ? undefined : ''} data-launch-preview={picture ? 'picture' : 'empty'}>
+        {picture ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img className={l.bannerImage} src={picture} alt="" />
+        ) : (
+          <span className={l.bannerArt} aria-hidden="true" />
+        )}
+        <span className={l.bannerShade} aria-hidden="true" />
+        <Kick className={l.bannerKick}>{w.seen}</Kick>
+        <CoinMark picture={picture} large />
       </div>
-      {m.format === 'pool' || pooled ? (
-        <Tile label={w.opensIn} value={<span className={l.amber}>{opensAt !== null && now !== null ? clockLeft(opensAt - now) : ' '}</span>} />
-      ) : m.preset ? (
-        <Tile label={w.movesAt} value={usdShort(m.preset.graduationMarketCapUsd)} />
-      ) : null}
-      {sniper ? (
-        <div className={l.sniper}>
-          <span className={l.sniperHead}>
-            <Kick className={l.grow}>{w.sniper}</Kick>
-            <b>
-              {pct(sniper.startBps)} → {pct(sniper.endBps)}
-            </b>
-          </span>
-          <span className={l.shieldBar} aria-hidden="true" />
+      <div className={l.seenBody}>
+        <div className={l.seenTitle} data-empty={m.symbol ? undefined : ''}>
+          <span className={l.seenSym}>${symbol}</span>
+          {ladder ? null : <Chip tone="ok">{w.fair}</Chip>}
         </div>
-      ) : null}
-      <div className={l.chips}>
-        <Chip>
-          <Glyph name="lock" small />
-          {w.locked}
-        </Chip>
-        <Chip>Meteora</Chip>
+        <span className={l.seenName} data-empty={m.check.clean.name ? undefined : ''}>
+          {name}
+        </span>
+        {about ? <p className={l.seenAbout}>{about}</p> : null}
+        {links.length ? (
+          <span className={l.seenLinks}>
+            {links.map(([kind, glyph]) => (
+              <span key={kind} className={l.seenLink}>
+                <Glyph name={glyph} small />
+              </span>
+            ))}
+          </span>
+        ) : null}
+        {pool ? (
+          <div className={l.seenStat}>
+            <span>{pooled ? w.opensIn : w.opens}</span>
+            <b className={l.amber}>{wait ?? (opensAt !== null && now !== null ? (pooled ? clockLeft(opensAt - now) : when(opensAt)) : ' ')}</b>
+          </div>
+        ) : m.preset ? (
+          <div className={l.road}>
+            <span className={l.roadHead}>
+              <span>{w.toPool}</span>
+              <b>
+                {usdShort(m.preset.startMarketCapUsd)} → {usdShort(m.preset.graduationMarketCapUsd)}
+              </b>
+            </span>
+            <span className={l.roadBar} aria-hidden="true">
+              <span className={l.roadFill} />
+            </span>
+          </div>
+        ) : null}
+        <div className={l.chips}>
+          <Chip>
+            <Glyph name="lock" small />
+            {ladder ? w.lineLockedPart(pct(10_000 - LADDER.shareBps)) : w.locked}
+          </Chip>
+          <Chip>{pool ? `Meteora ${w.fmtPoolTag}` : 'Meteora'}</Chip>
+          {pool || m.shield?.on ? (
+            <Chip>
+              <Glyph name="shield" small />
+              {w.shield}
+            </Chip>
+          ) : null}
+        </div>
+      </div>
+      <div className={l.seenRowHead}>
+        <Kick>{w.onMarket}</Kick>
+      </div>
+      <div className={l.seenRow} data-empty={m.symbol ? undefined : ''}>
+        <CoinMark picture={picture} />
+        <span className={l.listWords}>
+          <b>{symbol}</b>
+          <span>
+            {pool ? name : `${name} · ${w.justNow}`}
+          </span>
+        </span>
+        <span className={l.listCap}>{pool ? (wait ?? (opensAt !== null && !pooled ? when(opensAt) : '')) : m.preset ? usdText(m.preset.startMarketCapUsd, lang) : ''}</span>
       </div>
     </Panel>
   );
 }
 
-/** The new coin's picture in the card, round as every coin's logo; its ticker's first letter until it has one. */
-function CoinLogoPicture({ src, symbol }: { src: string | null; symbol: string }) {
-  if (!src) {
-    return (
-      <span className={l.seenMark} aria-hidden="true">
-        {symbol.slice(0, 1)}
-      </span>
-    );
+/** The new coin's own mark: its picture, round; until it has one, a glass orb with the brand's light and a rocket. */
+function CoinMark({ picture, large = false }: { picture: string | null; large?: boolean }) {
+  if (picture) {
+    // eslint-disable-next-line @next/next/no-img-element
+    return <img className={large ? l.markLarge : l.markSmall} src={picture} alt="" />;
   }
-  // eslint-disable-next-line @next/next/no-img-element
-  return <img className={l.seenPicture} src={src} alt="" />;
+  return (
+    <span className={`${l.orb} ${large ? l.markLarge : l.markSmall}`} aria-hidden="true">
+      <Glyph name="rocket" small={!large} />
+    </span>
+  );
 }
 
 /** A launch's second line: how long ago, and how many hold it — each only where the market measured it. */
@@ -89,17 +149,22 @@ function launchLine(m: LaunchModel, tower: Parameters<typeof measured>[0], now: 
   return [ageText(m.w, ageOf(tower.launchedAt, now)), holders !== null ? m.w.holders(holders) : null].filter(Boolean).join(' · ');
 }
 
-/** «New on the market», three rows beside the form, and «All» opens the whole list. */
+/** The market's new launches the screen shows: each with its logo and its market cap, none crude, hateful or borrowed. */
+function shown(towers: Parameters<typeof freshLaunches>[0], max: number) {
+  return showcase(freshLaunches(towers), (tower) => ({ symbol: tower.symbol, name: tower.name, icon: tower.icon, mcap: measured(tower, 'mcap'), holders: measured(tower, 'holders') }), max);
+}
+
+/** «New on the market», a few rows beside the form, and «All» opens the whole list. */
 export function FreshMini({ m, onAll }: { m: LaunchModel; onAll: () => void }) {
   const { w } = m;
   const lang = useLang();
   const towers = useMarket().towers;
   const now = useSeconds(30_000);
-  const rows = freshLaunches(towers, 3);
+  const rows = shown(towers, 6);
   if (!rows.length || now === null) return null;
   return (
     <Panel pad="none" label={w.fresh} className={l.freshMini}>
-      <div className={l.freshHead}>
+      <div className={l.listHead}>
         <Kick className={l.grow}>{w.fresh}</Kick>
         <button type="button" className={l.all} onClick={onAll}>
           {w.all}
@@ -108,7 +173,7 @@ export function FreshMini({ m, onAll }: { m: LaunchModel; onAll: () => void }) {
       <Table columns="minmax(0, 1fr) auto" minWidth={0} label={w.fresh}>
         {rows.map((tower) => (
           <TableRow key={tower.id}>
-            <CoinCell icon={coinIcon(tower)} symbol={tower.symbol} name={launchLine(m, tower, now * 1000)} href={coinHref(tower.id, 'live')} />
+            <CoinCell icon={logoOf(tower)} symbol={tower.symbol} name={launchLine(m, tower, now * 1000)} href={coinHref(tower.id, 'live')} />
             <Cell end>{measured(tower, 'mcap') !== null ? usdText(tower.mcap, lang) : ''}</Cell>
           </TableRow>
         ))}
@@ -117,13 +182,13 @@ export function FreshMini({ m, onAll }: { m: LaunchModel; onAll: () => void }) {
   );
 }
 
-/** The whole list of new launches: the market's own «New» launches, newest first. */
+/** The whole list of new launches: the market's own «New» launches, newest first, with their logos. */
 export function FreshPanel({ m }: { m: LaunchModel }) {
   const { w } = m;
   const lang = useLang();
   const towers = useMarket().towers;
   const now = useSeconds(30_000);
-  const rows = freshLaunches(towers, 40);
+  const rows = shown(towers, 40);
   return (
     <Panel pad="none" edge label={w.fresh}>
       {rows.length === 0 || now === null ? (
@@ -144,7 +209,7 @@ export function FreshPanel({ m }: { m: LaunchModel }) {
               </TableHead>
               {rows.map((tower) => (
                 <TableRow key={tower.id}>
-                  <CoinCell icon={coinIcon(tower)} symbol={tower.symbol} name={tower.name} href={coinHref(tower.id, 'live')} />
+                  <CoinCell icon={logoOf(tower)} symbol={tower.symbol} name={tower.name} href={coinHref(tower.id, 'live')} />
                   <Cell tone="dim">{ageText(w, ageOf(tower.launchedAt, now * 1000)) ?? ''}</Cell>
                   <Cell end>{measured(tower, 'holders') !== null ? num(tower.holders) : ''}</Cell>
                   <Cell end>{measured(tower, 'mcap') !== null ? usdText(tower.mcap, lang) : ''}</Cell>
@@ -156,7 +221,7 @@ export function FreshPanel({ m }: { m: LaunchModel }) {
             {rows.map((tower) => (
               <ListRow
                 key={tower.id}
-                icon={coinIcon(tower)}
+                icon={logoOf(tower)}
                 symbol={tower.symbol}
                 name={launchLine(m, tower, now * 1000)}
                 value={measured(tower, 'mcap') !== null ? usdText(tower.mcap, lang) : ''}
@@ -200,10 +265,9 @@ export function MinePanel({ m, shown, onResume }: { m: LaunchModel; shown: boole
 
   if (!address) {
     return (
-      <Panel pad="l" gap={14} edge label={w.mine}>
-        <p className={l.emptyLine}>{w.mineConnect}</p>
+      <Blank m={m} line={w.mineConnect}>
         {picking ? <WalletPick onBack={() => setPicking(false)} /> : <Quiet onClick={() => connectOrPick(() => setPicking(true))}>{w.connect}</Quiet>}
-      </Panel>
+      </Blank>
     );
   }
   const mine = now !== null ? mineOf(read.rows, pools, address, now * 1000) : [];
@@ -211,15 +275,27 @@ export function MinePanel({ m, shown, onResume }: { m: LaunchModel; shown: boole
     return (
       <Panel pad="l" gap={14} edge label={w.mine}>
         <p className={l.emptyLine}>{w.mineFailed}</p>
-        <Quiet onClick={() => void load()}>{w.tryAgain}</Quiet>
+        <Quiet className={l.blankAct} onClick={() => void load()}>{w.tryAgain}</Quiet>
+      </Panel>
+    );
+  }
+  if (!mine.length && read.state !== 'ready') {
+    // While the engine reads: the rows' places, never a blank bar.
+    return (
+      <Panel pad="none" edge label={w.mine}>
+        <span className={l.skeleton} aria-hidden="true">
+          <span />
+          <span />
+          <span />
+        </span>
       </Panel>
     );
   }
   if (!mine.length) {
     return (
-      <Panel pad="l" edge label={w.mine}>
-        <p className={l.emptyLine}>{read.state === 'ready' ? w.mineEmpty : ' '}</p>
-      </Panel>
+      <Blank m={m} line={w.mineEmpty}>
+        <Action onClick={onResume}>{w.newCoin}</Action>
+      </Blank>
     );
   }
   // A launch into a pool begun and not finished waits for its next step: the form takes it up, never mints again.
@@ -244,11 +320,50 @@ export function MinePanel({ m, shown, onResume }: { m: LaunchModel; shown: boole
           </Quiet>
         </div>
       ))}
-      {mine.map((coin) => (
-        <ListRow key={coin.token} icon={coin.image} symbol={coin.symbol} name={coin.name} value={mineState(m, coin, now ?? 0)} href={coinHref(coin.token, 'live')} />
-      ))}
+      <ul className={l.listRows}>
+        {mine.map((coin) => (
+          <li key={coin.token}>
+            <Link href={coinHref(coin.token, 'live')} className={l.listRow}>
+              <MineMark src={coin.image ?? `/api/icon/${encodeURIComponent(coin.token)}`} />
+              <span className={l.listWords}>
+                <b>{coin.symbol}</b>
+                <span>{coin.name}</span>
+              </span>
+              <span className={l.listCap}>{mineState(m, coin, now ?? 0)}</span>
+            </Link>
+          </li>
+        ))}
+      </ul>
     </Panel>
   );
+}
+
+/**
+ * «My coins» with nothing to list yet: the brand's light and a coin waiting for its picture, one line, and one way on —
+ * launching the first coin, or connecting the wallet that launched them.
+ */
+function Blank({ m, line, children }: { m: LaunchModel; line: string; children: ReactNode }) {
+  return (
+    <Panel pad="none" edge label={m.w.mine} className={l.blank}>
+      <span className={l.blankArt} aria-hidden="true">
+        <span className={`${l.orb} ${l.blankOrb}`}>
+          <Glyph name="rocket" />
+        </span>
+      </span>
+      <span className={l.blankWords} data-launch-blank="">
+        <b>{line}</b>
+        {children}
+      </span>
+    </Panel>
+  );
+}
+
+/** One of the creator's coins by its picture; where the picture does not come, the brand's coin in its place. */
+function MineMark({ src }: { src: string }) {
+  const [failed, setFailed] = useState(false);
+  if (failed) return <CoinMark picture={null} />;
+  // eslint-disable-next-line @next/next/no-img-element
+  return <img className={l.markSmall} src={src} alt="" decoding="async" onError={() => setFailed(true)} />;
 }
 
 /** Where one of the creator's coins stands: its way to the pool on the curve, or its opening in a pool. */

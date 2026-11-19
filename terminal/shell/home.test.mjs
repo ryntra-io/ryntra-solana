@@ -74,7 +74,9 @@ test("open: every old address leads to a section in one hop, never back to the c
   for (const source of ["/futures", "/perps", "/exchange", "/app/perps/:path*"]) assert.equal(at(source), SHELVES.futures.ready ? "/futures" : "/city?open=exchange", source);
   for (const source of ["/predictions", "/oracle", "/predict/:path*"]) assert.equal(at(source), SHELVES.predict.ready ? "/predictions" : "/city?open=oracle", source);
   assert.equal(at("/predict/:eventId"), SHELVES.predict.ready ? "/predictions" : "/city?open=oracle&market=:eventId");
-  assert.equal(at("/rewards"), "/city?open=hall", "Rewards stay the city's");
+  assert.ok(!rows.some((row) => row.source === "/rewards"), "«Rewards» answers at its own address: the city's row gives way");
+  assert.equal(at("/hall"), SHELVES.portfolio.ready ? "/rewards" : "/city?open=hall", "the city's Hall is «Rewards»");
+  assert.equal(at("/app/rewards/:path*"), SHELVES.portfolio.ready ? "/rewards" : "/city?open=hall");
   for (const row of open.r) {
     assert.ok(!/^(https:\/\/ryntra\.io)?\/\?open=/.test(row.destination), `${row.source} still asks the city's home: ${row.destination}`);
   }
@@ -95,6 +97,9 @@ test("the city's windows and Money's tabs: the section that does the same work",
   assert.equal(shelfOfWindow("money"), "portfolio");
   assert.equal(shelfOfWindow("agent"), "agents");
   assert.equal(shelfOfWindow("settings"), null);
+  assert.equal(shelfOfWindow("hall"), "portfolio");
+  assert.equal(terminalDestination("/?open=hall", "open", BUILT), "/rewards", "the Hall is a page of the Portfolio shelf, at its own address");
+  assert.equal(terminalDestination("/?open=hall", "open", READY(["market"])), "/city?open=hall", "with the shelf off the city keeps it");
   assert.equal(terminalDestination("https://ryntra.io/?open=harbor", "open", BUILT), "https://ryntra.io/earn");
   assert.equal(terminalDestination("/docs", "open", BUILT), "/docs");
   assert.equal(terminalDestination("/?open=oracle&page=positions", "open", READY(["market"])), "/city?open=oracle&page=positions");
@@ -105,7 +110,9 @@ test("a link to the home page that asks for a window or a coin: its section, the
   assert.deepEqual(homeAsk("?open=trade", "open", BUILT), { path: "/swap", drop: ["open", "tab", "market", "page"] });
   assert.deepEqual(homeAsk("?open=agent", "open", BUILT), { path: "/agent", drop: ["open", "tab", "market", "page"] });
   assert.deepEqual(homeAsk("?open=earn&tab=mine", "open", BUILT), { path: "/earn", drop: ["open", "tab", "market", "page"] });
-  assert.deepEqual(homeAsk("?open=hall", "open", BUILT), { path: CITY_PATH, drop: [] });
+  assert.deepEqual(homeAsk("?open=hall", "open", BUILT), { path: "/rewards", drop: ["open", "tab", "market", "page"] });
+  assert.deepEqual(homeAsk("?open=hall", "open", READY(["market"])), { path: CITY_PATH, drop: [] });
+  assert.deepEqual(homeAsk("?open=settings", "open", BUILT), { path: CITY_PATH, drop: [] });
   assert.deepEqual(homeAsk(`?coin=${mint}`, "open", BUILT), { path: `/coin/${mint}`, drop: ["coin"] });
   assert.equal(homeAsk("?coin=nope", "open", BUILT), null);
   assert.equal(homeAsk("?invite=ABC", "open", BUILT), null, "an invitation lands on the Market");

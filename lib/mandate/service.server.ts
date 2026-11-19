@@ -23,7 +23,7 @@ import { ed25519Valid } from "../solana/limits/trigger-tx.ts";
 import { onDevnet } from "../bots/ladder/connection.server.ts";
 import { planEnable, planStopAndWithdraw, tokenAccountOf, unsignedTransaction, type Mandate } from "./human.ts";
 import { NATIVE_MINT, readPolicyHead, readProgramConfig, readSettings, ssaAddress, SSA_PROGRAM_ID } from "./ssa.ts";
-import { budgetPreset, presetOpenOn, type BudgetPresetId } from "./presets.ts";
+import { agentNetworkOf, budgetFund, budgetRefusal, type AgentBudget } from "./budget.ts";
 import { NO_TIDY, withTidy, type Tidy } from "./tidy.ts";
 import { getGuardRuntime } from "../guard/runtime.ts";
 import type { GuardStore } from "../guard/store.ts";
@@ -124,7 +124,8 @@ export const recordOf = (mandate: Mandate): MandateRecord => ({
   expiresAt: mandate.terms.expiresAt.toString(),
 });
 
-export type ReviewResult = Readonly<{ ok: true; record: MandateRecord; transactions: readonly string[]; fundLamports: string }> | Readonly<{ ok: false; code: string; reason: string }>;
+/** `fundLamports` — what the signature moves into her vault; `networkLamports` — what it gives the agent for its fees. */
+export type ReviewResult = Readonly<{ ok: true; record: MandateRecord; transactions: readonly string[]; fundLamports: string; networkLamports?: string }> | Readonly<{ ok: false; code: string; reason: string }>;
 
 /**
  * The chain's clock, in seconds, at its newest confirmed slot — or null when the node cannot say. A node often has no
@@ -148,16 +149,18 @@ export async function poolOtherToken(connection: Connection, pool: PublicKey): P
 }
 
 /**
- * Turn the agent on: the person's unsigned transactions (one approval), for a budget preset, on her smart account —
- * the one she already has, or a new one. On devnet the agent buys the pool's coin; on mainnet the coin she names, by
- * Jupiter's route.
+ * Turn the agent on: the person's unsigned transactions (one approval), for her own budget — the day's cap, the trade's
+ * and the term she wrote (no ceiling of Ryntra's, `./budget.ts`) — on her smart account, the one she already
+ * has or a new one. On devnet the agent buys the pool's coin; on mainnet the coin she names, by Jupiter's route.
  */
 export async function reviewEnable(
-  input: Readonly<{ owner: string; preset: BudgetPresetId; smartAccount?: string | null; coin?: string | null }>,
+  input: Readonly<{ owner: string; budget: AgentBudget; smartAccount?: string | null; coin?: string | null }>,
   gate: Extract<MandateGate, { open: true }>,
   connection: Connection = mandateConnection(gate.network),
   dependencies: Readonly<{ receiveMint?: (connection: Connection, pool: PublicKey) => Promise<PublicKey>; origin?: (mint: string) => Promise<CoinOrigin> }> = {},
 ): Promise<ReviewResult> {
+  const budgetWrong = budgetRefusal(input.budget);
+  if (budgetWrong) return { ok: false, code: "VALIDATION_ERROR", reason: `Not a budget: ${budgetWrong}.` };
   if (!(await onNetwork(connection, gate.network))) return notNetwork(gate.network);
   const owner = addressOf(input.owner);
   if (!owner) return { ok: false, code: "VALIDATION_ERROR", reason: "Not a wallet address." };
@@ -170,8 +173,9 @@ export async function reviewEnable(
     if (!origin) return { ok: false, code: "UNAVAILABLE", reason: "Ryntra's launch registry is not readable." };
     if (origin.launchedHere) return { ok: false, code: "REFUSED", reason: origin.creator === owner.toBase58() ? "The agent does not buy your own coin." : "The agent does not buy coins launched on Ryntra." };
   }
-  if (!presetOpenOn(gate.network, input.preset)) return { ok: false, code: "VALIDATION_ERROR", reason: `The budget is not one ${gate.network} offers.` };
-  const preset = budgetPreset(input.preset);
+  const budget = input.budget;
+  const fund = budgetFund(budget);
+  const network = agentNetworkOf(budget);
   const now = BigInt((await chainSeconds(connection)) ?? Math.floor(Date.now() / 1000));
   let account: Parameters<typeof planEnable>[0]["account"];
   const known = addressOf(input.smartAccount ?? undefined);
@@ -203,17 +207,17 @@ export async function reviewEnable(
         human: owner,
         agent: gate.agent,
         budgetMint: NATIVE_MINT,
-        perTrade: preset.perTrade,
-        perDay: preset.perDay,
+        perTrade: budget.perTrade,
+        perDay: budget.perDay,
         slippageBps: 100,
-        expiresAt: now + BigInt(preset.days) * 86_400n,
+        expiresAt: now + BigInt(budget.days) * 86_400n,
         venue: gate.network === "mainnet" ? { kind: "jupiter" } : { kind: "dlmm", pool: gate.pool },
       },
       account,
-      fund: preset.budget,
+      fund,
       nowSeconds: now,
       receiveMints: [receive],
-      agentFeeLamports: preset.agentFee,
+      agentFeeLamports: network,
     });
   } catch (error) {
     return { ok: false, code: "REFUSED", reason: error instanceof Error ? error.message : "The mandate is not written." };
@@ -223,7 +227,8 @@ export async function reviewEnable(
     ok: true,
     record: recordOf(plan.mandate),
     transactions: plan.transactions.map((instructions) => toBase64(unsignedTransaction(owner, instructions, blockhash))),
-    fundLamports: preset.budget.toString(),
+    fundLamports: fund.toString(),
+    networkLamports: network.toString(),
   };
 }
 

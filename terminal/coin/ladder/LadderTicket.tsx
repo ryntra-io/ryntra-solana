@@ -13,6 +13,7 @@ import { useWallet } from '@/city/lib/trade/wallet';
 import { Action, AmountField, Figure, Kick, Quiet, Segment, Slider, SwitchRow, Tabs, cx, priceText } from '@/terminal/ui';
 import { setLayer } from '../chart-layer';
 import { ExplainBox, ExplainButton, LONG_LABEL, Rows, bare, connectOrPick } from '../parts';
+import { coinLogo, payLogo } from '../staples';
 import { WalletPick } from '../WalletPick';
 import { LADDER_MIN_RUNGS, LADDER_START_RUNGS, TICKET_START_BPS, bpsOfPercent, depositSol, farPrice, ladderLines, percentField, priceAt, shapeOf, signedPercent, type Shape } from './ladder-view';
 import { LIMIT } from './words';
@@ -21,16 +22,16 @@ import l from './ladder.module.css';
 
 type W = (typeof LIMIT)['en'];
 
-/** The quote coin's logo: USDC's own, kept with the site; SOL's from the engine. */
-const USDC_LOGO = '/site/universe/USDC.png';
-
 /** A price in the quote coin as the person reads it: dollars for USDC, the coin's own figure for SOL. */
 export function quotePrice(value: number, unit: string, lang: Lang): string {
   if (unit === 'USDC') return priceText(value, lang);
   return `${digits(plainFigure(value, { places: 4, significant: 4 }), lang)} ${unit}`;
 }
 
-const pct = (bps: number, lang: Lang) => digits(String(Math.round(bps) / 100), lang);
+// A fraction of a basis point is said, never rounded to «+0%» (JitoSOL's bonus is 0.004 %, as the pool's head says).
+const pct = (bps: number, lang: Lang) => digits(String(Number((bps / 100).toFixed(bps < 10 ? 3 : 2))), lang);
+/** A pool whose fee is this low is a pair that moves little (a staked SOL against SOL): its ladder starts at the slider's nearest. */
+const CALM_FEE_BPS = 10;
 
 /**
  * The ticket's Limit tab: buy cheaper or sell higher in the coin's Meteora DLMM Pro pool, at one price or on a ladder of
@@ -82,8 +83,9 @@ function Fields({ coin, market, usd }: { coin: TowerRef; market: Market; usd: nu
     const key = `${coin.mint}:${action}`;
     if (started.current === key || !ends || farBps === null || busy) return;
     started.current = key;
-    if (!state.shown && farBps === SLIDER_START_BPS[action]) state.setReach(positionOf(TICKET_START_BPS[action], action, ends), true);
-  }, [coin.mint, action, ends, farBps, busy, state]);
+    const calm = market.bonus.feeBps <= CALM_FEE_BPS;
+    if (!state.shown && farBps === SLIDER_START_BPS[action]) state.setReach(positionOf(calm ? ends.min : TICKET_START_BPS[action], action, ends), true);
+  }, [coin.mint, action, ends, farBps, busy, state, market.bonus.feeBps]);
   // The count is this tab's own: left, the store fits as many as it can again, as the city's view of the coin asks.
   // Never over a placed order: «Placed» stands in place of these fields and keeps its phase.
   useEffect(
@@ -166,7 +168,7 @@ function Fields({ coin, market, usd }: { coin: TowerRef; market: Market; usd: nu
           aside={balance ? w.balance(balance) : undefined}
           value={fieldText(state.typed)}
           onChange={(text) => state.setTyped(fieldValue(text))}
-          asset={{ symbol: unit, icon: action === 'buy' ? (market.quote.symbol === 'USDC' ? USDC_LOGO : `/api/icon/${market.quote.mint}`) : coin.icon ? `/api/icon/${coin.mint}` : null }}
+          asset={{ symbol: unit, icon: action === 'buy' ? payLogo({ mint: market.quote.mint, icon: null }) : coinLogo(coin) }}
         />
       </fieldset>
       {ends && farBps !== null ? (
@@ -200,8 +202,9 @@ function Fields({ coin, market, usd }: { coin: TowerRef; market: Market; usd: nu
                   type="button"
                   className={l.step}
                   aria-label={w.more}
-                  // The pool fits fewer prices than asked where the distance is short: more would change nothing.
+                  // The pool fits fewer prices than asked where the distance is short: more would change nothing — said on the control.
                   disabled={busy || count >= LADDER_MAX_RUNGS || (quote !== null && rungs !== null && quote.rungs.length < rungs)}
+                  title={quote !== null && rungs !== null && quote.rungs.length < rungs ? w.moreFull : undefined}
                   onClick={() => state.setRungs(Math.min(LADDER_MAX_RUNGS, count + 1))}
                 >
                   +
@@ -212,7 +215,12 @@ function Fields({ coin, market, usd }: { coin: TowerRef; market: Market; usd: nu
         </div>
         <div className={l.tile}>
           <Kick>{w.average}</Kick>
-          <Figure value={quote ? quotePrice(quote.averagePrice, market.quote.symbol, lang) : '—'} size="m" />
+          {/* The coin it is priced in stands small beside the figure: «0.003528 SOL» whole in a quarter of the ticket. */}
+          {quote && market.quote.symbol !== 'USDC' ? (
+            <Figure value={digits(plainFigure(quote.averagePrice, { places: 4, significant: 4 }), lang)} unit={market.quote.symbol} size="m" />
+          ) : (
+            <Figure value={quote ? quotePrice(quote.averagePrice, market.quote.symbol, lang) : '—'} size="m" />
+          )}
         </div>
         <div className={l.tile}>
           <Kick>{w.youGet(getUnit)}</Kick>

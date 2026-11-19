@@ -1,0 +1,577 @@
+/* The Bots section: how the kit's parts are laid out. Colours, faces and sizes are the terminal's variables
+   (terminal/styles); corners are the kit's — nothing here names a colour or a corner of its own. */
+
+.view {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+/* ── a bot's head in its panel ─────────────────────────────────────────── */
+
+.head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.headWords {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.headTitle {
+  font-size: var(--type-action);
+}
+
+.job {
+  font-size: var(--type-small);
+  font-weight: 500;
+  color: var(--soft);
+}
+
+.badge {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  color: var(--lilac);
+  border: 1px solid var(--glass-edge);
+  background: color-mix(in srgb, var(--violet) 14%, transparent);
+}
+
+.badge[data-on] {
+  color: var(--ice);
+  background: color-mix(in srgb, var(--violet) 28%, transparent);
+}
+
+.facts {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* ── the form ──────────────────────────────────────────────────────────── */
+
+.twoUp {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.fieldBox {
+  position: relative;
+  min-width: 0;
+}
+
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.line {
+  font-size: var(--type-small);
+  font-weight: 600;
+  color: var(--soft);
+  font-variant-numeric: tabular-nums;
+}
+
+/* The risk before the signature (a stock's coin while its exchange is shut): one warm line under the costs. */
+.risk {
+  font-size: var(--type-small);
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--warm);
+}
+
+/* The line before the signature breaks only between its parts. */
+.part {
+  white-space: nowrap;
+}
+
+.note {
+  font-size: var(--type-small);
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.note[data-tone='warn'] {
+  color: var(--warm);
+}
+
+/* A line kept in place before it is said: an answer never pushes the action. */
+.slot {
+  min-height: 20px;
+}
+
+/* ── the coin's list, under the field's coin ───────────────────────────── */
+
+.menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: min(340px, 100%);
+  padding: 8px;
+  background: var(--panel-up);
+  border: 1px solid var(--edge);
+  box-shadow: 0 18px 40px color-mix(in srgb, var(--ink-deep) 70%, transparent);
+}
+
+/* The list's search takes the list's whole width. */
+.menu > :first-child {
+  width: 100%;
+}
+
+.menuList {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.menuRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  padding: 0 10px;
+  font-size: var(--type-body);
+  font-weight: 700;
+  text-align: left;
+  color: var(--ice);
+  transition: background-color 0.15s;
+}
+
+.menuRow:hover,
+.menuRow[aria-checked='true'] {
+  background: var(--chosen);
+}
+
+.menuName {
+  flex: 1 1 0;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.menuAside {
+  font-size: var(--type-caption);
+  font-weight: 600;
+  color: var(--dim);
+  font-variant-numeric: tabular-nums;
+}
+
+/* A coin Jupiter has not verified: one quiet sign after its ticker. */
+.unchecked {
+  display: inline-flex;
+  flex: none;
+  color: var(--dim);
+}
+
+.menuEmpty {
+  padding: 12px 10px;
+  font-size: var(--type-small);
+  font-weight: 500;
+  color: var(--dim);
+}
+
+/* ── the side column ───────────────────────────────────────────────────── */
+
+.side {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+.coin {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.coinWords {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.coinSymbol {
+  font-family: var(--display);
+  font-weight: 800;
+  font-stretch: 125%;
+  font-size: var(--type-lead);
+}
+
+.coinName {
+  font-size: var(--type-caption);
+  font-weight: 500;
+  color: var(--dim);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.figureCol {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.cap {
+  font-size: var(--type-caption);
+  font-weight: 500;
+  color: var(--dim);
+  font-variant-numeric: tabular-nums;
+}
+
+/* The ladder itself: one step a price, the market's price where it stands among them. */
+.rungs {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rung {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  min-height: 34px;
+  padding: 0 12px 0 10px;
+  background: var(--well);
+  border-left: 2px solid var(--violet);
+}
+
+.rung[data-side='buy'] {
+  border-left-color: var(--mint);
+}
+
+.rung[data-side='exit'] {
+  border-left-color: var(--flare);
+}
+
+.rung[data-now] {
+  background: transparent;
+  border-left-color: var(--lilac);
+}
+
+.rungIndex {
+  font-size: var(--type-caption);
+  font-weight: 600;
+  color: var(--dim);
+  font-variant-numeric: tabular-nums;
+}
+
+.rungPrice {
+  font-family: var(--display);
+  font-size: var(--type-body);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.rungPct {
+  font-size: var(--type-caption);
+  font-weight: 600;
+  color: var(--soft);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── my bots ───────────────────────────────────────────────────────────── */
+
+.mineHead {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 18px 10px;
+}
+
+.mineTitle {
+  flex: 1 1 0;
+  min-width: 0;
+  font-size: var(--type-action);
+}
+
+.who {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.whoWords {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.name {
+  font-family: var(--display);
+  font-weight: 800;
+  font-stretch: 125%;
+  font-size: var(--type-body);
+}
+
+.sub {
+  font-size: var(--type-caption);
+  font-weight: 500;
+  color: var(--dim);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rowEnd {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.resultCell {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.empty {
+  padding: 4px 18px 20px;
+  font-size: var(--type-body);
+  font-weight: 500;
+  color: var(--dim);
+}
+
+.notePad {
+  padding: 0 18px 16px;
+}
+
+/* A phone's card of one bot. */
+.cards {
+  display: none;
+  flex-direction: column;
+}
+
+/* One bot on a phone: a block of the panel, a line between them — never a panel in the panel. */
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px 16px 16px;
+  border-top: 1px solid var(--line);
+}
+
+.cardHead {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.cardEnd {
+  display: flex;
+  gap: 8px;
+}
+
+.cardEnd > * {
+  flex: 1 1 0;
+}
+
+.emptyPhone {
+  padding: 18px 2px 0;
+  font-size: var(--type-body);
+  font-weight: 500;
+  color: var(--dim);
+  text-align: center;
+}
+
+/* ── the catalogue: a card a bot, the grid's first and twice as wide ─────────────────────────────────────── */
+
+/* The catalogue stands on the head's line, at the left of the working area as the head and the Grid's desk do — not in
+   the middle under a head at the left. Stronger than the action page's centred container on purpose. */
+.catalogBody.catalogBody.catalogBody[data-page-body] {
+  margin-inline: 0;
+}
+
+.catalog {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.catalogCard {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+  min-height: 248px;
+  padding: 24px;
+  color: var(--ice);
+  background: var(--glass);
+  border: 1px solid var(--pane-edge);
+  transition: border-color 0.15s, background-color 0.15s;
+}
+
+.catalogCard:hover {
+  border-color: var(--edge);
+  background: color-mix(in srgb, var(--violet) 6%, var(--panel));
+}
+
+.catalogCard:focus-visible {
+  outline: 2px solid var(--lilac);
+  outline-offset: -2px;
+}
+
+/* The lead card: its words on the left, the bot's own shape drawn on the right. */
+.catalogCard[data-lead] {
+  grid-column: span 2;
+  padding-right: calc(42% + 24px);
+}
+
+.catalogTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.catalogWords {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.catalogName {
+  font-size: var(--type-title);
+}
+
+.catalogTags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.catalogTag {
+  display: inline-flex;
+  align-items: center;
+  height: 28px;
+  padding: 0 10px;
+  font-size: var(--type-caption);
+  font-weight: 600;
+  color: var(--soft);
+  border: 1px solid var(--glass-edge);
+  white-space: nowrap;
+}
+
+.catalogTag[data-tone='pro'] {
+  color: var(--lilac);
+  border-color: var(--edge);
+  background: color-mix(in srgb, var(--violet) 14%, transparent);
+}
+
+.catalogLive {
+  font-family: var(--display);
+  font-size: var(--type-body);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--ice);
+}
+
+.catalogGo {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: auto;
+  font-size: var(--type-body);
+  font-weight: 650;
+  color: var(--soft);
+  transition: color 0.15s;
+}
+
+.catalogCard:hover .catalogGo {
+  color: var(--ice);
+}
+
+/* Its height said outright: a drawing keeps its own proportions between a top and a bottom otherwise. */
+.catalogPicture {
+  position: absolute;
+  top: 24px;
+  right: 24px;
+  width: 42%;
+  height: calc(100% - 48px);
+  background: var(--well);
+  border: 1px solid var(--line);
+}
+
+.pictureBuy {
+  stroke: var(--mint);
+  stroke-width: 1.5;
+  opacity: 0.6;
+}
+
+.pictureSell {
+  stroke: var(--flare);
+  stroke-width: 1.5;
+  opacity: 0.6;
+}
+
+.picturePrice {
+  fill: none;
+  stroke: var(--lilac);
+  stroke-width: 2;
+}
+
+@media (max-width: 1099px) {
+  .catalog {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 767px) {
+  .deskOnly {
+    display: none;
+  }
+
+  .cards {
+    display: flex;
+  }
+
+  .catalog {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 14px;
+  }
+
+  .catalogCard {
+    min-height: 0;
+    padding: 18px 16px;
+  }
+
+  .catalogCard[data-lead] {
+    grid-column: auto;
+    padding-right: 16px;
+  }
+
+  .catalogPicture {
+    display: none;
+  }
+}

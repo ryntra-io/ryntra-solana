@@ -14,7 +14,6 @@ import {
   HOME_PATH,
   KIT_PATH,
   PHONE_CENTER,
-  PHONE_SHEET,
   PHONE_TABS,
   SHELF_IDS,
   SHELVES,
@@ -68,7 +67,7 @@ test("the switch: `stand` and `open` open the terminal, the kit page only on a s
   assert.match(read("terminal/shell/flag.ts"), /process\.env\.NEXT_PUBLIC_RYNTRA_TERMINAL\)/);
 });
 
-test("eight shelves in the rail's order, each with an address of its own; the phone's five tabs and its sheet hold all of them", () => {
+test("eight shelves in the rail's order, each with an address of its own; the phone's five tabs", () => {
   assert.deepEqual([...SHELF_IDS], ["market", "swap", "futures", "predict", "earn", "agents", "launch", "portfolio"]);
   const paths = SHELF_IDS.map((id) => SHELVES[id].path);
   assert.equal(new Set(paths).size, paths.length, "no two shelves share an address");
@@ -76,7 +75,7 @@ test("eight shelves in the rail's order, each with an address of its own; the ph
   assert.equal(PHONE_TABS.length, 5);
   assert.equal(PHONE_TABS[2], PHONE_CENTER, "the agent is the middle tab");
   assert.equal(PHONE_CENTER, "agents");
-  assert.deepEqual([...PHONE_TABS, ...PHONE_SHEET].sort(), [...SHELF_IDS].sort(), "every shelf has its place on a phone, once");
+  assert.equal(new Set(PHONE_TABS).size, 5, "five shelves, each once; the rest of the menu stands in the sheet (menu.test.mjs)");
 });
 
 test("a shelf stands only once its screen is ready and the switch is open: no empty shelf, no «soon»", () => {
@@ -87,7 +86,7 @@ test("a shelf stands only once its screen is ready and the switch is open: no em
   assert.deepEqual(shelvesShown("preview", "stand", READY([])), [...SHELF_IDS], "the kit page shows every shelf");
   // Each shelf keeps its lines apart, so two screens turning theirs on at once never edit the same line.
   const source = read("terminal/shell/shelves.ts");
-  for (const id of SHELF_IDS) assert.match(source, new RegExp(`\\n  ${id}: \\{\\n    path: '[^']+',\\n    ready: (true|false),\\n  \\},`), id);
+  for (const id of SHELF_IDS) assert.match(source, new RegExp(`\\n  ${id}: \\{\\n    path: '[^']+',\\n    ready: (true|false),\\n(    also: [^\\n]*,\\n)?  \\},`), id);
 });
 
 test("addresses: a shelf's own and the ones under it, a coin's screen in the Market, the kit's previews inside the kit", () => {
@@ -165,13 +164,13 @@ test("a shelf that is on takes back only its own short address, on ryntra.io; ev
   const taken = (ids) => rows.filter((row) => takenByTerminal(row, "open", READY(ids))).map((row) => row.source);
   assert.deepEqual(taken(["swap"]), ["/swap"]);
   assert.deepEqual(taken(["earn"]), ["/earn"]);
-  assert.deepEqual(taken(["portfolio"]), ["/portfolio"]);
+  assert.deepEqual(taken(["portfolio"]), ["/money", "/portfolio", "/rewards"], "«Money» and «Rewards» are pages of the Portfolio shelf");
   assert.deepEqual(taken(["launch"]), ["/launch"]);
   assert.deepEqual(taken(["futures"]), ["/futures"]);
   assert.deepEqual(taken(["predict"]), ["/predictions"], "the old /predict keeps leading to the Oracle");
-  assert.deepEqual(taken(["agents"]), [], "/agent never led anywhere; /agents stays the old pages'");
+  assert.deepEqual(taken(["agents"]), ["/bots"], "/agent never led anywhere; /agents stays the old pages'; the bots' pages take /bots");
   assert.deepEqual(taken(["market"]), [rows.find((row) => row.source.startsWith("/coin/") && !row.has)?.source].filter(Boolean));
-  assert.equal(taken([...SHELF_IDS]).length, 7);
+  assert.equal(taken([...SHELF_IDS]).length, 10);
   for (const row of rows.filter((r) => r.has?.some((c) => c.type === "host"))) assert.equal(takenByTerminal(row, "open", READY([...SHELF_IDS])), false, `the app host's own: ${row.source}`);
 });
 

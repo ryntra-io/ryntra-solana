@@ -26,6 +26,11 @@ export type KnownAsset = PayAsset & Readonly<{ decimals: number }>;
 
 export const SOL: KnownAsset = { mint: WRAPPED_SOL_MINT, symbol: 'SOL', decimals: NATIVE_SOL_DECIMALS, name: 'Solana', verified: true, icon: `/api/icon/${WRAPPED_SOL_MINT}` };
 export const USDC: KnownAsset = { mint: SOLANA_MAINNET_USDC_MINT, symbol: 'USDC', decimals: 6, name: 'USD Coin', verified: true, icon: null };
+/**
+ * Tether's dollar on Solana: offered beside SOL and USDC by the Spot desk, and picked as a coin of its own
+ * (`pickCoin`) — not one of the card's two; a buy paid with it starts where one paid with USDC does (`size.ts`).
+ */
+export const USDT_MINT = 'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB';
 
 /** SOL and USDC: the two the card always offers, written without a `$`. */
 export function isBase(asset: Pick<PayAsset, 'mint'>): boolean {

@@ -3,9 +3,7 @@ import { FEE_POLICY_V2, TRENDING_MIN_AGE_MS } from '../../../lib/core/fee-policy
 import { presetTerms } from '../../../lib/core/launch/preset-terms.ts';
 import { DLMM_LIMIT_MAKER_FEE_SHARE_PERCENT, TRIGGER_V1_MIN_ORDER_USD } from '../../../lib/solana/limits/model.ts';
 import { RYNTRA_SERVICE_FEE_POLICY } from '../../../lib/swap/service-fee.ts';
-import { LIMIT_CEILING_USD } from '../earn/limit-gate.ts';
 import { PIER_MIN_LAMPORTS } from '../earn/pier.ts';
-import { PIER_CEILING_USD } from '../earn/pier-gate.ts';
 import type { Lang } from '../i18n/langs.ts';
 import { CITY_DEFAULT_PRESET, type CityPresetId } from '../launch/gate.ts';
 import { PARTNER_TERMS, type PartnerTerms } from '../partners/terms.ts';
@@ -46,7 +44,7 @@ export type DocsFacts = Readonly<{
     poolDays: number;
     poolCreatorBps: number;
   }>;
-  earn: Readonly<{ pierMinSol: number; pierCeilingUsd: number; limitCeilingUsd: number; makerSharePct: number }>;
+  earn: Readonly<{ pierMinSol: number; makerSharePct: number }>;
   partners: PartnerTerms;
 }>;
 
@@ -100,8 +98,6 @@ export function docsFacts(): DocsFacts {
     },
     earn: {
       pierMinSol: Number(PIER_MIN_LAMPORTS) / 1e9,
-      pierCeilingUsd: PIER_CEILING_USD['meteora-dlmm']!,
-      limitCeilingUsd: LIMIT_CEILING_USD,
       makerSharePct: DLMM_LIMIT_MAKER_FEE_SHARE_PERCENT,
     },
     partners: PARTNER_TERMS,

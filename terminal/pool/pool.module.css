@@ -1,0 +1,531 @@
+/* Meteora DLMM Pro: a pool's own desk (its head, «Liquidity by price», the ticket's bonus) and the list of
+   the pools. Straight dark glass in the terminal's tokens; the two coins of a pool are the brand's two lights — the coin
+   itself violet, the coin it is priced in mint. Corners and pressable parts are the kit's. */
+
+/* ── the head ─────────────────────────────────────────────────────────── */
+
+.pair,
+.pairSmall {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+}
+
+.pair > :nth-child(2),
+.pairSmall > :nth-child(2) {
+  margin-left: -12px;
+  box-shadow: 0 0 0 2px var(--panel);
+}
+
+.badge {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  width: max-content;
+  padding: 2px 8px;
+  border: 1px solid var(--edge);
+  background: color-mix(in srgb, var(--violet) 18%, transparent);
+  font-size: var(--type-micro);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--lilac);
+  white-space: nowrap;
+}
+
+.inQuote {
+  font-size: var(--type-caption);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--dim);
+  white-space: nowrap;
+}
+
+.up {
+  color: var(--mint);
+}
+
+.headTools {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 8px;
+}
+
+.facts {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 280px;
+}
+
+.fact {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: var(--type-caption);
+  color: var(--dim);
+}
+
+.fact b {
+  font-weight: 700;
+  color: var(--ice);
+  text-align: right;
+}
+
+.address {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  font-size: var(--type-micro);
+  color: var(--soft);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* A laptop's desk (1440): the pool's four figures stay in sight, the price's step among them; «Pool details»
+   says its «i» alone and the figures stand a step closer. */
+@media (min-width: 1361px) and (max-width: 1680px) {
+  .poolHead {
+    gap: 12px;
+  }
+
+  .poolHead dl > div {
+    padding: 0 10px;
+  }
+
+  .headTools button[aria-expanded] > span {
+    display: none;
+  }
+}
+
+/* A narrow laptop (1366): the price itself a step smaller, so the price's step still stands in sight. */
+@media (min-width: 1361px) and (max-width: 1500px) {
+  .poolHead > :nth-child(2) > b {
+    font-size: var(--type-title);
+  }
+
+  .spotSym {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}
+
+/* ── «Liquidity by price» ─────────────────────────────────────────────── */
+
+.dist {
+  flex: none;
+  margin: 0;
+  padding: 24px 12px 10px;
+  border-bottom: 1px solid var(--line);
+}
+
+.distPlot {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  gap: 1px;
+  height: 112px;
+}
+
+.distCol {
+  flex: 1 1 0;
+  min-width: 0;
+  height: var(--h);
+  background: color-mix(in srgb, var(--violet) 82%, transparent);
+}
+
+.distCol[data-side='quote'] {
+  background: color-mix(in srgb, var(--mint) 70%, transparent);
+}
+
+.distCol[data-side='both'] {
+  background: linear-gradient(to top, color-mix(in srgb, var(--mint) 70%, transparent) calc(100% - var(--coin)), color-mix(in srgb, var(--violet) 82%, transparent) calc(100% - var(--coin)));
+}
+
+.distHere {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: var(--here);
+  border-left: 1px dashed var(--ice);
+  pointer-events: none;
+}
+
+.distTag {
+  position: absolute;
+  top: -20px;
+  left: 0;
+  padding: 1px 6px;
+  border: 1px solid var(--glass-edge);
+  background: var(--panel-up);
+  font-size: var(--type-micro);
+  font-weight: 600;
+  color: var(--ice);
+  white-space: nowrap;
+  transform: translateX(-50%);
+}
+
+.distAxis {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 6px;
+  font-size: var(--type-micro);
+  font-variant-numeric: tabular-nums;
+  color: var(--dim);
+}
+
+.distAxis b {
+  font-weight: 700;
+  color: var(--ice);
+}
+
+.distWait {
+  flex: none;
+  height: 146px;
+  border-bottom: 1px solid var(--line);
+  background: var(--panel);
+}
+
+.quietLine {
+  margin: 0;
+  padding: 16px 12px;
+  font-size: var(--type-caption);
+  color: var(--dim);
+}
+
+/* ── the ticket's column: what a limit order earns, then the ticket ───── */
+
+.ticketCol {
+  display: flex;
+  flex: 1 0 auto;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 100%;
+}
+
+.bonus {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid color-mix(in srgb, var(--mint) 34%, transparent);
+  background: color-mix(in srgb, var(--mint) 7%, transparent);
+}
+
+.bonusBig {
+  flex: none;
+  font-family: var(--display);
+  font-size: var(--type-title);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  color: var(--mint);
+}
+
+.bonusWords {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  font-size: var(--type-caption);
+  color: var(--soft);
+}
+
+.bonusWords b {
+  font-size: var(--type-body);
+  color: var(--ice);
+}
+
+/* ── the ticket's three tabs: Position · Limit · Swap ───────── */
+
+/* The ticket stands the column's whole height, as the Spot's does. */
+.side {
+  flex: 1 0 auto;
+}
+
+.sidePhone {
+  flex: none;
+}
+
+.sideWait {
+  flex: none;
+  min-height: 320px;
+  background: var(--panel);
+}
+
+.sideFoot {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: auto;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+
+/* A Position tab where a position is not open here: the line, then the tab's one action under it. */
+.soonState {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Where a position is not open here yet: one quiet line, why behind «i». */
+.soon {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 1px solid var(--edge);
+  background: var(--well);
+}
+
+.soonWords {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  min-width: 0;
+  font-size: var(--type-small);
+  color: var(--soft);
+}
+
+.soonWords b {
+  font-size: var(--type-body);
+  font-weight: 700;
+  color: var(--ice);
+}
+
+.venueLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--type-small);
+  font-weight: 700;
+  color: var(--lilac);
+}
+
+.venueLink:hover {
+  color: var(--ice);
+}
+
+/* A pool that holds nothing yet: one line and the way in, centred in the column. */
+.emptyPool {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 24px 16px;
+  text-align: center;
+  font-size: var(--type-body);
+  color: var(--ice);
+}
+
+/* ── the pair as a picker of the pair's pools ───────────────────────────── */
+
+.pairHead {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.pairBtn {
+  gap: 12px;
+}
+
+/* Narrower than the coin's picker on a wide desk; below it the coin picker's own rule lays it across the window. */
+@media (min-width: 1361px) {
+  .pairPicker[role='dialog'] {
+    width: 600px;
+  }
+}
+
+/* The picker's title, with how the kinds differ behind its «i». */
+.pairTitle {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--line);
+  font-size: var(--type-caption);
+  font-weight: 600;
+  color: var(--dim);
+}
+
+/* The pools in groups by kind, the groups in one scroll. */
+.pairList {
+  padding: 0 0 6px;
+}
+
+.pairGroup + .pairGroup {
+  margin-top: 6px;
+  border-top: 1px solid var(--line);
+}
+
+.pairGroupHead {
+  margin: 0;
+  padding: 12px 14px 2px;
+  font-size: var(--type-caption);
+  color: var(--dim);
+}
+
+.pairGroupHead b {
+  font-weight: 700;
+  color: var(--ice);
+}
+
+.pairRows {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* Five columns at every width: the kind, the pool's fee, its step, its liquidity, and a Pro pool's limit bonus — the
+   coin picker's narrow rule hides its own last column, never this one's. Each group's head names them in the same grid. */
+.pairPicker .pairRow,
+.pairCols {
+  display: grid;
+  grid-template-columns: 84px minmax(0, 1fr) minmax(0, 1fr) 80px 96px;
+  align-items: center;
+  gap: 12px;
+}
+
+.pairPicker .pairRow {
+  min-height: 44px;
+}
+
+.pairCols {
+  flex: none;
+  margin: 0;
+  padding: 6px 14px 2px;
+  font-size: var(--type-micro);
+  font-weight: 600;
+  color: var(--dim);
+}
+
+/* Fixed widths for the figures: each row is a grid of its own, so the columns line up row to row and with the head. */
+.pairCols > :nth-child(n + 4) {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.pairPicker .pairRow > :last-child {
+  display: block;
+}
+
+.pairRow[data-here] {
+  box-shadow: inset 2px 0 0 var(--lilac);
+  background: var(--chosen);
+}
+
+.pairVenue {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--type-micro);
+  font-weight: 700;
+  color: var(--lilac);
+  white-space: nowrap;
+}
+
+.pairVenue svg {
+  color: var(--mint);
+}
+
+.pairFee {
+  font-size: var(--type-body);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.pairStep {
+  font-size: var(--type-small);
+  font-variant-numeric: tabular-nums;
+  color: var(--dim);
+}
+
+.pairNum {
+  font-size: var(--type-small);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  white-space: nowrap;
+}
+
+@media (max-width: 767px) {
+  .pairPicker .pairRow,
+  .pairCols {
+    grid-template-columns: 72px minmax(0, 1fr) minmax(0, 1fr) 64px 72px;
+    gap: 8px;
+  }
+
+  .pairCols > :nth-child(n + 4) {
+    white-space: normal;
+  }
+}
+
+/* A group's deeper pools past its first five, one quiet line away. */
+.pairMore {
+  margin: 0 14px;
+  padding: 6px 0 2px;
+  font-size: var(--type-caption);
+  font-weight: 600;
+  color: var(--dim);
+}
+
+.pairMore:hover {
+  color: var(--ice);
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* ── the phone ─────────────────────────────────────────────────────────── */
+
+.phoneBlock {
+  display: flex;
+  flex-direction: column;
+  height: 420px;
+  border: 1px solid var(--glass-edge);
+  background: var(--glass);
+}
+
+.phoneTicket {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* ── a phone: the pool's tools under its figures ────────────────────────── */
+
+@media (max-width: 767px) {
+  .headTools {
+    order: 4;
+    flex: 1 1 100%;
+    justify-content: space-between;
+  }
+
+  .facts {
+    min-width: 0;
+  }
+}

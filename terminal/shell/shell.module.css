@@ -18,7 +18,8 @@
 .rail {
   position: sticky;
   top: 0;
-  z-index: 3;
+  /* Over the header: they meet only where the arrow that hides the rail stands on its edge. */
+  z-index: 5;
   flex: 0 0 var(--rail);
   display: flex;
   flex-direction: column;
@@ -115,6 +116,313 @@
   position: relative;
 }
 
+/* ── the menu: the Market, then the groups — each open by default, folded with the arrow by its name (menu.ts,
+   menu-fold.ts). A long menu scrolls inside the rail, softly fading at its foot; the page never moves for it. ── */
+
+.railMenu {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  /* To the rail's edges, so the lit bar of the place a person is in stays whole inside the scroll. */
+  margin: 0 -14px;
+  padding: 0 14px 22px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(238, 241, 255, 0.12) transparent;
+  mask-image: linear-gradient(180deg, #000 calc(100% - 22px), transparent);
+}
+
+.railMenu .nav {
+  height: 40px;
+  font-size: var(--type-body);
+}
+
+/* A group's items under its name, set in, with a quiet line down their side. */
+.itemsIn > .item {
+  height: 36px;
+  padding-left: 30px;
+  gap: 8px;
+  font-size: var(--type-body);
+}
+
+.itemsIn > .item > .mi {
+  width: 16px;
+  height: 16px;
+}
+
+.itemsIn::before {
+  content: '';
+  position: absolute;
+  top: 4px;
+  bottom: 8px;
+  left: 35px;
+  width: 1px;
+  background: var(--line);
+}
+
+.group {
+  position: relative;
+  flex: none;
+}
+
+.gh {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  height: 40px;
+  margin-top: 2px;
+  padding: 0 12px;
+  color: var(--soft);
+  font-size: var(--type-body);
+  font-weight: 500;
+  text-align: left;
+  transition:
+    color 0.15s,
+    background-color 0.15s;
+}
+
+.gh:hover {
+  color: var(--ice);
+  background: rgba(238, 241, 255, 0.04);
+}
+
+.gh[aria-expanded='true'] {
+  color: var(--ice);
+}
+
+.ghIcon {
+  position: relative;
+  display: flex;
+  color: var(--dim);
+}
+
+.gh:hover .ghIcon,
+.gh[aria-expanded='true'] .ghIcon {
+  color: var(--soft);
+}
+
+/* The group holds the place a person is in: its icon lit, quietly. */
+.group[data-lit] .ghIcon {
+  color: var(--ice);
+}
+
+.ghArrow {
+  color: var(--dim);
+}
+
+.ghName {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ghArrow {
+  display: flex;
+  transition: transform 0.2s ease;
+}
+
+/* How many of the person's bots work now. */
+.run {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--mint);
+  font-size: var(--type-caption);
+  font-weight: 600;
+  letter-spacing: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.run > .live {
+  width: 6px;
+  height: 6px;
+  box-shadow: 0 0 8px var(--mint);
+}
+
+.ghDot {
+  position: absolute;
+  top: -2px;
+  right: -4px;
+  display: none;
+  width: 6px;
+  height: 6px;
+  box-shadow: 0 0 8px var(--mint);
+}
+
+/* The group's items: folding closes them smoothly to nothing, and nothing folded takes a press or the keyboard. */
+.items {
+  display: grid;
+  grid-template-rows: 1fr;
+  transition:
+    grid-template-rows 0.22s ease,
+    visibility 0s;
+}
+
+.itemsIn {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+  margin: 0 -14px;
+  padding: 0 14px;
+}
+
+.flyHead {
+  display: none;
+}
+
+.itemName {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Another site: an arrow out, quiet, at the line's end. */
+.outMark {
+  display: flex;
+  color: var(--dim);
+}
+
+.item:hover .outMark {
+  color: var(--soft);
+}
+
+.mi,
+.miS {
+  width: 18px;
+  height: 18px;
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.miS {
+  width: 14px;
+  height: 14px;
+}
+
+/* A place on a screen the menu leads to (`#history`) comes into view under the header, not behind it. */
+.body :global(:is(#positions, #history)) {
+  scroll-margin-top: calc(var(--top) + 16px);
+}
+
+/* The rail stands over the screen while a group's items open beside it. */
+.rail[data-fly] {
+  z-index: 35;
+}
+
+/* The open rail's groups stand folded, all but the one the person is in; the ones the person opened stay open and the
+   one they folded stays folded (menu-fold.ts: the root's `data-menu-open` and `data-menu-shut`, set before the first
+   paint). A folded group that holds the place a person is in has its name lit, with the menu's amber point. */
+/* From just past the narrow desk's line (1359 px): a zoomed window between the two never leaves every group open. */
+@media (min-width: 1359.01px) {
+  :global(html:not([data-rail='folded'])) .items {
+    grid-template-rows: 0fr;
+    visibility: hidden;
+    transition:
+      grid-template-rows 0.22s ease,
+      visibility 0s linear 0.22s;
+  }
+
+  :global(html:not([data-rail='folded'])) .ghArrow {
+    transform: rotate(-90deg);
+  }
+
+  :global(html:not([data-rail='folded'])) .group[data-lit] > .items,
+  :global(html:not([data-rail='folded'])[data-menu-open~='trade']) .group[data-group='trade'] > .items,
+  :global(html:not([data-rail='folded'])[data-menu-open~='launch']) .group[data-group='launch'] > .items,
+  :global(html:not([data-rail='folded'])[data-menu-open~='bots']) .group[data-group='bots'] > .items,
+  :global(html:not([data-rail='folded'])[data-menu-open~='agents']) .group[data-group='agents'] > .items,
+  :global(html:not([data-rail='folded'])[data-menu-open~='earn']) .group[data-group='earn'] > .items,
+  :global(html:not([data-rail='folded'])[data-menu-open~='portfolio']) .group[data-group='portfolio'] > .items,
+  :global(html:not([data-rail='folded'])[data-menu-open~='money']) .group[data-group='money'] > .items,
+  :global(html:not([data-rail='folded'])[data-menu-open~='rewards']) .group[data-group='rewards'] > .items {
+    grid-template-rows: 1fr;
+    visibility: visible;
+    transition:
+      grid-template-rows 0.22s ease,
+      visibility 0s;
+  }
+
+  :global(html:not([data-rail='folded'])) .group[data-lit] .ghArrow,
+  :global(html:not([data-rail='folded'])[data-menu-open~='trade']) .group[data-group='trade'] .ghArrow,
+  :global(html:not([data-rail='folded'])[data-menu-open~='launch']) .group[data-group='launch'] .ghArrow,
+  :global(html:not([data-rail='folded'])[data-menu-open~='bots']) .group[data-group='bots'] .ghArrow,
+  :global(html:not([data-rail='folded'])[data-menu-open~='agents']) .group[data-group='agents'] .ghArrow,
+  :global(html:not([data-rail='folded'])[data-menu-open~='earn']) .group[data-group='earn'] .ghArrow,
+  :global(html:not([data-rail='folded'])[data-menu-open~='portfolio']) .group[data-group='portfolio'] .ghArrow,
+  :global(html:not([data-rail='folded'])[data-menu-open~='money']) .group[data-group='money'] .ghArrow,
+  :global(html:not([data-rail='folded'])[data-menu-open~='rewards']) .group[data-group='rewards'] .ghArrow {
+    transform: none;
+  }
+
+  :global(html:not([data-rail='folded'])[data-menu-shut~='trade']) .group[data-group='trade'][data-lit] > .items,
+  :global(html:not([data-rail='folded'])[data-menu-shut~='launch']) .group[data-group='launch'][data-lit] > .items,
+  :global(html:not([data-rail='folded'])[data-menu-shut~='bots']) .group[data-group='bots'][data-lit] > .items,
+  :global(html:not([data-rail='folded'])[data-menu-shut~='agents']) .group[data-group='agents'][data-lit] > .items,
+  :global(html:not([data-rail='folded'])[data-menu-shut~='earn']) .group[data-group='earn'][data-lit] > .items,
+  :global(html:not([data-rail='folded'])[data-menu-shut~='portfolio']) .group[data-group='portfolio'][data-lit] > .items,
+  :global(html:not([data-rail='folded'])[data-menu-shut~='money']) .group[data-group='money'][data-lit] > .items,
+  :global(html:not([data-rail='folded'])[data-menu-shut~='rewards']) .group[data-group='rewards'][data-lit] > .items {
+    grid-template-rows: 0fr;
+    visibility: hidden;
+    transition:
+      grid-template-rows 0.22s ease,
+      visibility 0s linear 0.22s;
+  }
+
+  :global(html:not([data-rail='folded'])[data-menu-shut~='trade']) .group[data-group='trade'][data-lit] .ghArrow,
+  :global(html:not([data-rail='folded'])[data-menu-shut~='launch']) .group[data-group='launch'][data-lit] .ghArrow,
+  :global(html:not([data-rail='folded'])[data-menu-shut~='bots']) .group[data-group='bots'][data-lit] .ghArrow,
+  :global(html:not([data-rail='folded'])[data-menu-shut~='agents']) .group[data-group='agents'][data-lit] .ghArrow,
+  :global(html:not([data-rail='folded'])[data-menu-shut~='earn']) .group[data-group='earn'][data-lit] .ghArrow,
+  :global(html:not([data-rail='folded'])[data-menu-shut~='portfolio']) .group[data-group='portfolio'][data-lit] .ghArrow,
+  :global(html:not([data-rail='folded'])[data-menu-shut~='money']) .group[data-group='money'][data-lit] .ghArrow,
+  :global(html:not([data-rail='folded'])[data-menu-shut~='rewards']) .group[data-group='rewards'][data-lit] .ghArrow {
+    transform: rotate(-90deg);
+  }
+
+  :global(html:not([data-rail='folded'])[data-menu-shut~='trade']) .group[data-group='trade'][data-lit] .gh,
+  :global(html:not([data-rail='folded'])[data-menu-shut~='launch']) .group[data-group='launch'][data-lit] .gh,
+  :global(html:not([data-rail='folded'])[data-menu-shut~='bots']) .group[data-group='bots'][data-lit] .gh,
+  :global(html:not([data-rail='folded'])[data-menu-shut~='agents']) .group[data-group='agents'][data-lit] .gh,
+  :global(html:not([data-rail='folded'])[data-menu-shut~='earn']) .group[data-group='earn'][data-lit] .gh,
+  :global(html:not([data-rail='folded'])[data-menu-shut~='portfolio']) .group[data-group='portfolio'][data-lit] .gh,
+  :global(html:not([data-rail='folded'])[data-menu-shut~='money']) .group[data-group='money'][data-lit] .gh,
+  :global(html:not([data-rail='folded'])[data-menu-shut~='rewards']) .group[data-group='rewards'][data-lit] .gh {
+    color: var(--ice);
+  }
+
+}
+
+/* Until the page is hydrated nothing of the menu moves: a group lit by the address alone settles without a slide. */
+:global(html:not([data-menu-ready])) .rail :is(.items, .ghArrow) {
+  transition: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .items,
+  .ghArrow {
+    transition: none;
+  }
+
+  .itemsIn {
+    animation: none;
+  }
+}
+
 /* ── the main column and its header ────────────────────────────────────── */
 
 .main {
@@ -162,12 +470,19 @@
   min-width: 0;
 }
 
+/* The phone's menu button (three lines, first in the header) and the mark beside it, which leads home. */
+/* (`.top >`: the menu's button is an `.iconBtn` too, and that rule stands later.) */
+.top > .menuBtn,
 .phoneMark {
   display: none;
+}
+
+/* The mark's target is wider than the mark: it reaches into the gap after it (below), the mark at its start. */
+.phoneMark {
   flex: none;
   align-items: center;
-  justify-content: center;
-  width: 36px;
+  justify-content: flex-start;
+  width: 40px;
   height: 44px;
 }
 
@@ -299,6 +614,12 @@
 
 .row[aria-selected='true'] > svg {
   color: var(--amber);
+}
+
+/* The line's one quiet word while the agent reads a sentence, or its «Уточни: …» — never a row to tap. */
+.note {
+  cursor: default;
+  font-weight: 500;
 }
 
 /* The home page has the agent's field in its own first line (`data-terminal='hero'`): the header's steps aside there,
@@ -524,6 +845,31 @@
   color: var(--soft);
 }
 
+/* A group's name over its wallets: «Installed», «More wallets». */
+.choicesKick {
+  margin-bottom: 2px;
+}
+
+/* A wallet the browser does not have: its one step on the right — «Install» or «Open» — quiet until the row is hovered. */
+.choiceStep {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--type-small);
+  font-weight: 600;
+  color: var(--soft);
+}
+
+.choiceStep > svg {
+  width: 16px;
+  height: 16px;
+}
+
+.choice:hover .choiceStep {
+  color: var(--ice);
+}
+
 .walletLogo,
 .walletDisc {
   width: 32px;
@@ -731,26 +1077,28 @@
   clip-path: polygon(0 0, 100% 0, 100% calc(100% - var(--cut-s)), calc(100% - var(--cut-s)) 100%, 0 100%);
 }
 
+/* The shade under the menu: it never scrolls the page under it, and a tap on it puts the menu away. */
 .scrim {
   position: fixed;
   inset: 0;
   z-index: 40;
   background: rgba(6, 5, 12, 0.72);
+  touch-action: none;
   animation: fade 0.16s ease-out;
 }
 
+/* The phone's menu: a sheet over the whole screen under the header's strip — the strip, shaded, is the
+   «outside» a tap closes it on. Its head stays; its list scrolls inside it and never moves the page. */
 .sheet {
   position: fixed;
+  /* The phone's header is 64 px tall (below). */
+  top: 64px;
   left: 0;
   right: 0;
   bottom: 0;
   z-index: 41;
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  max-height: 88dvh;
-  overflow-y: auto;
-  padding: 28px 16px calc(18px + env(safe-area-inset-bottom));
   /* A sheet is square, from edge to edge: a line of light along its top and a grip say it lifts. */
   background: linear-gradient(180deg, rgb(28, 22, 48), rgb(14, 11, 26));
   border-top: 1px solid rgba(201, 162, 255, 0.34);
@@ -769,12 +1117,50 @@
   background: rgba(238, 241, 255, 0.24);
 }
 
+/* Going: down and out, from wherever a pull let it go; nothing in it takes a tap meanwhile. */
+.sheet[data-leaving] {
+  pointer-events: none;
+  animation: away 0.2s ease-in forwards;
+}
+
+/* The shade still takes a quick second tap while the sheet leaves, so it never reaches the page under it. */
+.scrim[data-leaving] {
+  animation: fadeAway 0.2s ease-in forwards;
+}
+
 .sheetHead {
   display: flex;
+  flex: none;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  min-height: 36px;
+  min-height: 44px;
+  padding: 20px 16px 4px;
+  /* A drag on the head is the sheet's pull, never the page's scroll under it. */
+  touch-action: none;
+}
+
+/* The menu's close: a target for a thumb, its edge on the gutter. */
+.sheetHead > .closeBtn {
+  width: 44px;
+  height: 44px;
+  margin-right: -10px;
+  color: var(--soft);
+}
+
+.sheetScroll {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 8px 16px calc(24px + env(safe-area-inset-bottom));
+}
+
+.sheetScroll > * {
+  flex-shrink: 0;
 }
 
 .sheetTitle {
@@ -788,6 +1174,142 @@
   height: 1px;
   margin: 4px 0;
   background: var(--line);
+}
+
+.sheetGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 4px;
+}
+
+.sheetGroupName {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 52px;
+  margin: 0;
+  padding: 0 4px;
+  color: var(--soft);
+  font-size: var(--type-base);
+  font-weight: 600;
+  text-align: left;
+}
+
+.sheetGroupName > .ghIcon {
+  color: var(--lilac);
+}
+
+.sheetGroupName[aria-expanded='true'] {
+  color: var(--ice);
+}
+
+.sheetGroupName[aria-expanded='false'] .ghArrow {
+  transform: rotate(-90deg);
+}
+
+.sheetGroup[data-open] {
+  padding-bottom: 12px;
+}
+
+.sheetGroup[data-open] .sheetItems {
+  animation: rise 0.16s ease-out;
+}
+
+.sheetItems {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.tile {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  height: auto;
+  min-height: 52px;
+  padding: 0 12px;
+  font-weight: 600;
+  font-size: var(--type-body);
+}
+
+/* A long name takes a second line rather than losing its end. */
+.tile > span {
+  flex: 1 1 auto;
+  min-width: 0;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.tile > svg:first-child {
+  color: var(--lilac);
+}
+
+.tile > svg:last-child:not(:first-child) {
+  color: var(--dim);
+}
+
+.tile:active {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.tile[aria-current='page'] {
+  border-color: var(--chosen-edge);
+  background: var(--chosen);
+}
+
+.tile[aria-current='page'] > svg:first-child {
+  color: var(--amber);
+}
+
+/* The Market: a row of the menu's list above the groups, as on the rail. */
+.sheetMarket {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 52px;
+  padding: 0 4px;
+  color: var(--soft);
+  font-size: var(--type-base);
+  font-weight: 600;
+  border-bottom: 1px solid var(--line);
+}
+
+.sheetMarket > .ghIcon {
+  color: var(--lilac);
+}
+
+/* On the Market: lit as a chosen tile is. */
+.sheetMarket[aria-current='page'] {
+  padding: 0 12px;
+  color: var(--ice);
+  background: var(--chosen);
+  border: 1px solid var(--chosen-edge);
+}
+
+.sheetMarket[aria-current='page'] > .ghIcon {
+  color: var(--amber);
+}
+
+/* The group that holds the place a person is in: its icon in the menu's amber. */
+.sheetGroup[data-lit] .ghIcon {
+  color: var(--amber);
+}
+
+/* Another site: its name, and under it where it opens. */
+.tileWords {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.tileWhere {
+  font-size: var(--type-caption);
+  font-weight: 500;
+  color: var(--dim);
 }
 
 @keyframes rise {
@@ -810,6 +1332,30 @@
   }
 }
 
+@keyframes away {
+  to {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+}
+
+@keyframes fadeAway {
+  to {
+    opacity: 0;
+  }
+}
+
+/* The phone's menu without motion: it stands and goes at once (SectionsSheet.tsx does not wait for it to leave). */
+@media (prefers-reduced-motion: reduce) {
+  .sheet,
+  .scrim,
+  .sheet[data-leaving],
+  .scrim[data-leaving],
+  .sheetGroup[data-open] .sheetItems {
+    animation: none;
+  }
+}
+
 @keyframes shimmer {
   to {
     background-position: -200% 0;
@@ -822,12 +1368,39 @@
 }
 
 /* ── the rail folded to its icons ──────────────────────────────────────────
-   A person folds it with the button at its foot — the page's root carries `data-rail='folded'` (rail-fold.ts), set before
+   A person folds it with the arrow at its edge, by the mark — the page's root carries `data-rail='folded'` (rail-fold.ts), set before
    the first paint; a desk narrower than 1360 px folds it itself. A shelf's name stays for a screen reader and as the
    icon's hint. The two blocks below are the same rules. */
 
+/* The arrow that hides the rail to the side: a small control on the rail's edge, level with the mark. */
+.railFold {
+  position: absolute;
+  top: 31px;
+  right: -13px;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  color: var(--soft);
+  padding: 0;
+  background: var(--panel-up);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45);
+  transition:
+    color 0.15s,
+    border-color 0.15s;
+}
+
+.railFold:hover,
+.railFold:focus-visible {
+  color: var(--ice);
+  border-color: var(--chosen-edge);
+}
+
 .railFold > svg {
-  transition: transform 0.15s;
+  transform: rotate(90deg);
+  transition: transform 0.2s ease;
 }
 
 :global(html[data-rail='folded']) .app {
@@ -860,8 +1433,116 @@
   left: calc(100% + 18px);
 }
 
+:global(html[data-rail='folded']) .app .railMenu {
+  margin: 0 -10px;
+  padding: 0 10px 22px;
+  scrollbar-width: none;
+  mask-image: none;
+}
+
+:global(html[data-rail='folded']) .app .ghDot {
+  display: block;
+}
+
+:global(html[data-rail='folded']) .app .itemsIn::before {
+  display: none;
+}
+
+:global(html[data-rail='folded']) .app .itemsIn > .item {
+  height: 38px;
+  padding-left: 12px;
+}
+
+:global(html[data-rail='folded']) .app .railMenu > .nav {
+  height: 44px;
+}
+
+:global(html[data-rail='folded']) .app .gh {
+  justify-content: center;
+  height: 44px;
+  margin-top: 4px;
+  padding: 0;
+}
+
+:global(html[data-rail='folded']) .app .ghIcon {
+  display: flex;
+}
+
+:global(html[data-rail='folded']) .app :is(.ghName, .ghArrow, .run) {
+  display: none;
+}
+
+:global(html[data-rail='folded']) .app .group[data-lit] .ghIcon {
+  color: var(--amber);
+}
+
+:global(html[data-rail='folded']) .app .group[data-lit] .gh {
+  color: var(--amber);
+  background: linear-gradient(90deg, rgba(255, 178, 63, 0.12), transparent 80%);
+}
+
+:global(html[data-rail='folded']) .app .group[data-lit] .gh::before {
+  content: '';
+  position: absolute;
+  left: -10px;
+  top: 12px;
+  bottom: 12px;
+  width: 3px;
+  background: var(--amber);
+  box-shadow: 0 0 14px var(--amber);
+}
+
+:global(html[data-rail='folded']) .app .group[data-open] .gh {
+  color: var(--ice);
+  background: rgba(238, 241, 255, 0.04);
+}
+
+/* Folded, a group's items open beside the rail: a panel of their own, with the group's name on top. */
+:global(html[data-rail='folded']) .app .items {
+  position: fixed;
+  left: var(--rail);
+  z-index: 30;
+  display: none;
+  padding-left: 10px;
+  visibility: visible;
+}
+
+:global(html[data-rail='folded']) .app .group[data-open] > .items {
+  display: block;
+}
+
+:global(html[data-rail='folded']) .app .itemsIn {
+  width: 236px;
+  margin: 0;
+  padding: 10px;
+  overflow: visible;
+  background: var(--panel-up);
+  border: 1px solid var(--glass-edge);
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.55);
+  animation: rise 0.16s ease-out;
+}
+
+:global(html[data-rail='folded']) .app .flyHead {
+  display: block;
+  padding: 4px 12px 8px;
+  color: var(--dim);
+  font-size: var(--type-caption);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+:global(html[data-rail='folded']) .app .items .nav {
+  justify-content: flex-start;
+  padding: 0 12px;
+}
+
+:global(html[data-rail='folded']) .app .items .nav[aria-current='page']::before {
+  display: none;
+}
+
 :global(html[data-rail='folded']) .app .railFold > svg {
-  transform: scaleX(-1);
+  transform: rotate(-90deg);
 }
 
 @media (min-width: 768px) and (max-width: 1359px) {
@@ -899,6 +1580,117 @@
 
   /* Folded by the window, not by the person: nothing to unfold. */
   .railFold {
+    display: none;
+  }
+}
+
+/* The narrow desk's rail, on its icons: the same rules. */
+@media (min-width: 768px) and (max-width: 1359px) {
+  .railMenu {
+    margin: 0 -10px;
+    padding: 0 10px 22px;
+    scrollbar-width: none;
+    mask-image: none;
+  }
+
+  .ghDot {
+    display: block;
+  }
+
+  .itemsIn::before {
+    display: none;
+  }
+
+  .itemsIn > .item {
+    height: 38px;
+    padding-left: 12px;
+  }
+
+  .railMenu > .nav {
+    height: 44px;
+  }
+
+  .gh {
+    justify-content: center;
+    height: 44px;
+    margin-top: 4px;
+    padding: 0;
+  }
+
+  .ghIcon {
+    display: flex;
+  }
+
+  :is(.ghName, .ghArrow, .run) {
+    display: none;
+  }
+
+  .group[data-lit] .ghIcon {
+    color: var(--amber);
+  }
+
+  .group[data-lit] .gh {
+    color: var(--amber);
+    background: linear-gradient(90deg, rgba(255, 178, 63, 0.12), transparent 80%);
+  }
+
+  .group[data-lit] .gh::before {
+    content: '';
+    position: absolute;
+    left: -10px;
+    top: 12px;
+    bottom: 12px;
+    width: 3px;
+    background: var(--amber);
+    box-shadow: 0 0 14px var(--amber);
+  }
+
+  .group[data-open] .gh {
+    color: var(--ice);
+    background: rgba(238, 241, 255, 0.04);
+  }
+
+  /* Folded, a group's items open beside the rail: a panel of their own, with the group's name on top. */
+  .items {
+    position: fixed;
+    left: var(--rail);
+    z-index: 30;
+    display: none;
+    padding-left: 10px;
+    visibility: visible;
+  }
+
+  .group[data-open] > .items {
+    display: block;
+  }
+
+  .itemsIn {
+    width: 236px;
+    margin: 0;
+    padding: 10px;
+    overflow: visible;
+    background: var(--panel-up);
+    border: 1px solid var(--glass-edge);
+    box-shadow: 0 18px 50px rgba(0, 0, 0, 0.55);
+    animation: rise 0.16s ease-out;
+  }
+
+  .flyHead {
+    display: block;
+    padding: 4px 12px 8px;
+    color: var(--dim);
+    font-size: var(--type-caption);
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .items .nav {
+    justify-content: flex-start;
+    padding: 0 12px;
+  }
+
+  .items .nav[aria-current='page']::before {
     display: none;
   }
 }
@@ -942,12 +1734,19 @@
   .top {
     height: 64px;
     padding: 0 16px;
-    gap: 10px;
+    gap: 8px;
     border-bottom: 0;
   }
 
+  .top > .menuBtn,
   .phoneMark {
     display: flex;
+  }
+
+  /* The menu's button and the mark sit closer: the agent's line keeps its room. */
+  .menuBtn + .phoneMark {
+    margin-left: -4px;
+    margin-right: -12px;
   }
 
   /* Without the agent's line (the home page) the bell and the wallet keep the header's right end. */
@@ -958,6 +1757,12 @@
   .say {
     flex: 1 1 0;
     max-width: none;
+  }
+
+  /* Beside the menu's button the line keeps its words: a narrower inset and gap. */
+  .sayBox {
+    gap: 8px;
+    padding: 0 8px 0 12px;
   }
 
   /* A screen that names itself in the header has its own line for the agent: the header's steps aside. */

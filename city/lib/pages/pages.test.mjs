@@ -38,6 +38,13 @@ test("each address answers with the city's page, not the old site's", () => {
       const file = `app${path}/page.tsx`;
       assert.ok(exists(file), `${path} has a route`);
       const source = read(file);
+      if (["app/docs/page.tsx", "app/support/page.tsx", "app/about/page.tsx"].includes(file)) {
+        // The documentation, Help and About are the terminal's (`app/docs/_book/`, `app/support/_view/`,
+        // `app/about/_view/`); the city's windows keep their own copies.
+        assert.match(source, /<DocsHub \/>|<HelpView \/>|<AboutView \/>/, `${file} is the terminal's page`);
+        assert.doesNotMatch(source, OLD, `${file} imports nothing of the old site`);
+        continue;
+      }
       assert.match(source, /from "@\/city\/components\/pages\/CityDocument"/, `${file} renders the city's page`);
       assert.match(source, new RegExp(`<CityDocument id="${id}" />`), `${file} is ${id}`);
       assert.match(source, new RegExp(`buildCityPageMetadata\\("${id}", "${path.replace(/\//g, "\\/")}"\\)`), `${file} names its address`);

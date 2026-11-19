@@ -1,50 +1,33 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { useAssistant } from '@/city/lib/assistant/store';
-import { testNow, useAutopilot } from '@/city/lib/autopilot/store';
-import { MANDATE_NET, useMandate } from '@/city/lib/bots/mandate';
-import { NOTE_YES_MS, noteLeftMs } from '@/city/lib/bots/note-hold';
 import { useCity } from '@/city/lib/city/store';
-import { agentCoins, bookOf } from '@/city/lib/command/parse';
-import type { Role } from '@/city/lib/crew/read';
-import { sayCoin } from '@/city/lib/crew/say';
+import { COMMAND_MAX, bookOf } from '@/city/lib/command/parse';
+import { sayCoins } from '@/city/lib/crew/say';
 import { useWords } from '@/city/lib/i18n/dict';
 import { useLang } from '@/city/lib/i18n/lang';
-import { usePilot } from '@/city/lib/pilot/store';
+import type { Tower } from '@/city/lib/market/types';
 import { SOL } from '@/city/lib/trade/tiles';
-import { useAsk, type Ask } from '@/terminal/shell/ask';
-import { askRows, gatesFor } from '@/terminal/shell/ask-route';
+import { useAsk } from '@/terminal/shell/ask';
+import { askRows } from '@/terminal/shell/ask-route';
 import { engineGates } from '@/terminal/shell/engine';
 import { PHONE_HEAD } from '@/terminal/shell/frame';
+import { MenuIcon } from '@/terminal/shell/menu-icons';
 import { useSay } from '@/terminal/shell/say';
-import { shelfHref, shelfOn } from '@/terminal/shell/shelves';
+import { shelfOn } from '@/terminal/shell/shelves';
 import { useAskHere } from '@/terminal/shell/useAskHere';
 import { useMarket } from '@/terminal/shell/useMarket';
-import { NARROW, useNarrow } from '@/terminal/shell/useNarrow';
-import { SHELF_WORDS, SHELL } from '@/terminal/shell/words';
-import { Action, Figure, Icon, Kick, Panel, Quiet, Tabs, Title, usdText } from '@/terminal/ui';
-import { Crew } from './Crew';
-import { resultShown } from './figures';
-import { History, MineCards, MineTable } from './Mine';
-import { How, NewAgent, Note, noteWords } from './NewAgent';
-import { crewOpen, hireWay, readySentences } from './read';
-import { cardState, todayOf, workingRoles, type MineRow } from './rows';
-import { Answer, ReadySays, SayField } from './Say';
-import { stopAgent, useAgentsData, type StopResult } from './useAgentsData';
+import { SHELF_WORDS } from '@/terminal/shell/words';
+import { Action, ActionBody, CoinLogo, Icon, Info, Kick, Page, PageHead, Panel, SayLine, Title, changeText, changeTone, coinIcon, priceText } from '@/terminal/ui';
+import { Answer } from './Say';
 import { AGENTS } from './words';
 import a from './agents.module.css';
 
-type Tab = 'hire' | 'mine' | 'history';
-
-/** The address of a phone's second step — the agents to hire and the new agent's card — so «Back» steps out of it. */
-const NEW = '#new';
-
 const onShelf = (id: Parameters<typeof shelfOn>[0]) => shelfOn(id);
 
-/** The screen's name and its «i» in a phone's header, where the frame keeps a place for the screen in front. */
+/** The screen's name and its «i» in a phone's header, where the frame keeps a place for a screen with its own line. */
 function PhoneHead({ title, children }: { title: string; children: ReactNode }) {
   const [box, setBox] = useState<HTMLElement | null>(null);
   useEffect(() => setBox(document.getElementById(PHONE_HEAD)), []);
@@ -58,261 +41,166 @@ function PhoneHead({ title, children }: { title: string; children: ReactNode }) 
   );
 }
 
+/** The analyst's «i»: what it reads, and that it only advises. */
+function AnalystInfo() {
+  const w = useWords(AGENTS);
+  return (
+    <Info label={w.analystHow}>
+      <span className={a.facts}>
+        <span>{w.analystReads}</span>
+        <span>{w.analystSafe}</span>
+      </span>
+    </Info>
+  );
+}
+
+/** A question asked here: Ryntra reads the market and answers in place — advice only. */
+function askAnalyst(question: string): void {
+  useAssistant.getState().show(null);
+  void useAssistant.getState().ask(question, () => useCity.getState().snapshot.towers);
+}
+
 /**
- * The Agents screen: «Say what to do» with the sentences ready to say, the agents a person hires, the agents at work
- * for the wallet, and the new agent's card with its one action — «Give the budget», one signature. Everything under it
- * is the city's own logic: the readers of a sentence, the mandate and its signing, the agent's book, the autopilot's
- * plan. The screen opens and fills; the wallet opens only from its own buttons.
+ * «Agents»: only those that decide by themselves — the AI. A rule a person
+ * sets is a bot's, on «Bots». Open now: the Analyst — a question about any coin or the market, and Ryntra's
+ * answer from the market's own read; advice only, it never signs or trades. Its field, the questions ready in one tap,
+ * the answer under them, and beside them the coins an example may name (decision 108) — a tap asks about one. An agent
+ * of its own stands here, and in the menu, once its screen is ready (the AI trader, the Scout, your own AI): never a
+ * «soon». A sentence that is a bot's job or a trade goes to its own screen; it never signs here.
  */
 export function AgentsScreen() {
-  // One terminal: a desk shows the whole screen, a phone its own narrow one.
-  const phone = useNarrow();
-  const desk = !phone;
   const w = useWords(AGENTS);
-  const shell = useWords(SHELL);
   const shelves = useWords(SHELF_WORDS);
-  const lang = useLang();
-  const router = useRouter();
   const say = useSay();
   const towers = useMarket().towers;
   const subject = useAsk((st) => st.subject);
   const book = useMemo(() => bookOf(towers), [towers]);
-  const solUsd = useMemo(() => {
+  const asking = useAssistant((st) => st.phase === 'asking');
+  const [text, setText] = useState('');
+
+  // The coins an example may name: SOL, JUP and MET (decision 108), as the market reads them.
+  const coins = useMemo(() => {
     const sol = towers.find((tower) => tower.id === SOL.mint);
-    return sol && Number.isFinite(sol.price) && sol.price > 0 ? sol.price : null;
-  }, [towers]);
-  const crew = useMemo(() => crewOpen(gatesFor(onShelf, engineGates()), shelfOn('earn')), []);
-  const says = useMemo(() => readySentences(lang, book, crew), [lang, book, crew]);
-  // One live fact a card: the Trader's first coin and its day's volume, read from the market; the Launcher's one signature.
-  const facts = useMemo(() => {
-    const coin = sayCoin(book);
-    const tower = coin ? towers.find((one) => one.id === coin.mint) : undefined;
-    const volume = tower && !tower.unread?.includes('volume24h') && tower.volume24h > 0 ? usdText(tower.volume24h, lang) : null;
-    return { ...(coin && volume ? { trader: w.traderFact(coin.symbol, volume) } : {}), launcher: w.launcherFact };
-  }, [book, towers, lang, w]);
-  const data = useAgentsData();
-  const { rows, owner, views } = data;
-  const working = useMemo(() => workingRoles(rows), [rows]);
+    const named = sayCoins(book).flatMap((coin) => towers.filter((tower) => tower.id === coin.mint));
+    return [...(sol ? [sol] : []), ...named].slice(0, 3);
+  }, [towers, book]);
+  const questions = useMemo(() => {
+    const [first, second, third] = coins;
+    return [first ? w.askToday(first.symbol) : w.askMarket, second ? w.askWhy(second.symbol) : null, third ? w.askRisk(third.symbol) : null].filter((one): one is string => Boolean(one));
+  }, [coins, w]);
 
-  const [tab, setTab] = useState<Tab>('hire');
-  // A phone draws no tabs: a window narrowed to one comes back to its one view.
-  useEffect(() => {
-    if (!desk) setTab('hire');
-  }, [desk]);
-  const [picked, setPicked] = useState<Role | null>(null);
-  const [hiring, setHiring] = useState(false);
-  const [noteAt, setNoteAt] = useState<'aside' | 'mine'>('aside');
-  const [stopping, setStopping] = useState<string | null>(null);
-  const [stopped, setStopped] = useState<Readonly<{ role: MineRow['role']; result: StopResult; at: number }> | null>(null);
-  // The agent the panel is about: the one picked, else the first a person can hire here.
-  const chosen: Role | null = picked && (crew[picked] || working[picked]) ? picked : crew.trader || working.trader ? 'trader' : crew.pilot || working.pilot ? 'pilot' : null;
-  const states = useMemo(() => {
-    const of = (role: Role) => cardState(role, crew, working, chosen);
-    return { trader: of('trader'), pilot: of('pilot'), keeper: of('keeper'), launcher: of('launcher') };
-  }, [crew, working, chosen]);
+  // A question from the header's line, left for this screen: asked here.
+  useAskHere((ask) => {
+    if (ask.command.kind === 'ask') askAnalyst(ask.command.question);
+  });
 
-  // A phone's second step lives in the address, so «Back» closes it and the first screen stays.
-  useEffect(() => {
-    const sync = () => setHiring(window.location.hash === NEW);
-    sync();
-    window.addEventListener('popstate', sync);
-    window.addEventListener('hashchange', sync);
-    return () => {
-      window.removeEventListener('popstate', sync);
-      window.removeEventListener('hashchange', sync);
-    };
-  }, []);
-  const openHiring = () => {
-    if (!window.matchMedia(NARROW).matches) return;
-    if (window.location.hash !== NEW) window.history.pushState(window.history.state, '', NEW);
-    setHiring(true);
+  /**
+   * The screen's own line: a bot's job, a trade or a launch goes to its own screen, as the header's line would take it;
+   * anything else is a question for the analyst, asked here.
+   */
+  const send = (sentence: string) => {
+    const said = sentence.trim();
+    if (!said) return;
+    const row = askRows(said, book, { subject }, onShelf, engineGates())[0];
+    const elsewhere = row && !['ask', 'coin', 'chart', 'learn'].includes(row.command.kind) && (row.target.shelf !== 'agents' || Boolean(row.target.path));
+    if (elsewhere && say(said, row)) return setText('');
+    askAnalyst(said);
+    setText('');
   };
-  const closeHiring = () => {
-    if (window.location.hash === NEW) window.history.back();
-    else setHiring(false);
-  };
-
-  const show = (role: Role) => {
-    setPicked(role);
-    setTab('hire');
-    setNoteAt('aside');
-    openHiring();
-  };
-
-  /** «Hire»: the agent's own card — here, or on the shelf its work lives on. */
-  const hire = (role: Role | null) => {
-    if (!role) return openHiring();
-    if (working[role]) return show(role);
-    if (!crew[role]) return;
-    const way = hireWay(role);
-    if (way === 'earn') return router.push(shelfHref('earn', 'live'));
-    if (way === 'launch') {
-      const sentence = says.find((one) => one.key === 'launch')?.text;
-      if (!sentence || !say(sentence)) router.push(shelfHref('launch', 'live'));
-      return;
-    }
-    show(role);
-  };
-
-  // A sentence for this screen — from the header's line or its own: the city's reading fills the agent's card.
-  const market = useRef(towers);
-  market.current = towers;
-  const price = useRef(solUsd);
-  price.current = solUsd;
-  const take = (command: Ask['command']) => {
-    if (command.kind === 'autopilot' && command.ask.kind === 'trade') {
-      useAutopilot.getState().show(command.ask);
-      // On mainnet the agent buys a named coin: a sentence that named none keeps the first sentence's coin, at once.
-      if (MANDATE_NET === 'mainnet' && !useMandate.getState().coin) {
-        const first = sayCoin(bookOf(market.current));
-        if (first) {
-          useMandate.getState().setCoin({ mint: first.mint, symbol: first.symbol, icon: first.icon });
-          void testNow();
-        }
-      }
-      return show('trader');
-    }
-    if (command.kind === 'pilot') {
-      const first = agentCoins(bookOf(market.current))[0] ?? null;
-      usePilot.getState().show(command.ask, price.current, first ? { mint: first.mint, symbol: first.symbol, icon: first.icon } : null);
-      return show('pilot');
-    }
-    if (command.kind === 'hire') return hire(command.ask.role);
-    if (command.kind === 'ask') {
-      setTab('hire');
-      useAssistant.getState().show(null);
-      void useAssistant.getState().ask(command.question, () => useCity.getState().snapshot.towers);
-    }
-  };
-  useAskHere((ask) => take(ask.command));
-
-  /** The screen's own line: a sentence for this screen is taken here, in place; any other goes to its shelf. */
-  const sayHere = (sentence: string): boolean => {
-    const row = askRows(sentence, book, { subject }, onShelf, engineGates())[0];
-    if (!row) return false;
-    if (row.target.shelf !== 'agents') return say(sentence, row);
-    take(row.command);
-    return true;
-  };
-
-  /** «Stop»: one at a time; its answer stands under «My agents». */
-  const stop = (row: MineRow) => {
-    if (stopping) return;
-    setStopping(row.key);
-    setNoteAt('mine');
-    setStopped(null);
-    void stopAgent(row, () => owner && data.setPilot(owner, null))
-      .then((result) => result && setStopped({ role: row.role, result, at: Date.now() }))
-      .finally(() => setStopping(null));
-  };
-
-  // What a step answered stays long enough to be read, counted from when it was said.
-  const mandateNote = useMandate((st) => st.note);
-  useEffect(() => {
-    if (!mandateNote) return;
-    const timer = setTimeout(() => {
-      if (useMandate.getState().note === mandateNote) useMandate.getState().say(null);
-    }, noteLeftMs(mandateNote, Date.now()) ?? NOTE_YES_MS);
-    return () => clearTimeout(timer);
-  }, [mandateNote]);
-  useEffect(() => {
-    if (!stopped) return;
-    const timer = setTimeout(() => setStopped(null), noteLeftMs({ kind: stopped.result, at: stopped.at }, Date.now()) ?? NOTE_YES_MS);
-    return () => clearTimeout(timer);
-  }, [stopped]);
-  const asideNote = noteAt === 'aside' && mandateNote ? <Note warn={mandateNote.kind !== 'on' && mandateNote.kind !== 'stopped'}>{noteWords(w, mandateNote.kind)}</Note> : null;
-  const mineNote = noteAt === 'mine' && stopped ? <Note warn={stopped.result !== 'stopped'}>{stopped.result === 'stopped' && stopped.role === 'pilot' ? w.pilotStopped : stopped.result === 'stopped' && stopped.role === 'keeper' ? w.keeperStopped : noteWords(w, stopped.result)}</Note> : null;
-
-  const today = todayOf(rows);
-  const todayResult = resultShown(today.raw, solUsd, lang);
-  const mine = { rows, owner, views, solUsd, note: mineNote, stopping, onStop: stop };
 
   return (
-    <div className={a.screen} data-hiring={hiring ? '' : undefined} data-agents="">
-      <PhoneHead title={shell.agent}>
-        <How />
+    <Page className={a.screen} data-agents="">
+      <PhoneHead title={shelves.agents}>
+        <AnalystInfo />
       </PhoneHead>
 
-      <div className={a.head} data-plain={desk ? undefined : ''}>
-        {desk ? (
-          <Title>{shelves.agents}</Title>
-        ) : (
-          <div className={a.hero}>
-            <Title>{w.hireTitle}</Title>
-            <p className={a.lead}>{w.hireLead}</p>
-          </div>
-        )}
-        <Tabs
-          className={a.headTabs}
-          label={w.views}
-          value={tab}
-          onChange={setTab}
-          items={[
-            { id: 'hire', label: w.hire },
-            { id: 'mine', label: w.mine, ...(rows.length ? { count: String(rows.length) } : {}) },
-            { id: 'history', label: w.history },
-          ]}
-        />
-        <div className={a.grow} />
-        {today.trades !== null || todayResult ? (
-          <div className={a.today} data-agents-today="">
-            <Kick>{w.today}</Kick>
-            <span className={a.todayFigure}>
-              {today.trades !== null ? <Figure size="m" value={w.tradesCount(String(today.trades))} /> : null}
-              {today.trades !== null && todayResult ? <Figure size="m" value="·" /> : null}
-              {todayResult ? <Figure size="m" value={todayResult.text} tone={todayResult.tone} /> : null}
+      {/* No count of the day's questions on the screen: past the day's model
+          answers the analyst still answers, from the reads alone. */}
+      <PageHead title={shelves.agents} />
+
+      <ActionBody sideLabel={w.askAbout} side={<CoinsToAsk coins={coins} onAsk={(tower) => send(w.askWhy(tower.symbol))} />}>
+        <Panel tone="hi" pad="l" gap={16} label={w.analyst}>
+          <div className={a.asideHead}>
+            <span className={a.badge} data-on="">
+              <MenuIcon name="analyst" />
+            </span>
+            <div className={a.asideWords}>
+              <Kick>{w.analystKick}</Kick>
+              <Title as="h2" className={a.asideTitle}>
+                {w.analyst}
+              </Title>
+              <span className={a.job}>{w.analystJob}</span>
+            </div>
+            <span className={a.deskOnly}>
+              <AnalystInfo />
             </span>
           </div>
-        ) : null}
-      </div>
+          <div className={a.askRow}>
+            <label className={a.sayBox}>
+              <Icon name="agents" size="l" />
+              <input
+                className={a.sayInput}
+                type="text"
+                value={text}
+                maxLength={COMMAND_MAX}
+                placeholder={w.askHere}
+                aria-label={w.askHere}
+                autoComplete="off"
+                autoCorrect="off"
+                spellCheck={false}
+                enterKeyHint="go"
+                onChange={(event) => setText(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key !== 'Enter' || event.nativeEvent.isComposing) return;
+                  event.preventDefault();
+                  send(text);
+                }}
+                data-agent-ask-field=""
+              />
+            </label>
+            <Action full={false} busy={asking} disabled={!text.trim() || asking} onClick={() => send(text)} data-agent-ask="">
+              {w.ask}
+            </Action>
+          </div>
+          <div className={a.says} data-agent-questions="">
+            {questions.map((question) => (
+              <SayLine key={question} onSay={() => send(question)}>
+                {question}
+              </SayLine>
+            ))}
+          </div>
+          <Answer />
+        </Panel>
+      </ActionBody>
+    </Page>
+  );
+}
 
-      {/* A phone's second step: the new agent's card first, the agents to hire under it, «×» back to the first screen. */}
-      <div className={a.back}>
-        <Kick className={a.grow}>{w.hire}</Kick>
-        <Quiet size="s" aria-label={shell.close} onClick={closeHiring}>
-          <Icon name="close" size="s" />
-        </Quiet>
+/** The coins an example names, each with its price and its day: a tap asks the analyst why it moves. */
+function CoinsToAsk({ coins, onAsk }: { coins: readonly Tower[]; onAsk: (tower: Tower) => void }) {
+  const w = useWords(AGENTS);
+  const lang = useLang();
+  if (!coins.length) return null;
+  return (
+    <Panel gap={10} label={w.askAbout}>
+      <Kick>{w.askAbout}</Kick>
+      <div className={a.coinRows}>
+        {coins.map((tower) => {
+          const moved = !tower.unread?.includes('change24h') && Number.isFinite(tower.change24h);
+          return (
+            <button key={tower.id} type="button" className={a.coinRow} onClick={() => onAsk(tower)} aria-label={w.askWhy(tower.symbol)} data-agent-coin={tower.symbol}>
+              <CoinLogo src={coinIcon(tower)} symbol={tower.symbol} />
+              <span className={a.coinRowName}>{tower.symbol}</span>
+              <span className={a.coinRowFigures}>
+                <span className={a.coinRowPrice}>{tower.price > 0 ? priceText(tower.price, lang) : '—'}</span>
+                <span className={a.coinRowChange} data-tone={moved ? changeTone(tower.change24h) : undefined}>
+                  {moved ? changeText(tower.change24h, lang) : '—'}
+                </span>
+              </span>
+            </button>
+          );
+        })}
       </div>
-
-      <div className={a.grid}>
-        <div className={a.main}>
-          <div className={a.view} data-off={tab !== 'hire' ? '' : undefined}>
-            {desk ? (
-              <Panel pad="l" gap={12} label={w.sayPanel} className={a.deskOnly}>
-                <SayField onSay={sayHere} />
-                <ReadySays says={says} onSay={sayHere} />
-                <Answer />
-              </Panel>
-            ) : null}
-            <div className={`${a.phoneOnly} ${a.home} ${a.phoneSay}`}>
-              <SayField onSay={sayHere} />
-              <ReadySays says={says} onSay={sayHere} tall />
-              <Answer />
-            </div>
-            <Crew states={states} onHire={hire} facts={facts} open={!desk} />
-            <div className={a.deskOnly}>
-              <MineTable {...mine} />
-            </div>
-            <div className={a.home}>
-              <MineCards {...mine} />
-            </div>
-            <div className={`${a.phoneDock} ${a.home}`}>
-              <Action onClick={() => hire(null)} data-agent-hire="">
-                {w.hireAgent}
-              </Action>
-            </div>
-          </div>
-          <div className={a.view} data-desk="" data-off={tab !== 'mine' ? '' : undefined}>
-            <MineTable {...mine} />
-          </div>
-          <div className={a.view} data-desk="" data-off={tab !== 'history' ? '' : undefined}>
-            <History views={views} past={data.past} />
-          </div>
-        </div>
-        <aside className={a.aside}>
-          <NewAgent role={chosen} rows={rows} views={views} pilot={data.pilot} solUsd={solUsd} note={asideNote} onAct={() => setNoteAt('aside')} stopping={stopping} onStop={stop} />
-        </aside>
-      </div>
-    </div>
+    </Panel>
   );
 }

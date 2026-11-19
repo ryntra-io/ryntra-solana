@@ -25,7 +25,7 @@ export function TotalPanel({ data }: { data: AllData }) {
   const howId = useId();
   const sum = data.sum;
   if (!sum) return null;
-  const names: Readonly<Record<PartId, string>> = { pools: w.pools, staking: w.staking, lending: w.lendingGroup, coins: w.coins, agents: w.agents };
+  const names: Readonly<Record<PartId, string>> = { pools: w.pools, staking: w.staking, lending: w.lendingGroup, coins: w.coins, dust: w.dust, agents: w.agents };
   // The pools' fees and rewards — what «Collect fees» collects; a deposit's interest is not collected, it is the deposit.
   const toCollect = collectable(data.groups).usd;
 
@@ -73,7 +73,7 @@ export function TotalPanel({ data }: { data: AllData }) {
           ))}
         </ul>
       ) : null}
-      {!sum.complete ? (
+      {sum.unread ? (
         <p className={a.notAll}>
           <span>{w.notAll}</span>
           <Quiet size="s" disabled={data.rereading} onClick={data.reread}>

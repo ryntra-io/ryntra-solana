@@ -41,7 +41,7 @@ test("the windows keep the line by its kind and its age, not by a fixed eight se
   const budget = read("../../components/bots/AgentBudget.tsx");
   assert.match(budget, /\}, noteLeftMs\(note, Date\.now\(\)\) \?\? NOTE_YES_MS\);/u);
   // A «no» said to one budget or coin does not sit under another choice.
-  assert.match(budget, /if \(said && saysNo\(said\.kind\)\) useMandate\.getState\(\)\.say\(null\);\n  \}, \[preset, coin\]\);/u);
+  assert.match(budget, /if \(said && saysNo\(said\.kind\)\) useMandate\.getState\(\)\.say\(null\);\n  \}, \[budget, coin\]\);/u);
 });
 
 test("the ladder's answer stands right under «Place», above the two quiet buttons, and is brought into view", () => {

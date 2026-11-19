@@ -126,8 +126,8 @@ export const LAUNCH: DocPage = {
         ],
       ),
       note(
-        "One wallet launches at most three tokens a day. Ryntra pays the rent of a new token's accounts and your wallet pays it back in the same transaction — that is the SOL «Before you sign» shows.",
-        "Один гаманець запускає щонайбільше три токени на добу. Оренду нових рахунків токена платить Ryntra, а твій гаманець повертає її в тій самій транзакції — це і є SOL, який показує «Перед підписом».",
+        "Ryntra pays the rent of a new token's accounts and your wallet pays it back in the same transaction — that is the SOL «Before you sign» shows.",
+        "Оренду нових рахунків токена платить Ryntra, а твій гаманець повертає її в тій самій транзакції — це і є SOL, який показує «Перед підписом».",
       ),
     ]),
     section("fair", "A fair launch you can check", "Чесний лаунч, який можна перевірити", [

@@ -124,3 +124,23 @@ export function orderMatchesQuote(quote: QuoteBody['order'], order: OrderBody): 
 export function orderMatchesReview(reviewed: OrderBody, fresh: OrderBody): boolean {
   return freshOrderWithinReview(reviewed.order, fresh.order, { reviewed: orderWarnings(reviewed), fresh: orderWarnings(fresh) });
 }
+
+/** How far the least you get may slip in a renewal of the bytes before the card says so in words: 0.5 %. */
+export const QUIET_DRIFT_BPS = 50n;
+
+/**
+ * Whether renewed bytes moved enough to be said in words (`useTrade.renew`), against the figures last said: anything
+ * `orderMatchesReview` counts as worse — another swap, a higher fee of Ryntra's or the venue's, a higher deposit, a
+ * network fee past its slack, a new warning — except a least-you-get lower by less than `QUIET_DRIFT_BPS`. That slip
+ * of the price is shown by the figures themselves, and a press right after it is still not taken as agreeing
+ * (`WORSE_FIGURES_SETTLE_MS`): the market ticks every second, and a line for every tick read as a fault.
+ */
+export function orderMovedALot(shown: OrderBody, fresh: OrderBody): boolean {
+  const digits = /^\d{1,40}$/;
+  if (!digits.test(shown.order.minReceivedRaw) || !digits.test(fresh.order.minReceivedRaw)) return true;
+  const was = BigInt(shown.order.minReceivedRaw);
+  const now = BigInt(fresh.order.minReceivedRaw);
+  const slight = now < was && (was - now) * 10_000n < was * QUIET_DRIFT_BPS;
+  const forgiven = slight ? { ...fresh.order, minReceivedRaw: shown.order.minReceivedRaw } : fresh.order;
+  return !freshOrderWithinReview(shown.order, forgiven, { reviewed: orderWarnings(shown), fresh: orderWarnings(fresh) });
+}

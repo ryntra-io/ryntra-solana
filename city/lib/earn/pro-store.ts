@@ -88,6 +88,8 @@ type Store = {
   style: PierStyle;
   /** What the person picked; null — the pier's own default. */
   goal: PierGoal | null;
+  /** The person's own grid in place of the goal (the terminal's ticket): 32 columns of 0 to 8 cells; null — the goal stands. */
+  shape: readonly number[] | null;
   typed: string;
   /** The stop a care is given, percent under the price now; 0 — none. */
   stop: ProStop;
@@ -105,6 +107,7 @@ type Store = {
   back: () => void;
   setStyle: (style: PierStyle) => void;
   setGoal: (goal: PierGoal) => void;
+  setShape: (shape: readonly number[] | null) => void;
   setTyped: (text: string) => void;
   setStop: (stop: ProStop) => void;
   prepare: (connection: Connection, target: ProTarget, holdings: Holdings | null) => Promise<void>;
@@ -131,9 +134,10 @@ export const useProPier = create<Store>((set, get) => {
     if (target.kind === 'open') {
       if (!st.pier) return null;
       const goal = proGoal(st.pier, st.goal);
-      const choice = proChoice(st.pier, st.style, goal, st.typed, holdings, owner);
+      const choice = proChoice(st.pier, st.style, goal, st.typed, holdings, owner, st.shape);
       if (!choice.key || !choice.lamports) return null;
-      return { key: choice.key, body: { action: 'open', owner, pool: st.pier.address, goal, style: st.style, lamports: choice.lamports.toString() } };
+      const opening = { action: 'open', owner, pool: st.pier.address, style: st.style, lamports: choice.lamports.toString() } as const;
+      return { key: choice.key, body: st.shape ? { ...opening, goal: 'custom', columns: [...st.shape] } : { ...opening, goal } };
     }
     const boat = st.boat;
     if (!boat || boat.nftMint !== target.nftMint) return null;
@@ -147,6 +151,7 @@ export const useProPier = create<Store>((set, get) => {
     boat: null,
     style: DEFAULT_STYLE,
     goal: null,
+    shape: null,
     typed: START_TEXT,
     stop: 0,
     target: null,
@@ -212,7 +217,12 @@ export const useProPier = create<Store>((set, get) => {
     setGoal: (goal) => {
       if (PRO_BUSY.has(get().phase)) return;
       ticket += 1;
-      set({ goal, reviewed: null, phase: 'idle', notice: null });
+      set({ goal, shape: null, reviewed: null, phase: 'idle', notice: null });
+    },
+    setShape: (shape) => {
+      if (PRO_BUSY.has(get().phase)) return;
+      ticket += 1;
+      set({ shape: shape ? [...shape] : null, reviewed: null, phase: 'idle', notice: null });
     },
     setTyped: (text) => {
       if (PRO_BUSY.has(get().phase)) return;

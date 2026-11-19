@@ -1,4 +1,5 @@
-// The Launch screen for the eyes, at 1440×900 and 390×844, in English and Ukrainian → <out>/*.jpg and <out>/report.json
+// The Launch screen for the eyes, at 1440×900, 1920×1080 and 390×844 (2560×1440 with SIZES=xl), in English and Ukrainian
+// → <out>/*.jpg and <out>/report.json
 //   node terminal/launch/shots.mjs <out> [baseUrl]
 // A stand runs with the terminal's switch and Launch's own switches, its server on the devnet stand of Launch:
 //   NEXT_PUBLIC_RYNTRA_TERMINAL=stand NEXT_PUBLIC_RYNTRA_CITY_LAUNCH=open NEXT_PUBLIC_RYNTRA_CITY_POOL_LAUNCH=open
@@ -28,7 +29,9 @@ const SIZES = [
   { name: "desk", width: 1440, height: 900, mobile: false },
   { name: "wide", width: 1920, height: 1080, mobile: false },
   { name: "phone", width: 390, height: 844, mobile: true },
-].filter((size) => !process.env.SIZES || process.env.SIZES.split(",").includes(size.name));
+  // The widest desk the operator looks on: only when named.
+  { name: "xl", width: 2560, height: 1440, mobile: false, named: true },
+].filter((size) => (process.env.SIZES ? process.env.SIZES.split(",").includes(size.name) : !size.named));
 const LANGS = (process.env.LANGS ?? "en,uk").split(",");
 const ONLY = process.env.ONLY ? new Set(process.env.ONLY.split(",")) : null;
 const SAY = { en: "launch me a token Kite $KITE", uk: "запусти мені токен Kite $KITE" };
@@ -114,7 +117,9 @@ function walletScript({ owner, name }) {
 /** ryntra.io's own read: the market and its logos. Nothing else goes there. */
 async function fromLive(route, request) {
   const url = new URL(request.url());
-  const answer = await fetch(`${LIVE}${url.pathname}${url.search}`, { headers: { accept: request.headers().accept ?? "*/*" } }).catch(() => null);
+  // ryntra.io answers its own pages' reads only: the origin and the page are said as its own.
+  const headers = { accept: request.headers().accept ?? "*/*", origin: LIVE, referer: `${LIVE}/launch` };
+  const answer = await fetch(`${LIVE}${url.pathname}${url.search}`, { headers }).catch(() => null);
   if (!answer) return route.fulfill({ status: 503, contentType: "application/json", body: "{}" });
   return route.fulfill({ status: answer.status, contentType: answer.headers.get("content-type") ?? "application/json", body: Buffer.from(await answer.arrayBuffer()) });
 }
@@ -155,7 +160,7 @@ for (const size of SIZES) {
     await proOn(context);
     await context.route("**/api/**", (route, request) => {
       const { pathname } = new URL(request.url());
-      if (pathname === "/api/city" || pathname.startsWith("/api/icon/")) return fromLive(route, request);
+      if (pathname === "/api/city" || pathname.startsWith("/api/icon/") || pathname === "/api/spot/icon") return fromLive(route, request);
       // LIVE_LAUNCH=1: a stand without Launch's devnet server reads the launch's lists from ryntra.io — reads only.
       const reads = ["/api/v1/launch/presets", "/api/v1/launch/markets", "/api/v1/market/depth"];
       if (process.env.LIVE_LAUNCH === "1" && request.method() === "GET" && (reads.includes(pathname) || pathname.startsWith("/api/launch/image/"))) return fromLive(route, request);
@@ -190,25 +195,39 @@ for (const size of SIZES) {
       report.states.push({ state, size: size.name, lang });
     };
     const open = async (address = "/launch", ready = "[data-launch-screen]") => {
-      await page.goto(`${base}${address}`, { waitUntil: "domcontentloaded" });
+      await page.goto(`${base}${address}`, { waitUntil: "domcontentloaded", timeout: 120_000 });
       await page.locator(ready).filter({ visible: true }).first().waitFor({ timeout: 60_000 });
+      // The ready formats stand once the engine named its presets (where the pool's door is open).
+      if (address === "/launch") await page.locator("[data-launch-ready]").first().waitFor({ timeout: 12_000 }).catch(() => {});
       await page.waitForTimeout(2500);
     };
     const visible = (selector) => page.locator(selector).filter({ visible: true }).first();
     const fill = async () => {
       await page.locator("[data-launch-picture] input[type=file]").setInputFiles(picture);
       await visible("[data-launch-name]").fill("Kite");
+      // A line about the coin and its links, as a launchpad asks them.
+      await visible("[data-launch-description]").fill(lang === "uk" ? "Повітряний змій над Solana. Летимо разом." : "A kite over Solana. We fly together.");
+      await visible("[data-launch-link=x]").fill("x.com/kitecoin");
+      await visible("[data-launch-link=telegram]").fill("t.me/kitecoin");
       await page.waitForTimeout(400);
     };
 
     await open();
     if (want("empty")) await shot("empty");
+    if (want("empty") && size.mobile) await shot("empty-full", true);
+    // The agent's row puts «launch me a token …» into the header's line, the keyboard with it.
+    if (want("say")) {
+      await visible("[data-launch-say]").click();
+      await page.waitForTimeout(500);
+      report.states.push({ state: "say", size: size.name, lang, line: await visible("[data-city-command] input").inputValue() });
+      await shot("say");
+      await open();
+    }
     await fill();
     // The pool's way, where its door is open: trading opens in an hour, with the ladder — the approved design's state.
-    const poolDoor = await page.locator("[data-launch-format]").count();
+    const poolDoor = await page.locator("[data-launch-ready=pool]").count();
     if (poolDoor) {
-      await visible("[data-launch-format] [role=radio]:nth-child(2)").click();
-      await visible("[data-launch-opening] button").click();
+      await visible("[data-launch-ready=pool]").click();
       await visible("[data-launch-opening] [role=radio]:nth-child(2)").click();
       await visible("[data-launch-ladder] [role=switch]").click();
     }
@@ -219,12 +238,12 @@ for (const size of SIZES) {
       if (size.mobile) await shot(poolDoor ? "form-pool-full" : "form-curve-full", true);
     }
     if (want("settings")) {
-      await visible("[data-launch-settings] button").click();
-      await shot(poolDoor ? "settings-pool" : "settings-curve", size.mobile);
-      await visible("[data-launch-settings] button").click();
+      await visible("[data-launch-terms] button").click();
+      await shot(poolDoor ? "details-pool" : "details-curve", size.mobile);
+      await visible("[data-launch-terms] button").click();
     }
     if (poolDoor && want("curve")) {
-      await visible("[data-launch-format] [role=radio]:nth-child(1)").click();
+      await visible("[data-launch-ready=quick]").click();
       await page.waitForTimeout(2500);
       await shot("form-curve");
       if (size.mobile) await shot("form-curve-full", true);
@@ -236,12 +255,12 @@ for (const size of SIZES) {
       for (const format of poolDoor ? ["curve", "pool"] : ["curve"]) {
         await open();
         await fill();
-        if (poolDoor) await visible(`[data-launch-format] [role=radio]:nth-child(${format === "pool" ? 2 : 1})`).click();
+        if (poolDoor) await visible(`[data-launch-ready=${format === "pool" ? "pool" : "quick"}]`).click();
         // The curve's cost comes from Solana's simulation once the fields are stored: given its moment.
         await page.waitForTimeout(format === "curve" ? 6000 : 1500);
         const act = visible("[data-launch-act]");
         await act.waitFor({ timeout: 20_000 });
-        const before = { act: await act.getAttribute("data-launch-act"), tiles: await visible("[data-launch-tiles]").innerText() };
+        const before = { act: await act.getAttribute("data-launch-act"), terms: await visible("[data-launch-terms]").innerText() };
         if (format === "curve") await shot("ready-curve", size.mobile);
         await act.click();
         const refusal = visible("[data-launch-refusal]");
@@ -273,7 +292,9 @@ for (const size of SIZES) {
       await visible("[role=tablist] [role=tab]:nth-child(3)").click();
       await shot("fresh");
       await visible("[role=tablist] [role=tab]:nth-child(2)").click();
-      await page.waitForTimeout(2500);
+      // The wallet's coins are read: their rows, or the blank state — never the rows' places still waiting.
+      await page.locator("[data-launch-blank], [data-launch-resume], a[href*='/coin/']").filter({ visible: true }).first().waitFor({ timeout: 20_000 }).catch(() => {});
+      await page.waitForTimeout(1500);
       await shot("mine");
     }
 

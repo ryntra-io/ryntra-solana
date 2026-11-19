@@ -93,14 +93,15 @@ test("each moment counts once a visit, a refused store still once a page", () =>
   assert.equal(onceStore(null).first("agent_line"), true);
 });
 
-test("the first sentences are ones the agent takes, in both languages, the budget a new agent starts with", () => {
+test("the first sentences are ones the agent takes, in both languages — no sum in any of them (decision 108)", () => {
   for (const lang of ["en", "uk"]) {
     const says = firstSentences(lang, BOOK, { trade: true, launch: true });
     assert.deepEqual(says.map((s) => s.key), ["trade", "dip", "launch"], lang);
     const [trade, dip, launch] = says;
     assert.equal(trade.ask.kind, "trade");
-    assert.equal(trade.ask.perDaySol, "0.1", trade.text);
-    assert.ok(trade.ask.coin, `${trade.text} names a tower`);
+    assert.equal(trade.ask.perDaySol, null, `${trade.text}: the budget is hers to say`);
+    for (const say of says) assert.doesNotMatch(say.text, /\d|SOL/u, `${say.text} names no sum`);
+    if (BOOK.coins.some((c) => c.symbol === "JUP" && c.tower)) assert.ok(trade.ask.coin, `${trade.text} names a tower`);
     assert.equal(dip.ask.kind, "trade");
     assert.equal(dip.ask.plan?.id, "dip", dip.text);
     assert.equal(launch.ask.kind, "launch", launch.text);
@@ -111,18 +112,28 @@ test("the first sentences are ones the agent takes, in both languages, the budge
   }
 });
 
-test("a shut door offers no sentence for it; the coin is a tower the agent may buy", () => {
+test("a shut door offers no sentence for it; the coin is JUP or MET, never one advertised (decision 108)", () => {
   assert.deepEqual(firstSentences("en", BOOK, { trade: false, launch: true }).map((s) => s.key), ["launch"]);
   assert.deepEqual(firstSentences("uk", BOOK, { trade: true, launch: false }).map((s) => s.key), ["trade", "dip"]);
   assert.deepEqual(firstSentences("en", BOOK, { trade: false, launch: false }), []);
   const coin = sayCoin(BOOK);
-  assert.ok(coin && coin.tower && !/SOL$|^USD/.test(coin.symbol));
-  if (BOOK.coins.some((c) => c.symbol === "BONK" && c.tower)) assert.equal(coin.symbol, "BONK");
+  if (coin) assert.ok(["JUP", "MET"].includes(coin.symbol), coin.symbol);
+  for (const lang of ["en", "uk"]) for (const say of firstSentences(lang, BOOK, { trade: true, launch: true })) assert.doesNotMatch(say.text, /BONK|PUMP|WIF/u, say.text);
+  const named = bookOf([
+    { id: "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263", symbol: "BONK", name: "Bonk", icon: null, mcap: 2e9, liquidity: 1e7, verified: true },
+    { id: "JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN", symbol: "JUP", name: "Jupiter", icon: null, mcap: 1e9, liquidity: 1e7, verified: true },
+    { id: "METvsvVRapdj9cFLzq4Tr43xK4tAjQfwX76z3n6mWQL", symbol: "MET", name: "Meteora", icon: null, mcap: 5e8, liquidity: 1e6, verified: true },
+  ]);
+  assert.equal(sayCoin(named)?.symbol, "JUP", "the market's best is not the example's");
+  const [trade, dip] = firstSentences("en", named, { trade: true, launch: false });
+  assert.equal(trade.text, "Trade JUP for me every day");
+  assert.equal(dip.text, "Buy MET on dips for me");
   const empty = bookOf([]);
   assert.equal(sayCoin(empty), null);
   const bare = firstSentences("en", empty, { trade: true, launch: false });
-  assert.equal(bare[0]?.text, "Trade for me, 0.1 SOL a day");
-  assert.equal(bare[0]?.ask.perDaySol, "0.1");
+  assert.equal(bare[0]?.text, "Trade for me every day");
+  assert.equal(bare[0]?.ask.perDaySol, null);
+  assert.equal(firstSentences("uk", empty, { trade: true, launch: false })[0]?.text, "Торгуй за мене щодня");
 });
 
 test("the track route takes the funnel through its own row; the page sends nothing but `funnelEvent`", async () => {
@@ -178,16 +189,18 @@ test("a card left for a wallet waits two hours in this browser, then the city op
 
 test("«Add SOL» only when the wallet certainly cannot hold the budget and the agent's fees", async () => {
   const { fundsFor, shortOfFunds, solAbout } = await import("./funds.ts");
-  assert.deepEqual(fundsFor("small"), { floor: 110_000_000n, about: 120_000_000n });
-  assert.equal(solAbout(fundsFor("small").about), "0.12");
-  assert.equal(solAbout(fundsFor("medium").about), "0.27");
+  /* Her budget — 0.1 SOL a day, 0.05 a trade, 3 days: 0.3 into the vault, 0.01 for the agent's fees, ~0.02 the accounts. */
+  const hers = { perDay: 100_000_000n, perTrade: 50_000_000n, days: 3 };
+  assert.deepEqual(fundsFor(hers), { floor: 330_000_000n, about: 330_000_000n });
+  assert.equal(solAbout(fundsFor(hers).about), "0.33");
+  assert.equal(solAbout(fundsFor({ ...hers, days: 30 }).about), "3.03");
   assert.equal(solAbout(105_000_001n), "0.11", "rounded up");
-  assert.equal(shortOfFunds("40000000", "small"), true);
-  assert.equal(shortOfFunds("109999999", "small"), true);
-  assert.equal(shortOfFunds("110000000", "small"), false, "at the floor the wallet decides");
-  assert.equal(shortOfFunds("405000000", "small"), false);
-  assert.equal(shortOfFunds(null, "small"), false, "an unread balance is never short");
-  assert.equal(shortOfFunds("abc", "small"), false);
+  assert.equal(shortOfFunds("40000000", hers), true);
+  assert.equal(shortOfFunds("329999999", hers), true, "the accounts the signature opens count");
+  assert.equal(shortOfFunds("330000000", hers), false, "at the floor the wallet decides");
+  assert.equal(shortOfFunds("405000000", hers), false);
+  assert.equal(shortOfFunds(null, hers), false, "an unread balance is never short");
+  assert.equal(shortOfFunds("abc", hers), false);
   assert.equal(shortOfFunds("40000000", null), false);
 });
 

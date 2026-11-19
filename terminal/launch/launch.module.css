@@ -1,60 +1,9 @@
-/* The Launch screen: how the kit's parts are laid out, in the approved design's measures. Colours and sizes are the
-   terminal's variables (terminal/styles); nothing here names a colour of its own. */
-
-.screen {
-  display: flex;
-  flex: 1 1 auto;
-  flex-direction: column;
-  gap: 16px;
-  min-width: 0;
-}
-
-.head {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 16px;
-}
-
-.headTabs {
-  margin-left: 8px;
-}
-
-.headChips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
+/* The Launch screen, a launchpad: how the kit's parts are laid out. Colours and sizes are the terminal's
+   variables (terminal/styles); a tint is a token mixed with transparency, never a colour of its own. */
 
 .grow {
   flex: 1 1 0;
   min-width: 0;
-}
-
-.grid {
-  display: flex;
-  flex: 1 1 auto;
-  flex-wrap: wrap;
-  align-items: flex-start;
-  gap: 16px;
-}
-
-.main {
-  display: flex;
-  flex: 999 1 520px;
-  flex-direction: column;
-  gap: 16px;
-  min-width: 0;
-}
-
-/* A form is as wide as a form: on a desk the new coin's column stops at 720 px, and the card people will see stands
-   right beside it. The lists of the other tabs keep the whole width. */
-.grid[data-view='new']:not([data-plain]) > .main {
-  max-width: 720px;
-}
-
-.grid[data-view='new']:not([data-plain]) > .aside {
-  flex-grow: 0;
 }
 
 .view {
@@ -68,56 +17,239 @@
   display: none;
 }
 
-.aside {
+/* ── the agent's line, first ───────────────────────────────────────────── */
+
+.say {
   display: flex;
-  flex: 1 1 328px;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  min-height: 64px;
+  padding: 12px 18px;
+  text-align: left;
+  color: var(--ice);
+  border: 1px solid var(--act-edge);
+  background:
+    linear-gradient(100deg, color-mix(in srgb, var(--amber) 12%, transparent), color-mix(in srgb, var(--violet) 8%, transparent) 55%, transparent),
+    var(--panel);
+  transition: border-color 0.15s, background-color 0.15s;
+}
+
+.say:hover {
+  border-color: color-mix(in srgb, var(--amber) 62%, transparent);
+}
+
+.say:focus-visible {
+  outline: 2px solid var(--amber);
+  outline-offset: 2px;
+}
+
+.saySign {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  color: var(--amber);
+  background: color-mix(in srgb, var(--amber) 14%, transparent);
+}
+
+.sayWords {
+  display: flex;
+  flex: 1 1 0;
   flex-direction: column;
-  gap: 16px;
-  max-width: 360px;
+  gap: 2px;
   min-width: 0;
 }
 
-/* ── the form ──────────────────────────────────────────────────────────── */
+.sayWords > b {
+  font-size: var(--type-base);
+  font-weight: 700;
+}
 
-.coinRow {
+.sayWords > span {
+  overflow: hidden;
+  font-size: var(--type-small);
+  color: var(--soft);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sayArrow {
+  color: var(--amber);
+}
+
+/* ── the ready formats ─────────────────────────────────────────────────── */
+
+.formats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.format {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-height: 88px;
+  padding: 16px 18px;
+  text-align: left;
+  background: var(--panel);
+  border: 1px solid var(--glass-edge);
+  transition: border-color 0.15s, background-color 0.15s;
+}
+
+.format:hover:not(:disabled) {
+  border-color: var(--chosen-edge);
+}
+
+.format[aria-pressed='true'] {
+  border-color: color-mix(in srgb, var(--amber) 70%, transparent);
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--amber) 16%, transparent), color-mix(in srgb, var(--amber) 4%, transparent) 70%),
+    var(--panel);
+}
+
+.format:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.formatSign {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  color: var(--dim);
+  background: color-mix(in srgb, var(--ice) 5%, transparent);
+}
+
+.format[aria-pressed='true'] .formatSign {
+  color: var(--on-amber);
+  background: var(--amber);
+}
+
+.formatCheck {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  margin-left: auto;
+  color: var(--on-amber);
+  background: var(--amber);
+  opacity: 0;
+}
+
+.format[aria-pressed='true'] .formatCheck {
+  opacity: 1;
+}
+
+.formatWords {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  font-size: var(--type-small);
+  color: var(--soft);
+}
+
+.formatName {
   display: flex;
   flex-wrap: wrap;
-  align-items: stretch;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--type-base);
+  color: var(--ice);
+}
+
+.formatTag {
+  padding: 2px 6px;
+  font-size: var(--type-micro);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--lilac);
+  border: 1px solid var(--edge-soft);
+}
+
+/* ── the new coin ──────────────────────────────────────────────────────── */
+
+.coinRow {
+  display: grid;
+  grid-template-columns: 184px minmax(0, 1fr);
   gap: 16px;
 }
 
 .drop {
   position: relative;
   display: flex;
-  flex: none;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  width: 136px;
-  height: 136px;
+  gap: 4px;
+  height: 184px;
   overflow: hidden;
-  font-size: var(--type-caption);
-  font-weight: 700;
-  color: var(--lilac);
-  border-radius: var(--r-ctl);
-  border: 1px dashed var(--edge);
-  background: rgba(153, 69, 255, 0.06);
+  padding: 12px;
+  text-align: center;
+  border: 1px solid color-mix(in srgb, var(--amber) 30%, transparent);
+  background:
+    radial-gradient(closest-side at 50% 36%, color-mix(in srgb, var(--amber) 16%, transparent), transparent),
+    radial-gradient(closest-side at 50% 110%, color-mix(in srgb, var(--violet) 26%, transparent), transparent),
+    var(--well);
   cursor: pointer;
-  transition: background-color 0.15s;
+  transition: border-color 0.15s, background-color 0.15s;
 }
 
-.drop:hover {
-  background: rgba(153, 69, 255, 0.14);
+.drop:hover,
+.drop[data-over] {
+  border-color: var(--amber);
 }
 
 .drop:focus-within {
-  outline: 2px solid var(--lilac);
+  outline: 2px solid var(--amber);
   outline-offset: 2px;
 }
 
 .drop[data-bad] {
   border-color: var(--amber);
+}
+
+.drop[data-has] {
+  border-color: var(--glass-edge);
+}
+
+.dropSign {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  margin-bottom: 6px;
+  color: var(--amber);
+  background: color-mix(in srgb, var(--amber) 14%, transparent);
+  box-shadow: 0 0 28px color-mix(in srgb, var(--amber) 28%, transparent);
+}
+
+.dropTitle,
+.dropTitleTouch {
+  font-size: var(--type-body);
+  font-weight: 700;
+  color: var(--ice);
+}
+
+/* A finger drops nothing: a phone says «Add a picture». */
+.dropTitleTouch {
+  display: none;
+}
+
+.dropOr {
+  font-size: var(--type-small);
+  font-weight: 600;
+  color: var(--amber-hi);
 }
 
 .dropImage {
@@ -126,6 +258,41 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+.dropRound {
+  position: absolute;
+  left: 10px;
+  bottom: 10px;
+  width: 52px;
+  height: 52px;
+  object-fit: cover;
+  border: 2px solid var(--ink);
+  box-shadow: 0 4px 16px color-mix(in srgb, var(--ink-deep) 70%, transparent);
+}
+
+.dropChange {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  padding: 4px 10px;
+  font-size: var(--type-caption);
+  font-weight: 700;
+  color: var(--ice);
+  background: color-mix(in srgb, var(--ink-deep) 72%, transparent);
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.drop:hover .dropChange,
+.drop:focus-within .dropChange {
+  opacity: 1;
+}
+
+@media (hover: none) {
+  .dropChange {
+    opacity: 1;
+  }
 }
 
 .file {
@@ -143,9 +310,8 @@
 
 .names {
   display: flex;
-  flex: 1 1 260px;
   flex-direction: column;
-  gap: 12px;
+  gap: 16px;
   min-width: 0;
 }
 
@@ -154,37 +320,47 @@
   flex: 1 1 0;
   flex-direction: column;
   justify-content: center;
-  gap: 10px;
-  padding: 14px;
-  border-radius: var(--r-ctl);
+  gap: 8px;
+  padding: 14px 16px;
   background: var(--well);
   border: 1px solid var(--line);
   transition: border-color 0.15s;
   min-width: 0;
 }
 
-.field:focus-within {
-  border-color: rgba(238, 241, 255, 0.16);
+.field,
+.link {
+  border-radius: var(--r-ctl);
 }
 
-.field[data-bad] {
-  border-color: rgba(255, 178, 63, 0.6);
+.field:focus-within,
+.link:focus-within {
+  border-color: var(--chosen-edge);
+}
+
+.field[data-bad],
+.link[data-bad] {
+  border-color: color-mix(in srgb, var(--amber) 60%, transparent);
 }
 
 .text {
   width: 100%;
   min-width: 0;
-  font-size: var(--type-action);
+  font-size: var(--type-title);
   font-weight: 700;
   color: var(--ice);
 }
 
-.text:focus-visible {
+.text:focus-visible,
+.textArea:focus-visible,
+.linkText:focus-visible {
   outline: none;
 }
 
-.text::placeholder {
-  color: rgba(152, 153, 166, 0.7);
+.text::placeholder,
+.textArea::placeholder,
+.linkText::placeholder {
+  color: color-mix(in srgb, var(--dim) 70%, transparent);
   opacity: 1;
 }
 
@@ -198,12 +374,74 @@
   font-family: var(--display);
   font-weight: 800;
   font-stretch: 125%;
-  font-size: var(--type-action);
+  font-size: var(--type-title);
   color: var(--amber);
 }
 
+.about {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.fieldHead {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.count {
+  font-size: var(--type-caption);
+  color: var(--dim);
+  font-variant-numeric: tabular-nums;
+}
+
+.textArea {
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  padding: 0;
+  font: inherit;
+  font-size: var(--type-base);
+  line-height: 1.45;
+  color: var(--ice);
+  background: transparent;
+  border: 0;
+  resize: none;
+}
+
+.links {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 48px;
+  padding: 0 14px;
+  color: var(--dim);
+  background: var(--well);
+  border: 1px solid var(--line);
+  transition: border-color 0.15s;
+}
+
+.linkText {
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 0;
+  font: inherit;
+  font-size: var(--type-body);
+  font-weight: 600;
+  color: var(--ice);
+  background: transparent;
+  border: 0;
+}
+
 .problem {
-  margin: -4px 0 0;
+  margin: -8px 0 0;
   font-size: var(--type-small);
   font-weight: 600;
   color: var(--amber);
@@ -215,13 +453,6 @@
   gap: 8px;
 }
 
-.blockHead {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.explainLines,
 .explainRows {
   display: flex;
   flex-direction: column;
@@ -232,10 +463,6 @@
   display: flex;
   flex-direction: column;
   gap: 2px;
-}
-
-.chevronUp {
-  transform: rotate(180deg);
 }
 
 .ladder {
@@ -254,44 +481,86 @@
   font-weight: 700;
 }
 
-.tiles {
+/* When a pool's trading opens: a row of choices. */
+.openChips {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
   gap: 8px;
 }
 
-.settings {
-  display: flex;
-  flex-direction: column;
+.openChip {
+  height: 48px;
+  padding: 0 12px;
+  font-size: var(--type-body);
+  font-weight: 700;
+  border: 1px solid var(--glass-edge);
+  background: var(--well);
 }
 
-.settingsHead {
+.openChip,
+.format,
+.drop,
+.say {
+  border-radius: var(--r-ctl);
+}
+
+.openChip[aria-checked='true'] {
+  color: var(--ice);
+  border-color: var(--act-edge);
+  background: color-mix(in srgb, var(--amber) 12%, transparent);
+}
+
+.openChip:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+/* The launch in one row: its price and the creator's share, the rest behind «i». */
+.termsBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.terms {
   display: flex;
   align-items: center;
-  gap: 10px;
-  width: 100%;
-  height: 44px;
-  padding: 0 14px;
-  color: var(--lilac);
-  border-radius: var(--r-ctl);
+  gap: 16px;
+  padding: 14px 16px;
+  background: var(--well);
   border: 1px solid var(--line);
-  background: rgba(238, 241, 255, 0.02);
-  text-align: left;
-  transition: background-color 0.15s;
 }
 
-.settingsHead:hover,
-.settingsHead[aria-expanded='true'] {
-  background: rgba(255, 255, 255, 0.05);
+.termList {
+  display: flex;
+  flex: 1 1 0;
+  align-items: flex-end;
+  gap: 24px;
+  min-width: 0;
 }
 
-.settingsBody {
+.term {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  padding: 14px;
-  border: 1px solid var(--line);
-  border-top: 0;
+  gap: 2px;
+  min-width: 0;
+  font-size: var(--type-caption);
+  color: var(--soft);
+}
+
+.term + .term {
+  padding-left: 24px;
+  border-left: 1px solid var(--line);
+}
+
+.term > b {
+  font-family: var(--display);
+  font-size: var(--type-lead);
+  font-weight: 800;
+  font-stretch: 112%;
+  color: var(--ice);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
 }
 
 .setting {
@@ -300,14 +569,6 @@
   justify-content: space-between;
   gap: 12px;
   min-height: 36px;
-  font-size: var(--type-body);
-  font-weight: 600;
-}
-
-.setting b {
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-  text-align: right;
 }
 
 .pair {
@@ -315,31 +576,27 @@
   flex: none;
 }
 
-.settingsHow {
-  margin: 4px 0 0;
-  font-size: var(--type-small);
-  line-height: 1.45;
-  color: var(--ice);
+.bare {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
 }
 
-/* ── the line before the signature, the action, the launch on its way ──── */
+/* ── the action, the launch on its way ─────────────────────────────────── */
 
 .act {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-}
-
-.lineRow {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-start;
   gap: 10px;
 }
 
+.actBar {
+  display: flex;
+  flex-direction: column;
+}
+
 .line {
-  flex: 1 1 0;
-  min-width: 0;
   margin: 0;
   font-size: var(--type-small);
   font-weight: 600;
@@ -347,17 +604,16 @@
   color: var(--ice);
 }
 
-.line > span + span::before {
-  content: ' · ';
+.hood {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin: 0;
+  font-size: var(--type-caption);
   color: var(--dim);
-}
-
-.risk {
-  color: var(--lilac);
-}
-
-.lineRow > [role='note'] {
-  flex: 1 0 100%;
+  text-align: center;
+  text-wrap: balance;
 }
 
 .progress {
@@ -374,8 +630,7 @@
   width: 22px;
   height: 22px;
   flex: none;
-  border-radius: 50%;
-  border: 2px solid rgba(255, 178, 63, 0.25);
+  border: 2px solid color-mix(in srgb, var(--amber) 25%, transparent);
   border-top-color: var(--amber);
   animation: spin 0.9s linear infinite;
 }
@@ -430,7 +685,7 @@
   padding: 14px 16px;
   align-self: stretch;
   background: var(--well);
-  border: 1px solid rgba(255, 178, 63, 0.35);
+  border: 1px solid color-mix(in srgb, var(--amber) 35%, transparent);
 }
 
 .refusedWords b {
@@ -441,7 +696,7 @@
 .refusedWords span {
   font-size: var(--type-small);
   font-weight: 600;
-  color: var(--lilac);
+  color: var(--soft);
 }
 
 .refusedDetails {
@@ -487,95 +742,227 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* ── the card people will see ──────────────────────────────────────────── */
+/* ── the coin as people will see it ────────────────────────────────────── */
 
-.seenCoin {
+.preview {
+  overflow: hidden;
+}
+
+.banner {
+  position: relative;
+  height: 164px;
+  overflow: hidden;
+  background: var(--well);
+}
+
+.bannerImage {
+  position: absolute;
+  inset: -24px;
+  width: calc(100% + 48px);
+  height: calc(100% + 48px);
+  object-fit: cover;
+  opacity: 0.85;
+  filter: blur(28px) saturate(1.4);
+}
+
+/* No picture yet: the brand's light and a fine grid, the place a coin's banner stands. */
+.bannerArt {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(closest-side at 26% 78%, color-mix(in srgb, var(--amber) 34%, transparent), transparent),
+    radial-gradient(closest-side at 78% 22%, color-mix(in srgb, var(--violet) 44%, transparent), transparent),
+    repeating-linear-gradient(0deg, color-mix(in srgb, var(--ice) 5%, transparent) 0 1px, transparent 1px 24px),
+    repeating-linear-gradient(90deg, color-mix(in srgb, var(--ice) 5%, transparent) 0 1px, transparent 1px 24px),
+    var(--haze);
+}
+
+.bannerShade {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 35%, color-mix(in srgb, var(--ink) 88%, transparent));
+}
+
+.bannerKick {
+  position: absolute;
+  top: 14px;
+  left: 18px;
+  color: var(--ice);
+}
+
+.markLarge,
+.markSmall,
+.blankOrb,
+.dropRound,
+.dropSign,
+.formatCheck,
+.roadFill,
+.spinner {
+  border-radius: 50%;
+}
+
+.markLarge {
+  position: absolute;
+  left: 18px;
+  bottom: 14px;
+  width: 76px;
+  height: 76px;
+  object-fit: cover;
+  border: 3px solid var(--ink);
+  box-shadow: 0 0 32px color-mix(in srgb, var(--amber) 22%, transparent);
+}
+
+.markSmall {
+  width: 36px;
+  height: 36px;
+  flex: none;
+  object-fit: cover;
+}
+
+.orb {
   display: flex;
   align-items: center;
-  gap: 12px;
+  justify-content: center;
+  color: var(--amber-hi);
+  background:
+    radial-gradient(circle at 32% 24%, color-mix(in srgb, var(--warm) 55%, transparent), transparent 34%),
+    radial-gradient(circle at 34% 30%, color-mix(in srgb, var(--amber) 52%, transparent), transparent 64%),
+    radial-gradient(circle at 72% 84%, color-mix(in srgb, var(--violet) 70%, transparent), transparent 74%),
+    conic-gradient(from 210deg, var(--haze), color-mix(in srgb, var(--violet) 40%, var(--haze)), var(--haze));
+  border: 1px solid color-mix(in srgb, var(--amber) 55%, transparent);
+  box-shadow:
+    inset 0 0 0 3px color-mix(in srgb, var(--ink) 55%, transparent),
+    inset 0 -8px 18px color-mix(in srgb, var(--ink-deep) 60%, transparent),
+    0 0 28px color-mix(in srgb, var(--amber) 22%, transparent);
 }
 
-.seenCoin[data-empty] .seenNames {
-  opacity: 0.55;
-}
-
-.seenNames {
+.seenBody {
   display: flex;
-  flex: 1 1 0;
   flex-direction: column;
-  min-width: 0;
+  gap: 10px;
+  padding: 16px 18px 18px;
+}
+
+.seenTitle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 .seenSym {
+  flex: 1 1 0;
+  min-width: 0;
+  overflow: hidden;
   font-family: var(--display);
   font-weight: 800;
   font-stretch: 125%;
-  font-size: var(--type-action);
-  overflow: hidden;
+  font-size: var(--type-headline);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .seenName {
-  font-size: var(--type-caption);
-  color: var(--dim);
+  margin-top: -6px;
   overflow: hidden;
+  font-size: var(--type-body);
+  color: var(--soft);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.seenMark,
-.seenPicture {
-  width: 44px;
-  height: 44px;
-  flex: none;
-  border-radius: 50%;
+.seenTitle[data-empty] .seenSym,
+.seenName[data-empty],
+.seenRow[data-empty] .listWords {
+  opacity: 0.5;
 }
 
-.seenMark {
+.seenAbout {
+  display: -webkit-box;
+  margin: 0;
+  overflow: hidden;
+  font-size: var(--type-small);
+  line-height: 1.45;
+  color: var(--soft);
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow-wrap: anywhere;
+}
+
+.seenLinks {
+  display: flex;
+  gap: 8px;
+}
+
+.seenLink {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-family: var(--display);
-  font-weight: 800;
-  font-stretch: 125%;
-  font-size: var(--type-action);
-  color: var(--lilac);
-  background: var(--haze);
+  width: 28px;
+  height: 28px;
+  color: var(--soft);
   border: 1px solid var(--glass-edge);
 }
 
-.seenPicture {
-  object-fit: cover;
+.seenStat {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  font-size: var(--type-small);
+  color: var(--soft);
+  background: var(--well);
+  border: 1px solid var(--line);
+}
+
+.seenStat b {
+  font-family: var(--display);
+  font-size: var(--type-lead);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
 }
 
 .amber {
   color: var(--amber);
 }
 
-.sniper {
+/* The curve's way to its pool: where it starts, where it moves. */
+.road {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
 }
 
-.sniperHead {
+.roadHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: var(--type-small);
+  color: var(--soft);
+}
+
+.roadHead b {
+  font-weight: 700;
+  color: var(--ice);
+  font-variant-numeric: tabular-nums;
+}
+
+.roadBar {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 10px;
+  height: 6px;
+  background: color-mix(in srgb, var(--ice) 8%, transparent);
 }
 
-.sniperHead b {
-  font-size: var(--type-small);
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-}
-
-.shieldBar {
+/* Where a new coin starts: a point at the road's beginning, nothing filled yet. */
+.roadFill {
   display: block;
-  height: 8px;
-  background: linear-gradient(90deg, var(--flare), var(--amber) 45%, var(--mint));
+  width: 10px;
+  height: 10px;
+  background: var(--amber);
+  box-shadow: 0 0 12px color-mix(in srgb, var(--amber) 60%, transparent);
 }
 
 .chips {
@@ -584,17 +971,19 @@
   gap: 8px;
 }
 
-/* ── the lists ─────────────────────────────────────────────────────────── */
+.seenRowHead {
+  padding: 12px 18px 4px;
+  border-top: 1px solid var(--line);
+}
 
-.freshHead {
+.seenRow {
   display: flex;
   align-items: center;
-  padding: 16px 18px 12px;
+  gap: 12px;
+  padding: 8px 18px 16px;
 }
 
-.freshHead > span:first-child {
-  color: var(--ice);
-}
+/* ── the lists ─────────────────────────────────────────────────────────── */
 
 .all {
   font-size: var(--type-caption);
@@ -608,7 +997,7 @@
 
 .empty {
   margin: 0;
-  padding: 22px;
+  padding: 24px;
   font-size: var(--type-body);
   font-weight: 600;
 }
@@ -625,275 +1014,134 @@
   border-bottom: 1px solid var(--line);
 }
 
-.bare {
-  min-width: 0;
-  margin: 0;
-  padding: 0;
-  border: 0;
-}
-
 .emptyLine {
   margin: 0;
   font-size: var(--type-body);
   font-weight: 600;
 }
 
-.phoneList {
-  display: none;
-}
-
-.phoneDock {
-  display: none;
-}
-
-/* ── the marks ─────────────────────────────────────────────────────────── */
-
-.glyph {
-  width: 24px;
-  height: 24px;
-  flex: none;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 1.7;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-
-.glyphS {
-  width: 16px;
-  height: 16px;
-}
-
-/* ── a phone: one column, the card under the form, the action at the bottom ── */
-
-@media (max-width: 767px) {
-  .screen {
-    gap: 14px;
-  }
-
-  .head {
-    gap: 12px;
-  }
-
-  .headTabs {
-    order: 3;
-    flex: 1 0 100%;
-    margin-left: 0;
-  }
-
-  .headChips {
-    display: none;
-  }
-
-  .grid {
-    flex-direction: column;
-    flex-wrap: nowrap;
-    align-items: stretch;
-    gap: 14px;
-  }
-
-  .main,
-  .aside {
-    flex: none;
-    max-width: none;
-  }
-
-  .aside[data-off] {
-    display: none;
-  }
-
-  .freshMini {
-    display: none;
-  }
-
-  .deskAct {
-    display: none;
-  }
-
-  .deskList {
-    display: none;
-  }
-
-  .phoneList {
-    display: flex;
-    flex-direction: column;
-    padding: 0 16px;
-  }
-
-  /* The picture beside the name, the ticker under both. */
-  .coinRow {
-    display: grid;
-    grid-template-columns: 92px minmax(0, 1fr);
-    gap: 12px;
-  }
-
-  .names {
-    display: contents;
-  }
-
-  .drop {
-    width: auto;
-    height: auto;
-    min-height: 92px;
-  }
-
-  .names > :last-child {
-    grid-column: 1 / -1;
-  }
-
-  .text {
-    font-size: 16px;
-  }
-
-  /* The ladder's prices stand behind its «i» on a phone: the row keeps one line. */
-  .ladderSpan {
-    display: none;
-  }
-
-  /* The share and the signatures side by side, the network's deposit across the width. */
-  .tiles {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    grid-auto-flow: row dense;
-  }
-
-  .tiles > :nth-child(2) {
-    grid-column: 1 / -1;
-  }
-
-  .phoneDock {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-  }
-
-  .phoneDock[data-off] {
-    display: none;
-  }
-}
-
-/* ── the plain view (docs/terminal/design/2026-11-17/A-Launch) ─────────────────────────────────────── */
-
-.hero {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  min-width: 0;
-}
-
-.lead {
-  margin: 0;
-  font-size: var(--type-body);
-  color: var(--dim);
-}
-
-/* The ready formats: one row of three, the chosen one lit. */
-.formats {
+.blank {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 16px;
-}
-
-.format {
-  display: flex;
+  grid-template-columns: 220px minmax(0, 1fr);
   align-items: center;
-  gap: 14px;
-  min-height: 84px;
-  padding: 16px 18px;
-  text-align: left;
-  background: var(--panel);
-  border-radius: var(--r-ctl);
-  border: 1px solid var(--glass-edge);
-  transition: border-color 0.15s, background-color 0.15s;
+  overflow: hidden;
 }
 
-.format:hover:not(:disabled) {
-  border-color: rgba(238, 241, 255, 0.16);
-}
-
-.format[aria-checked='true'] {
-  border-color: var(--chosen-edge);
-  background: linear-gradient(var(--chosen), var(--chosen)), var(--panel);
-}
-
-.format:disabled {
-  cursor: default;
-  opacity: 0.6;
-}
-
-.formatSign {
+.blankArt {
+  position: relative;
   display: flex;
-  flex: none;
   align-items: center;
   justify-content: center;
-  width: 48px;
-  height: 48px;
-  color: var(--lilac);
-  background: rgba(153, 69, 255, 0.12);
+  height: 200px;
+  background:
+    radial-gradient(closest-side at 50% 55%, color-mix(in srgb, var(--amber) 26%, transparent), transparent),
+    radial-gradient(closest-side at 30% 20%, color-mix(in srgb, var(--violet) 40%, transparent), transparent),
+    repeating-linear-gradient(0deg, color-mix(in srgb, var(--ice) 5%, transparent) 0 1px, transparent 1px 24px),
+    repeating-linear-gradient(90deg, color-mix(in srgb, var(--ice) 5%, transparent) 0 1px, transparent 1px 24px),
+    var(--haze);
 }
 
-.format[aria-checked='true'] .formatSign {
-  color: var(--ice);
-  background: rgba(153, 69, 255, 0.28);
+.blankOrb {
+  width: 96px;
+  height: 96px;
 }
 
-.formatWords {
+.blankWords {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  min-width: 0;
-  font-size: var(--type-body);
+  align-items: flex-start;
+  gap: 16px;
+  padding: 24px 32px;
 }
 
-.formatWords > span {
-  font-size: var(--type-small);
-  color: var(--dim);
+.blankWords > button {
+  align-self: stretch;
+  max-width: 400px;
 }
 
-/* When trading opens: a row of choices. */
-.openChips {
+.blankWords > b {
+  font-size: var(--type-lead);
+  font-weight: 650;
+  line-height: 1.35;
+}
+
+.skeleton {
+  display: flex;
+  flex-direction: column;
+}
+
+.skeleton > span {
+  display: block;
+  height: 60px;
+  border-top: 1px solid var(--line);
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--ice) 5%, transparent), transparent) 0 0 / 200% 100%;
+  animation: shimmer 1.4s linear infinite;
+}
+
+@keyframes shimmer {
+  to {
+    background-position: -200% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton > span {
+    animation: none;
+  }
+}
+
+/* The «New» tab: the market's new coins as cards, two to a row on a desk. */
+.freshGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
-  gap: 8px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
-.openChip {
-  height: 48px;
-  padding: 0 12px;
-  font-size: var(--type-body);
-  font-weight: 700;
-  border-radius: var(--r-ctl);
-  border: 1px solid var(--glass-edge);
-  background: var(--well);
+.freshCard {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 72px;
+  padding: 12px 18px;
+  border-top: 1px solid var(--line);
+  transition: background-color 0.15s;
 }
 
-.openChip[aria-checked='true'] {
-  color: var(--ice);
-  border-color: var(--chosen-edge);
+.freshCard:nth-child(even) {
+  border-left: 1px solid var(--line);
+}
+
+.freshCard:last-child:nth-child(odd) {
+  grid-column: 1 / -1;
+}
+
+.freshCard:hover {
   background: var(--chosen);
 }
 
-.openChip:disabled {
-  cursor: default;
-  opacity: 0.6;
+.freshFigures {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  font-size: var(--type-small);
+  color: var(--dim);
+  font-variant-numeric: tabular-nums;
 }
 
-.tiles[data-off] {
+.freshFigures > b {
+  font-size: var(--type-body);
+  color: var(--ice);
+}
+
+/* A blank list's one quiet step stands its own width, under its line — never across the page. */
+.blankAct {
+  align-self: flex-start;
+}
+
+.phoneList {
   display: none;
 }
-
-/* The plain view's two halves: the form, and the lists beside it as wide. */
-@media (min-width: 1100px) {
-  .grid[data-plain] > .main {
-    flex: 1 1 0;
-  }
-
-  .grid[data-plain] > .aside {
-    flex: 1 1 0;
-    max-width: none;
-  }
-}
-
-/* ── «Launches on Ryntra» · «New on the market» ─────────────────────────── */
 
 .listHead {
   display: flex;
@@ -904,11 +1152,6 @@
 
 .listHead > span:first-child {
   color: var(--ice);
-}
-
-.listLead {
-  font-size: var(--type-caption);
-  color: var(--dim);
 }
 
 .listRows {
@@ -928,7 +1171,7 @@
 }
 
 .listRow:hover {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--chosen);
 }
 
 .listWords {
@@ -970,34 +1213,95 @@
   font-variant-numeric: tabular-nums;
 }
 
-.marks {
-  display: flex;
-  gap: 4px;
+/* On a short desk the beside-list keeps to its first rows; a tall one shows them all. */
+@media (min-width: 768px) and (max-height: 1199px) {
+  .listRows > li:nth-child(n + 7) {
+    display: none;
+  }
 }
 
-.mark {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 22px;
-  height: 22px;
-  font-size: 11px;
-  font-weight: 800;
-  text-decoration: none;
-  border-radius: var(--r-ctl);
+/* A tall wide desk (2560 × 1440): the same wizard a step roomier, so the form and its card hold the screen's height. */
+@media (min-width: 1800px) and (min-height: 1300px) {
+  .say {
+    min-height: 72px;
+  }
+
+  .format {
+    min-height: 104px;
+  }
+
+  .coinRow {
+    grid-template-columns: 208px minmax(0, 1fr);
+  }
+
+  .drop {
+    height: 208px;
+  }
+
+  .textArea {
+    min-height: 56px;
+  }
+
+  .field {
+    padding: 18px 20px;
+  }
+
+  .link {
+    height: 52px;
+  }
+
+  .banner {
+    height: 196px;
+  }
+
+  .markLarge {
+    width: 88px;
+    height: 88px;
+  }
 }
 
-.mark[data-right='off'] {
-  color: var(--mint);
-  background: color-mix(in srgb, var(--mint) 14%, transparent);
+/* ── the marks ─────────────────────────────────────────────────────────── */
+
+.glyph {
+  width: 24px;
+  height: 24px;
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
-.mark[data-right='on'] {
-  color: var(--flare);
-  background: color-mix(in srgb, var(--flare) 14%, transparent);
+.glyphS {
+  width: 16px;
+  height: 16px;
 }
+
+/* ── a phone: one column, the action in the thumb's reach ──────────────── */
 
 @media (max-width: 767px) {
+  .freshMini,
+  .deskList {
+    display: none;
+  }
+
+  .phoneList {
+    display: flex;
+    flex-direction: column;
+    padding: 0 16px;
+  }
+
+  .say {
+    min-height: 56px;
+    padding: 8px 14px;
+  }
+
+  .saySign {
+    width: 36px;
+    height: 36px;
+  }
+
   .formats {
     grid-template-columns: minmax(0, 1fr);
     gap: 8px;
@@ -1011,6 +1315,135 @@
   .formatSign {
     width: 40px;
     height: 40px;
+  }
+
+  /* The picture square beside the name and the ticker, as on a desk, a size smaller. */
+  .coinRow {
+    grid-template-columns: 132px minmax(0, 1fr);
+    gap: 12px;
+  }
+
+  .names {
+    gap: 8px;
+  }
+
+  .names > .field {
+    gap: 2px;
+    padding: 10px 12px;
+  }
+
+  .drop {
+    height: 132px;
+    padding: 8px;
+  }
+
+  .dropSign {
+    width: 40px;
+    height: 40px;
+    margin-bottom: 4px;
+  }
+
+  .dropRound {
+    left: 8px;
+    bottom: 8px;
+    width: 40px;
+    height: 40px;
+  }
+
+  /* A tap on the picture changes it: no words laid over it. */
+  .dropChange,
+  .dropOr,
+  .dropTitle {
+    display: none;
+  }
+
+  .dropTitleTouch {
+    display: block;
+  }
+
+  .text {
+    font-size: 16px;
+  }
+
+  .textArea,
+  .linkText {
+    font-size: 16px;
+  }
+
+  .links {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+  }
+
+  /* The ladder's prices stand behind its «i» on a phone: the row keeps one line. */
+  .ladderSpan {
+    display: none;
+  }
+
+  .terms {
+    gap: 12px;
+    padding: 12px 14px;
+  }
+
+  /* The figures spread across the row; a long name takes two lines, each figure stands on one line under it. */
+  .termList {
+    display: grid;
+    grid-auto-columns: minmax(0, 1fr);
+    grid-auto-flow: column;
+    align-items: end;
+    gap: 8px;
+  }
+
+  .term + .term {
+    padding-left: 0;
+    border-left: 0;
+  }
+
+  .term > b {
+    font-size: var(--type-body);
+  }
+
+  /* The action stays above the tab bar while the form scrolls under it, and stops where the form ends. */
+  .act {
+    position: sticky;
+    bottom: calc(var(--tabbar) + env(safe-area-inset-bottom));
+    z-index: 3;
+    gap: 6px;
+    margin: 0 calc(-1 * var(--bleed, 16px));
+    padding: 8px var(--bleed, 16px);
+    border-top: 1px solid var(--line);
+    background: var(--ink-deep);
+  }
+
+  /* Where the form ends the action stops: its dark runs to the panel's foot, no lighter strip under it. */
+  .act:last-child {
+    margin-bottom: -24px;
+    padding-bottom: 24px;
+  }
+
+  .blank {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .blankArt {
+    height: 160px;
+  }
+
+  .blankWords {
+    padding: 20px 16px 24px;
+  }
+
+  .freshGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .freshCard {
+    min-height: 64px;
+    padding: 8px 16px;
+  }
+
+  .freshCard:nth-child(even) {
+    border-left: 0;
   }
 
   .listAge {

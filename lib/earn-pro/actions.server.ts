@@ -3,7 +3,7 @@
  *
  * | Action | What the wallet signs | Transactions |
  * |---|---|---|
- * | `open` | a position from a goal, paid in SOL alone: the pool swaps the part the shape needs, then «open and deposit» | 2 (3 for a shape wider than one message) |
+ * | `open` | a position from a goal or from a shape of one's own (behind `RYNTRA_EARN_PRO_SHAPE`), paid in SOL alone: the pool swaps the part the shape needs, then «open and deposit» | 2 (3 for a shape wider than one message) |
  * | `compound` | «take and put back»: the fees collected and deposited again | 1 |
  * | `collect` | the fees, and the pool's reward where it has one | 1–3 |
  * | `leave` | all the liquidity out, with the fees and the reward | 1–4 |
@@ -26,16 +26,17 @@ import { signatureStates, type LiquidityRelay, type RelayState } from "../liquid
 import { PRO_CARE_STOP_PCTS, isProCareStopPct, stopBelowOf, watchOf } from "./care.ts";
 import { endProCare, holdProCare, proCareGate, recordProCare, type ProCareDeps, type ProCareHold } from "./care.server.ts";
 import { SOL_MINT, coinKindOf } from "./coins.ts";
-import { EARN_PRO_ACTIONS, earnProGate, earnProStopped, heldByStop, type EarnProAction, type EarnProNetwork } from "./gate.ts";
+import { EARN_PRO_ACTIONS, earnProGate, earnProShapeOpen, earnProStopped, heldByStop, type EarnProAction, type EarnProNetwork } from "./gate.ts";
 import { lamportsOf, priceOfTick, readPier, type ProPier } from "./piers.server.ts";
 import { MAX_TICKET_MESSAGES, checkEarnProSigned, digestOf, issueEarnProTicket, openCosigners, readEarnProTicket, sealCosigners, ticketKeyHere, type Cosigner } from "./ticket.ts";
-import { CARE_RIGHTS, DlmmProRefusal, earnProConnection, earnProVenue, isEarnGoal, isEarnStyle, type DlmmProBuild, type DlmmProRefusalCode, type DlmmProTx, type DlmmProVenue, type EarnGoal, type EarnStyle } from "./venue.server.ts";
+import { CARE_RIGHTS, CUSTOM_GOAL, DlmmProRefusal, earnProConnection, earnProVenue, isEarnStyle, isOpenGoal, isShapeColumns, type DlmmProBuild, type DlmmProRefusalCode, type DlmmProTx, type DlmmProVenue, type EarnStyle, type OpenGoal } from "./venue.server.ts";
 
 type Env = Readonly<Record<string, string | undefined>>;
 
-/** The least and the most SOL one opening takes: under the least the rent outweighs the position; the most is the first release's ceiling. */
+/**
+ * The least SOL one opening takes: under it the rent outweighs the position. No most — the person's own amount and wallet are the bound, the price band holds the opening to its moment.
+ */
 export const EARN_PRO_MIN_LAMPORTS = 50_000_000n;
-export const EARN_PRO_MAX_LAMPORTS = 10_000_000_000n;
 /** The band of the price a person's opening asks for; the venue holds it to an eighth of the way to the range's nearer edge. */
 export const OPEN_BAND_BPS = 100;
 /** The band «take and put back» is built for, and a removal's. */
@@ -68,17 +69,20 @@ const ADDRESS = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
 const isAddress = (value: unknown): value is string => typeof value === "string" && ADDRESS.test(value);
 
 export type EarnProReviewInput =
-  | Readonly<{ action: "open"; owner: string; pool: string; goal: EarnGoal; style: EarnStyle; lamports: string }>
+  /** `columns` — only with the goal `custom`: the person's own grid, 32 columns of 0 to 8 cells, painted on both sides of the price. */
+  | Readonly<{ action: "open"; owner: string; pool: string; goal: OpenGoal; style: EarnStyle; lamports: string; columns?: readonly number[] }>
   | Readonly<{ action: "compound" | "collect" | "leave" | "close" | "care_off"; owner: string; pool: string; nftMint: string }>
   | Readonly<{ action: "care_on"; owner: string; pool: string; nftMint: string; stopPct: (typeof PRO_CARE_STOP_PCTS)[number] }>;
 
 /** A request's body as a Review's input; null for anything that is not one. */
 export function parseEarnProReview(body: unknown): EarnProReviewInput | null {
   if (!body || typeof body !== "object") return null;
-  const { action, owner, pool, nftMint, goal, style, lamports, stopPct } = body as Record<string, unknown>;
+  const { action, owner, pool, nftMint, goal, style, lamports, stopPct, columns } = body as Record<string, unknown>;
   if (typeof action !== "string" || !(EARN_PRO_ACTIONS as readonly string[]).includes(action) || !isAddress(owner) || !isAddress(pool)) return null;
   if (action === "open") {
-    if (!isEarnGoal(goal) || !isEarnStyle(style) || typeof lamports !== "string" || !/^\d{1,20}$/.test(lamports)) return null;
+    if (!isOpenGoal(goal) || !isEarnStyle(style) || typeof lamports !== "string" || !/^\d{1,20}$/.test(lamports)) return null;
+    if (goal === CUSTOM_GOAL) return isShapeColumns(columns) ? { action, owner, pool, goal, style, lamports, columns: [...columns] } : null;
+    if (columns !== undefined) return null;
     return { action, owner, pool, goal, style, lamports };
   }
   if (!isAddress(nftMint)) return null;
@@ -182,12 +186,15 @@ export async function reviewEarnPro(input: EarnProReviewInput, deps: EarnProDeps
   const gate = earnProGate(env);
   if (!gate.open) return fail(404, "EARN_PRO_CLOSED", "Earning on DLMM Pro is not served here.");
   if (heldByStop(input.action) && earnProStopped(env)) return fail(403, "EARN_PRO_STOPPED", "New money is stopped for now. Taking out stays open.");
+  if (input.action === "open" && input.goal === CUSTOM_GOAL && !earnProShapeOpen(env)) return fail(404, "EARN_PRO_CLOSED", "A shape of one's own is not served here yet.");
   if (!ticketKeyHere(env)) return fail(503, "UNAVAILABLE", "This server cannot seal a Review; nothing was built.");
   const connection = deps.connection ?? earnProConnection(gate.network);
   const venue = deps.venue ?? earnProVenue(gate.network, connection, env);
   try {
     const read = await readPier(gate.network, input.pool, { env, connection, venue });
     if (!read) return fail(404, "NOT_A_PIER", "No DLMM Pro pier lives at this address.");
+    /* New money and a new care only where the pier is served; taking out and taking back wherever the person holds. */
+    if (heldByStop(input.action) && !read.served) return fail(404, "NOT_A_PIER", "No DLMM Pro pier lives at this address.");
     const { pier } = read;
     const at = "nftMint" in input ? { pool: input.pool, nftMint: input.nftMint, owner: input.owner } : null;
     let builds: readonly DlmmProTx[];
@@ -199,11 +206,10 @@ export async function reviewEarnPro(input: EarnProReviewInput, deps: EarnProDeps
     if (input.action === "open") {
       const lamports = BigInt(input.lamports);
       if (lamports < EARN_PRO_MIN_LAMPORTS) return fail(422, "AMOUNT_LOW", "The least one opening takes is 0.05 SOL.");
-      if (lamports > EARN_PRO_MAX_LAMPORTS) return fail(422, "AMOUNT_HIGH", "The most one opening takes is 10 SOL.");
       if (!pier.takesDeposits) return fail(409, "PIER_NOT_OPEN", "The pier takes no deposit now.");
       const fresh = (deps.freshKey ?? Keypair.generate)();
       nftMint = fresh.publicKey.toBase58();
-      const built = await venue.earn.open({ pool: input.pool, wallet: input.owner, nftMint, goal: input.goal, style: input.style, pay: { mint: SOL_MINT, amountRaw: input.lamports }, slippageBps: OPEN_BAND_BPS });
+      const built = await venue.earn.open({ pool: input.pool, wallet: input.owner, nftMint, goal: input.goal, style: input.style, ...(input.columns ? { columns: input.columns } : {}), pay: { mint: SOL_MINT, amountRaw: input.lamports }, slippageBps: OPEN_BAND_BPS });
       if (!built.swap) return fail(422, "REFUSED", "The opening was not built from SOL.");
       builds = built.steps;
       cosigners = built.steps.flatMap((step, index) => (step.cosigners.includes(nftMint) ? [{ index, key: fresh }] : []));
@@ -268,9 +274,12 @@ export async function reviewEarnPro(input: EarnProReviewInput, deps: EarnProDeps
       nftMint = input.nftMint;
       const care = proCareGate(env);
       if (!care.open) return fail(404, "CARE_CLOSED", "No agent looks after positions here.");
+      /* An agent looks after a position only where it knows the coin: in a pool opened to any coin the person does. */
+      const kind = coinKindOf(gate.network, pier.solIsX ? pier.y.mint : pier.x.mint, env);
+      if (kind === null) return fail(404, "CARE_CLOSED", "No agent looks after positions in this pool; the position is yours to look after.");
       /* The position must be this pier's: the approval itself names only the NFT. */
       await venue.positions.read({ pool: input.pool, nftMint });
-      const watch = watchOf(pier, coinKindOf(gate.network, pier.solIsX ? pier.y.mint : pier.x.mint, env));
+      const watch = watchOf(pier, kind);
       stopBelow = stopBelowOf(watch.value, input.stopPct);
       const built = await venue.earn.approveCare({ nftMint, owner: input.owner, agent: care.agent });
       builds = [built];

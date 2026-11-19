@@ -2,18 +2,20 @@ import type { Kind } from '../../city/lib/command/parse.ts';
 
 /**
  * The ready sentences under «Your agent does it for you». Each stands only when the agent's line would read it as
- * what it says and a shelf that is on would take it: «Trade BONK with 0.1 SOL a day» is offered once the Agents shelf
+ * what it says and a shelf that is on would take it: «Trade JUP every day» is offered once the Agents shelf
  * is on, «Launch me a token» once Launch is — until then the block offers the sentences this screen's own shelf does.
  * A sentence the line would read as something else is never offered under its own words.
  *
  * Pure: the screen gives it the line's reading; the tests hold the rule.
  */
 
-export const SENTENCES = ['tradeDaily', 'dips', 'launch', 'earn', 'buy', 'limit', 'chart'] as const;
+export const SENTENCES = ['scout', 'tradeDaily', 'dips', 'launch', 'earn', 'buy', 'limit', 'chart'] as const;
 export type SentenceId = (typeof SENTENCES)[number];
 
 /** What the agent's line must read each sentence as, for the sentence to say what it does. */
 export const READ_AS: Readonly<Record<SentenceId, readonly Kind[]>> = {
+  // «Find new coins for me»: the agent's analyst answers it until the scout does.
+  scout: ['ask'],
   tradeDaily: ['autopilot'],
   dips: ['instruct'],
   launch: ['launch', 'autopilot'],
@@ -54,12 +56,21 @@ export function dipPrice(price: number): string | null {
 }
 
 /**
- * The first screen's sentences: the three things a person came for — the agent trading on a budget, a token
- * launched, SOL put to work. The side panel beside the list keeps the coin's own sentences, never these again.
+ * The first screen's sentences: the agent finding new coins, the agent trading every day
+ * on the person's own budget, a token launched. The side panel beside the list keeps the coin's own sentences, never these again.
  */
-export const HERO: readonly SentenceId[] = ['tradeDaily', 'launch', 'earn'];
+export const HERO: readonly SentenceId[] = ['scout', 'tradeDaily', 'launch'];
 
-/** The coin «Trade … with 0.1 SOL a day» names: BONK when the agent offers it — the sentence people know — else its first. */
+/**
+ * The coin «Trade … every day» names: JUP, else MET, when the agent
+ * offers it; none of them offered — no such sentence.
+ */
+export const HERO_COINS = ['JUP', 'MET'] as const;
+
 export function heroCoin<T extends Readonly<{ symbol: string }>>(offered: readonly T[]): T | null {
-  return offered.find((coin) => coin.symbol.toUpperCase() === 'BONK') ?? offered[0] ?? null;
+  for (const symbol of HERO_COINS) {
+    const coin = offered.find((one) => one.symbol.replace(/^\$+/, '').toUpperCase() === symbol);
+    if (coin) return coin;
+  }
+  return null;
 }

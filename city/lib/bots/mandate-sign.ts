@@ -1,5 +1,5 @@
 import { citySigner } from '../app-bridge/route.ts';
-import type { BudgetPresetId } from '../../../lib/mandate/presets.ts';
+import { agentNetworkOf, budgetFund, type AgentBudget } from '../../../lib/mandate/budget.ts';
 import type { StrategyId } from '../../../lib/mandate/strategy.ts';
 import { forgetAgents } from './agents.ts';
 import { checkUnsigned, sameMessage } from './mandate-check.ts';
@@ -44,14 +44,22 @@ export async function signAndRelay(who: Who, transactions: readonly string[], de
   return null;
 }
 
-/** «Sign»: the agent on, with the picked budget — one wallet prompt. */
-export async function enableAgent(who: Who, preset: BudgetPresetId, smartAccount: string | null, deps: Readonly<{ fetch?: Fetcher; sign?: SignMany; coin?: string | null }> = {}): Promise<Readonly<{ result: MandateResult; record: MandateRecord | null }>> {
+/** The budget as the review route takes it: lamports as text, the term in days. */
+export const budgetBody = (budget: AgentBudget) => ({ perDay: budget.perDay.toString(), perTrade: budget.perTrade.toString(), days: budget.days });
+
+/** «Sign»: the agent on, with the person's own budget — one wallet prompt. */
+export async function enableAgent(who: Who, budget: AgentBudget, smartAccount: string | null, deps: Readonly<{ fetch?: Fetcher; sign?: SignMany; coin?: string | null }> = {}): Promise<Readonly<{ result: MandateResult; record: MandateRecord | null }>> {
   const fetcher = deps.fetch ?? ((url: string, init?: RequestInit) => fetch(url, init));
   const sign = deps.sign ?? citySigner.signTransactions;
   // Mainnet: the coin the person named; devnet's agent buys its pool's coin and is sent none.
-  const built = await post<{ record: MandateRecord; transactions: string[] }>(fetcher, '/api/bots/mandate/review', deps.coin ? { owner: who.owner, preset, smartAccount, coin: deps.coin } : { owner: who.owner, preset, smartAccount });
+  const body = { owner: who.owner, ...budgetBody(budget), smartAccount, ...(deps.coin ? { coin: deps.coin } : {}) };
+  const built = await post<{ record: MandateRecord; transactions: string[]; fundLamports?: string; networkLamports?: string }>(fetcher, '/api/bots/mandate/review', body);
   if (!built.ok) return { result: built.status === 0 || built.status >= 500 ? { kind: 'unreachable' } : { kind: 'refused', reason: built.reason }, record: null };
   if (built.value.record.owner !== who.owner) return { result: { kind: 'refused', reason: 'Another wallet.' }, record: null };
+  // The wallet is asked for exactly what the card said: the vault's part and the agent's fees, the card's own numbers.
+  if (built.value.record.perDay !== budget.perDay.toString() || built.value.record.perTrade !== budget.perTrade.toString() || built.value.fundLamports !== budgetFund(budget).toString() || built.value.networkLamports !== agentNetworkOf(budget).toString()) {
+    return { result: { kind: 'refused', reason: 'The budget is not the one shown.' }, record: null };
+  }
   const failed = await signAndRelay(who, built.value.transactions, { fetch: fetcher, sign });
   return failed ? { result: failed, record: null } : { result: { kind: 'on' }, record: built.value.record };
 }
@@ -105,7 +113,11 @@ export async function tapEnable(who: Who, ask: AgentAskOf = { strategy: 'steady'
       st.say({ kind: 'refused', at: Date.now() });
       return null;
     }
-    const { result, record } = await enableAgent(who, st.preset, previous?.settings ?? null, { coin });
+    if (!st.budget) {
+      st.say({ kind: 'refused', at: Date.now() });
+      return null;
+    }
+    const { result, record } = await enableAgent(who, st.budget, previous?.settings ?? null, { coin });
     if (record) {
       await joinAgent(record, { ...ask, coin });
       forgetAgents(who.owner);

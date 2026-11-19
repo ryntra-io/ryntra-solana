@@ -35,7 +35,7 @@ export const OLD_CHAPTERS: Readonly<Record<string, string>> = {
   '/docs/strategies/my-strategies': '/docs/orders',
   '/docs/strategies/overview': '/docs/agent',
   '/docs/strategies/results': '/docs/agent',
-  '/docs/bots': '/docs/agent',
+  /* `/docs/bots` is a section of the terminal's documentation again (`app/docs/_book/book.ts`). */
   '/docs/ryntra': '/docs/agent',
   '/docs/agent-control': '/docs/agent',
 

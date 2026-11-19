@@ -27,7 +27,9 @@ export const MARKET = words(
     agentDoes: 'Your agent does it for you',
     howAgent: 'How the agent works',
     howAgentText: 'Say it in your own words. Your agent fills in the trade and shows it; you read it and sign in your wallet. Your keys stay with you.',
-    sayTradeDaily: (coin: string, perDay: string) => `Trade ${coin} with ${perDay} SOL a day`,
+    // «торгуй … на 0,1 SOL в день — це взагалі фігня»: an example names no sum.
+    sayTradeDaily: (coin: string) => `Trade ${coin} every day`,
+    sayScout: 'Find new coins for me',
     sayDips: (coin: string) => `Buy ${coin} on dips`,
     sayLaunch: 'Launch me a token',
     sayBuy: (coin: string) => `Buy ${coin} for 10 USDC`,
@@ -36,8 +38,9 @@ export const MARKET = words(
     sayEarn: (coin: string) => `Earn on ${coin}`,
     // The first screen's promise: what the agent does, said in one tap; what it does with the money, in one line.
     heroTitle: 'Say it. Your agent does the rest.',
-    heroTerms: (perDay: string, low: string, high: string) => `${perDay} SOL a day · fee ${low}–${high}% · stop anytime · keys stay yours`,
     heroKeys: 'Stop anytime · keys stay yours',
+    // Decision 108: the budget is the person's — no ceiling of ours; safety in one line, under the hood.
+    heroSafe: 'Your budget, your call · stop anytime · keys stay yours',
     heroWallet: (sol: string) => `${sol} SOL in your wallet`,
   },
   {
@@ -65,7 +68,8 @@ export const MARKET = words(
     agentDoes: 'Агент зробить за тебе',
     howAgent: 'Як працює агент',
     howAgentText: 'Скажи своїми словами. Агент заповнить угоду й покаже її; ти читаєш і підписуєш у гаманці. Ключі лишаються в тебе.',
-    sayTradeDaily: (coin: string, perDay: string) => `Торгуй ${coin} на ${perDay} SOL на день`,
+    sayTradeDaily: (coin: string) => `Торгуй ${coin} щодня`,
+    sayScout: 'Знаходь нові монети за мене',
     sayDips: (coin: string) => `Купуй ${coin} на просіданнях`,
     sayLaunch: 'Запусти мені токен',
     sayBuy: (coin: string) => `Купи ${coin} на 10 USDC`,
@@ -73,8 +77,8 @@ export const MARKET = words(
     sayChart: (coin: string) => `Покажи графік ${coin}`,
     sayEarn: (coin: string) => `Заробляй на ${coin}`,
     heroTitle: 'Скажи — агент зробить решту.',
-    heroTerms: (perDay: string, low: string, high: string) => `${perDay} SOL на день · комісія ${low}–${high}% · стоп будь-коли · ключі в тебе`,
     heroKeys: 'Стоп будь-коли · ключі в тебе',
+    heroSafe: 'Бюджет обираєш ти · стоп будь-коли · ключі в тебе',
     heroWallet: (sol: string) => `У гаманці ${sol} SOL`,
   },
 );

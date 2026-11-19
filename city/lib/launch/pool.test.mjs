@@ -80,11 +80,12 @@ test("the pool's own words are not the coin's name: the command line reads the n
 
 test("the door is behind two locks, both shut by default: the deployment's switch, and mainnet's own constant", () => {
   assert.equal(CITY_POOL_SWITCH, false, "no deployment opened it here");
-  assert.equal(CITY_POOL_MAINNET, false, "mainnet stays shut until the constant is changed in code");
-  assert.equal(poolDoorOpen("solana:mainnet"), false);
+  assert.equal(CITY_POOL_MAINNET, true, "mainnet is opened in code");
+  assert.equal(poolDoorOpen("solana:mainnet"), false, "the deployment's switch is still shut");
+  assert.equal(poolDoorOpen("solana:mainnet", true), true, "the switch over the constant opens mainnet");
   assert.equal(poolDoorOpen("solana:devnet"), false, "the switch is shut");
   assert.equal(poolDoorOpen("solana:devnet", true), true);
-  assert.equal(poolDoorOpen("solana:mainnet", true), false, "the switch alone does not open mainnet");
+  assert.equal(poolDoorOpen("solana:mainnet", true, false), false, "the switch alone does not open mainnet");
   assert.equal(poolDoorOpen("solana:mainnet", true, true), true);
   assert.equal(poolDoorOpen(null, true, true), false);
 });
@@ -259,7 +260,7 @@ test("with the creator's ladder the supply's step is one transaction more, and t
 });
 
 test("shut doors launch nothing: the city's switch, mainnet's constant, the launch district itself", async () => {
-  for (const extra of [{ poolSwitch: false }, { network: "solana:mainnet" }, { switchOpen: false }]) {
+  for (const extra of [{ poolSwitch: false }, { network: "solana:mainnet", poolWord: false }, { switchOpen: false }]) {
     const s = stand();
     const stopped = await s.run(extra);
     assert.deepEqual({ step: stopped.step, code: stopped.failure?.code }, { step: "failed", code: "CITY_LAUNCH_CLOSED" }, JSON.stringify(extra));

@@ -470,4 +470,4 @@ export function splitRuleLines(rule: SplitRule, facts: Readonly<{ since: number;
  * alike — whatever else is configured. Flipped here when it opens; the server and the cabinet read this
  * one value. The devnet stand is open.
  */
-export const CREATOR_SPLIT_OWNER_WORD = false;
+export const CREATOR_SPLIT_OWNER_WORD = true; // SOL-L2b ЗРОБЛЕНО, devnet-прохід `scripts/launch-qa/split-run.mjs`; гроші — лише творця, його підписом; Ryntra бере 0

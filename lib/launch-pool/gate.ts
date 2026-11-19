@@ -15,7 +15,8 @@ import type { LaunchCluster, LaunchNetwork } from "../launch/config.server.ts";
  * deployment says; flipped here, with the venue's own gate and the capability registry, when he gives it. The devnet stand is open without it. A constant, not a flag: nothing in a deployment
  * can flip it.
  */
-export const DLMM_PRO_LAUNCH_OWNER_WORD = false;
+/* Given 18.11.2026 — «Так, відкривай». */
+export const DLMM_PRO_LAUNCH_OWNER_WORD = true;
 
 /**
  * Where a launch's pool comes from. `launch` — a launch pool, which anybody holding both coins may make: the

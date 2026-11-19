@@ -70,6 +70,75 @@ export function feePolicyInForce(env: Record<string, string | undefined> = proce
   return env[FEE_POLICY_ENV]?.trim() === "as-now" ? "as-now" : "v2";
 }
 
+/**
+ * How many lanes a `/build` flow asks (swap speed, 18.11), beside `RYNTRA_FEE_POLICY`.
+ * `/order` is asked only when
+ * `/build` could not answer for a reason other than the request window. `both` is the rollback: both lanes, the better
+ * net price (fee policy v2 as first written).
+ *
+ * Why: on production 18.11 Ryntra's Jupiter window was ten requests for the whole site, spent by two a price and two
+ * an order; and the MAJOR flow's `/order` cannot carry its 0.10 % (Jupiter refuses a referral under 50 bps), so whenever
+ * `/order` won the swap carried no Ryntra fee and the card's fee line jumped between «Fee 0.1%» and «No Ryntra fee» on
+ * the same pair. Measured the same day on 20 quotes a pair: `/order` won 10 of 16 USDC→SOL quotes (JupiterZ), 1–2 of
+ * the rest — each one a swap with no fee.
+ *
+ * What it costs: `/build` states no dollar value of the input, which `/order` lent it beside; under `build` the value
+ * is read from the market Ryntra already keeps (`inputDollarsOf`), and stays empty when that has no price. And `/order`
+ * as a stand-in is asked only after `/build` failed: two slow answers in a row outlast the card's eight seconds.
+ */
+export const SWAP_LANES_ENV = "RYNTRA_SWAP_LANES";
+export type SwapLanes = "both" | "build";
+export function swapLanesInForce(env: Record<string, string | undefined> = process.env): SwapLanes {
+  return env[SWAP_LANES_ENV]?.trim() === "both" ? "both" : "build";
+}
+
+/** How long the input's dollar value may be waited for beside a `/build` answer: the market keeps it, warm. */
+const INPUT_DOLLARS_WAIT_MS = 600;
+
+/**
+ * The input's dollar value for a `/build` answer `/order` did not price: a dollar coin is its own amount; any other is
+ * its amount at the price of the market Ryntra keeps (`readSpotMarket`, served from its cache), when that answers within
+ * `INPUT_DOLLARS_WAIT_MS` with a price and the coin's decimals. Never a guess: no price, no value.
+ */
+export async function inputDollarsOf(
+  mint: string,
+  amountRaw: string,
+  read: (mint: string) => Promise<Readonly<{ ok: boolean; market?: Readonly<{ price: number | null; decimals: number | null }> | null }>> = readSpotMarket,
+): Promise<string | null> {
+  if (!/^\d{1,40}$/.test(amountRaw)) return null;
+  const units = (decimals: number) => Number(amountRaw) / 10 ** decimals;
+  if (mint === USDC_MINT || mint === USDT_MINT) return units(6).toFixed(6);
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const late = new Promise<null>((resolve) => {
+    timer = setTimeout(() => resolve(null), INPUT_DOLLARS_WAIT_MS);
+  });
+  const answer = await Promise.race([read(mint).catch(() => null), late]);
+  clearTimeout(timer);
+  const market = answer && answer.ok ? (answer.market ?? null) : null;
+  // The fee mints' decimals are Ryntra's own (`FEE_MINT_FACTS`); only another coin takes the catalogue's.
+  const decimals = FEE_MINT_FACTS[mint]?.decimals ?? market?.decimals ?? null;
+  if (!market || typeof market.price !== "number" || !Number.isFinite(market.price) || market.price <= 0 || decimals === null) return null;
+  return (units(decimals) * market.price).toFixed(6);
+}
+
+/** A `/build` answer carrying the input's dollar value: `/order`'s for the same amount, else the market's. */
+async function withInputDollars<T extends JupiterOrderQuote | JupiterExecutableOrder>(build: T, order: Pick<JupiterOrderQuote, "inputMint" | "inAmountRaw" | "inUsdValue"> | null, dollars: Promise<string | null> | null): Promise<T> {
+  const lent = withInputValue(build, order);
+  if (lent.inUsdValue !== null || dollars === null || build.inAmountRaw !== lent.inAmountRaw) return lent;
+  const value = await dollars;
+  return value === null ? lent : { ...lent, inUsdValue: value };
+}
+
+/** Whether `/order` is asked beside `/build` for this flow under the lanes in force. */
+function orderAskedBeside(rule: Readonly<{ orderMayWin: boolean }>, lanes: SwapLanes): boolean {
+  return rule.orderMayWin && lanes === "both";
+}
+
+/** Under `build` alone: `/order` stands in when `/build` failed for anything but the request window (which `/order` shares). */
+function orderStandsIn(build: Readonly<{ ok: boolean; code?: string }>, lanes: SwapLanes): boolean {
+  return lanes === "build" && !build.ok && build.code !== "RATE_LIMITED";
+}
+
 const FEE_MINT_FACTS: Readonly<Record<string, Readonly<{ decimals: number; symbol: string }>>> = {
   [WRAPPED_SOL_MINT]: { decimals: 9, symbol: "SOL" },
   [USDC_MINT]: { decimals: 6, symbol: "USDC" },
@@ -208,6 +277,8 @@ function withInputValue<T extends JupiterOrderQuote | JupiterExecutableOrder>(bu
 /** What the choice asks the world, replaceable in tests; the defaults are the lane's own calls. */
 export type LaneChoiceDeps = Readonly<{
   policy?: "v2" | "as-now";
+  lanes?: SwapLanes;
+  dollars?: (mint: string, amountRaw: string) => Promise<string | null>;
   flow?: (inputMint: string, outputMint: string) => Promise<FeeFlow>;
   fee?: typeof buildFeeFor;
   referral?: (flow: FeeFlow | null, config: ServiceFeeConfig, bps?: number | null) => Promise<JupiterReferral | null>;
@@ -284,12 +355,16 @@ export async function chooseExecutableOrder(args: Readonly<{
     const result = await askOrder(referral);
     return result.ok ? { ok: true, order: result.order, flow, lane: "ORDER" } : { ok: false, failure: result, flow };
   }
-  const [build, order] = await Promise.all([
+  const lanes = deps.lanes ?? swapLanesInForce();
+  /* Under `/build` alone the input's dollar value is read beside it, never after it. */
+  const dollars = lanes === "build" ? (deps.dollars ?? inputDollarsOf)(inputMint, amountRaw).catch(() => null) : null;
+  const [build, beside] = await Promise.all([
     askOnceMoreAfterRate(() => (deps.fetchBuild ?? fetchJupiterBuild)({ inputMint, outputMint, amountRaw, taker, fee: fee.fee, ...(slippageBps !== undefined ? { slippageBps } : {}) }, endpoint), {
       maxWaitMs: JUPITER_ORDER_RETRY_WAIT_MAX_MS,
     }) as Promise<JupiterBuildResult>,
-    rule.orderMayWin ? askOrder(referral) : Promise.resolve(null),
+    orderAskedBeside(rule, lanes) ? askOrder(referral) : Promise.resolve(null),
   ]);
+  const order = beside ?? (orderStandsIn(build, lanes) ? await askOrder(referral) : null);
   const orderUsable = order?.ok && orderSignableByTaker(order.order) ? order.order : null;
   if (build.ok) {
     const orderWins =
@@ -301,9 +376,11 @@ export async function chooseExecutableOrder(args: Readonly<{
       );
     if (orderWins) return { ok: true, order: withFlowFee(orderUsable, flow), flow, lane: "ORDER" };
     const assembled = await (deps.assemble ?? assembleJupiterBuildOrder)(build.answer, handle);
-    if (assembled.ok) return { ok: true, order: withInputValue(assembled.order, order?.ok ? order.order : null), flow, lane: "BUILD" };
-    /* The router priced it and its bytes would not assemble for this wallet: `/order`, when it answered, is the swap. */
-    if (order?.ok) return { ok: true, order: withFlowFee(order.order, flow), flow, lane: "ORDER" };
+    if (assembled.ok) return { ok: true, order: await withInputDollars(assembled.order, order?.ok ? order.order : null, dollars), flow, lane: "BUILD" };
+    /* The router priced it and its bytes would not assemble for this wallet: `/order`, when it answered, is the swap —
+       under `build` alone it is asked now, as it would have been beside. */
+    const standIn = order ?? (lanes === "build" ? await askOrder(referral) : null);
+    if (standIn?.ok) return { ok: true, order: withFlowFee(standIn.order, flow), flow, lane: "ORDER" };
     return { ok: false, failure: assembled, flow };
   }
   /* `/order`'s own answer stands as it always did when the router could not price — the guard judges it. */
@@ -312,9 +389,18 @@ export async function chooseExecutableOrder(args: Readonly<{
 }
 
 /**
+ * The routers the signable `/order` never takes (`fetchJupiterExecutableOrder`: the swap path does not implement
+ * JupiterZ's market-maker co-signature). The read-only quote leaves them out too, so the price on the card is one the
+ * order can build. Measured on production 18.11: the quote's `/order` answered by JupiterZ on every SOL↔USDC quote — a
+ * price with no Ryntra fee the order then could not build — and the card turned from «No Ryntra fee» to «Fee 0.1%»,
+ * or said «The price moved», the moment the exact order arrived.
+ */
+export const QUOTE_EXCLUDED_ROUTERS: readonly string[] = ["jupiterz"];
+
+/**
  * The read-only quote, on the web's card and the phone alike: the same decision, with `/build`
- * asked under its stand-in taker and `/order` without one. Nothing here can
- * be signed.
+ * asked under its stand-in taker and `/order` without one — over the routers the signable order may take
+ * (`QUOTE_EXCLUDED_ROUTERS`). Nothing here can be signed.
  */
 export async function chooseQuote(args: Readonly<{
   inputMint: string;
@@ -328,7 +414,7 @@ export async function chooseQuote(args: Readonly<{
   const fetchQuote = deps.fetchQuote ?? fetchJupiterOrder;
   if ((deps.policy ?? feePolicyInForce()) === "as-now") {
     const referral = deps.referral ? await deps.referral(null, config) : await asNowReferral(config);
-    const result = await askOnceMoreAfterRate(() => fetchQuote({ inputMint, outputMint, amountRaw, referral }, selection));
+    const result = await askOnceMoreAfterRate(() => fetchQuote({ inputMint, outputMint, amountRaw, referral, excludeRouters: QUOTE_EXCLUDED_ROUTERS }, selection));
     return result.ok ? { ok: true, order: result.order, flow: "AS_NOW", lane: "ORDER" } : { ok: false, failure: result, flow: "AS_NOW" };
   }
   const flow = await (deps.flow ?? flowOfSwap)(inputMint, outputMint);
@@ -338,15 +424,18 @@ export async function chooseQuote(args: Readonly<{
     (deps.referral ?? referralFor)(flow, config),
     rule.lane === "BUILD" && selection.ok && selection.access === "production" ? (deps.fee ?? buildFeeFor)(flow, inputMint, outputMint, handle) : Promise.resolve(null),
   ]);
-  const askOrder = () => askOnceMoreAfterRate(() => fetchQuote({ inputMint, outputMint, amountRaw, referral }, selection));
+  const askOrder = () => askOnceMoreAfterRate(() => fetchQuote({ inputMint, outputMint, amountRaw, referral, excludeRouters: QUOTE_EXCLUDED_ROUTERS }, selection));
   if (!fee || !fee.ok) {
     const result = await askOrder();
     return result.ok ? { ok: true, order: result.order, flow, lane: "ORDER" } : { ok: false, failure: result, flow };
   }
-  const [build, order] = await Promise.all([
+  const lanes = deps.lanes ?? swapLanesInForce();
+  const dollars = lanes === "build" ? (deps.dollars ?? inputDollarsOf)(inputMint, amountRaw).catch(() => null) : null;
+  const [build, beside] = await Promise.all([
     askOnceMoreAfterRate(() => (deps.fetchBuild ?? fetchJupiterBuild)({ inputMint, outputMint, amountRaw, taker: null, fee: fee.fee }, selection)) as Promise<JupiterBuildResult>,
-    rule.orderMayWin ? askOrder() : Promise.resolve(null),
+    orderAskedBeside(rule, lanes) ? askOrder() : Promise.resolve(null),
   ]);
+  const order = beside ?? (orderStandsIn(build, lanes) ? await askOrder() : null);
   if (!build.ok) {
     if (order?.ok) return { ok: true, order: withFlowFee(order.order, flow), flow, lane: "ORDER" };
     return { ok: false, failure: order && !order.ok ? order : build, flow };
@@ -360,5 +449,5 @@ export async function chooseQuote(args: Readonly<{
   ) {
     return { ok: true, order: withFlowFee(order.order, flow), flow, lane: "ORDER" };
   }
-  return { ok: true, order: withInputValue(build.answer.quote, order?.ok ? order.order : null), flow, lane: "BUILD" };
+  return { ok: true, order: await withInputDollars(build.answer.quote, order?.ok ? order.order : null, dollars), flow, lane: "BUILD" };
 }

@@ -38,11 +38,32 @@ export type Ticket =
 type TicketState = {
   /** What the person picked; null — the screen's first offer stands in front. */
   picked: Ticket | null;
+  /**
+   * The tab it was picked on: a pick stands on its own tab only — another tab opens its own ticket, never the
+   * last one's. Null — said by no tab (a test, the agent before the screen turned).
+   */
+  on: string | null;
   /** On a phone the ticket is a sheet from the bottom: open only once something was picked. */
   sheet: boolean;
 };
 
-export const useTicket = create<TicketState>(() => ({ picked: null, sheet: false }));
+export const useTicket = create<TicketState>(() => ({ picked: null, on: null, sheet: false }));
+
+/** The tabs a ticket belongs to: a position's coin opens on «My positions» as well as on its own tab. */
+export const TICKET_TABS: Readonly<Record<Ticket['kind'], readonly string[]>> = {
+  pool: ['pools'],
+  view: ['pools'],
+  pro: ['pools', 'pro'],
+  stake: ['staking', 'mine'],
+  lend: ['lending', 'mine'],
+  position: ['mine'],
+  proPosition: ['mine'],
+};
+
+/** Whether a ticket may stand on a tab. */
+export function onTab(ticket: Ticket | null, tab: string): boolean {
+  return ticket !== null && TICKET_TABS[ticket.kind].includes(tab);
+}
 
 /** One ticket and another are the same thing in front (a position's two actions are one ticket). */
 export function sameTicket(a: Ticket | null, b: Ticket | null): boolean {
@@ -245,16 +266,16 @@ function chooseLst(lst: LstId): boolean {
   return true;
 }
 
-/** The person picked something: it goes in front, and on a phone its sheet opens. */
-export function pick(ticket: Ticket): boolean {
+/** The person picked something — on the tab `on` — it goes in front, and on a phone its sheet opens. */
+export function pick(ticket: Ticket, on: string | null = null): boolean {
   if (!place(ticket)) return false;
-  useTicket.setState({ picked: ticket, sheet: true });
+  useTicket.setState({ picked: ticket, on, sheet: true });
   return true;
 }
 
 /** Lending with the side said — «put in» or «take back» — and, when said, the amount. */
-export function pickLending(asset: DollarAsset, side: DollarSide): boolean {
-  if (!pick({ kind: 'lend', asset })) return false;
+export function pickLending(asset: DollarAsset, side: DollarSide, on: string | null = null): boolean {
+  if (!pick({ kind: 'lend', asset }, on)) return false;
   if (useDollar.getState().side !== side) useDollar.getState().setSide(side);
   return true;
 }

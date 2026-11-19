@@ -25,7 +25,7 @@ import {
   volume7d,
 } from "./stock-pier.ts";
 import { CLOSING_SOON_MS, GUARD_BEFORE_MS, dividendGuard, hoursOf, planDue, stepKind, stepOf, untilText } from "./stock-pier-hours.ts";
-import { CLOSED_STATES, STOCK_PIER_CANARY_CEILING_USD, STOCK_PIER_CEILING_USD, admitStockBuild, admitStockExit, stockPierMode, stockPierStates, withinStockCeiling } from "./stock-pier-gate.ts";
+import { CLOSED_STATES, admitStockBuild, admitStockExit, stockPierMode, stockPierStates, withinStockCeiling } from "./stock-pier-gate.ts";
 import { TSLAX, pair, LIST } from "./stock-pier-fixtures.mjs";
 
 const OWNER = "4EeXyPQ1u3bWMZ3C3BaG2Tn9z8W1E6uN9rT5aS8dPGWw";
@@ -363,7 +363,6 @@ test("the switch: closed by default, canary for one named wallet, open for all; 
   assert.deepEqual(admitStockBuild(OWNER, canary), {
     ok: true,
     mode: "canary",
-    ceilingUsd: STOCK_PIER_CANARY_CEILING_USD,
   });
   assert.deepEqual(admitStockBuild("Someone1111111111111111111111111111111111", canary), { ok: false, code: "STOCK_PIER_CLOSED" });
   assert.deepEqual(admitStockBuild(OWNER, { NEXT_PUBLIC_RYNTRA_CITY_STOCK_PIER: "canary" }), { ok: false, code: "STOCK_PIER_CLOSED" }, "a canary without a wallet admits nobody");
@@ -371,7 +370,6 @@ test("the switch: closed by default, canary for one named wallet, open for all; 
   assert.deepEqual(admitStockBuild(null, open), {
     ok: true,
     mode: "open",
-    ceilingUsd: STOCK_PIER_CEILING_USD,
   });
   assert.deepEqual(admitStockBuild(OWNER, { ...open, RYNTRA_CITY_STOCK_PIER_STOP: "1" }), { ok: false, code: "STOCK_PIER_STOPPED" });
   assert.equal(admitStockBuild(OWNER, { ...open, RYNTRA_CITY_STOCK_PIER_STOP: "off" }).ok, true);
@@ -385,7 +383,7 @@ test("the city's word and the engine's together: the lower ceiling, on only wher
   const on = { status: "on" };
   const later = { status: "later" };
   const open = { NEXT_PUBLIC_RYNTRA_CITY_STOCK_PIER: "open" };
-  assert.deepEqual(stockPierStates(OWNER, open, { add: on, remove: on, maxDepositUsd: null }), { build: "on", exit: "on", ceilingUsd: 1000, stopped: false });
+  assert.deepEqual(stockPierStates(OWNER, open, { add: on, remove: on, maxDepositUsd: null }), { build: "on", exit: "on", ceilingUsd: null, stopped: false });
   assert.deepEqual(stockPierStates(OWNER, open, { add: on, remove: on, maxDepositUsd: 5 }), { build: "on", exit: "on", ceilingUsd: 5, stopped: false });
   assert.deepEqual(
     stockPierStates(OWNER, open, {
@@ -404,4 +402,6 @@ test("the city's word and the engine's together: the lower ceiling, on only wher
   assert.equal(withinStockCeiling(999, 1000), true);
   assert.equal(withinStockCeiling(1001, 1000), false);
   assert.equal(withinStockCeiling(null, 1000), false);
+  assert.equal(withinStockCeiling(1_000_000), true, "no sum of Ryntra's");
+  assert.equal(withinStockCeiling(null), false, "still priced");
 });

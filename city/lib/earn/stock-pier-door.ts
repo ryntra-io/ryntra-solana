@@ -85,8 +85,9 @@ export async function reviewStockBuild(body: unknown, deps: StockDoorDeps): Prom
   if (quoteUsd === null || price === null) return fail(503, 'STOCK_PIER_UNPRICED', 'There is no live price to make the pier at.');
   const amountA = BigInt(asked.amountA);
   const amountB = BigInt(asked.amountB);
-  if (!withinStockCeiling(depositUsdOf(pair, asked.quote, quoteUsd, amountA, amountB), admitted.ceilingUsd))
-    return fail(403, 'STOCK_PIER_CEILING', 'More than the Stock Pier takes in one go for now.');
+  /* No sum of Ryntra's on a build: it must only be priced. */
+  if (!withinStockCeiling(depositUsdOf(pair, asked.quote, quoteUsd, amountA, amountB)))
+    return fail(503, 'STOCK_PIER_UNPRICED', 'There is no live price to make the pier at.');
 
   const spot = pair.piers[asked.quote];
   const quoteMint = QUOTE[asked.quote].mint;

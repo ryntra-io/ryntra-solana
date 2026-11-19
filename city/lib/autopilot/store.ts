@@ -1,26 +1,26 @@
 import { create } from 'zustand';
-import type { BudgetPresetId } from '../../../lib/mandate/presets.ts';
+import type { AgentBudget } from '../../../lib/mandate/budget.ts';
 import type { AgentDay } from '../../../lib/mandate/report.ts';
 import type { AgentNet } from '../../../lib/mandate/net.ts';
 import type { Picture } from '../../../lib/launch/picture.client.ts';
-import { MANDATE_NET, MANDATE_PRESETS, useMandate, type MandateRecord } from '../bots/mandate.ts';
+import { MANDATE_NET, useMandate, type MandateRecord } from '../bots/mandate.ts';
 import { useMine } from '../trade/mine-store.ts';
 import { useWallet } from '../trade/wallet.ts';
 import { launchOpenHere, poolDoorHere, useLaunch } from '../launch/district.ts';
 import { poolChoiceOf, usePool } from '../launch/pool.ts';
 import { poolAskOf } from '../launch/pool-ask.ts';
 import { AUTOPILOT_NET } from './flag.ts';
-import { presetFor, proposal, type Proposal } from './plan.ts';
+import { budgetFor, proposal, type Proposal } from './plan.ts';
 import type { AgentAsk } from './read.ts';
-import { calmPlan, planText, type StrategyPlan } from '../../../lib/mandate/plans.ts';
+import { planText, STEADY, type StrategyPlan } from '../../../lib/mandate/plans.ts';
 import type { Paper, RunResult } from '../../../lib/mandate/backtest.ts';
 import { pickLaunch, readRun } from './runs.ts';
 
 /**
  * The agent on its word: the card a sentence opens, and what the agent did since.
  *
- * - **Trade.** The card proposes the budget a day from the words said (never more than said), the rhythm the agent
- *   keeps and the limits in one line; «Sign once» is the mandate — the person's wallet signs once, her
+ * - **Trade.** The card takes the budget a day from the words said — exactly as said, no ceiling of Ryntra's —
+ *   with the trade and the term that follow, the rhythm the agent keeps and the limits in one line; «Sign once» is the mandate — the person's wallet signs once, her
  *   budget moves into her own smart account's vault under a policy the chain holds — and the mandate joins the agent's
  *   book with her words, so the agent trades by itself from then on. «Stop» is one more signature.
  * - **Launch.** The card proposes a name, a ticker and a picture the agent made (`emblem.ts`), with the launch sheet's
@@ -123,10 +123,8 @@ type AutopilotState = {
   ask: AgentAsk | null;
   /** `ask` — opened by the person's words; `agent` — opened from «Mine» to see what the agent did. */
   face: 'ask' | 'agent';
-  /** Trade: the budget picked — from the words, or a tap. */
-  preset: BudgetPresetId | null;
-  /** Trade: more was said than a new agent starts with. */
-  capped: boolean;
+  /** Trade: the person's budget — from her words or her fields; null until it is one the agent takes. */
+  budget: AgentBudget | null;
   /** Launch: the agent's proposal and its picture. */
   proposal: Proposal | null;
   picture: Picture | null;
@@ -146,7 +144,7 @@ type AutopilotState = {
   /** What the agent did, from «Mine». */
   showAgent: () => void;
   close: () => void;
-  pick: (preset: BudgetPresetId) => void;
+  setBudget: (budget: AgentBudget | null) => void;
   another: () => Promise<void>;
   setView: (policy: string, view: AgentView) => void;
   setPaper: (paper: Paper | null, run?: RunResult | null) => void;
@@ -190,8 +188,7 @@ export const useAutopilot = create<AutopilotState>((set, get) => ({
   open: false,
   ask: null,
   face: 'ask',
-  preset: null,
-  capped: false,
+  budget: null,
   proposal: null,
   picture: null,
   drawing: false,
@@ -203,12 +200,11 @@ export const useAutopilot = create<AutopilotState>((set, get) => ({
   paperRun: null,
   show: (ask) => {
     if (ask.kind === 'trade') {
-      const said = presetFor(ask.perDaySol, MANDATE_PRESETS);
-      // One budget offered (mainnet's 0.1 SOL a day): it is the proposal when nothing, or more, was said.
-      const preset = said.preset ?? (MANDATE_PRESETS.length === 1 && ask.perDaySol === null ? MANDATE_PRESETS[0]! : null);
+      // The day as said, never cut; nothing said — the card asks, with no sum of Ryntra's proposed (decision 108).
+      const budget = budgetFor(ask.perDaySol, spendableNow(), { perTradeSol: ask.perTradeSol ?? null, days: ask.days ?? null });
       const plan = ask.plan ?? null;
-      set({ open: true, ask, face: 'ask', preset, capped: said.capped, proposal: null, picture: null, plan, tested: null, launch: plan?.id === 'early' && MANDATE_NET === 'mainnet' ? { state: 'picking' } : null });
-      if (preset) useMandate.getState().setPreset(preset);
+      set({ open: true, ask, face: 'ask', budget, proposal: null, picture: null, plan, tested: null, launch: plan?.id === 'early' && MANDATE_NET === 'mainnet' ? { state: 'picking' } : null });
+      useMandate.getState().setBudget(budget);
       useMandate.getState().setCoin(ask.coin ? { mint: ask.coin.mint, symbol: ask.coin.symbol, icon: ask.coin.icon } : null);
       // An early plan on mainnet: the agent picks the launch itself, through the city's check.
       if (plan?.id === 'early' && MANDATE_NET === 'mainnet') {
@@ -223,16 +219,16 @@ export const useAutopilot = create<AutopilotState>((set, get) => ({
       return;
     }
     const next = proposal(ask, (seedCounter += 1));
-    set({ open: true, ask, face: 'ask', preset: null, capped: false, proposal: next, picture: null, drawing: true });
+    set({ open: true, ask, face: 'ask', budget: null, proposal: next, picture: null, drawing: true });
     void paint(next).then((picture) => {
       if (get().proposal === next) set({ picture, drawing: false });
     });
   },
-  showAgent: () => set({ open: true, ask: { kind: 'trade', said: '', perDaySol: null }, face: 'agent', preset: useMandate.getState().preset, capped: false, proposal: null, picture: null }),
+  showAgent: () => set({ open: true, ask: { kind: 'trade', said: '', perDaySol: null }, face: 'agent', budget: useMandate.getState().budget, proposal: null, picture: null }),
   close: () => set({ open: false }),
-  pick: (preset) => {
-    set({ preset });
-    useMandate.getState().setPreset(preset);
+  setBudget: (budget) => {
+    set({ budget });
+    useMandate.getState().setBudget(budget);
   },
   another: async () => {
     const ask = get().ask;
@@ -250,25 +246,40 @@ export const useAutopilot = create<AutopilotState>((set, get) => ({
   },
 }));
 
-/** The plan the card proposes: the one said, or the steady one. */
-/** The strategy at the city's calm pace — few trades, small fees — unless it names its own. */
-const planNow = (): StrategyPlan => calmPlan(useAutopilot.getState().plan ?? { id: 'steady', exit: null });
+/**
+ * The plan the card proposes: the one said, or the steady one. The rhythm is the person's own numbers — the day
+ * over the trade (`lib/mandate/budget.ts`) — so no calm pace of the city's is put over it: «1 SOL a day» spends the day.
+ */
+const planNow = (): StrategyPlan => useAutopilot.getState().plan ?? STEADY;
 export const planShown = planNow;
 const bornNow = (): number | null => {
   const launch = useAutopilot.getState().launch;
   return launch && launch.state === 'picked' ? launch.bornAt : null;
 };
 
+/** The wallet's spendable SOL, when this wallet's holdings are read; null — not known. */
+export function spendableNow(): bigint | null {
+  const st = useWallet.getState();
+  const owner = st.connection?.address ?? null;
+  const raw = st.holdingsRead === 'ready' && st.holdings && st.holdings.owner === owner ? (st.holdings.sol?.spendableRaw ?? null) : null;
+  return typeof raw === 'string' && /^\d{1,20}$/u.test(raw) ? BigInt(raw) : null;
+}
+
+const budgetKey = (budget: AgentBudget) => `${budget.perDay}/${budget.perTrade}/${budget.days}`;
+
 /** The run on history for the card's «Details», once per coin, plan and budget. */
 export async function testNow(fetcher?: Fetcher): Promise<void> {
   const coin = useMandate.getState().coin?.mint ?? null;
-  const preset = useAutopilot.getState().preset;
-  if (!coin || !preset) return;
+  const budget = useAutopilot.getState().budget;
+  if (!coin || !budget) return;
   const plan = planNow();
-  const key = `${coin}:${planText(plan)}:${preset}`;
+  const key = `${coin}:${planText(plan)}:${budgetKey(budget)}`;
   if (useAutopilot.getState().tested?.key === key) return;
-  const run = await readRun({ coin, plan, preset, bornAt: bornNow() }, fetcher);
-  if (run) useAutopilot.setState({ tested: { key, run } });
+  const run = await readRun({ coin, plan, budget, bornAt: bornNow() }, fetcher);
+  // A run for numbers changed meanwhile is not the card's: only the run of what the card shows now is kept.
+  const shown = useAutopilot.getState().budget;
+  const still = useMandate.getState().coin?.mint === coin && shown !== null && budgetKey(shown) === budgetKey(budget) && planText(planNow()) === planText(plan);
+  if (run && still) useAutopilot.setState({ tested: { key, run } });
 }
 
 /** «Practice first»: the agent on paper from now, on the plan, the coin and the budget the card shows. No wallet, no money. */
@@ -282,12 +293,12 @@ export function startPaper(now: number = Date.now()): Paper | null {
 
 /** The practice's run since it started, read again while the card shows it. */
 export async function readPaper(fetcher?: Fetcher): Promise<void> {
-  const { paper, preset } = useAutopilot.getState();
-  if (!paper) return;
+  const { paper, budget } = useAutopilot.getState();
+  if (!paper || !budget) return;
   const { planFrom } = await import('../../../lib/mandate/plans.ts');
   const plan = planFrom(paper.plan);
   if (!plan) return useAutopilot.getState().setPaper(null);
-  const run = await readRun({ coin: paper.coin, plan, preset: preset ?? MANDATE_PRESETS[0]!, since: paper.startedAt, bornAt: paper.bornAt }, fetcher);
+  const run = await readRun({ coin: paper.coin, plan, budget, since: paper.startedAt, bornAt: paper.bornAt }, fetcher);
   if (useAutopilot.getState().paper === paper) useAutopilot.setState({ paperRun: run });
 }
 
@@ -300,8 +311,8 @@ export function askOpen(ask: AgentAsk, launchReady: boolean = launchOpenHere(use
 /** «Sign once»: the mandate with the picked budget, the person's words with it into the agent's book. */
 export async function signTrade(who: Readonly<{ wallet: string; owner: string }>): Promise<MandateRecord | null> {
   const st = useAutopilot.getState();
-  if (!st.preset || st.ask?.kind !== 'trade') return null;
-  useMandate.getState().setPreset(st.preset);
+  if (!st.budget || st.ask?.kind !== 'trade') return null;
+  useMandate.getState().setBudget(st.budget);
   const { tapEnable } = await import('../bots/mandate-sign.ts');
   // The plan said — or the practice's, when the person goes live from paper — travels with the mandate.
   const plan = planNow();

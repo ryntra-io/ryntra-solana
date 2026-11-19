@@ -30,13 +30,13 @@ export async function POST(request: Request) {
   const owner = input.request.owner;
   if (door.mismatch(owner)) return liquidityFailure(403, 'WALLET_MISMATCH', "The session's wallet is not this action's wallet.", door.rate);
 
-  let ceilingUsd: number | null = null;
+  let placing = false;
   if (input.action === 'limit_cancel') {
     if (!admitLimitExit(owner, process.env)) return liquidityFailure(403, 'LIMITS_CLOSED', 'Limit orders are closed to this wallet.', door.rate);
   } else {
     const admitted = admitLimitPlace(owner, process.env);
     if (!admitted.ok) return liquidityFailure(403, admitted.code, 'No new order from this wallet now.', door.rate);
-    ceilingUsd = admitted.ceilingUsd;
+    placing = true;
     if (input.action === 'limit_place') {
       const { markets } = await readLimitMarkets();
       if (!markets.some((market) => market.pool === input.request.pool)) return liquidityFailure(403, 'LIMIT_MARKET', 'This market is not one Sell Higher offers.', door.rate);
@@ -46,10 +46,11 @@ export async function POST(request: Request) {
   const reviewed = await reviewLimitAction(door.body);
   if (!reviewed.ok) return liquidityFailure(reviewed.status, reviewed.code, reviewed.reason, door.rate);
   const preview = reviewed.value.preview;
-  if (preview.action !== 'limit_cancel' && ceilingUsd !== null) {
+  if (preview.action !== 'limit_cancel' && placing) {
     const market = (await readLimitMarkets()).markets.find((m) => m.pool === preview.pool);
     if (!market) return liquidityFailure(403, 'LIMIT_MARKET', 'This market is not one Sell Higher offers.', door.rate);
-    if (!withinLimitCeiling(reviewed.value.depositUsd, ceilingUsd)) return liquidityFailure(403, 'LIMIT_CEILING', 'More than one order takes for now.', door.rate);
+    /* No sum of Ryntra's on an order: it must only be priced. */
+    if (!withinLimitCeiling(reviewed.value.depositUsd, null)) return liquidityFailure(422, 'LIMIT_UNPRICED', 'The order could not be priced.', door.rate);
     const place = preview.place;
     const intent = place.side === poolSide('sell', market.assetIsX) ? 'sell' : 'buy';
     const ratio = previewRatio({ assetIsX: market.assetIsX, side: place.side, poolPrice: Number(preview.price), lowerPrice: Number(place.lowerPrice), upperPrice: Number(place.upperPrice) });

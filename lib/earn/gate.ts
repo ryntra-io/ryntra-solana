@@ -6,8 +6,8 @@
  * states, set at runtime:
  *
  * - `CLOSED` — the default and anything unrecognised: no surface offers the action and no route builds bytes;
- * - `CANARY` — the one wallet the deployment names, up to {@link EARN_CANARY_MAX_USD} a move: the founder's
- *   first live check;
+ * - `CANARY` — the one wallet the deployment names: the founder tries it first (decision 92), with no sum of
+ *   Ryntra's on a move;
  * - `OPEN` — everyone.
  *
  * A stranger under `CANARY` is told exactly what a stranger under `CLOSED` is told. The gate is asked twice —
@@ -23,9 +23,6 @@ import type { Env } from "./providers.ts";
 export const EARN_ACTIONS_ENV = "RYNTRA_EARN_ACTIONS";
 export const EARN_CANARY_WALLET_ENV = "RYNTRA_EARN_CANARY_WALLET";
 
-/** The most one canary move may carry, in dollars: enough to prove the path, small enough to lose. */
-export const EARN_CANARY_MAX_USD = 5;
-
 export type EarnAdmission =
   | Readonly<{ ok: true; mode: "CANARY" | "OPEN"; maxUsd: number | null }>
   | Readonly<{ ok: false; code: "ACTIONS_CLOSED" }>;
@@ -35,7 +32,7 @@ export function admitEarn(owner: string | null, env: Env): EarnAdmission {
   if (mode === "OPEN") return { ok: true, mode: "OPEN", maxUsd: null };
   if (mode === "CANARY") {
     const wallet = env[EARN_CANARY_WALLET_ENV]?.trim();
-    if (wallet && owner !== null && owner === wallet) return { ok: true, mode: "CANARY", maxUsd: EARN_CANARY_MAX_USD };
+    if (wallet && owner !== null && owner === wallet) return { ok: true, mode: "CANARY", maxUsd: null };
   }
   return { ok: false, code: "ACTIONS_CLOSED" };
 }

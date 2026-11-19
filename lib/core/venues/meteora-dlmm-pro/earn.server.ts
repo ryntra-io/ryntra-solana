@@ -5,7 +5,8 @@
  * Everything here is put together from the venue's own parts — `./goals.ts`, `./swap.server.ts`,
  * `./positions.server.ts`, `./rewards.server.ts` — and adds no instruction of its own.
  *
- * - **open** — a goal and a width become one position, one NFT. The wallet pays in both of the pool's coins, or in
+ * - **open** — a goal (or a shape of the person's own, painted on a grid) and a width become one position,
+ *   one NFT. The wallet pays in both of the pool's coins, or in
  *   one: then the part the shape needs of the other is swapped **in this very pool**, first, and the opening is built
  *   for the pool as that swap leaves it — its ranges and its deposit stand at the price the swap's quote ends at. The
  *   wallet is asked once for both transactions; they are sent in order. The swap's fee is the pool's own — Ryntra adds
@@ -36,7 +37,7 @@ import { PublicKey } from "@solana/web3.js";
 import BN from "bn.js";
 
 import type { Address } from "../../contracts.ts";
-import { GOAL_BAND_SHARE, GOAL_BAND_SHARE_AT_LANDING, goalBandBps, goalPlanOf, isEarnGoal, isEarnStyle, sizedAtLanding, type EarnGoal, type EarnStyle, type GoalPlan } from "./goals.ts";
+import { CUSTOM_GOAL, CUSTOM_MAX_RANGES, GOAL_BAND_SHARE, GOAL_BAND_SHARE_AT_LANDING, goalBandBps, isEarnStyle, isOpenGoal, isShapeColumns, openPlanOf, sizedAtLanding, type EarnStyle, type GoalPlan, type OpenGoal } from "./goals.ts";
 import { poolWhole, type DlmmProContext, type DlmmProPool, type DlmmProPools } from "./pools.server.ts";
 import type { DepositView, DlmmProPositions, OpenRole, PositionPermission, PositionView } from "./positions.server.ts";
 import { DlmmProRefusal, refusing } from "./sdk.server.ts";
@@ -67,8 +68,11 @@ export type EarnOpenRequest = Readonly<{
   wallet: Address;
   /** The address of the fresh key the position's NFT is minted at; the caller holds the key. */
   nftMint: Address;
-  goal: EarnGoal;
+  /** One of the three goals, or `custom` — the person's own painted grid, in `columns`. */
+  goal: OpenGoal;
   style: EarnStyle;
+  /** For `custom` only: 32 columns, 16 under the price and 16 over it, each 0 to 8 cells (`./goals.ts`). */
+  columns?: readonly number[];
   pay: EarnPay;
   /** How far the price may move before the deposit lands, basis points either way; held to an eighth of the way to the range's nearer edge. */
   slippageBps: number;
@@ -147,7 +151,22 @@ export function createDlmmProEarn(context: DlmmProContext, venue: Readonly<{ poo
   /** A position from a goal — unsigned steps in the order they are sent; the wallet signs each, the fresh NFT key the opening. */
   async function open(request: EarnOpenRequest, options: SealOptions = {}): Promise<EarnOpenBuild> {
     return refusing(async () => {
-      if (!isEarnGoal(request.goal) || !isEarnStyle(request.style)) throw new DlmmProRefusal("BAD_INPUT", "The goal is Even, Near price or Catch moves; the width Calm, Balanced or Dense.");
+      if (!isOpenGoal(request.goal) || !isEarnStyle(request.style)) throw new DlmmProRefusal("BAD_INPUT", "The goal is Even, Near price, Catch moves or a shape of one's own; the width Calm, Balanced or Dense.");
+      const custom = request.goal === CUSTOM_GOAL;
+      if (custom ? !isShapeColumns(request.columns) : request.columns !== undefined) throw new DlmmProRefusal("BAD_INPUT", "A shape of one's own is 32 columns of 0 to 8 cells, painted on both sides of the price; a goal takes none.");
+      const planAt = (at: Readonly<{ tickSpacing: number; tickCurrentId: number }>) => {
+        const plan = openPlanOf(request.goal, request.style, at, custom ? request.columns! : null);
+        /* Never coarsened behind the person's back: a shape that needs more ranges than a position of one's own takes is refused, as the ticket said. */
+        if (plan && custom && (plan.ranges ?? Infinity) > CUSTOM_MAX_RANGES) throw new DlmmProRefusal("BAD_INPUT", `This shape needs ${plan.ranges} ranges; a shape of one's own takes at most ${CUSTOM_MAX_RANGES}.`);
+        return plan;
+      };
+      /*
+       * A shape of one's own opens together with its deposit, in one transaction: an opening sent apart from its deposit
+       * is left empty — its rent held — when the price leaves the band between the two. Its ranges are held to what fits.
+       */
+      const oneOpening = (transactions: number) => {
+        if (custom && transactions > 1) throw new DlmmProRefusal("TX_TOO_LARGE", "A shape of one's own opens with its deposit in one transaction; this one does not fit.");
+      };
       const poolKey = keyOf(request.pool, "The pool");
       const asked = bpsOf(request.slippageBps, "The band of the price", 0, MAX_EARN_BAND_BPS);
       const { pool } = await poolWhole(context, poolKey);
@@ -161,7 +180,7 @@ export function createDlmmProEarn(context: DlmmProContext, venue: Readonly<{ poo
         const amount = rawOf(request.pay.amountRaw, "The amount");
         if (amount === 0n) throw new DlmmProRefusal("AMOUNT_ZERO", "The amount is zero.");
         /* The split is read at the pool's price now; the opening itself is built at the price the swap ends at. */
-        const first = goalPlanOf(request.goal, request.style, pool);
+        const first = planAt(pool);
         if (!first) throw new DlmmProRefusal("BAD_INPUT", "The pool's price stands too close to the program's last tick for a range around it.");
         const share = otherShare(shapeOf(first.shape, pool, first.maxRanges, "ranges").ranges, pool, payingX);
         const swapIn = (amount * share) / 1_000_000n;
@@ -171,7 +190,7 @@ export function createDlmmProEarn(context: DlmmProContext, venue: Readonly<{ poo
         const band = goalBandBps(first, asked, bandShare);
         const swap = await venue.swap.build({ pool: request.pool, inputMint: payMint.toBase58(), amountInRaw: swapIn.toString(), slippageBps: band, wallet: request.wallet }, shared);
         const after = { tickSpacing: pool.tickSpacing, tickCurrentId: tickIdFromSqrtPrice(new BN(swap.quote.sqrtPriceAfterX64)) };
-        const plan = goalPlanOf(request.goal, request.style, after);
+        const plan = planAt(after);
         if (!plan) throw new DlmmProRefusal("BAD_INPUT", "The pool's price stands too close to the program's last tick for a range around it.");
         const bandBps = goalBandBps(plan, asked, bandShare);
         const left = amount - swapIn;
@@ -200,6 +219,7 @@ export function createDlmmProEarn(context: DlmmProContext, venue: Readonly<{ poo
           },
           shared,
         );
+        oneOpening(opened.packed.length);
         const steps = [{ ...txOf(swap), roles: ["SWAP"] as readonly EarnRole[] }, ...opened.packed.map((step) => ({ ...txOf(step), roles: step.roles as readonly EarnRole[] }))];
         return {
           steps,
@@ -228,7 +248,7 @@ export function createDlmmProEarn(context: DlmmProContext, venue: Readonly<{ poo
         };
       }
 
-      const plan = goalPlanOf(request.goal, request.style, pool);
+      const plan = planAt(pool);
       if (!plan) throw new DlmmProRefusal("BAD_INPUT", "The pool's price stands too close to the program's last tick for a range around it.");
       const sizing = sizedAtLanding(plan) ? "landing" : "band";
       const bandBps = goalBandBps(plan, asked, sizing === "landing" ? GOAL_BAND_SHARE_AT_LANDING : GOAL_BAND_SHARE);
@@ -236,6 +256,7 @@ export function createDlmmProEarn(context: DlmmProContext, venue: Readonly<{ poo
         { pool: request.pool, wallet: request.wallet, nftMint: request.nftMint, shape: plan.shape, amountXRaw: request.pay.amountXRaw, amountYRaw: request.pay.amountYRaw, slippageBps: bandBps, maxRanges: plan.maxRanges, sizing },
         shared,
       );
+      oneOpening(opened.packed.length);
       const steps = opened.packed.map((step) => ({ ...txOf(step), roles: step.roles as readonly EarnRole[] }));
       return {
         steps,

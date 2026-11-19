@@ -14,9 +14,10 @@
  *   separated (`polymarket,limitless`). The route is priced only across
  *   these; a fill anywhere else is refused. Unset, none: every order is
  *   paper.
- * - `PREDICTIONS_LIVE_MAX_USD` — the most one live order may spend, fees
- *   included; $5 when unset, never above $10 000. A value that is not a
- *   number of at least $1 closes live orders rather than guessing.
+ * - `PREDICTIONS_LIVE_MAX_USD` — a lower bound the operator may set on one
+ *   live order, fees included; unset, the order form's own bound of
+ *   $10 000 (as on paper) — no sum of Ryntra's below it. A value that is
+ *   not a number of at least $1 closes live orders rather than guessing.
  *
  * And one fact of the provider: the app's own trading mode
  * (`GET /app/config` → `tradingMode`). A paper app has no real-money path,
@@ -29,10 +30,12 @@ import type { PredictionProvider } from "./provider.ts";
 
 export type TradeMode = "paper" | "live";
 
-export const LIVE_MAX_USD_DEFAULT = 5;
 /** The most the price may move against a live order before it stops, in basis points. */
 export const LIVE_SLIP_CAP_BPS = 200;
+/** The order form's own bound on one order, paper or live (`limit-model.ts`, `paper.ts`). */
 const LIVE_MAX_USD_CEILING = 10_000;
+/** Unset, a live order meets only the form's own bound: no sum of Ryntra's below it. */
+export const LIVE_MAX_USD_DEFAULT = LIVE_MAX_USD_CEILING;
 const VENUE = /^[a-z][a-z0-9_.-]{1,31}$/;
 const BASE58 = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
 

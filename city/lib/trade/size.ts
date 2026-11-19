@@ -1,7 +1,7 @@
 import { exactDecimal } from '../../../lib/solana/amounts.ts';
 import { PRIORITY_CEILING_LAMPORTS, SIGNATURE_LAMPORTS, TOKEN_ACCOUNT_RENT_LAMPORTS } from '../../../lib/spot/radar-cost.ts';
 import { wordsNow } from '../i18n/dict.ts';
-import { SOL, USDC, isBase, type Balance, type PayAsset, type Side } from './tiles.ts';
+import { SOL, USDC, USDT_MINT, type Balance, type PayAsset, type Side } from './tiles.ts';
 import { SIZE } from './words.ts';
 
 /**
@@ -26,8 +26,11 @@ export const SWAP_SOL_RESERVE_LAMPORTS = BigInt(SIGNATURE_LAMPORTS + PRIORITY_CE
 /** And the rent of the account the coin bought lands in, while the wallet holds none of it. */
 export const NEW_ACCOUNT_RENT_LAMPORTS = BigInt(TOKEN_ACCOUNT_RENT_LAMPORTS);
 
-/** Where a buy starts while the wallet covers it or is not known yet: a first trade should be a small one. */
-const START_RAW: Readonly<Record<string, bigint>> = { [SOL.mint]: 100_000_000n, [USDC.mint]: 10_000_000n };
+/**
+ * Where a buy starts while the wallet covers it or is not known yet: a first trade should be a small one. Ten dollars
+ * in USDC or in USDT alike.
+ */
+const START_RAW: Readonly<Record<string, bigint>> = { [SOL.mint]: 100_000_000n, [USDC.mint]: 10_000_000n, [USDT_MINT]: 10_000_000n };
 /** Otherwise a buy starts at this share of what can be spent. */
 const START_SHARE: Share = 25;
 /** The slider writes amounts a person reads: this many significant digits, rounded down. */
@@ -123,7 +126,7 @@ export function sizingOf(max: bigint | null, amountRaw: string | null, shares: r
  */
 export function startAmount(side: Side, pay: PayAsset, max: bigint | null, solStart?: bigint): bigint {
   if (side === 'sell') return max ?? 0n;
-  const start = isBase(pay) ? (pay.mint === SOL.mint && solStart !== undefined && solStart > 0n ? solStart : START_RAW[pay.mint]) : undefined;
+  const start = pay.mint === SOL.mint && solStart !== undefined && solStart > 0n ? solStart : START_RAW[pay.mint];
   if (start !== undefined && (max === null || start <= max)) return start;
   return max === null ? 0n : amountAt(max, START_SHARE);
 }

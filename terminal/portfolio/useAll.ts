@@ -3,8 +3,9 @@ import { createEarnEngine } from '@/city/lib/earn/engine';
 import { rangeMark } from '@/city/lib/earn/pier';
 import type { PortfolioResponse } from '@/lib/api/v1/contract';
 import { useMarket } from '@/terminal/shell/useMarket';
-import { dayMove, groupsOf, summaryOf, type DayMove, type Group, type Summary } from './all-view';
+import { dayMove, groupsOf, summaryOf, withMarket, type DayMove, type Group, type MarketFact, type Summary } from './all-view';
 import { useClean } from './clean';
+import { useFacts } from './facts';
 
 /** The portfolio is read again this often while the screen is in front. */
 const AGAIN_MS = 60_000;
@@ -26,7 +27,9 @@ export type AllData = Readonly<{
   /** A pool position's range as one mark, by the position's address — where the venue states it. */
   ranges: ReadonlyMap<string, string>;
   /** A coin of the market by its mint: its name, its logo, its day's move. */
-  coin: (mint: string) => Readonly<{ name: string; icon: string | null; dayPct: number | null }> | null;
+  coin: (mint: string) => Readonly<{ name: string | null; icon: string | null; dayPct: number | null }> | null;
+  /** What the market's list of named mints says of a coin of this wallet: its symbol, name, logo, price and day. */
+  fact: (mint: string) => MarketFact | null;
   /** Reads everything again now. */
   reread: () => void;
   /** Reads again after something landed: now, and once more for a network that lags. */
@@ -131,17 +134,21 @@ export function useAll(address: string | null, agentsUsd: number | null = null):
 
   const towers = useMarket().towers;
   const market = useMemo(() => new Map(towers.map((tower) => [tower.id, tower])), [towers]);
+  const fact = useFacts(answer);
+  // The day's move of every coin with a price: the market's list of the wallet's own mints first, the towers after.
   const coin = useCallback(
     (mint: string) => {
       const tower = market.get(mint);
-      if (!tower) return null;
-      return { name: tower.name, icon: tower.icon ? `/api/icon/${tower.id}` : null, dayPct: Number.isFinite(tower.change24h) ? tower.change24h : null };
+      const said = fact(mint);
+      if (!tower && !said) return null;
+      const towerDay = tower && Number.isFinite(tower.change24h) ? tower.change24h : null;
+      return { name: said?.name ?? tower?.name ?? null, icon: tower?.icon ? `/api/icon/${tower.id}` : (said?.icon ?? null), dayPct: said?.dayPct ?? towerDay };
     },
-    [market],
+    [market, fact],
   );
 
   return useMemo(() => {
-    const groups = answer ? groupsOf(answer, litter) : [];
+    const groups = answer ? withMarket(groupsOf(answer, litter), fact) : [];
     const rows = groups.flatMap((group) => group.rows);
     return {
       address,
@@ -153,8 +160,9 @@ export function useAll(address: string | null, agentsUsd: number | null = null):
       day: answer ? dayMove(rows, (mint) => coin(mint)?.dayPct ?? null) : null,
       ranges: address && ranges?.owner === address ? ranges.marks : new Map<string, string>(),
       coin,
+      fact,
       reread,
       landed,
     };
-  }, [address, answer, failed, rereading, litter, agentsUsd, ranges, coin, reread, landed]);
+  }, [address, answer, failed, rereading, litter, agentsUsd, ranges, coin, fact, reread, landed]);
 }

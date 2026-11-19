@@ -8,9 +8,11 @@ import { useWords } from '@/city/lib/i18n/dict';
 import { useLang } from '@/city/lib/i18n/lang';
 import { Icon } from '@/terminal/ui';
 import { askLabel } from './ask-label';
+import { useAsk } from './ask';
+import { clearClarify, useAskNote } from './ask-note';
 import { closePanel } from './frame';
 import { useAskRows, useSay } from './say';
-import { useNarrow } from './useNarrow';
+import { useNarrow, useTiny } from './useNarrow';
 import { SHELL } from './words';
 import s from './shell.module.css';
 
@@ -24,6 +26,7 @@ export function AgentLine() {
   const w = useWords(SHELL);
   const lang = useLang();
   const narrow = useNarrow();
+  const tiny = useTiny();
   const [text, setText] = useState('');
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(0);
@@ -32,11 +35,38 @@ export function AgentLine() {
   const list = useId();
   const rows = useAskRows(text);
   const say = useSay();
-  const shown = open && rows.length > 0;
+  // The agent reading a sentence through the model, or its «Уточни: …» for the sentence kept in the line.
+  const reading = useAsk((st) => st.reading);
+  const clarify = useAsk((st) => st.clarify);
+  const note = useAskNote();
+  const shown = open && rows.length > 0 && !note;
   const at = Math.min(active, Math.max(0, rows.length - 1));
 
   useEffect(() => setMac(/Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent)), []);
   useEffect(() => setActive(0), [text]);
+
+  // «Уточни: …»: the sentence comes back to the line, the keyboard with it, so the person says it again in place.
+  useEffect(() => {
+    if (!clarify) return;
+    setText(clarify.said);
+    setOpen(true);
+    field.current?.focus();
+  }, [clarify]);
+
+  // A screen's own «Say it to your agent»: the sentence's start stands in the line, the keyboard with it, and
+  // the person finishes it here — the same line, the same reading.
+  const begun = useAsk((st) => st.begun);
+  useEffect(() => {
+    if (!begun) return;
+    useAsk.setState({ begun: null });
+    clearClarify();
+    setText(begun.said);
+    setOpen(true);
+    const input = field.current;
+    if (!input) return;
+    input.focus();
+    input.setSelectionRange(begun.said.length, begun.said.length);
+  }, [begun]);
 
   // Ctrl K or ⌘K: into the line from anywhere but another field; pressed in the line, out of it.
   useEffect(() => {
@@ -68,8 +98,8 @@ export function AgentLine() {
   }, []);
 
   const go = (index: number) => {
-    const row = rows[index];
-    if (!row || !say(text, row)) return;
+    // No row the line's own rules can open is still a sentence: the model may read it (`useSay`).
+    if (!say(text, rows[index])) return;
     funnelSay('agent_said');
     setText('');
     setOpen(false);
@@ -90,7 +120,7 @@ export function AgentLine() {
           aria-controls={list}
           aria-autocomplete="list"
           aria-activedescendant={shown ? `${list}-${at}` : undefined}
-          placeholder={narrow ? w.sayShort : w.say}
+          placeholder={narrow ? (tiny ? w.sayTiny : w.sayShort) : w.say}
           value={text}
           maxLength={COMMAND_MAX}
           autoComplete="off"
@@ -107,6 +137,7 @@ export function AgentLine() {
           onChange={(event) => {
             setText(event.target.value);
             setOpen(true);
+            clearClarify();
           }}
           onKeyDown={(event) => {
             if (event.key === 'ArrowDown' && rows.length) {
@@ -130,6 +161,14 @@ export function AgentLine() {
           {w.key(mac)}
         </span>
       </label>
+      <div className={s.rows} role="status" aria-live="polite" hidden={!(open || reading) || !note}>
+        {note ? (
+          <div className={`${s.row} ${s.note}`}>
+            <Icon name="agents" />
+            <span>{note}</span>
+          </div>
+        ) : null}
+      </div>
       <div id={list} role="listbox" aria-label={w.rows} className={s.rows} hidden={!shown}>
         {rows.map((row, index) => (
           <div

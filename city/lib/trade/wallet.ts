@@ -47,6 +47,11 @@ export type Holdings = Readonly<{
   names?: ReadonlyMap<string, CoinName>;
   /** False when the chain answered by halves: what is missing is unknown, never zero. */
   complete: boolean;
+  /**
+   * Tokens some of whose units cannot move — an account frozen by the coin's issuer: the balance above is
+   * what can, and a swap through the frozen account cannot go. Absent: none known.
+   */
+  frozen?: ReadonlySet<string>;
   /** When the engine answered, ms since the epoch: a balance on screen always says how old it is. */
   at: number;
 }>;
@@ -54,6 +59,7 @@ export type Holdings = Readonly<{
 type HoldingRow = Readonly<{
   kind?: string;
   mint?: string | null;
+  amountRaw?: string;
   spendableRaw?: string;
   decimals?: number;
   symbol?: string | null;
@@ -112,9 +118,11 @@ export function holdingsOf(owner: string, rows: readonly HoldingRow[], complete:
   let sol: Balance | null = null;
   const tokens = new Map<string, Balance>();
   const names = new Map<string, CoinName>();
+  const frozen = new Set<string>();
   for (const row of rows) {
     if (typeof row.spendableRaw !== 'string' || !/^\d+$/.test(row.spendableRaw) || typeof row.decimals !== 'number') continue;
     const balance = { spendableRaw: row.spendableRaw, decimals: row.decimals };
+    if (row.kind !== 'NATIVE_SOL' && typeof row.mint === 'string' && typeof row.amountRaw === 'string' && /^\d+$/.test(row.amountRaw) && BigInt(row.amountRaw) > BigInt(row.spendableRaw)) frozen.add(row.mint);
     if (row.kind === 'NATIVE_SOL') sol = balance;
     else if (typeof row.mint === 'string' && BigInt(row.spendableRaw) > 0n) {
       tokens.set(row.mint, balance);
@@ -122,7 +130,7 @@ export function holdingsOf(owner: string, rows: readonly HoldingRow[], complete:
       if (name) names.set(row.mint, name);
     }
   }
-  return { owner, sol, tokens, names, complete, at };
+  return { owner, sol, tokens, names, complete, at, ...(frozen.size ? { frozen } : {}) };
 }
 
 /** The towers of a wallet: every coin it holds except SOL itself, which every wallet keeps for fees. */

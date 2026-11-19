@@ -1,4 +1,4 @@
-import { BUDGET_PRESET_IDS, BUDGET_PRESETS, type BudgetPresetId } from '../../../lib/mandate/presets.ts';
+import { budgetFrom, budgetIssue, defaultDays, type AgentBudget } from '../../../lib/mandate/budget.ts';
 import { steadyRhythm } from '../../../lib/mandate/strategy.ts';
 
 /**
@@ -8,17 +8,19 @@ import { steadyRhythm } from '../../../lib/mandate/strategy.ts';
  */
 
 /**
- * The budget for a day said in SOL: the largest of the city's budgets that is not more than what was said — never
- * more than the person said. `capped` when she said more than a new agent starts with: the card says the agent starts
- * smaller, and raising it is her own, separate choice later. Null when nothing was said, or less than the smallest.
+ * The budget for a day said in SOL: exactly what was said — «торгуй на 1 SOL на день» is 1 SOL a
+ * day, never cut to a budget of the city's — with the trade and the term that follow from it and from her spendable SOL
+ * (`lib/mandate/budget.ts`). Null when nothing was said, or a day the agent cannot take (under its least trade).
  */
-export function presetFor(perDaySol: string | null, offered: readonly BudgetPresetId[] = BUDGET_PRESET_IDS): Readonly<{ preset: BudgetPresetId | null; capped: boolean }> {
-  if (perDaySol === null || !/^\d+(\.\d+)?$/u.test(perDaySol)) return { preset: null, capped: false };
-  const said = lamports(perDaySol);
-  const fitting = offered.filter((id) => BUDGET_PRESETS[id].perDay <= said);
-  const preset = fitting.at(-1) ?? null;
-  const largest = BUDGET_PRESETS[offered.at(-1)!].perDay;
-  return { preset, capped: said > largest };
+export function budgetFor(perDaySol: string | null, spendableRaw: bigint | null = null, said: Readonly<{ perTradeSol?: string | null; days?: number | null }> = {}): AgentBudget | null {
+  if (perDaySol === null || !/^\d+(\.\d+)?$/u.test(perDaySol)) return null;
+  const budget = budgetFrom(lamports(perDaySol), spendableRaw);
+  if (budgetIssue(budget) !== null) return null;
+  /* A trade's limit and a term said with the day are hers too — each kept only where the mandate's rules take it. */
+  const trade = said.perTradeSol && /^\d+(\.\d+)?$/u.test(said.perTradeSol) ? { ...budget, perTrade: lamports(said.perTradeSol), days: defaultDays({ perDay: budget.perDay, perTrade: lamports(said.perTradeSol) }, spendableRaw) } : budget;
+  const withTrade = budgetIssue(trade) === null ? trade : budget;
+  const term = said.days ? { ...withTrade, days: said.days } : withTrade;
+  return budgetIssue(term) === null ? term : withTrade;
 }
 
 /** SOL as said, in lamports, rounded down: «0.25» → 250 000 000. */
@@ -28,11 +30,10 @@ export function lamports(sol: string): bigint {
 }
 
 /** How the agent spends a budget: so many buys a day, this far apart, each this big (SOL). */
-export function rhythmOf(id: BudgetPresetId, pace: number | null = null): Readonly<{ buys: number; everyHours: number; perTrade: number; perDay: number; days: number }> {
-  const preset = BUDGET_PRESETS[id];
-  /* The plan's pace spaces the buys inside the caps. */
-  const { buys, everyMs } = steadyRhythm(preset.perTrade, preset.perDay, pace);
-  return { buys, everyHours: Math.round((everyMs / 3_600_000) * 10) / 10, perTrade: Number(preset.perTrade) / 1e9, perDay: Number(preset.perDay) / 1e9, days: preset.days };
+export function rhythmOf(budget: AgentBudget, pace: number | null = null): Readonly<{ buys: number; everyHours: number; perTrade: number; perDay: number; days: number }> {
+  /* A plan's own pace spaces the buys inside the caps; without one, her trade sets the rhythm. */
+  const { buys, everyMs } = steadyRhythm(budget.perTrade, budget.perDay, pace);
+  return { buys, everyHours: Math.round((everyMs / 3_600_000) * 10) / 10, perTrade: Number(budget.perTrade) / 1e9, perDay: Number(budget.perDay) / 1e9, days: budget.days };
 }
 
 /* ---------------------------------------------------------------- a launch the agent prepares */

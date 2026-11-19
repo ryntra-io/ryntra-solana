@@ -3,7 +3,7 @@ import test from "node:test";
 
 import { MIN_WALLET_WINDOW_MS } from "../../../lib/solana/blockhash-life.ts";
 import { runLaunch } from "./flow.ts";
-import { BACKGROUND_STORES, FIELDS_REFUSED, PREBUILT_SLACK_MS, createPrep, fieldsKey, freshPrebuilt, launchRequest } from "./prepare.ts";
+import { BACKGROUND_STORES, FIELDS_REFUSED, NO_ABOUT, PREBUILT_SLACK_MS, createPrep, fieldsKey, freshPrebuilt, launchRequest, metadataBody } from "./prepare.ts";
 import { STUB_CREATOR, STUB_PRESETS, STUB_WALLET, stubEngine, stubWallet } from "./stub.ts";
 
 /* The launch sheet stores the picture while the creator types and has the engine simulate the launch before
@@ -181,4 +181,16 @@ test("after a launch nothing is kept for the next but the cost", async () => {
   await simulate(prep);
   prep.reset();
   assert.deepEqual(prep.state(), { stored: null, costLamports: "9874320" });
+});
+
+test("the coin's line and links go to the store with it, and another line is another store", () => {
+  const picture = { base64: "AAAA" };
+  const plain = { name: "Kite", symbol: "KITE", picture };
+  assert.deepEqual(metadataBody(plain), { name: "Kite", symbol: "KITE", description: "", website: "", x: "", telegram: "", imageBase64: "AAAA" });
+  const about = { description: "A kite over Solana.", website: "https://kite.example/", x: "https://x.com/kite", telegram: "" };
+  assert.deepEqual(metadataBody({ ...plain, about }), { name: "Kite", symbol: "KITE", ...about, imageBase64: "AAAA" });
+  // Nothing said about the coin keeps the key the store had before the words came.
+  assert.equal(fieldsKey({ ...plain, about: NO_ABOUT }), fieldsKey(plain));
+  assert.notEqual(fieldsKey({ ...plain, about }), fieldsKey(plain));
+  assert.notEqual(fieldsKey({ ...plain, about }), fieldsKey({ ...plain, about: { ...about, x: "https://x.com/other" } }));
 });

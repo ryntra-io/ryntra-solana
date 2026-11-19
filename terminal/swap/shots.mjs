@@ -1,5 +1,5 @@
-// The Swap screen for the eyes — one card with its tabs — at 1440×900, 1920×1080 and 390×844, in English and
-// Ukrainian → <out>/*.jpg
+// The Swap screen and the Bridge's page for the eyes — one form each in the middle — at
+// 1440×900, 1920×1080 and 390×844, in English and Ukrainian → <out>/*.jpg
 //   node terminal/swap/shots.mjs [out] [baseUrl] [source]
 // A stand runs with the switch on: `NEXT_PUBLIC_RYNTRA_TERMINAL=stand` (`next build`, then `next start`), with the money
 // and the limits open as on ryntra.io (`NEXT_PUBLIC_RYNTRA_CITY_MONEY=open`, `NEXT_PUBLIC_RYNTRA_CITY_SPOT=open`). The
@@ -18,7 +18,7 @@ import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 
 const out = path.resolve(process.argv[2] ?? "docs/shots/swap");
-const base = process.argv[3] ?? "http://localhost:3253";
+const base = process.argv[3] ?? "http://localhost:3190";
 const source = process.argv[4] ?? "https://ryntra.io";
 mkdirSync(out, { recursive: true });
 
@@ -27,8 +27,6 @@ const JUP = "JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN";
 const TAKER = "4EeXQa4MKrBSwDj9pHEoZXjiiUaZmWzveGq5X9dUKPGW";
 /** Where the stand's bridge sends: an address no one holds a key to. */
 const THERE = "0x000000000000000000000000000000000000dEaD";
-/** Who the stand's transfer goes to: a wallet the engine's recipient check lets USDC go to (read only). */
-const FRIEND = "9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM";
 const golden = JSON.parse(readFileSync(new URL("../../app/api/solana/swap/golden/transcripts.json", import.meta.url), "utf8"));
 const recordedOrder = () => structuredClone(golden["order: SOL to USDT with the verified referral fee is a signable Review"].steps.at(-1).body);
 const recordedBytes = recordedOrder().order.transactionBase64;
@@ -169,7 +167,7 @@ for (const size of SIZES) {
 
     // Every read the screen makes, answered at once: from the source, from a fixture, or 503.
     await context.route("**/api/**", (route) => route.fulfill({ status: 503, contentType: "application/json", body: "{}" }));
-    for (const pattern of ["**/api/city", "**/api/icon/**", "**/api/spot/candles?*", "**/api/v1/money/recipient?*", "**/api/v1/research/address-evidence?*"]) await context.route(pattern, fromSource);
+    for (const pattern of ["**/api/city", "**/api/icon/**", "**/api/spot/icon?*", "**/api/solana/tokens/search?*", "**/api/spot/candles?*", "**/api/v1/money/recipient?*", "**/api/v1/research/address-evidence?*"]) await context.route(pattern, fromSource);
     // The limits engine answers only its own site: the stand prices the Limit tab's pair from the market the source
     // reads (`/api/city`) — a read; no order is asked for.
     await context.route("**/api/solana/limits/market", async (route) => {
@@ -315,9 +313,15 @@ for (const size of SIZES) {
     };
     const tap = (locator) => (size.mobile ? locator.tap() : locator.click());
     const swapPanel = () => page.locator(`section[aria-label="${uk ? "Обмін" : "Swap"}"]`);
-    // The bridge and the transfer are tabs of the one card.
-    const bridgePanel = swapPanel;
-    const sendPanel = swapPanel;
+    // The bridge is a page of its own; a transfer stands in the Portfolio.
+    const bridgePanel = () => page.locator(`section[aria-label="${uk ? "Міст" : "Bridge"}"]`);
+    const openBridge = async (withWallet) => {
+      state.wallet = withWallet;
+      await page.goto(`${base}/bridge?lang=${lang}`, { waitUntil: "domcontentloaded", timeout: 180_000 });
+      await bridgePanel().waitFor({ timeout: 120_000 });
+      await settle();
+      await page.waitForTimeout(1500);
+    };
     const open = async (withWallet) => {
       state.wallet = withWallet;
       await page.evaluate((on) => {
@@ -382,7 +386,6 @@ for (const size of SIZES) {
     await page.waitForTimeout(6000);
     await priceOnce();
     await shot("swap-wallet");
-    if (size.mobile) await shot("recent", page.locator(`section[aria-label="${uk ? "Останні дії" : "Recent activity"}"]`));
     if (!size.mobile) {
       const info = swapPanel().getByRole("button", { name: uk ? "Маршрут і деталі" : "Route and details" });
       if (await info.count()) {
@@ -391,9 +394,13 @@ for (const size of SIZES) {
         await tap(info);
       }
       // The coin to get: the market's coins and a search.
-      await tap(swapPanel().getByRole("button", { name: uk ? "Обрати, що отримаєш" : "Pick the coin you get" }));
+      await tap(swapPanel().getByRole("button", { name: new RegExp(uk ? "^Обрати, що отримаєш" : "^Pick the coin you get") }));
       await page.waitForTimeout(800);
       await shot("swap-pick");
+      await swapPanel().locator("input[type='search']").fill("met");
+      await page.waitForTimeout(2500);
+      await shot("swap-find");
+      report.push(`${size.name}/${lang}: the search «met» lists ${(await swapPanel().locator("[role='menuitemradio']").allInnerTexts()).map((t) => t.split("\n")[0]).slice(0, 6).join(", ")}`);
       await page.keyboard.press("Escape");
       await page.waitForTimeout(400);
     }
@@ -407,11 +414,8 @@ for (const size of SIZES) {
     report.push(`${size.name}/${lang}: the swap asked the wallet ${asked.signs.length} time(s); the bytes are the order's own — ${signed !== null && signed === recordedBytes}; executes ${asked.execute}`);
 
     // ── the bridge into Solana: the engine's address on the other network ──
-    await open(true);
+    await openBridge(true);
     const signsBeforeBridge = asked.signs.length;
-    // The bridge is a tab of the card.
-    await tap(page.getByRole("tab", { name: uk ? "Міст" : "Bridge" }));
-    await page.waitForTimeout(800);
     const moveIn = bridgePanel().getByRole("button", { name: uk ? "Перевести на Solana" : "Move to Solana" });
     if (size.mobile) await moveIn.scrollIntoViewIfNeeded();
     await tap(moveIn);
@@ -445,47 +449,37 @@ for (const size of SIZES) {
       }
     }
     const bridgeSign = asked.signs.length > signsBeforeBridge ? asked.signs.at(-1) : null;
+
+    // ── the bridge out with SOL, ETH arriving: the coins by their logos ──
+    await openBridge(true);
+    if (!(await bridgePanel().locator("input[placeholder='0x…']").count())) {
+      await tap(bridgePanel().getByRole("button", { name: uk ? "Змінити напрям" : "Change direction" }));
+    }
+    await tap(bridgePanel().getByRole("button", { name: new RegExp(uk ? "^Обрати, що надсилаєш" : "^Pick the coin you send") }));
+    await tap(bridgePanel().getByRole("menuitemradio", { name: "SOL" }));
+    await tap(bridgePanel().getByRole("button", { name: new RegExp(uk ? "^Обрати, що отримаєш" : "^Pick the coin that arrives") }));
+    await tap(bridgePanel().getByRole("menuitemradio", { name: "ETH" }));
+    await bridgePanel().locator("input[inputmode='decimal']:visible").first().fill("0.5");
+    await bridgePanel().locator("input[placeholder='0x…']").fill(THERE);
+    await page.waitForTimeout(6000);
+    await shot("bridge-sol", bridgePanel());
+    report.push(`${size.name}/${lang}: SOL → ETH — the button says «${(await bridgePanel().getByRole("button").last().innerText().catch(() => "?")).trim()}»`);
     report.push(`${size.name}/${lang}: the bridge built ${asked.plan} transfer(s); the wallet was asked ${asked.signs.length - signsBeforeBridge} time(s), the bytes are the transfer's own — ${bridgeSign === recordedBytes}; submits ${asked.submit}`);
 
-    // ── a transfer: the door, the recipient, the amount ──
-    await open(true);
-    const door = page.getByRole("tab", { name: uk ? "Надіслати" : "Send" });
-    await tap(door);
-    await page.waitForTimeout(1200);
-    await sendPanel().locator("input[translate='no']:visible").first().fill(FRIEND);
-    await sendPanel().locator("input[inputmode='decimal']:visible").first().fill("5");
-    await page.waitForTimeout(4000);
-    // A new address: the person agrees it is the one they meant; the transfer then waits for its review.
-    const agree = sendPanel().getByRole("button", { name: uk ? "Адресу звірено" : "Address checked" });
-    if (await agree.count()) {
-      await tap(agree);
-      await page.waitForTimeout(800);
-    }
-    await shot("send", sendPanel());
-    report.push(`${size.name}/${lang}: the transfer's button says «${(await sendPanel().getByRole("button").last().innerText().catch(() => "?")).trim()}»`);
-    report.push(`${size.name}/${lang}: the transfer asked the engine to build ${asked.transfer} time(s)`);
-
-    // ── an empty history ──
-    if (!size.mobile) {
-      state.history = false;
-      await open(true);
-      await shot("recent-empty");
-      state.history = true;
+    // ── the old tabs' addresses: each leads on in one step ──
+    for (const tab of ["limit", "bridge", "send"]) {
+      await page.goto(`${base}/swap?tab=${tab}&lang=${lang}`, { waitUntil: "domcontentloaded", timeout: 180_000 });
+      await page.waitForTimeout(5000);
+      const at = new URL(page.url());
+      const history = await page.evaluate(() => history.length);
+      report.push(`${size.name}/${lang}: /swap?tab=${tab} → ${at.pathname}${at.search} (history ${history})`);
     }
 
-    // ── «Limit»: a tab of the same card — the screen stays where it is ──
-    await open(false);
-    await tap(page.getByRole("tab", { name: uk ? "Ліміт" : "Limit" }));
-    await page.waitForTimeout(3500);
-    await shot("limit");
-    report.push(`${size.name}/${lang}: «Limit» left the screen at ${new URL(page.url()).pathname}${new URL(page.url()).search}`);
-    // The bridge and a transfer with no wallet: the tabs as a first visit sees them.
-    await tap(page.getByRole("tab", { name: uk ? "Міст" : "Bridge" }));
-    await page.waitForTimeout(1500);
+    // ── the bridge with no wallet: a first visit ──
+    await openBridge(false);
     await shot("bridge");
-    await tap(page.getByRole("tab", { name: uk ? "Надіслати" : "Send" }));
-    await page.waitForTimeout(1200);
-    await shot("send-empty");
+    const overflowBridge = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+    report.push(`${size.name}/${lang}: the bridge's sideways overflow ${overflowBridge}px`);
 
     if (errors.length) report.push(`${size.name}/${lang}: page errors — ${errors.join(" | ").slice(0, 600)}`);
     await context.close();

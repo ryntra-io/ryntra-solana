@@ -136,16 +136,21 @@ test("a tap on a price alone builds the order and shows it; the wallet waits for
   assert.equal(routes("execute").length, 0);
 });
 
-test("the card builds an order by itself once per choice, and a refusal is said, not retried", async () => {
-  const { routes } = scene({ order: [recorded("order refused: Jupiter finds no route")] });
+test("the card builds an order by itself once per choice; its refusal is quiet until a press, which says it", async () => {
+  const { routes } = scene({ order: [recorded("order refused: Jupiter finds no route"), recorded("order refused: Jupiter finds no route")] });
   useTrade.getState().openFor(TOWER);
   await flush();
   await useTrade.getState().prepare(true);
   await useTrade.getState().prepare(true);
-  const state = useTrade.getState();
+  let state = useTrade.getState();
   assert.equal(routes("order").length, 1);
   assert.equal(state.review, null);
-  assert.deepEqual(state.notice, { tone: "error", text: "No route for this pair right now." });
+  // Nothing red before the person pressed anything.
+  assert.equal(state.notice, null);
+  await useTrade.getState().press();
+  state = useTrade.getState();
+  assert.equal(routes("order").length, 2);
+  assert.deepEqual(state.notice, { tone: "error", text: "No route for this pair right now.", code: "ORDER_NO_ROUTE" });
 });
 
 test("a trade under way cannot be closed or changed", async () => {
@@ -331,9 +336,9 @@ test("your towers glow from the wallet's balances, and from a trade until the ba
 });
 
 const WITH_USDC = { ...WITH_USDT, tokens: new Map([...WITH_USDT.tokens, [USDC.mint, { spendableRaw: "30000000", decimals: 6 }]]) };
-const choiceNow = (holdings) => {
+const choiceNow = (holdings, overPriced = false) => {
   const state = useTrade.getState();
-  return choiceOf(state.tower, state.side, holdings, { pay: state.pay, typed: state.typed });
+  return choiceOf(state.tower, state.side, holdings, { pay: state.pay, typed: state.typed, overPriced });
 };
 
 test("pay with USDC: the buy spends USDC, the sale is paid in USDC, through the same engine routes", async () => {
@@ -579,4 +584,79 @@ test("MAX of SOL never spends the whole balance: the swap's network cost stays i
   assert.equal(over.amountRaw, null);
   assert.equal(over.problem?.kind, "balance");
   assert.doesNotMatch(over.problem.text, /lamport|reserve|API/i);
+});
+
+test("a sale before any wallet is priced: the coin's decimals are known without one", async () => {
+  const { routes } = scene({}, { connection: null, holdings: null });
+  useTrade.getState().openFor(TOWER, "sell");
+  await flush();
+  useTrade.getState().setTyped("2");
+  await flush();
+  assert.deepEqual(routes("quote").at(-1).body, { inputMint: USDT, outputMint: WSOL, amountRaw: "2000000" });
+  assert.equal(useTrade.getState().quote.status, "ready");
+  assert.equal(await useTrade.getState().press(), "connect");
+  assert.equal(routes("order").length, 0);
+});
+
+test("a sale of a coin whose decimals nobody knew reads them once from the chain, then is priced", async () => {
+  const MINT = "7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU";
+  const asked = [];
+  const before = globalThis.fetch;
+  globalThis.fetch = async (url, init) => {
+    asked.push([url, JSON.parse(init.body)]);
+    return { ok: true, json: async () => ({ mint: MINT, decimals: 5 }) };
+  };
+  try {
+    const { routes } = scene({}, { connection: null, holdings: null });
+    useTrade.getState().openFor({ ...TOWER, id: MINT, symbol: "ODD" }, "sell");
+    await flush();
+    useTrade.getState().setTyped("3");
+    await flush();
+    assert.deepEqual(asked, [["/api/solana/tokens/mint", { mint: MINT }]]);
+    assert.deepEqual(routes("quote").at(-1).body, { inputMint: MINT, outputMint: WSOL, amountRaw: "300000" });
+  } finally {
+    globalThis.fetch = before;
+  }
+});
+
+test("the plain swap prices an amount above the balance beside its shortfall, and never orders it", async () => {
+  const { routes } = scene({});
+  useTrade.getState().openFor(TOWER, "buy", { view: "swap" });
+  await flush();
+  const asked = routes("quote").length;
+  useTrade.getState().setTyped("3");
+  await flush();
+  const choice = choiceNow(SOL_ONLY, true);
+  assert.equal(choice.amountRaw, null);
+  assert.equal(choice.askRaw, "3000000000");
+  assert.equal(choice.problem.kind, "balance");
+  assert.equal(routes("quote").length, asked + 1);
+  assert.equal(routes("quote").at(-1).body.amountRaw, "3000000000");
+  assert.equal(useTrade.getState().quote.status, "ready");
+  await useTrade.getState().prepare(true);
+  await useTrade.getState().press();
+  assert.equal(routes("order").length, 0);
+});
+
+test("a wallet that holds none of the coin sold is short by its own line, and the swap still prices it", async () => {
+  const { routes } = scene({}, { holdings: SOL_ONLY });
+  useTrade.getState().openFor(TOWER, "sell", { view: "swap" });
+  await flush();
+  useTrade.getState().setTyped("2");
+  await flush();
+  const choice = choiceNow(SOL_ONLY, true);
+  assert.equal(choice.problem.kind, "balance");
+  assert.equal(choice.spendDecimals, 6, "never the zero balance's stand-in decimals");
+  assert.deepEqual(routes("quote").at(-1).body, { inputMint: USDT, outputMint: WSOL, amountRaw: "2000000" });
+  await useTrade.getState().press();
+  assert.equal(routes("order").length, 0);
+});
+
+test("the swap's flip can carry its amount to the other side", async () => {
+  scene({});
+  useTrade.getState().openFor(TOWER);
+  await flush();
+  useTrade.getState().setSide("sell", "0.5");
+  assert.equal(useTrade.getState().typed, "0.5");
+  assert.equal(useTrade.getState().side, "sell");
 });

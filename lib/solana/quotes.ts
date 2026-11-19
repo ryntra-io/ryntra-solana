@@ -189,7 +189,9 @@ export type JupiterOrderRequest = Readonly<{
   /**
    * Routers this request may not use.
    *
-   * Set by the caller only to re-ask after a router answered with a quote that
+   * Set by the caller to keep the quote on the routers the signable order may
+   * take (`QUOTE_EXCLUDED_ROUTERS` in `../core/solana-swap/fee-route.server.ts`),
+   * and to re-ask after a router answered with a quote that
    * did not agree with itself. `excludeRouters` takes a comma-separated list and
    * refuses cleanly with HTTP 400 when every router is excluded (checked live,
    * 2026-09-10), so a route that genuinely cannot be served fails as a route

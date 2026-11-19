@@ -129,7 +129,7 @@ test("a read never throws: a network down is offline, a page that is not JSON fa
 test("the window keeps the last good bars through a blink, drops them for a market without a chart, and never shows another market's", () => {
   const ready = readCandles("15m", 200, answer({ candles: [bar(1, 1, 1, 1, 1)] }), NOW);
   let state = loading(JUP, "15m", null);
-  assert.deepEqual(state, { mint: JUP, timeframe: "15m", status: "loading", last: null, code: null, misses: 0 });
+  assert.deepEqual(state, { mint: JUP, timeframe: "15m", status: "loading", last: null, code: null, misses: 0, busy: false });
   state = settle(state, ready);
   assert.equal(state.status, "ready");
   assert.equal(state.last, ready);
@@ -191,8 +191,24 @@ test("a 429 carries the engine's Retry-After to the next try; an answer without 
   assert.deepEqual(await fetchCandles(JUP, "15m", deps(404, { "retry-after": "5" })), { status: "none", code: null });
 });
 
+test("a source that refuses for rate is never «unavailable»: the frame waits and asks again", () => {
+  const busy = { status: "unavailable", reason: "busy", retryAfterMs: 12_000 };
+  let state = loading(JUP, "15m", null);
+  for (let i = 1; i <= QUIET_MISSES + 3; i += 1) {
+    state = settle(state, busy);
+    assert.equal(saysUnavailable(state), false, `try ${i} refused for rate: still «in a moment»`);
+    assert.equal(state.busy, true);
+    state = loading(JUP, "15m", state);
+  }
+  // The next try waits the engine's own Retry-After, never less.
+  assert.ok(nextReadMs(busy, QUIET_MISSES + 3, "15m") >= 12_000);
+  // A source that went down is said after a few tries.
+  for (let i = 0; i < QUIET_MISSES; i += 1) state = settle(state, { status: "unavailable", reason: "offline" });
+  assert.equal(saysUnavailable(state), true);
+});
+
 test("«Chart unavailable» only after a few failed reads in a row with no bars; one good read starts the count again", () => {
-  const busy = { status: "unavailable", reason: "busy" };
+  const busy = { status: "unavailable", reason: "failed" };
   let state = loading(JUP, "15m", null);
   for (let i = 1; i < QUIET_MISSES; i += 1) {
     state = settle(state, busy);

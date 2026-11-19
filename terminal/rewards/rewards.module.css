@@ -1,0 +1,305 @@
+/* «Rewards»: how the kit's parts are laid out. Colours, faces and sizes are the terminal's variables (terminal/styles);
+   the page, its head and its columns are the kit's (Page, PageHead, ActionBody). Nothing here names a colour, a corner
+   or a page size of its own. */
+
+/* ── the action panel's own rows ───────────────────────────────────────── */
+
+.top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 24px;
+}
+
+.topEnd {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* The big number, its place kept while it is read: the panel never grows when the figures come. */
+.hero {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 44px;
+}
+
+/* The level's span: a thin line that fills, the levels at its ends. */
+.span {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.spanEnds {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: var(--type-small);
+  font-weight: 600;
+  color: var(--soft);
+}
+
+.spanEnds > :last-child {
+  color: var(--dim);
+  text-align: right;
+}
+
+.track {
+  position: relative;
+  height: 6px;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--ice) 8%, transparent);
+}
+
+.fill {
+  position: absolute;
+  inset: 0;
+  background: var(--lilac);
+  transform-origin: left center;
+  transition: transform 0.2s ease-out;
+}
+
+/* Three facts in a row on a desk; two on a phone, the odd one across. */
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+/* Two big numbers side by side: who came and what they brought. */
+.pair {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+}
+
+.fact {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.sub {
+  font-size: var(--type-small);
+  font-weight: 500;
+  color: var(--dim);
+  font-variant-numeric: tabular-nums;
+}
+
+/* The link to share, as it reads: a quiet well, the whole of it copied by the action. */
+.link {
+  display: flex;
+  align-items: center;
+  height: 56px;
+  padding: 0 16px;
+  overflow: hidden;
+  font-family: var(--display);
+  font-weight: 650;
+  font-size: var(--type-lead);
+  color: var(--ice);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  background: var(--well);
+  border: 1px solid var(--line);
+  user-select: all;
+}
+
+.linkText {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.acts {
+  display: flex;
+  align-items: stretch;
+  gap: 12px;
+}
+
+.acts > :first-child {
+  flex: 1 1 auto;
+}
+
+.acts > :last-child:not(:first-child) {
+  flex: none;
+  height: auto;
+  min-width: 152px;
+}
+
+/* One line in place of the figures: what points are, the one signature, a read that did not come. */
+.line {
+  max-width: 560px;
+  font-size: var(--type-base);
+  line-height: 1.5;
+  color: var(--soft);
+}
+
+.bad {
+  font-size: var(--type-base);
+  font-weight: 600;
+  color: var(--flare);
+}
+
+.badRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+  min-height: 56px;
+}
+
+/* The read under way: the same rows as the figures, the same height. */
+.bones {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.bones > span {
+  display: block;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--ice) 3%, transparent), color-mix(in srgb, var(--ice) 7%, transparent), color-mix(in srgb, var(--ice) 3%, transparent));
+  background-size: 200% 100%;
+  animation: shimmer 1.4s linear infinite;
+}
+
+.bones > .boneHero {
+  width: 52%;
+  height: 44px;
+}
+
+.bones > .boneSpan {
+  height: 30px;
+}
+
+.bones > .boneTiles {
+  height: 78px;
+}
+
+@keyframes shimmer {
+  to {
+    background-position: -200% 0;
+  }
+}
+
+/* ── the side column's lists ───────────────────────────────────────────── */
+
+.rows {
+  display: flex;
+  flex-direction: column;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 48px;
+  padding: 0 10px;
+  border-top: 1px solid var(--line);
+}
+
+.row:first-child {
+  border-top-color: transparent;
+}
+
+.row[data-on] {
+  background: var(--chosen);
+  border-top-color: transparent;
+}
+
+.row[data-on] + .row {
+  border-top-color: transparent;
+}
+
+.rowName {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  font-size: var(--type-body);
+  font-weight: 600;
+  color: var(--ice);
+}
+
+.rowNote {
+  overflow: hidden;
+  font-size: var(--type-caption);
+  font-weight: 500;
+  color: var(--dim);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.rowValue {
+  flex: none;
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: var(--type-base);
+  color: var(--ice);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.rowValue[data-out] {
+  color: var(--soft);
+}
+
+.rowUnit {
+  margin-left: 0.3em;
+  color: var(--amber);
+  font-size: 0.8em;
+}
+
+.rowHead {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0 10px 8px;
+}
+
+.rankName {
+  font-family: var(--display);
+  font-weight: 700;
+  font-stretch: 105%;
+  font-size: var(--type-figure);
+  line-height: 1;
+  color: var(--ice);
+}
+
+.quiet {
+  padding: 14px 10px 4px;
+  font-size: var(--type-body);
+  color: var(--dim);
+}
+
+@media (max-width: 767px) {
+  .tiles {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .tiles > :last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+  }
+
+  .pair {
+    gap: 16px;
+  }
+
+  .acts {
+    flex-direction: column;
+  }
+
+  .acts > :last-child:not(:first-child) {
+    height: 46px;
+    min-width: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fill {
+    transition: none;
+  }
+}

@@ -11,7 +11,8 @@ import type { SignResult } from './send.ts';
 import { BRIDGE_WORDS as WORDS, ORDER_WORDS as ORDER } from './words.ts';
 
 /**
- * Bridge out of Solana from the city: USDC in this wallet → USDC on another network, to an address the person types,
+ * Bridge out of Solana: USDC or SOL in this wallet → USDC or that network's own coin (ETH, BNB, POL) on another
+ * network (decision 109 — before, USDC to USDC only), to an address the person types,
  * through the engine's cross-network lane (`/api/solana/cross-swap/*`, the rail the engine names for the pair). One
  * Solana signature; the engine quotes, builds and checks the transaction, sends it once and follows the order until
  * the money lands or comes back, then issues the receipt. Bringing money in is not a signature at all: it is an
@@ -30,9 +31,38 @@ export const RUN_KEY = 'ryntra.solana.cross-swap-run.v1';
 
 type CrossRoute = Extract<SwapRouteClassification, { kind: 'CROSS_SWAP' }>;
 
-/** The engine's route for Solana USDC → USDC on `network`, or null when it carries none. */
-export function bridgeRoute(network: DepositNetwork): CrossRoute | null {
-  const route = classifySwapRoute({ network: 'solana', asset: SOLANA_USDC_MINT }, { network, asset: 'USDC' });
+/** What leaves Solana on a bridge out: the wallet's USDC, or its SOL. */
+export type BridgeCoin = 'USDC' | 'SOL';
+export const BRIDGE_COINS: readonly BridgeCoin[] = ['USDC', 'SOL'];
+
+/** What arrives on the other network: USDC, or that network's own coin. */
+export type BridgeArrive = 'USDC' | 'NATIVE';
+export const BRIDGE_ARRIVALS: readonly BridgeArrive[] = ['USDC', 'NATIVE'];
+
+/** Each network's own coin, as the engine's catalogue names it (`lib/swap/catalog.ts`). */
+export const NATIVE_COIN: Readonly<Record<DepositNetwork, 'ETH' | 'BNB' | 'POL'>> = {
+  base: 'ETH',
+  ethereum: 'ETH',
+  arbitrum: 'ETH',
+  optimism: 'ETH',
+  polygon: 'POL',
+  bnb: 'BNB',
+};
+
+/** The coin that arrives on `network`, by the ticker the engine's catalogue gives it. */
+export function arrivalCode(network: DepositNetwork, arrive: BridgeArrive): 'USDC' | 'ETH' | 'BNB' | 'POL' {
+  return arrive === 'USDC' ? 'USDC' : NATIVE_COIN[network];
+}
+
+/**
+ * The engine's route for this coin out of Solana into this coin on `network`, or null when it carries none. Every pair
+ * here is one the engine already prices and builds on Relay (`classifySwapRoute`, live quotes 17.11): the server
+ * classifies again, and its checks — the recipient, both currencies, the amount, the refunds — stand as they
+ * are. USDC to USDC is the default, as it always was.
+ */
+export function bridgeRoute(network: DepositNetwork, coin: BridgeCoin = 'USDC', arrive: BridgeArrive = 'USDC'): CrossRoute | null {
+  const from = { network: 'solana' as const, asset: coin === 'SOL' ? 'SOL' : SOLANA_USDC_MINT };
+  const route = classifySwapRoute(from, { network, asset: arrivalCode(network, arrive) });
   return route.ok && route.kind === 'CROSS_SWAP' ? route : null;
 }
 

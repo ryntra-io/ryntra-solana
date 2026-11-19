@@ -1,7 +1,7 @@
 import { rangePrices } from '../../../city/lib/earn/pier.ts';
 import { digits } from '../../../city/lib/i18n/dict.ts';
 import type { Lang } from '../../../city/lib/i18n/langs.ts';
-import { pctText, type GapView, type RangeView, type ShapeId } from './model.ts';
+import { edgeTexts, pctText, type GapView, type RangeView, type ShapeId } from './model.ts';
 
 /**
  * The facts a person reads before adding to a pool, as rows of names and figures under the range's two
@@ -82,9 +82,12 @@ export function factRows(w: FactWords, lang: Lang, input: FactsInput): FactRow[]
   ];
 }
 
-/** The range as one line under the width: «141.06 – 144.95 USDC · 69 bins». */
-export function rangeLine(w: Pick<FactWords, 'binsOf' | 'stepsOf'>, lang: Lang, range: RangeView, unit: string, steps: 'bins' | 'steps'): string {
-  const prices = rangePrices(range.low, range.high);
+/**
+ * The range as one line under the width: «141.06 – 144.95 USDC · 69 bins». With the pool's step (`stepBps`) the two
+ * prices are written to the places the step needs, as the edges under the chart are.
+ */
+export function rangeLine(w: Pick<FactWords, 'binsOf' | 'stepsOf'>, lang: Lang, range: RangeView, unit: string, steps: 'bins' | 'steps', stepBps: number | null = null): string {
+  const prices = stepBps !== null ? edgeTexts(range.low, range.high, range.low, stepBps) : rangePrices(range.low, range.high);
   const count = steps === 'bins' ? w.binsOf(String(range.steps)) : w.stepsOf(String(range.steps));
   return digits(`${prices.low} – ${prices.high} ${unit} · ${count}`, lang);
 }

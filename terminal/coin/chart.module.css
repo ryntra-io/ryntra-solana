@@ -1,69 +1,41 @@
-/* The coin's chart in the terminal: the core chart draws the candles; its colours and type are redrawn here in the
-   terminal's own tokens, inside the pane only. Measures from the approved design
-   (docs/terminal/design/2026-11-16/Coin.dc.html, PhoneCoin.dc.html). */
+/* The coin's chart in the terminal: the core chart (0.14.0, as rxn.gg draws it) with its own bar, drawing tools,
+   indicators and the bar's figures, redrawn here in the terminal's tokens, inside the pane only. The intervals and the
+   price or market cap switch are the terminal's own, in the bar's slot. */
 
 .wrap {
+  position: relative;
   display: flex;
+  flex: 1 1 auto;
   flex-direction: column;
-  gap: 12px;
   min-width: 0;
+  min-height: 0;
 }
 
-.panel {
-  display: flex;
-  flex-direction: column;
+/* The whole screen: the chart over everything, on the terminal's ground, until Escape or the same button. */
+.wrap[data-full] {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  padding: 12px;
+  background: var(--ground);
 }
 
-.head {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px 14px 6px;
-  min-width: 0;
-}
-
-.grow {
-  flex: 1 1 0;
-  min-width: 0;
-}
-
-/* A quiet round control beside the periods, as the «i» is drawn. */
-.round {
-  display: inline-flex;
-  flex: none;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  color: var(--lilac);
-  border: 1px solid var(--glass-edge);
-  border-radius: var(--r-ctl);
-}
-
-.round:hover,
-.round[aria-pressed='true'] {
-  color: var(--ice);
-  background: rgba(153, 69, 255, 0.18);
-}
-
-/* ── the pane ──────────────────────────────────────────────────────────── */
+/* ── the pane: the core's tokens in the terminal's palette and form ───────── */
 
 .pane {
-  /* The core chart's tokens, in the terminal's palette: the chart reads them on its own element and draws its canvas
-     in them. */
   --ryntra-bg: var(--panel);
   --ryntra-surface: var(--panel);
   --ryntra-elevated: var(--panel-up);
-  --ryntra-border: var(--haze);
-  --ryntra-border-hover: var(--violet);
-  --ryntra-surface-hover: var(--panel-up);
+  --ryntra-border: var(--line);
+  --ryntra-border-hover: var(--chosen-edge);
+  --ryntra-surface-hover: var(--chosen);
   --ryntra-elevated-hover: var(--haze);
   --ryntra-text: var(--ice);
   --ryntra-muted: var(--dim);
   --ryntra-brand: var(--amber);
   --ryntra-brand-text: var(--amber);
   --ryntra-brand-pressed: var(--amber);
-  --ryntra-on-brand: var(--ink);
+  --ryntra-on-brand: var(--on-amber);
   --ryntra-up: var(--mint);
   --ryntra-down: var(--flare);
   --ryntra-up-text: var(--mint);
@@ -73,81 +45,285 @@
   --ryntra-info: var(--lilac);
   --ryntra-info-text: var(--lilac);
   --ryntra-shadow-elevated: none;
-  --ryntra-scrim: rgba(6, 5, 12, 0.7);
+  --ryntra-scrim: color-mix(in srgb, var(--ink-deep) 72%, transparent);
   --ryntra-brand-glow: none;
   --ryntra-focus-outline: 2px solid var(--lilac);
   --ryntra-font-sans: var(--ui);
+  /* The terminal's form (decision 106): 0 on the boxes, 4 px on what is pressed, never a pill. */
+  --ryntra-radius-block: 0;
+  --ryntra-radius-card: 0;
+  --ryntra-radius-field: var(--r-ctl);
+  --ryntra-radius-button: var(--r-ctl);
+  --ryntra-radius-pill: var(--r-ctl);
 
   position: relative;
   display: flex;
+  flex: 1 1 auto;
   flex-direction: column;
-  height: 386px;
   min-height: 0;
-  padding: 0 14px 12px;
+  container: coinchart / inline-size;
+}
+
+.wrap[data-phone] .pane {
+  flex: none;
+  height: 420px;
 }
 
 .pane .core {
   flex: 1 1 auto;
-  height: 100%;
   min-height: 0;
   margin: 0;
-  padding: 0;
-  gap: 0;
+  padding: 8px 10px 6px;
+  gap: 6px;
 }
 
-/* The candles take the whole pane: no box of the core's own around them. */
 .pane .core :global(.ryntra-chart__stage) {
   flex: 1 1 auto;
-  height: 100%;
   min-height: 0;
   border: 0;
-  border-radius: 0;
+  background: transparent;
 }
 
-/* The core chart draws the candles only: its toolbar, its legend, its wordmark and its status line step aside for the
-   terminal's periods and readout. */
-.pane .core :global(.ryntra-chart__bar),
-.pane .core :global(.ryntra-chart__ohlc),
+/* One row of the bar on every width: the terminal's intervals and the switch stand in the core's slot, the core's own
+   intervals, candle list and scale step aside (the candles and the scale keep the core's own defaults). */
+.pane .core :global(.ryntra-chart__bar) {
+  flex-wrap: nowrap;
+  gap: 6px;
+  min-height: 32px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.pane .core :global(.ryntra-chart__symbol) {
+  display: contents;
+}
+
+.pane .core :global(.ryntra-chart__frames),
+.pane .core :global(.ryntra-chart__select),
+.pane .core :global(.ryntra-chart__scale:not(.ryntra-chart__price)) {
+  display: none;
+}
+
+.pane .core :global(.ryntra-chart__ind-toggle),
+.pane .core :global(.ryntra-chart__draw-toggle) {
+  flex: none;
+}
+
+/* A phone's bar stands on one line whole: drawing waits for a desk, the pool's button stays in view. */
+.wrap[data-phone] .pane .core :global(.ryntra-chart__draw-toggle) {
+  display: none;
+}
+
+/* «Live» is the screen's own, as it always said it (the live price closes the newest bar): at the bar's right, the
+   pane's two quiet controls after it. The core's own state says how late its source is, behind its tooltip. */
+.pane .core :global(.ryntra-chart__state) {
+  display: none;
+}
+
+.live {
+  order: 1;
+  display: inline-flex;
+  flex: none;
+  margin-left: auto;
+}
+
+/* The drawing tools down the left, quiet until the hand comes. */
+.pane .core :global(.ryntra-draw__rail) {
+  border-right-color: transparent;
+}
+
+.pane .core :global(.ryntra-draw__button) {
+  opacity: 0.6;
+  transition: opacity 0.15s;
+}
+
+.pane .core :global(.ryntra-draw__button:hover:not(:disabled)),
+.pane .core :global(.ryntra-draw__button:focus-visible),
+.pane .core :global(.ryntra-draw__button[data-tool][aria-pressed='true']),
+.pane .core :global(.ryntra-draw__button[data-active]) {
+  opacity: 1;
+}
+
+/* The core's wordmark and the source line under the candles stay off the desk: «Live» says what a person needs. */
 .pane .core :global(.ryntra-chart__mark),
+.pane .core :global(.ryntra-chart__status),
+.pane .core :global(.ryntra-chart__keys) {
+  display: none;
+}
+
 .pane .core :global(.ryntra-chart__foot) {
+  position: absolute;
+  right: 12px;
+  bottom: 32px;
+  z-index: 2;
+}
+
+.pane .core[data-newest] :global(.ryntra-chart__latest) {
   display: none;
 }
 
-/* The chart's own tools, asked for with the control above: its bar of indicators and drawings, and the bar under the
-   crosshair. The periods stay the terminal's, so the core's own are not shown twice. */
-.wrap[data-tools] .pane .core :global(.ryntra-chart__bar) {
-  display: flex;
-  padding: 0 0 6px;
+/* The words only a screen reader hears, and the core's quiet icon buttons, without the core's design system. */
+.pane :global(.ryntra-visually-hidden) {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
 }
 
-.wrap[data-tools] .pane .core :global(.ryntra-chart__ohlc) {
-  display: block;
-}
-
-.wrap[data-tools] .pane .core :global(.ryntra-chart__frames),
-.wrap[data-tools] .pane .core :global(.ryntra-chart__select--frames),
-.wrap[data-tools] .pane .core :global(.ryntra-chart__symbol) {
+/* The screen's lines over the candles (`chart-layer.ts`) are levels to the core: its «Level: …» name gives way to the
+   price's tag at the right, and a pool's strip says nothing — its length says it. */
+.pane :global(.ryntra-trade__row--level .ryntra-trade__level) {
   display: none;
 }
 
-/* «Delayed» says how long: the pane gives the words, the badge keeps its dot and its tone. */
-.wrap[data-tools] .pane .core :global(.ryntra-chart__state--info) {
-  font-size: 0;
+/* The small parts the core rounds by its own measure: a tag on the scale, a count, a chip — the control's 4 px here. */
+.pane :global(.ryntra-trade__tag),
+.pane :global(.ryntra-trade__axis),
+.pane :global(.ryntra-trade__chip),
+.pane :global(.ryntra-chart__chip),
+.pane :global(.ryntra-chart__ind-count) {
+  border-radius: var(--r-ctl);
 }
 
-.wrap[data-tools] .pane .core :global(.ryntra-chart__state--info)::after {
-  content: var(--chart-delay, '');
-  font-size: var(--type-caption);
+/* A narrower chart keeps its bar on one line: the intervals closer, «Live» or «Delayed» said by its dot alone. */
+@container coinchart (max-width: 720px) {
+  .frame {
+    min-width: 0;
+    padding: 0 6px;
+  }
+
+  /* The chip keeps its dot; its word waits for a wider chart. */
+  .live > span {
+    gap: 0;
+    padding: 0 8px;
+    font-size: 0;
+  }
+
+  .pane .core :global(.ryntra-chart__ind-label) {
+    display: none;
+  }
+}
+
+/* On a narrow chart the bar's figures under the finger wait for a wider one. */
+@container coinchart (max-width: 520px) {
+  .pane .core :global(.ryntra-chart__ohlc) {
+    display: none;
+  }
 }
 
 /* On a phone the chart stands inside the page, so the browser may pan up and down over it; with the drawing tools open
    every touch is the chart's again. */
-.pane:not(:has(:global(.ryntra-draw[data-open]))) .core :global(.ryntra-chart__canvas) > div {
+.wrap[data-phone] .pane:not(:has(:global(.ryntra-draw[data-open]))) .core :global(.ryntra-chart__canvas) > div {
   touch-action: pan-y !important;
   overscroll-behavior: auto !important;
 }
 
-/* What the core chart may still say over the candles: the terminal's type and its quiet button, on the panel's ground. */
+/* ── the bar's own: intervals, price or cap, two quiet controls ───────────── */
+
+/* The bar where the core chart does not stand: the same row, on the pane's own ground. */
+.ownBar {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+  padding: 8px 10px 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.frames,
+.basis {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 2px;
+}
+
+.basis {
+  padding-left: 6px;
+  border-left: 1px solid var(--line);
+}
+
+.frame,
+.round {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  height: 28px;
+  border: 1px solid transparent;
+  border-radius: var(--r-ctl);
+  color: var(--dim);
+  transition: color 0.15s, background-color 0.15s, border-color 0.15s;
+}
+
+.frame {
+  min-width: 34px;
+  padding: 0 8px;
+  font-family: var(--ui);
+  font-size: var(--type-small);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.round {
+  order: 2;
+  width: 28px;
+  color: var(--lilac);
+  border-color: var(--glass-edge);
+}
+
+.frame:hover,
+.round:hover {
+  color: var(--ice);
+  background: var(--chosen);
+}
+
+/* The chosen interval is quiet, as a chosen tab: lifted ground and a line under it — amber is the action's alone. */
+.frame[aria-checked='true'] {
+  color: var(--ice);
+  background: var(--chosen);
+  box-shadow: inset 0 -2px 0 var(--lilac);
+}
+
+.round[aria-pressed='true'] {
+  color: var(--ice);
+  background: var(--chosen);
+  border-color: var(--chosen-edge);
+}
+
+.badge {
+  order: 1;
+  flex: none;
+  font-size: var(--type-caption);
+  font-weight: 600;
+  color: var(--lilac);
+  white-space: nowrap;
+}
+
+/* ── the screen's lines past the prices on screen: counted at that edge ── */
+
+.edge {
+  position: absolute;
+  z-index: 3;
+  padding: 2px 8px;
+  font-size: var(--type-caption);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--lilac);
+  background: color-mix(in srgb, var(--panel) 86%, transparent);
+  border: 1px solid color-mix(in srgb, var(--lilac) 45%, transparent);
+  pointer-events: none;
+}
+
+/* ── what the core chart may still say over the candles ───────────────── */
+
 .pane .core :global(.ryntra-chart__cover) {
   font-family: var(--ui);
   font-size: var(--type-base);
@@ -164,10 +340,9 @@
   height: 36px;
   padding: 0 12px;
   border: 1px solid var(--glass-edge);
-  border-radius: var(--r-ctl);
   font-weight: 700;
   color: var(--ice);
-  background: rgba(153, 69, 255, 0.08);
+  background: var(--chosen);
 }
 
 /* No chart, or the chart on its way: one calm line, or one quiet sweep of light — never a grey box. */
@@ -197,8 +372,18 @@
   left: -40%;
   width: 40%;
   height: 1px;
-  background: linear-gradient(90deg, rgba(201, 162, 255, 0), var(--lilac), rgba(201, 162, 255, 0));
+  background: linear-gradient(90deg, transparent, var(--lilac), transparent);
   animation: sweep 1.6s ease-in-out infinite;
+}
+
+/* The source asked for a pause: «Chart in a moment» in the middle, the sweep of light under its words. */
+.wait[data-soon]::after {
+  top: calc(50% + 20px);
+}
+
+.soon {
+  font: 500 var(--type-small) / 1.2 var(--ui);
+  color: var(--dim);
 }
 
 @keyframes sweep {
@@ -207,144 +392,10 @@
   }
 }
 
-/* The bar under the pointer: its time, its close and its move — only while a hand is on the chart. */
-.readout {
-  position: absolute;
-  top: 6px;
-  left: 20px;
-  z-index: 3;
-  display: flex;
-  align-items: baseline;
-  gap: 10px;
-  padding: 5px 10px;
-  font-size: var(--type-caption);
-  font-variant-numeric: tabular-nums;
-  color: var(--dim);
-  background: var(--well);
-  border: 1px solid var(--glass-edge);
-  pointer-events: none;
-}
-
-.readout b {
-  font-size: var(--type-small);
-  color: var(--ice);
-}
-
-.readout [data-tone='up'] {
-  color: var(--mint);
-}
-
-.readout [data-tone='down'] {
-  color: var(--flare);
-}
-
-/* ── under the chart on a phone: four periods and the screen's small control ── */
-
-.under {
-  display: none;
-}
-
-/* ── the whole screen ──────────────────────────────────────────────────── */
-
-.wrap[data-full] {
-  position: fixed;
-  inset: 0;
-  z-index: 50;
-  padding: 16px;
-  background: var(--ink);
-}
-
-.wrap[data-full] .panel {
-  flex: 1 1 auto;
-  min-height: 0;
-}
-
-.wrap[data-full] .pane {
-  flex: 1 1 auto;
-  height: auto;
-}
-
 @media (prefers-reduced-motion: reduce) {
   .wait::after,
   .pane .core :global(.ryntra-chart__cover.ryntra-chart__cover--loading)::after {
-    left: 30%;
     animation: none;
+    left: 30%;
   }
-}
-
-@media (max-width: 767px) {
-  .head {
-    display: none;
-  }
-
-  .pane {
-    height: 244px;
-    padding: 10px 10px 4px;
-  }
-
-  .under {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-
-  .underTabs {
-    flex: 1 1 0;
-  }
-
-  .underTabs > button {
-    height: 44px;
-    padding: 0;
-  }
-
-  .wrap[data-full] .head {
-    display: flex;
-  }
-
-  .wrap[data-full] .under {
-    display: none;
-  }
-}
-
-/* ── the screen's lines over the candles (chart-layer.ts) ─────────────── */
-
-/* The badge of what is drawn — «Ladder · 8 prices» — amber, as the approved design (CoinLimit) draws it. */
-.badge {
-  display: inline-flex;
-  flex: none;
-  align-items: center;
-  height: 26px;
-  padding: 0 10px;
-  font: 600 var(--type-caption) / 1 var(--ui);
-  color: var(--soft);
-  white-space: nowrap;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid var(--glass-edge);
-}
-
-/* A level is the screen's line: its colour comes from its row (the sheet CoinChart writes), its name gives way to the
-   price's tag at the right end of the plot. */
-.pane :global(.ryntra-trade__row--level .ryntra-trade__rule) {
-  border-top: 1px dashed var(--tone);
-  opacity: 0.85;
-}
-
-.pane :global(.ryntra-trade__row--level .ryntra-trade__level) {
-  display: none;
-}
-
-.pane :global(.ryntra-trade__row--level)::after {
-  position: absolute;
-  top: 0;
-  left: calc(var(--plot-left) + var(--plot-width) + 2px);
-  padding: 3px 6px;
-  font: 600 var(--type-micro) / 1 var(--display);
-  font-variant-numeric: tabular-nums;
-  color: var(--tone);
-  white-space: nowrap;
-  background: var(--panel);
-  border: 1px solid var(--tone);
-  transform: translateY(-50%);
-  z-index: 3;
-  pointer-events: none;
 }

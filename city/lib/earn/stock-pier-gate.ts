@@ -5,8 +5,10 @@
  *
  * - `closed` (the default, and any value it does not know): the verified pairs read and show, and nothing is offered;
  * - `canary`: one wallet — named only in the server's environment and compared character for character — may build or
- *   moor, up to `STOCK_PIER_CANARY_CEILING_USD`; to everyone else it looks closed (the canary is not announced);
- * - `open`: everyone the engine admits, up to `STOCK_PIER_CEILING_USD` for one build.
+ *   moor; to everyone else it looks closed (the operator tries it first, decision 92);
+ * - `open`: everyone the engine admits.
+ *
+ * No sum of Ryntra's on a build in either state.
  *
  * And a stop that needs no new build: `RYNTRA_CITY_STOCK_PIER_STOP` set to anything stops new money at once. It never
  * holds money in: taking fees and leaving stay open whenever the engine allows them.
@@ -20,10 +22,6 @@ export const STOCK_PIER_STOP_ENV = 'RYNTRA_CITY_STOCK_PIER_STOP';
 
 export const STOCK_PIER_MODES = ['closed', 'canary', 'open'] as const;
 export type StockPierMode = (typeof STOCK_PIER_MODES)[number];
-
-/** One build or mooring, dollars at the prices the pool is made at. */
-export const STOCK_PIER_CEILING_USD = 1_000;
-export const STOCK_PIER_CANARY_CEILING_USD = 5;
 
 export type Env = Readonly<Record<string, string | undefined>>;
 
@@ -49,20 +47,15 @@ export type StockAdmission =
   | Readonly<{
       ok: true;
       mode: Exclude<StockPierMode, 'closed'>;
-      ceilingUsd: number;
     }>
   | Readonly<{ ok: false; code: 'STOCK_PIER_CLOSED' | 'STOCK_PIER_STOPPED' }>;
 
-/** Whether this wallet may put new money in at a Stock Pier now, and up to how much. */
+/** Whether this wallet may put new money in at a Stock Pier now: no sum of Ryntra's on it. */
 export function admitStockBuild(owner: string | null, env: Env): StockAdmission {
   const mode = stockPierMode(env[STOCK_PIER_MODE_ENV]);
   if (mode === 'closed' || (mode === 'canary' && !named(owner, env))) return { ok: false, code: 'STOCK_PIER_CLOSED' };
   if (stockPierStopped(env)) return { ok: false, code: 'STOCK_PIER_STOPPED' };
-  return {
-    ok: true,
-    mode,
-    ceilingUsd: mode === 'canary' ? STOCK_PIER_CANARY_CEILING_USD : STOCK_PIER_CEILING_USD,
-  };
+  return { ok: true, mode };
 }
 
 /** Taking fees and leaving: whenever the Stock Pier is not closed to this wallet — the stop never applies. */
@@ -71,15 +64,15 @@ export function admitStockExit(owner: string | null, env: Env): boolean {
   return mode === 'open' || (mode === 'canary' && named(owner, env));
 }
 
-/** A deposit's worth against its ceiling: a deposit without a price is refused rather than guessed. */
-export function withinStockCeiling(usd: number | null, ceilingUsd: number): boolean {
-  return usd !== null && Number.isFinite(usd) && usd > 0 && usd <= ceilingUsd;
+/** A deposit's worth, priced, against the engine's own bound if it names one (null — none): a deposit without a price is refused rather than guessed. */
+export function withinStockCeiling(usd: number | null, ceilingUsd: number | null = null): boolean {
+  return usd !== null && Number.isFinite(usd) && usd > 0 && (ceilingUsd === null || usd <= ceilingUsd);
 }
 
 export type StockPierStates = Readonly<{
   build: 'on' | 'off';
   exit: 'on' | 'off';
-  /** One build's ceiling for this wallet now, dollars; null when it may not build. */
+  /** The engine's own bound on one build in dollars, if it names one; null — none (no sum of Ryntra's). */
   ceilingUsd: number | null;
   /** New money stopped by the switch (exits still on). Said only to a wallet the product is open to. */
   stopped: boolean;
@@ -91,14 +84,14 @@ export type EngineStates = Readonly<{
   maxDepositUsd: number | null;
 }>;
 
-/** The city's admission and the engine's together: the lower ceiling, and on only where both say on. */
+/** The city's admission and the engine's together: on only where both say on. */
 export function stockPierStates(owner: string | null, env: Env, engine: EngineStates): StockPierStates {
   const build = admitStockBuild(owner, env);
-  const ceiling = build.ok && engine.add.status === 'on' ? (engine.maxDepositUsd === null ? build.ceilingUsd : Math.min(build.ceilingUsd, engine.maxDepositUsd)) : null;
+  const on = build.ok && engine.add.status === 'on';
   return {
-    build: ceiling !== null ? 'on' : 'off',
+    build: on ? 'on' : 'off',
     exit: admitStockExit(owner, env) && engine.remove.status === 'on' ? 'on' : 'off',
-    ceilingUsd: ceiling,
+    ceilingUsd: on ? engine.maxDepositUsd : null,
     stopped: !build.ok && build.code === 'STOCK_PIER_STOPPED',
   };
 }

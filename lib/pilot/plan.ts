@@ -2,9 +2,10 @@
  * The money autopilot's plan: one sentence, one plan for the whole budget. «Work with my 2 SOL and 100 USDC:
  * some into savings, trade BONK with some, some into pools» becomes four parts:
  *
- * - `trade` — SOL the agent trades by itself, the mandate with a strategy. Its size is one
- *   of the city's budgets open on the network: a larger share is
- *   capped and the rest stays in the person's wallet. The signed policy holds the caps; nothing here raises them.
+ * - `trade` — SOL the agent trades by itself, the mandate with a strategy.
+ *   (decision 108) the whole share is its budget, with no ceiling of Ryntra's: a day's spend over a month at the default
+ *   trade, the agent's network fees inside the share (`../mandate/budget.ts` `budgetWithin`). The signed policy holds
+ *   the caps the person signs.
  * - `save` — the dollar savings: USDC (first) and SOL into Jupiter Lend, a position of her own wallet.
  * - `pool` — SOL into a SOL pier (Meteora Zap), a position of her own wallet.
  * - `reserve` — what stays in her wallet: at least the network's fees, and whatever a part could not take.
@@ -13,7 +14,7 @@
  * and the care rules are this file's, the same in the window, the server and the agent's pass (`./care.ts`).
  */
 
-import { BUDGET_PRESETS, PRESETS_ON, type BudgetPresetId } from "../mandate/presets.ts";
+import { budgetRefusal, budgetTotal, budgetWithin, DAYS_MAX, TRADE_MIN_LAMPORTS, type AgentBudget } from "../mandate/budget.ts";
 
 export const PILOT_PARTS = ["trade", "save", "pool", "reserve"] as const;
 export type PilotPart = (typeof PILOT_PARTS)[number];
@@ -56,10 +57,8 @@ export type PilotSplit = Readonly<{
   legs: PilotLegs;
   /** Each part's share of the whole budget, basis points, summing to 10 000. */
   shares: Readonly<Record<PilotPart, number>>;
-  /** The trade's budget — one of the city's — or null when there is no trade part. */
-  preset: BudgetPresetId | null;
-  /** More was asked to trade than a new agent trades: the rest stays in the wallet. */
-  capped: boolean;
+  /** The trade's budget — the person's share as a day, a trade and a term — or null when there is no trade part. */
+  budget: AgentBudget | null;
   /** Parts asked for that could not take money: too little, or not on this network. */
   dropped: readonly WorkPart[];
 }>;
@@ -76,17 +75,14 @@ export const usdOfUsdc = (raw: bigint) => Number(raw) / 1e6;
 const solOfUsd = (usd: number, solUsd: number) => (usd > 0 && solUsd > 0 ? BigInt(Math.floor((usd / solUsd) * 1e9)) : 0n);
 const usdcOfUsd = (usd: number) => (usd > 0 ? BigInt(Math.floor(usd * 1e6)) : 0n);
 
-/** The largest of the network's budgets not above `lamports`; null when even the smallest is more. */
-export function tradePresetFor(network: PilotNetwork, lamports: bigint): BudgetPresetId | null {
-  const open = PRESETS_ON[network].map((id) => BUDGET_PRESETS[id]).sort((a, b) => (a.budget < b.budget ? -1 : 1));
-  let picked: BudgetPresetId | null = null;
-  /* The vault takes the budget and the agent's network fees: both come out of the trade part. */
-  for (const preset of open) if (preset.budget + preset.agentFee <= lamports) picked = preset.id;
-  return picked;
-}
+/** The trade's budget a share of SOL holds whole: the vault's part and the agent's network fees; null when not even a day of the least trade fits. */
+export const tradeBudgetFor = (lamports: bigint): AgentBudget | null => budgetWithin(lamports);
 
-/** The SOL a trade part of this budget takes: the budget and the agent's network fees. */
-export const tradeLamports = (preset: BudgetPresetId) => BUDGET_PRESETS[preset].budget + BUDGET_PRESETS[preset].agentFee;
+/** The smallest trade part there is: one day of the least trade, and the agent's fees. */
+export const SMALLEST_TRADE: AgentBudget = Object.freeze({ perDay: TRADE_MIN_LAMPORTS, perTrade: TRADE_MIN_LAMPORTS, days: 1 });
+
+/** The SOL a trade part of this budget takes: the vault's part and the agent's network fees. */
+export const tradeLamports = (budget: AgentBudget) => budgetTotal(budget);
 
 /**
  * The parts' targets, in basis points of the budget past the reserve: the shares said, and the default weights for parts
@@ -114,7 +110,7 @@ export function targetsOf(named: PilotWants["named"]): Readonly<Record<WorkPart,
  * savings (USDC first, then SOL) — each from its target share of the budget's value; what a part cannot take stays in the
  * wallet. Null when SOL's price is not read and both SOL and USDC were given: the parts could not be weighed honestly.
  */
-export function splitOf(wants: PilotWants, network: PilotNetwork, solUsd: number | null): PilotSplit | null {
+export function splitOf(wants: PilotWants, solUsd: number | null): PilotSplit | null {
   const S = wants.solRaw > 0n ? wants.solRaw : 0n;
   const U = wants.usdcRaw > 0n ? wants.usdcRaw : 0n;
   if (S === 0n && U === 0n) return null;
@@ -130,20 +126,16 @@ export function splitOf(wants: PilotWants, network: PilotNetwork, solUsd: number
   const dropped: WorkPart[] = [];
   const asked = (part: WorkPart) => targets[part] > 0;
 
-  /* The trade: a budget of the city's, never more than its target. */
+  /* The trade: its whole target, as a budget — no ceiling of Ryntra's. */
   let trade = 0n;
-  let preset: BudgetPresetId | null = null;
-  let capped = false;
+  let budget: AgentBudget | null = null;
   if (asked("trade")) {
     const want = min(solLeft, solOfUsd((budgetUsd * targets.trade) / 10_000, p));
+    budget = tradeBudgetFor(want);
     /* A trade said by name gets the smallest budget even under its share, when the SOL is there. */
-    preset = tradePresetFor(network, want);
-    const smallest = smallestPreset(network);
-    if (!preset && wants.named.trade !== undefined && smallest && tradeLamports(smallest) <= solLeft) preset = smallest;
-    if (preset) {
-      trade = tradeLamports(preset);
-      /* More than a tenth over what the budget takes: the card says the rest stays in the wallet. */
-      capped = want * 10n > trade * 11n;
+    if (!budget && wants.named.trade !== undefined && tradeLamports(SMALLEST_TRADE) <= solLeft) budget = SMALLEST_TRADE;
+    if (budget) {
+      trade = tradeLamports(budget);
       solLeft -= trade;
     } else dropped.push("trade");
   }
@@ -181,13 +173,8 @@ export function splitOf(wants: PilotWants, network: PilotNetwork, solUsd: number
     pool: { solRaw: pool },
     reserve: { solRaw: reserveSol + solLeft, usdcRaw: usdcLeft },
   };
-  return { legs, shares: sharesOf(legs, p), preset, capped, dropped };
+  return { legs, shares: sharesOf(legs, p), budget, dropped };
 }
-
-const smallestPreset = (network: PilotNetwork): BudgetPresetId | null => {
-  const open = PRESETS_ON[network].map((id) => BUDGET_PRESETS[id]).sort((a, b) => (a.budget < b.budget ? -1 : 1));
-  return open[0]?.id ?? null;
-};
 
 /** Each part's value in USD at the price. */
 export function legsUsd(legs: PilotLegs, solUsd: number): Readonly<Record<PilotPart, number>> {
@@ -261,9 +248,25 @@ export type PilotPlanData = Readonly<{
     reserve: Readonly<{ solRaw: string; usdcRaw: string }>;
   }>;
   shares: Readonly<Record<PilotPart, number>>;
-  preset: BudgetPresetId | null;
+  /** The trade's budget, lamports as strings; null — no trade part. */
+  budget: BudgetData | null;
   rules: PilotRules;
 }>;
+
+/** A budget as the store and the routes carry it. */
+export type BudgetData = Readonly<{ perDay: string; perTrade: string; days: number }>;
+
+export const budgetData = (budget: AgentBudget): BudgetData => ({ perDay: budget.perDay.toString(), perTrade: budget.perTrade.toString(), days: budget.days });
+
+/** A budget read back; null when it is not one the agent takes. */
+export function budgetFromData(value: unknown): AgentBudget | null {
+  if (typeof value !== "object" || value === null) return null;
+  const v = value as Record<string, unknown>;
+  if (typeof v.perDay !== "string" || typeof v.perTrade !== "string" || !RAW.test(v.perDay) || !RAW.test(v.perTrade)) return null;
+  if (typeof v.days !== "number" || !Number.isInteger(v.days) || v.days < 1 || v.days > DAYS_MAX) return null;
+  const budget = { perDay: BigInt(v.perDay), perTrade: BigInt(v.perTrade), days: v.days };
+  return budgetRefusal(budget) === null ? budget : null;
+}
 
 const RAW = /^\d{1,24}$/u;
 
@@ -278,7 +281,7 @@ export function planData(split: PilotSplit, rules: PilotRules = DEFAULT_RULES): 
       reserve: { solRaw: l.reserve.solRaw.toString(), usdcRaw: l.reserve.usdcRaw.toString() },
     },
     shares: { ...split.shares },
-    preset: split.preset,
+    budget: split.budget ? budgetData(split.budget) : null,
     rules,
   };
 }
@@ -303,12 +306,13 @@ export function planFromData(value: unknown): PilotPlanData | null {
     shares[part] = x;
   }
   if (PILOT_PARTS.reduce((sum, part) => sum + shares[part], 0) !== 10_000) return null;
-  const preset = v.preset === null ? null : typeof v.preset === "string" && v.preset in BUDGET_PRESETS ? (v.preset as BudgetPresetId) : undefined;
-  if (preset === undefined) return null;
+  const said = v.budget === undefined && v.preset === null ? null : v.budget;
+  const budget = said === null ? null : budgetFromData(said);
+  if (budget === null && said !== null) return null;
   const [ts, ss, su, ps, rs, ru] = fields as string[];
-  if ((preset === null) !== (BigInt(ts!) === 0n)) return null;
-  if (preset !== null && BigInt(ts!) !== tradeLamports(preset)) return null;
-  return { v: 1, legs: { trade: { solRaw: ts! }, save: { solRaw: ss!, usdcRaw: su! }, pool: { solRaw: ps! }, reserve: { solRaw: rs!, usdcRaw: ru! } }, shares, preset, rules: rulesOf(v.rules) };
+  if ((budget === null) !== (BigInt(ts!) === 0n)) return null;
+  if (budget !== null && BigInt(ts!) !== tradeLamports(budget)) return null;
+  return { v: 1, legs: { trade: { solRaw: ts! }, save: { solRaw: ss!, usdcRaw: su! }, pool: { solRaw: ps! }, reserve: { solRaw: rs!, usdcRaw: ru! } }, shares, budget: budget ? budgetData(budget) : null, rules: rulesOf(v.rules) };
 }
 
 /** The legs of a plan as numbers again. */

@@ -8,8 +8,8 @@ import { setMoneyEnv, useMoneyStore } from "../../city/lib/money/store.ts";
 import { SOL, USDC } from "../../city/lib/trade/tiles.ts";
 import { useWallet } from "../../city/lib/trade/wallet.ts";
 import { swapDoors } from "./doors.ts";
-import { FILL_LIFE_MS, SOL_REF, TABS, arrivalOf, showLimit, showSwap, tabOf, tradeBusy, useSwapScreen } from "./state.ts";
-import { agoOf, bridgeStep, depositStep, doorsShown, limitCoin, pickList, pickPlan, priceFigure, rateOf, recentRows } from "./swap-view.ts";
+import { BRIDGE_PATH, FILL_LIFE_MS, SOL_REF, tradeBusy, useSwapScreen } from "./state.ts";
+import { agoOf, bridgeStep, depositStep, leaveOf, pickList, pickPlan, priceFigure, rateOf, recentRows, searchable, unitsOf, usdWorth, withFound } from "./swap-view.ts";
 
 /* The Swap screen's own rules as they are written, and a sentence handed to it: it fills the screen's own fields and
    never orders, builds a transfer, asks the wallet or sends anything. */
@@ -64,7 +64,7 @@ test("a coin picked from a field: the same one does nothing, the other field's o
 test("a field lists SOL and USDC first, then what the wallet holds or the market has, each once; a search narrows them", () => {
   const held = [BONK_ASSET, asset(USDC.mint, "USDC", 6)];
   const market = [JUP_ASSET, BONK_ASSET];
-  assert.deepEqual(pickList({ field: "pay", held, market, query: "", most: 10 }).map((a) => a.symbol), ["SOL", "USDC", "BONK"]);
+  assert.deepEqual(pickList({ field: "pay", held, market, query: "", most: 10 }).map((a) => a.symbol), ["SOL", "USDC", "BONK", "JUP"], "any coin pays: the wallet's first, then the market's");
   assert.deepEqual(pickList({ field: "get", held, market, query: "", most: 10 }).map((a) => a.symbol), ["SOL", "USDC", "JUP", "BONK"]);
   assert.deepEqual(pickList({ field: "get", held, market, query: "jup", most: 10 }).map((a) => a.symbol), ["JUP"]);
   assert.deepEqual(pickList({ field: "get", held, market, query: "bon", most: 10 }).map((a) => a.symbol), ["BONK"]);
@@ -132,19 +132,6 @@ test("the ledger's actions as rows: newest first, a swap's coins and what came, 
   assert.equal(rows[0].network, null);
   assert.equal(rows[4].amount, null, "an amount whose decimals the ledger did not know is not guessed");
   assert.equal(recentRows([], now, 4).length, 0);
-});
-
-test("the doors stand only where their way is open; buying with a card has none", () => {
-  assert.deepEqual(doorsShown({ limits: true, coinScreen: true, send: true }), ["limitStop", "send"]);
-  assert.deepEqual(doorsShown({ limits: false, coinScreen: true, send: true }), ["send"]);
-  assert.deepEqual(doorsShown({ limits: true, coinScreen: false, send: false }), []);
-});
-
-test("«Limit and stop» opens the coin of the ticket that is not a dollar", () => {
-  assert.equal(limitCoin(SOL, USDC).mint, SOL.mint);
-  assert.equal(limitCoin(USDC, SOL).mint, SOL.mint);
-  assert.equal(limitCoin(USDC, BONK_ASSET).mint, BONK);
-  assert.equal(limitCoin(JUP_ASSET, SOL).mint, JUP);
 });
 
 test("the bridge out climbs the money window's ladder, and only a press over the built transfer opens the wallet", () => {
@@ -282,47 +269,7 @@ test("a limit or a price said aloud belongs to the coin's screen: the swap leave
   for (const name of ["openChart", "openCoin", "openMint", "openEarn", "openLaunch", "askRyntra", "openAutopilot", "openLadder", "openPilot", "openCrew"]) assert.equal(typeof doors[name], "function", name);
 });
 
-
-test("the card's tabs: Swap, Limit, Bridge, Send — an address names one of them, or none", () => {
-  assert.deepEqual(TABS, ["swap", "limit", "bridge", "send"]);
-  for (const tab of TABS) assert.equal(tabOf(tab), tab);
-  for (const other of [null, undefined, "", "chart", "Limit", "stop", "between"]) assert.equal(tabOf(other), null);
-});
-
-test("«Limit» turns the card to a limit on the coin it is given, on the same screen; «Swap» turns it back", async () => {
-  const { useMoney } = await import("../../city/lib/money/open.ts");
-  useMoney.getState().setBusy(false);
-  showSwap();
-  const jup = { id: JUP, symbol: "JUP", name: "Jupiter", icon: null };
-  showLimit(jup);
-  assert.equal(useSwapScreen.getState().tab, "limit");
-  assert.deepEqual(useSwapScreen.getState().limit, jup);
-  showSwap();
-  assert.equal(useSwapScreen.getState().tab, "swap");
-  // A sale on the swap stays a sale on its limit.
-  showLimit(jup, "sell");
-  assert.equal(useSwapScreen.getState().limitSide, "sell");
-  showSwap();
-  // While money is mid-way (the bridge's or a transfer's signature) the card keeps its tab.
-  useMoney.getState().setBusy(true);
-  try {
-    showLimit(jup);
-    assert.equal(useSwapScreen.getState().tab, "swap");
-  } finally {
-    useMoney.getState().setBusy(false);
-    useSwapScreen.setState({ limit: SOL_REF, limitSide: "buy" });
-  }
-});
-
-test("an address turns the card on arrival only to a tab it does not already stand on — «Back» keeps the card as left", () => {
-  assert.equal(arrivalOf("limit", "swap"), "limit");
-  assert.equal(arrivalOf("bridge", "limit"), "bridge");
-  assert.equal(arrivalOf("limit", "limit"), null, "a return to the Limit tab keeps its coin and its fields");
-  assert.equal(arrivalOf(null, "bridge"), null);
-  assert.equal(arrivalOf("chart", "swap"), null);
-});
-
-test("only a signature holds the tabs: an order built by the card itself, or a result on screen, lets them go", async () => {
+test("only a signature holds the card: an order built by the card itself, or a result on screen, lets it go", async () => {
   const { useTrade } = await import("../../city/lib/trade/store.ts");
   try {
     for (const phase of ["idle", "preparing", "done", "failed"]) {
@@ -334,48 +281,82 @@ test("only a signature holds the tabs: an order built by the card itself, or a r
       assert.equal(tradeBusy(), true, phase);
     }
     useTrade.setState({ phase: "idle", held: true });
-    assert.equal(tradeBusy(), true, "a limit's signature holds the card");
+    assert.equal(tradeBusy(), true, "a held signature holds the card");
   } finally {
     useTrade.setState({ phase: "idle", held: false });
   }
 });
 
-test("the Swap screen draws no chart and leads nowhere: no chart is imported, no tab pushes another address", () => {
+
+test("the Swap screen is one form: no tabs, no limit, no chart, no transfer and no bridge drawn on it; beside it the pair and «Recent»", () => {
   const strip = (text) => text.replace(/\/\*[\s\S]*?\*\/|\/\/.*$/gm, "");
   const screen = strip(readFileSync(new URL("./SwapScreen.tsx", import.meta.url), "utf8"));
   assert.doesNotMatch(screen, /CoinChart|PairChart|CoinLine|chart\.module/, "a chart on the Swap screen (decision 107)");
-  assert.doesNotMatch(screen, /router\.push|useRouter|handOff\(/, "a tab of the Swap screen leads to another screen");
-  assert.match(screen, /<LimitTab /, "the Limit tab is the card's own");
-  const limit = strip(readFileSync(new URL("./LimitTab.tsx", import.meta.url), "utf8"));
-  assert.match(limit, /only="limit"/);
-  assert.match(limit, /framed=\{false\}/);
-  // The one press that leaves: «My orders», after an order was placed — and the coin's page opens on its orders.
-  assert.match(limit, /onOrders=\{\(\) => router\.push\(`\$\{coinHref\(coin\.id, 'live'\)\}#orders`\)\}/);
-  const coinScreen = strip(readFileSync(new URL("../coin/CoinScreen.tsx", import.meta.url), "utf8"));
-  assert.match(coinScreen, /window\.location\.hash === '#orders'\) setTab\('orders'\)/);
+  assert.doesNotMatch(screen, /<Tabs|LimitTab|<SendPanel|<BridgePanel|AgentCard/, "the Swap screen draws only its form (decision 109)");
+  assert.match(screen, /<SwapTicket /);
+  // One page for every section: the page's side column holds the pair's coins and the recent swaps, nothing else.
+  assert.match(screen, /side=\{\s*<>\s*<Pair \/>\s*\{owner \? <Recent title=\{w\.recent\} edge \/> : null\}\s*<\/>\s*\}/, "«Recent» only with a wallet: no line of text in its place");
+  // «Recent» reads again the moment a swap, a transfer or the top-up's bridge ends on this screen.
+  assert.match(screen, /useTrade\.subscribe\(/);
+  assert.match(screen, /readActivity\(\)/);
+  assert.doesNotMatch(screen, /router\.push\((?!BRIDGE_PATH)/, "the only step the person takes from here is the top-up to the bridge");
 });
 
-test("a limit on its way keeps its tab: no tab, sentence or bridge turns the card away from its signature", async () => {
+test("the old tabs' addresses lead on in one step: the limit to the coin, the bridge to its page, a transfer to the Portfolio", () => {
+  assert.equal(leaveOf("limit"), "coin");
+  assert.equal(leaveOf("bridge"), "bridge");
+  assert.equal(leaveOf("send"), "send");
+  for (const other of [null, undefined, "", "swap", "chart", "Limit"]) assert.equal(leaveOf(other), null);
+  assert.equal(BRIDGE_PATH, "/bridge");
+  const page = readFileSync(new URL("../../app/(terminal)/swap/page.tsx", import.meta.url), "utf8");
+  assert.match(page, /if \(leave === "coin" && shelfOn\("market"\)\) redirect\(coinHref\(SOLANA_NATIVE_SOL_MINT, "live"\)\)/);
+  assert.match(page, /if \(leave === "bridge" && \(flowLive\("bridge"\) \|\| flowLive\("deposit"\)\)\) redirect\(BRIDGE_PATH\)/, "only while the bridge is open");
+  const leave = readFileSync(new URL("./useLeave.ts", import.meta.url), "utf8");
+  assert.match(leave, /router\.replace\(BRIDGE_PATH\)/, "replaced, never a step in the history");
+  assert.match(leave, /setAct\(\{ kind: 'send' \}\);\n\s*router\.replace\(`\$\{shelfHref\('portfolio', 'live'\)\}\?act=send`\)/, "the address agreed with the menu");
+  const bridge = readFileSync(new URL("../../app/(terminal)/bridge/page.tsx", import.meta.url), "utf8");
+  assert.match(bridge, /<BridgeScreen \/>/);
+});
+
+test("«bridge», «top up» and «send» lead on to their page, once the panel is turned; nothing while money is mid-way", async () => {
+  scene();
+  const went = [];
+  const doors = swapDoors(() => 1_000, (place) => went.push(place));
   const { useMoney } = await import("../../city/lib/money/open.ts");
-  const { useTrade } = await import("../../city/lib/trade/store.ts");
-  const { sayTrade, showMoney } = await import("./state.ts");
-  useMoney.getState().setBusy(false);
-  showSwap();
-  showLimit(SOL_REF);
-  useTrade.setState({ held: true });
+  doors.openMoney("bridge");
+  doors.openMoney("topup");
+  doors.openMoney("send");
+  assert.deepEqual(went, ["bridge", "bridge", "send"]);
+  assert.equal(useSwapScreen.getState().money, "send");
+  useMoney.getState().setBusy(true);
   try {
-    showSwap();
-    showMoney("bridge", "out");
-    sayTrade({ id: JUP, symbol: "JUP", name: "Jupiter", icon: null }, "buy", Date.now());
-    assert.equal(useSwapScreen.getState().tab, "limit");
-    // …and a swap on its way keeps the Limit tab away from the card it holds.
-    useTrade.setState({ held: false });
-    showSwap();
-    useTrade.setState({ phase: "wallet" });
-    showLimit(SOL_REF);
-    assert.equal(useSwapScreen.getState().tab, "swap");
+    doors.openMoney("bridge");
+    assert.deepEqual(went, ["bridge", "bridge", "send"], "a signature keeps its page");
   } finally {
-    useTrade.setState({ held: false, phase: "idle" });
-    useSwapScreen.setState({ tab: "swap", limit: SOL_REF, fill: null });
+    useMoney.getState().setBusy(false);
   }
+});
+
+test("a search over every coin adds what the list lacks, each once, and asks only for two characters or more", () => {
+  const list = [SOL, USDC, JUP_ASSET];
+  const found = [JUP_ASSET, BONK_ASSET, asset("So1ana11111111111111111111111111111111111111", ""), BONK_ASSET];
+  assert.deepEqual(withFound(list, found, 10).map((a) => a.symbol), ["SOL", "USDC", "JUP", "BONK"], "a found coin without a ticker is not offered");
+  assert.equal(withFound(list, found, 3).length, 3);
+  assert.equal(searchable("j"), false);
+  assert.equal(searchable("$jup"), true);
+  assert.equal(searchable(" me "), true);
+  assert.equal(searchable("x".repeat(65)), false);
+});
+
+test("the dollars under a figure: the market's price, a dollar coin at one dollar, nothing when either is unknown", () => {
+  assert.equal(usdWorth(2, 72.5), 145);
+  assert.equal(usdWorth(10, null, true), 10);
+  assert.equal(usdWorth(10, undefined), null);
+  assert.equal(usdWorth(null, 72.5), null);
+  assert.equal(usdWorth(0, 72.5), null);
+  assert.equal(usdWorth(1, 0), null);
+  assert.equal(unitsOf("1383300000", 9), 1.3833);
+  assert.equal(unitsOf("100000000", 6), 100);
+  assert.equal(unitsOf("12a", 6), null);
+  assert.equal(unitsOf("1", null), null);
 });

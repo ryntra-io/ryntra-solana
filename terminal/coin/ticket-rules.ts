@@ -27,6 +27,11 @@ export type ActionInput = Readonly<{
   exact: boolean;
   /** The screen has somewhere to send a person with nothing to buy with. */
   canTopUp: boolean;
+  /**
+   * The order being built was asked by the card itself, while the person reads the price — not by a press. Absent:
+   * false.
+   */
+  auto?: boolean;
 }>;
 
 export type ActionLabel = 'verb' | 'connect' | 'connecting' | 'building' | 'wallet' | 'sending' | 'checking' | 'short' | 'nothing' | 'topUp';
@@ -48,7 +53,10 @@ const go = (label: ActionLabel, does: 'press' | 'topUp' = 'press'): ActionView =
  * of its own (`retryShown`), so a tap meant for that control cannot land on the button that opens the wallet.
  */
 export function actionOf(input: ActionInput): ActionView {
-  if (input.phase === 'preparing') return wait('building');
+  // The card building its first order while the price is read is no wait of the person's: the button reads on as if
+  // idle, and a press then waits for that order and shows it (`useTrade.press`). Renewing bytes already on screen, or
+  // an order a press asked for, is a wait.
+  if (input.phase === 'preparing' && !(input.auto && !input.exact)) return wait('building');
   if (input.phase === 'wallet') return wait('wallet');
   if (input.phase === 'sending') return wait('sending');
   if (input.phase === 'checking') return wait('checking');

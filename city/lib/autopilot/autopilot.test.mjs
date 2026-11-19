@@ -7,7 +7,7 @@ import { readInstruction } from "../instruct/read.ts";
 import { agentCard, cardFile } from "../launch/cards.ts";
 import { cardFace, postText } from "../launch/card-words.ts";
 import { autopilotNetwork } from "./flag.ts";
-import { lamports, presetFor, proposal, rhythmOf, tickerFrom } from "./plan.ts";
+import { budgetFor, lamports, proposal, rhythmOf, tickerFrom } from "./plan.ts";
 import { readAsk } from "./read.ts";
 
 /* The agent on its word — «trade 1 SOL a day», «launch me a token» — read, proposed and opened. */
@@ -73,17 +73,17 @@ test("«launch me a token»: the agent to prepare a launch, with the name and th
   assert.equal(ask("launch a bot").kind, "trade");
 });
 
-test("the budget is never more than said: the largest one at or under it, and a note when more was said", () => {
-  assert.deepEqual(presetFor("1"), { preset: "large", capped: true });
-  assert.deepEqual(presetFor("0.5"), { preset: "large", capped: false });
-  assert.deepEqual(presetFor("0.3"), { preset: "medium", capped: false });
-  assert.deepEqual(presetFor("0.25"), { preset: "medium", capped: false });
-  assert.deepEqual(presetFor("0.1"), { preset: "small", capped: false });
-  assert.deepEqual(presetFor("0.05"), { preset: null, capped: false });
-  assert.deepEqual(presetFor(null), { preset: null, capped: false });
+test("the budget is exactly what was said — «1 SOL a day» is 1 SOL, never cut; the trade and the term follow", () => {
+  const SOL = 1_000_000_000n;
+  assert.deepEqual(budgetFor("1"), { perDay: SOL, perTrade: SOL / 2n, days: 30 });
+  assert.deepEqual(budgetFor("1000"), { perDay: 1000n * SOL, perTrade: 500n * SOL, days: 30 }, "no ceiling of Ryntra's");
+  assert.deepEqual(budgetFor("0.05"), { perDay: SOL / 20n, perTrade: SOL / 40n, days: 30 });
+  assert.deepEqual(budgetFor("1", 5n * SOL), { perDay: SOL, perTrade: SOL / 2n, days: 4 }, "the term never asks for more than the wallet holds");
+  assert.equal(budgetFor("0.0001"), null, "under the least trade");
+  assert.equal(budgetFor(null), null);
   assert.equal(lamports("0.25"), 250_000_000n);
   assert.equal(lamports("1"), 1_000_000_000n);
-  assert.deepEqual(rhythmOf("large"), { buys: 5, everyHours: 4.8, perTrade: 0.1, perDay: 0.5, days: 30 });
+  assert.deepEqual(rhythmOf(budgetFor("0.5")), { buys: 2, everyHours: 12, perTrade: 0.25, perDay: 0.5, days: 30 });
 });
 
 test("the agent's launch proposal keeps the person's words and fills the rest within the sheet's rules", () => {

@@ -12,6 +12,7 @@ import { buildPassport } from "@/lib/solana/passport";
 import { evaluateOwnerPolicy } from "@/lib/solana/policy";
 import { buildTransferPreflight } from "@/lib/solana/preflight";
 import { resolveJupiterSwapEndpoint } from "@/lib/solana/quotes";
+import { jupiterBudget } from "@/lib/solana/jupiter-budget";
 import { eventStateAt } from "@/lib/stocks/instrument";
 import { lifecycleEventFor } from "@/lib/stocks/lifecycle-events";
 import { isRetiredMint, RETIRED_REASON } from "@/lib/stocks/retired";
@@ -74,6 +75,17 @@ const RequestSchema = z
 
 function responseHeaders(rate: RateLimitDecision) {
   return { ...privateNoStoreHeaders(), ...rateLimitHeaders(rate) };
+}
+
+/** How long until Jupiter frees a slot of the shared window: its own pause when it named one, else the reset it last stated. */
+function windowWaitMs(result: object): number | null {
+  const named = "retryWaitMs" in result && typeof result.retryWaitMs === "number" ? result.retryWaitMs : null;
+  if (named !== null) return named;
+  /* This instance's own last reading of the window, only while it still describes the future: else no hint. */
+  const { resetAt, observedAt } = jupiterBudget("shared");
+  const now = Date.now();
+  if (resetAt === null || observedAt === null || resetAt <= now || now - observedAt > 15_000) return null;
+  return resetAt - now;
 }
 
 function failure(status: number, code: string, message: string, rate: RateLimitDecision, extra: object = {}) {
@@ -153,6 +165,8 @@ export async function POST(request: Request) {
     const status = result.code === "NO_ROUTE" ? 409 : result.code === "RATE_LIMITED" ? 429 : 502;
     return failure(status, `QUOTE_${result.code}`, result.reason, rate, {
       provider: { errorCode: result.errorCode ?? null },
+      /* A full window: when the venue frees a slot, so the card asks again then — once — and not into the same window. */
+      ...(result.code === "RATE_LIMITED" ? { retryAfterMs: windowWaitMs(result) } : {}),
     });
   }
   const order = result.order;

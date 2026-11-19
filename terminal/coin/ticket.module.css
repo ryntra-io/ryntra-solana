@@ -42,6 +42,18 @@ div.anchor {
   box-shadow: 0 18px 40px rgba(0, 0, 0, 0.5);
 }
 
+/* The sale's «paid in» list hangs from a control on the ticket's left: it opens toward the ticket's inside. */
+.menuLeft {
+  right: auto;
+  left: 0;
+}
+
+/* The «paid in» control: the coin's logo, its ticker and the chevron, as the «pay with» pill draws them. */
+.paidPick.paidPick {
+  gap: 6px;
+  padding-left: 6px;
+}
+
 .menuRow {
   display: flex;
   align-items: center;
@@ -111,6 +123,13 @@ div.anchor {
   align-items: center;
   gap: 8px;
   min-height: 24px;
+}
+
+/* The figure itself, beside what a sale is paid in: its own box, so the paid-in control stands while it changes. */
+.getValue {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
 }
 
 /* While the price comes: one quiet sweep of light where the figure will stand, as wide as a figure. */
@@ -411,4 +430,26 @@ div.anchor {
   .group :global([role='tab']) {
     height: 44px;
   }
+}
+
+/* ── the coin's desk: the ticket the column's whole height, the coin's facts at its foot ─── */
+
+.desk {
+  flex: 1 0 auto;
+}
+
+.desk .terms {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  row-gap: 2px;
+  max-width: 55%;
+}
+
+.foot {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: auto;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
 }

@@ -20,6 +20,7 @@ import {
   shortAddress,
   stakeState,
   summaryOf,
+  withMarket,
 } from './all-view.ts';
 import { ALL } from './all-words.ts';
 import { DOOR_SHUT, amountFigure, doorOf, maybeSent, outcomeOf, receiveFigures, rentSol, reviewBody, reviewFresh, reviewOf } from './exit-view.ts';
@@ -145,7 +146,11 @@ test('the total is the engine’s sum with the agents beside it; its parts add u
   assert.equal(sum.complete, true, 'every source answered and what works is priced — a spam coin without a price does not make it «so far»');
   assert.equal(summaryOf({ ...ANSWER, sources: [source('wallet'), source('kamino', 'stale')] }, groups).complete, false);
   assert.equal(summaryOf({ ...ANSWER, solUsd: null }, groups).complete, false);
-  assert.deepEqual(sum.parts.map((part) => part.id), ['pools', 'staking', 'lending', 'coins']);
+  assert.deepEqual(sum.parts.map((part) => part.id), ['pools', 'staking', 'lending', 'coins', 'dust'], 'the legend names the dust apart, as its group does');
+  const of = (id) => groups.find((group) => group.id === id).usd;
+  assert.equal(sum.parts.find((part) => part.id === 'coins').usd, of('coins'), 'the legend says what the group says');
+  assert.equal(sum.unread, false, 'every source answered: nothing to read again');
+  assert.equal(summaryOf({ ...ANSWER, sources: [source('wallet'), source('kamino', 'unread')] }, groups).unread, true);
   assert.ok(Math.abs(sum.parts.reduce((total, part) => total + part.usd, 0) - TOTAL) < 1e-9, 'the same money never twice, and none left out');
   assert.ok(Math.abs(sum.bar.reduce((total, seg) => total + seg.share, 0) - 1) < 1e-9);
   assert.equal(sum.empty, false);
@@ -158,6 +163,36 @@ test('the total is the engine’s sum with the agents beside it; its parts add u
   assert.equal(summaryOf(nothing, []).empty, true);
   assert.equal(summaryOf({ ...nothing, sources: [source('wallet', 'unread')] }, []).empty, false, 'not everything read is never «empty»');
   assert.equal(summaryOf(nothing, [], 10).empty, false, 'an agent holding money is not nothing');
+});
+
+test('the market names and prices what the engine could not: a pool whose coin had no symbol and no price', () => {
+  const STNK = 'Stnk111111111111111111111111111111111111111';
+  const pool = position({
+    id: 'meteora-damm-v2:P9',
+    protocol: 'meteora-damm-v2',
+    kind: 'pool',
+    label: null,
+    value: { usd: null, sol: null },
+    earned: { usd: 22.5, sol: 0.3 },
+    inRange: true,
+    exit: whole('pool-withdraw'),
+    tokens: [held(STNK, null, 9, '351482631436252393', null), held(SOL, 'SOL', 9, '2845083434', 208.25), held(SOL, 'SOL', 9, '307796944', 22.5, 'fee')],
+  });
+  const answer = { ...ANSWER, positions: [pool, ...POSITIONS], totals: { ...ANSWER.totals } };
+  const fact = (mint) => (mint === STNK ? { symbol: 'STNK', name: 'Stonk Index', icon: null, price: 7.8e-7, dayPct: null } : null);
+  const groups = withMarket(groupsOf(answer), fact);
+  const row = groups.find((group) => group.id === 'pools').rows.find((r) => r.id === 'meteora-damm-v2:P9');
+  assert.equal(row.name, 'STNK–SOL', 'the pair by its coins — never the same coin twice');
+  assert.ok(Math.abs(row.usd - (351_482_631.436252393 * 7.8e-7 + 208.25 + 22.5)) < 1e-6, 'priced at the market where every coin has a price, its fees with it as the engine counts them');
+  assert.equal(row.marketPriced, true);
+  const sum = summaryOf(answer, groups);
+  assert.ok(Math.abs(sum.usd - (TOTAL + row.usd)) < 1e-6, 'the total counts what the screen priced, once');
+  assert.equal(sum.complete, true, 'nothing that works is left without a price');
+  const silent = withMarket(groupsOf(answer), () => null).find((group) => group.id === 'pools').rows.find((r) => r.id === 'meteora-damm-v2:P9');
+  assert.equal(silent.usd, null, 'a coin the market does not price leaves the position unpriced');
+  assert.equal(silent.name, null);
+  const spam = withMarket(groupsOf(answer), () => ({ symbol: 'X', name: null, icon: null, price: 1, dayPct: null })).find((group) => group.id === 'coins').rows.find((r) => r.id === `wallet:${SPAM}`);
+  assert.equal(spam.usd, null, 'a coin the engine did not price stays «No price»: the market prices only what works');
 });
 
 test('today’s move counts the coins the market moved, at their worth at the day’s start', () => {

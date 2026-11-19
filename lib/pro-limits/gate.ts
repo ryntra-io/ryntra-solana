@@ -12,8 +12,8 @@
  *   public addresses. On mainnet both are the attribution registry's own rows and no variable names them.
  * - `RYNTRA_PRO_LIMITS_DEVNET_QUOTES` — test coins a devnet pool may be quoted in, beside wrapped SOL and Circle's
  *   devnet USDC.
- * - `RYNTRA_PRO_LIMITS_CAP_TIMES` — a whole number from 1 to 10 that the most one mainnet ladder may rest is multiplied
- *   by; above ten times the start is a change of code.
+ * - No ceiling on what one ladder rests: the person's own amount is
+ *   the only bound; a price the agent collects still holds `minRungRaw`, below which the collector's fee eats the fill.
  *
  * Pure: the environment is an argument.
  */
@@ -22,10 +22,11 @@ import { DLMM_PRO_LIMITS_MAINNET } from "../core/venues/meteora-dlmm-pro/gate.ts
 
 export const PRO_LIMITS_ENV = "RYNTRA_PRO_LIMITS";
 export const PRO_LIMITS_PUBLIC_ENV = "NEXT_PUBLIC_RYNTRA_CITY_PRO_LIMITS";
+/** Set to anything: new ladders stop at once. Cancelling, collecting and the agent's collecting stay open — the stop never holds money in. */
+export const PRO_LIMITS_STOP_ENV = "RYNTRA_PRO_LIMITS_STOP";
 export const PRO_LIMITS_DEVNET_AGENT_ENV = "RYNTRA_PRO_LIMITS_DEVNET_AGENT";
 export const PRO_LIMITS_DEVNET_REFERRAL_ENV = "RYNTRA_PRO_LIMITS_DEVNET_REFERRAL";
 export const PRO_LIMITS_DEVNET_QUOTES_ENV = "RYNTRA_PRO_LIMITS_DEVNET_QUOTES";
-export const PRO_LIMITS_CAP_TIMES_ENV = "RYNTRA_PRO_LIMITS_CAP_TIMES";
 
 export const PRO_LIMITS_NETWORKS = ["devnet", "mainnet"] as const;
 export type ProLimitsNetwork = (typeof PRO_LIMITS_NETWORKS)[number];
@@ -44,10 +45,7 @@ export const DEVNET_USDC = "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU";
  */
 export type ProQuote = Readonly<{ mint: string; symbol: string; decimals: number | null; maxRaw: bigint | null; minRungRaw: bigint }>;
 
-/** The start: what one mainnet ladder may rest until the operator raises it. */
-export const PRO_LIMITS_START = Object.freeze({ sol: 1_000_000_000n, usdc: 200_000_000n });
 export const PRO_LIMITS_MIN_RUNG = Object.freeze({ sol: 2_000_000n, usdc: 500_000n });
-export const PRO_LIMITS_CAP_TIMES_CEILING = 10;
 
 const BASE58 = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
 type Env = Readonly<Record<string, string | undefined>>;
@@ -64,19 +62,12 @@ export function addressOf(value: string | undefined): string | null {
   return address && BASE58.test(address) ? address : null;
 }
 
-function capTimes(env: Env): bigint {
-  const raw = env[PRO_LIMITS_CAP_TIMES_ENV]?.trim();
-  const value = raw && /^\d+$/.test(raw) ? Number(raw) : 1;
-  return BigInt(Math.min(PRO_LIMITS_CAP_TIMES_CEILING, Math.max(1, value)));
-}
-
 /** The coins a ladder may be quoted in on a network, with their caps. */
 export function proQuotes(env: Env, network: ProLimitsNetwork): readonly ProQuote[] {
   if (network === "mainnet") {
-    const times = capTimes(env);
     return [
-      { mint: WRAPPED_SOL, symbol: "SOL", decimals: 9, maxRaw: PRO_LIMITS_START.sol * times, minRungRaw: PRO_LIMITS_MIN_RUNG.sol },
-      { mint: MAINNET_USDC, symbol: "USDC", decimals: 6, maxRaw: PRO_LIMITS_START.usdc * times, minRungRaw: PRO_LIMITS_MIN_RUNG.usdc },
+      { mint: WRAPPED_SOL, symbol: "SOL", decimals: 9, maxRaw: null, minRungRaw: PRO_LIMITS_MIN_RUNG.sol },
+      { mint: MAINNET_USDC, symbol: "USDC", decimals: 6, maxRaw: null, minRungRaw: PRO_LIMITS_MIN_RUNG.usdc },
     ];
   }
   const listed = [...new Set((env[PRO_LIMITS_DEVNET_QUOTES_ENV] ?? "").split(",").map((item) => item.trim()).filter((item) => BASE58.test(item) && item !== WRAPPED_SOL && item !== DEVNET_USDC))].slice(0, 8);
@@ -99,6 +90,9 @@ export function proLimitsGate(env: Env): ProLimitsGate {
   if (network === "mainnet" && !DLMM_PRO_LIMITS_MAINNET) return { open: false };
   return { open: true, network, quotes: proQuotes(env, network) };
 }
+
+/** Whether new ladders are stopped (`RYNTRA_PRO_LIMITS_STOP`). */
+export const proLimitsStopped = (env: Env): boolean => Boolean(env[PRO_LIMITS_STOP_ENV]?.trim());
 
 /** The network the window shows the panel for; null — the panel is not drawn. The window's switch opens nothing by itself. */
 export function proLimitsWindow(value: string | undefined | null): ProLimitsNetwork | null {

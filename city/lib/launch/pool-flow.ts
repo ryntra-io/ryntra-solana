@@ -5,7 +5,7 @@ import type { LaunchFields, Phase, Signer } from './flow.ts';
 import { cityLaunchOpen } from './gate.ts';
 import type { PoolCheck } from './pool-check.ts';
 import { POOL_LADDER, POOL_STAGES, poolDoorOpen, poolOpensAt, type PoolChoice, type PoolEngine, type PoolStage } from './pool.ts';
-import { FIELDS_REFUSED } from './prepare.ts';
+import { FIELDS_REFUSED, metadataBody } from './prepare.ts';
 import { BUILD_AGED, BUILD_UNEXPECTED, CITY_CLOSED, WALLET_REFUSED } from './refusal.ts';
 
 /**
@@ -68,7 +68,7 @@ export async function runPoolLaunch(args: Readonly<{
     let ahead = args.stored ? await args.stored : null;
     if (ahead?.ok && (ahead.data.name !== fields.name || ahead.data.symbol !== fields.symbol)) ahead = null;
     if (ahead && !ahead.ok && !FIELDS_REFUSED.has(ahead.code)) ahead = null;
-    const stored = ahead ?? (await engine.metadata({ name: fields.name, symbol: fields.symbol, description: '', website: '', x: '', telegram: '', imageBase64: fields.picture.base64 }));
+    const stored = ahead ?? (await engine.metadata(metadataBody(fields)));
     if (!stored.ok) return fail(stored.code, stored.message);
     metadataUri = stored.data.metadataUri;
     name = stored.data.name;

@@ -24,6 +24,8 @@ export const TICKET = words(
     back: 'Back',
     watchedByRyntra: 'By Ryntra, around the clock',
     paidIn: (coin: string) => `Paid in ${coin}. Pick another coin`,
+    quick: (coin: string) => `Quick sums in ${coin}`,
+    slippage: (percent: string) => `Slippage ${percent}`,
   },
   {
     label: 'Купівля та продаж',
@@ -41,6 +43,8 @@ export const TICKET = words(
     back: 'Назад',
     watchedByRyntra: 'Ryntra, цілодобово',
     paidIn: (coin: string) => `Отримаєш у ${coin}. Обрати іншу монету`,
+    quick: (coin: string) => `Швидкі суми в ${coin}`,
+    slippage: (percent: string) => `Прослизання ${percent}`,
   },
 );
 
@@ -71,6 +75,7 @@ export const COIN = words(
     exitFull: 'Leave full screen',
     noChart: (coin: string) => `No chart for ${coin} yet`,
     chartUnavailable: 'The chart is unavailable right now',
+    chartSoon: 'Chart in a moment',
     chartOf: (coin: string) => `${coin} price chart`,
     about: 'About the coin',
     mcap: 'Market cap',
@@ -139,6 +144,7 @@ export const COIN = words(
     exitFull: 'Згорнути',
     noChart: (coin: string) => `Графіка ${coin} поки немає`,
     chartUnavailable: 'Графік зараз недоступний',
+    chartSoon: 'Графік за мить',
     chartOf: (coin: string) => `Графік ціни ${coin}`,
     about: 'Про монету',
     mcap: 'Капіталізація',

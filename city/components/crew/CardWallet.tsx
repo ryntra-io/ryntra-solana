@@ -1,6 +1,6 @@
 'use client';
 
-import { budgetPreset, type BudgetPresetId } from '@/lib/mandate/presets';
+import type { AgentBudget } from '@/lib/mandate/budget';
 import { MANDATE_NET, useMandate } from '@/city/lib/bots/mandate';
 import { cityDoors } from '@/city/lib/command/doors';
 import { funnelSay } from '@/city/lib/crew/funnel-watch';
@@ -40,17 +40,17 @@ export function CardWalletPicker({ said, onBack }: Readonly<{ said: string; onBa
  * says what is needed in one line and offers «Add SOL» (Money's top-up) where «Sign» would stand. Unknown balances, and
  * any balance above the floor, leave the card as it is.
  */
-export function useFundsShort(preset: BudgetPresetId | null): Readonly<{ short: boolean; about: string | null }> {
+export function useFundsShort(budget: AgentBudget | null): Readonly<{ short: boolean; about: string | null }> {
   const lang = useLang();
   const owner = useWallet((st) => st.connection?.address ?? null);
   // An unread SOL row is unknown, never zero; the wallet's balances are mainnet's, so they say nothing of a devnet budget.
   const spendable = useWallet((st) => (st.holdingsRead === 'ready' && st.holdings && st.holdings.owner === owner ? (st.holdings.sol?.spendableRaw ?? null) : null));
-  const short = MANDATE_NET === 'mainnet' && !!owner && !!preset && shortOfFunds(spendable, preset);
+  const short = MANDATE_NET === 'mainnet' && !!owner && !!budget && shortOfFunds(spendable, budget);
   // While the card asks for SOL, the balance is read again — on return to the page and every 15 s — so a top-up turns
   // «Add SOL» back into «Sign» without a reload.
   useHoldingsWatch(short);
-  if (!short || !preset) return { short: false, about: null };
-  return { short, about: digits(solAbout(fundsFor(preset).about), lang) };
+  if (!short || !budget) return { short: false, about: null };
+  return { short, about: digits(solAbout(fundsFor(budget).about), lang) };
 }
 
 /**
@@ -72,7 +72,7 @@ const solText = (lamports: bigint) => (Number((lamports / 100_000n) * 100_000n) 
  * (all the wallet can spend when that is less); the window shows the route and the fee, and the wallet signs as always.
  * Shown only when the card names a coin, trading is open here, and the wallet's SOL was read.
  */
-export function BuyNow({ preset, className }: Readonly<{ preset: BudgetPresetId; className: string }>) {
+export function BuyNow({ budget, className }: Readonly<{ budget: AgentBudget; className: string }>) {
   const w = useWords(CREW_WORDS);
   const coin = useMandate((st) => st.coin);
   const owner = useWallet((st) => st.connection?.address ?? null);
@@ -80,7 +80,7 @@ export function BuyNow({ preset, className }: Readonly<{ preset: BudgetPresetId;
   if (!TRADE_OPEN || !coin || typeof spendable !== 'string' || !/^\d{1,20}$/u.test(spendable)) return null;
   const room = BigInt(spendable) - SWAP_KEEP;
   if (room < BUY_NOW_MIN) return null;
-  const perTrade = budgetPreset(preset).perTrade;
+  const perTrade = budget.perTrade;
   const buy = () => {
     cityDoors.openTrade({ mint: coin.mint, symbol: coin.symbol, name: coin.symbol, icon: coin.icon, tower: true }, 'buy', 'swap', 'market');
     // The window keeps the coin it paid with last: this buy is the agent's, in SOL.

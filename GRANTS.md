@@ -21,13 +21,14 @@ history.
 
 ## Meteora
 
-Ryntra Launch puts every coin on a Meteora Dynamic Bonding Curve config Ryntra created as the partner; at about $75K the
+A coin launched on a curve starts on a Meteora Dynamic Bonding Curve config Ryntra created as the partner; at about $75K the
 curve graduates into a DAMM v2 pool whose liquidity is locked for ever. It runs on Solana mainnet. The whole lifecycle,
 file by file, with the tests that prove it: [METEORA.md](METEORA.md).
 
-Since then Ryntra has added Meteora DLMM Pro as a venue of the engine — a launch straight into a pool, limit-order
-ladders and positions an agent looks after — rehearsed on the program's deployed binary. It is closed to people until
-it is opened on mainnet: [METEORA.md — DLMM Pro](METEORA.md#dlmm-pro).
+Since then Ryntra has built on Meteora DLMM Pro — positions in a shape, limit orders with a maker bonus, a grid on
+those orders, a launch straight into a pool and an agent that looks after a position — rehearsed on the program's own
+binary and open to everyone in the terminal on mainnet since 18 November 2026:
+[METEORA.md — DLMM Pro](METEORA.md#dlmm-pro).
 
 ## Clock In by Solana Mobile
 
@@ -86,8 +87,8 @@ system share sheet.
 shown.
 - *Today:* tested on an emulator; Sign In With Solana and `.skr` names are already in the app.
 
-**4 · An open kit** — the Market Weather kit on npm under Apache-2.0: live market data and the market city in one file
-any Seeker app can embed.
+**4 · An open kit** — the Market Weather kit on npm under Apache-2.0: a data contract and read-only Jupiter and Meteora
+adapters any Seeker app can embed.
 - *Today:* [`packages/market-weather/`](packages/market-weather), a read-only market-data kit; not on npm yet.
 
 ## Open source today

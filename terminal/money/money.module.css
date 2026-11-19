@@ -1,0 +1,355 @@
+/* «Money»: the tab's one panel in the page's action column, the wallet's own links under it, the recent
+   transfers beside it. Every colour, face and size is the terminal's own token (docs/terminal/DESIGN.md); the page,
+   its head and its columns are the kit's (Page, PageHead, ActionBody). */
+
+/* The tab's panel holds the same height on every tab, so switching tabs moves nothing below it. */
+.form {
+  min-height: 520px;
+}
+
+.grow {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+/* The figures as on the Swap: 42 px on a desk, 48 px on a wide one, 36 px on a phone — a step lighter. */
+@media (min-width: 768px) {
+  .form input[inputmode='decimal'] {
+    font-size: 42px;
+    font-weight: 600;
+    line-height: 1.15;
+  }
+}
+
+@media (min-width: 1440px) {
+  .form input[inputmode='decimal'] {
+    font-size: 48px;
+  }
+}
+
+@media (max-width: 767px) {
+  .form {
+    min-height: 0;
+  }
+
+  .form input[inputmode='decimal'] {
+    font-size: 36px;
+    font-weight: 600;
+  }
+}
+
+/* One plain line. */
+.line {
+  margin: 0;
+  font-size: var(--type-body);
+  line-height: 1.45;
+  color: var(--soft);
+}
+
+.line[data-tone='down'] {
+  color: var(--flare);
+}
+
+/* A tab with no wallet yet: the tab's sign in a lit frame, its name and one line, in the middle of the
+   panel's free height; the panel's one press under them, where the tab's own stands once a wallet is here. */
+.blank {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 24px 16px;
+  text-align: center;
+}
+
+.blankSign {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 72px;
+  height: 72px;
+  margin-bottom: 8px;
+  color: var(--amber);
+  background:
+    radial-gradient(circle at 50% 40%, color-mix(in srgb, var(--amber) 22%, transparent), transparent 70%),
+    var(--well);
+  border: 1px solid var(--edge);
+}
+
+.blankSign svg {
+  width: 30px;
+  height: 30px;
+  stroke-width: 1.5;
+}
+
+.blankTitle {
+  max-width: 420px;
+  margin: 0;
+  font-family: var(--display);
+  font-size: var(--type-title);
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  line-height: 1.25;
+  color: var(--ice);
+}
+
+.blankLine {
+  max-width: 400px;
+  margin: 0;
+  font-size: var(--type-body);
+  line-height: 1.45;
+  color: var(--soft);
+}
+
+/* The amount field as the form's other fields stand on a desk (the Swap's `.big`): the same inner edge and well, so
+   «Amount» lines up with «To» (m8 of 19.11). */
+@media (min-width: 768px) {
+  .form fieldset > div:first-child:has(input[inputmode='decimal']) {
+    padding: 20px 24px 18px;
+    background: var(--well);
+  }
+}
+
+/* ── Receive, and a link just made: the QR beside its words ─────────────────────────────────────────────────────── */
+
+.receive,
+.made {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  gap: 24px;
+}
+
+.receiveWords {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
+/* The address in its groups of four, four a line, a line never broken (m9 of 19.11): checked by those groups. */
+.address {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  font-family: var(--display);
+  font-size: var(--type-title);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  line-height: 1.4;
+  color: var(--ice);
+  font-variant-numeric: tabular-nums;
+}
+
+.address > span {
+  white-space: pre;
+  word-spacing: 0.3em;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.qr {
+  flex: none;
+  width: 216px;
+  padding: 8px;
+  background: var(--warm);
+  border: 1px solid var(--glass-edge);
+}
+
+.qr img,
+.qrBone {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1;
+}
+
+.qrBone {
+  background: var(--ink);
+  opacity: 0.12;
+}
+
+.madeKick.madeKick {
+  color: var(--mint);
+}
+
+.url {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  font-size: var(--type-body);
+  font-weight: 600;
+  color: var(--lilac);
+  word-break: break-all;
+}
+
+.url:hover {
+  color: var(--ice);
+}
+
+/* «From another network»: a quiet door to the bridge. */
+.door {
+  gap: 8px;
+}
+
+/* ── Invoices: how long a link is valid ─────────────────────────────────────────────────────────────────────────── */
+
+.expiry {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.expiryChoice {
+  min-width: 0;
+}
+
+/* ── Your links ─────────────────────────────────────────────────────────────────────────────────────────────────── */
+
+.list {
+  flex: none;
+  min-width: 0;
+}
+
+.listHead {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 18px 12px;
+}
+
+.listKick.listKick {
+  flex: 1 1 0;
+  color: var(--ice);
+}
+
+.listBlank {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 14px 18px 18px;
+  border-top: 1px solid var(--line);
+}
+
+.listLine {
+  padding: 14px 18px 18px;
+  border-top: 1px solid var(--line);
+}
+
+.links {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.link {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  column-gap: 16px;
+  min-height: 60px;
+  padding: 8px 18px;
+  border-top: 1px solid var(--line);
+}
+
+.linkNames {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.linkNames > b {
+  font-family: var(--display);
+  font-size: var(--type-base);
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
+
+.linkNames > span {
+  overflow: hidden;
+  font-size: var(--type-caption);
+  color: var(--dim);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.linkState {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.linkGot {
+  font-size: var(--type-caption);
+  font-weight: 600;
+  color: var(--amber);
+  font-variant-numeric: tabular-nums;
+}
+
+.linkActs {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* A paid link's date leads to the payment on Solana, where the payer stands. */
+.paidLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--type-caption);
+  font-weight: 600;
+  color: var(--mint);
+}
+
+.paidLink:hover {
+  color: var(--ice);
+}
+
+@media (max-width: 767px) {
+  .receive,
+  .made {
+    grid-template-columns: minmax(0, 1fr);
+    justify-items: center;
+    gap: 16px;
+  }
+
+  .receiveWords {
+    width: 100%;
+  }
+
+  .qr {
+    width: 184px;
+  }
+
+  .address {
+    font-size: var(--type-lead);
+  }
+
+  .link {
+    grid-template-columns: minmax(0, 1fr) auto;
+    row-gap: 8px;
+    padding: 10px 16px;
+  }
+
+  .linkState {
+    align-items: flex-start;
+    grid-row: 2;
+  }
+
+  .linkActs {
+    grid-row: 1 / span 2;
+    grid-column: 2;
+  }
+}

@@ -1,15 +1,34 @@
 import type { Metadata, Viewport } from "next";
 
-import { CityDocument } from "@/city/components/pages/CityDocument";
 import { PALETTE } from "@/city/lib/palette";
-import { buildCityPageMetadata } from "@/app/seo";
 
-/* `/support` — Help as a page of the city: one form for a question, a problem, an idea or a security report, on the engine's inbox (`POST /api/feedback`). The store listing names this address. */
+import { SITE, SITE_NAME, TWITTER } from "@/app/seo";
 
-export const metadata: Metadata = buildCityPageMetadata("help", "/support");
+import { TerminalFrame } from "../docs/_book/frame";
+import { HelpView } from "./_view/HelpView";
 
-export const viewport: Viewport = { themeColor: PALETTE.inkDeep, colorScheme: "dark" };
+/* `/support` — Help in the terminal's frame and language: one form for a question, a problem, an idea or a
+   security report, on the engine's inbox (`POST /api/feedback`). The store listing names this address. */
+
+export const dynamic = "force-static";
+
+const TITLE = "Ryntra Help — write to us";
+const DESCRIPTION = "A question, a problem, an idea or a security report about Ryntra, the AI terminal on Solana — one form, read by the team.";
+
+export const metadata: Metadata = {
+  title: { absolute: TITLE },
+  description: DESCRIPTION,
+  alternates: { canonical: `${SITE}/support` },
+  openGraph: { type: "website", siteName: SITE_NAME, title: TITLE, description: DESCRIPTION, url: `${SITE}/support` },
+  twitter: { card: "summary_large_image", site: TWITTER, creator: TWITTER, title: TITLE, description: DESCRIPTION },
+};
+
+export const viewport: Viewport = { themeColor: PALETTE.inkDeep, colorScheme: "dark", viewportFit: "cover" };
 
 export default function Page() {
-  return <CityDocument id="help" />;
+  return (
+    <TerminalFrame>
+      <HelpView />
+    </TerminalFrame>
+  );
 }

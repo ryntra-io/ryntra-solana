@@ -15,9 +15,28 @@ import type { ShelfId } from './shelves.ts';
  */
 export type Ask = Readonly<{ id: number; shelf: ShelfId; href: string; command: Command; said: string }>;
 
-type AskState = { ask: Ask | null; subject: Coin | null };
+/**
+ * The model's question back — «Уточни: …» — with the sentence it was about, kept in the line for the person to
+ * say again; `need` is which (`lib/sentence/plan.ts`), `word` the coin as written when it is the coin.
+ */
+export type Clarify = Readonly<{ said: string; need: 'action' | 'coin' | 'other'; word?: string }>;
 
-export const useAsk = create<AskState>(() => ({ ask: null, subject: null }));
+type AskState = {
+  ask: Ask | null;
+  subject: Coin | null;
+  /** The sentence the model is reading now, or null; `reading` is its turn, so a newer sentence wins. */
+  reading: Readonly<{ id: number; said: string }> | null;
+  clarify: Clarify | null;
+  /** A sentence's start a screen put into the line for the person to finish there; the line takes it once. */
+  begun: Readonly<{ said: string }> | null;
+};
+
+export const useAsk = create<AskState>(() => ({ ask: null, subject: null, reading: null, clarify: null, begun: null }));
+
+/** Puts a sentence's start into the agent's line, the keyboard with it: «Launch me a token …» — the person finishes it. */
+export function beginSentence(said: string): void {
+  useAsk.setState({ begun: { said } });
+}
 
 let next = 1;
 

@@ -102,14 +102,14 @@ test("the run on history in one line, signed and without a promise; nothing when
 
 test("the card's reads: the run's answer is taken only in its own shape; the early pick through the same filter", async () => {
   const answer = (status, body) => async () => new Response(JSON.stringify(body), { status });
-  const input = { coin: BONK, plan: planFrom("dip:800"), preset: "small" };
+  const input = { coin: BONK, plan: planFrom("dip:800"), budget: { perDay: 100_000_000n, perTrade: 50_000_000n, days: 30 } };
   assert.equal(await readRun(input, answer(422, { error: { code: "NO_HISTORY" } })), null);
   assert.equal(await readRun(input, answer(200, { result: { nope: 1 } })), null);
   assert.equal(await readRun(input, async () => { throw new Error("offline"); }), null);
   const asked = [];
   const run = await readRun({ ...input, since: 1_700_000_000_000 }, async (url) => (asked.push(url), new Response(JSON.stringify({ result: { bars: 10, buys: 2 } }))));
   assert.equal(run.buys, 2);
-  assert.match(asked[0], /^\/api\/bots\/mandate\/test\?coin=Dez.*&plan=dip%3A800&preset=small&since=1700000000000$/);
+  assert.match(asked[0], /^\/api\/bots\/mandate\/test\?coin=Dez.*&plan=dip%3A800&perDay=100000000&perTrade=50000000&days=30&since=1700000000000$/);
   const now = Date.UTC(2026, 10, 4, 12);
   const row = (mint, extra = {}) => ({ mint, symbol: mint.slice(0, 4), icon: null, liquidityUsd: 40_000, marketCapUsd: 90_000, holders: 400, top10Pct: 18, devPct: 2, creatorLaunches: 1, creatorGraduated: 0, auditRead: true, notices: [], firstPoolAt: new Date(now - 3_600_000).toISOString(), windows: { h1: { volumeUsd: 1_000 } }, ...extra });
   const pulse = { rows: [row("Bad1111111111111111111111111111111111111111", { notices: ["MINT_AUTHORITY"], windows: { h1: { volumeUsd: 1e9 } } }), row("Good111111111111111111111111111111111111111"), "junk"] };

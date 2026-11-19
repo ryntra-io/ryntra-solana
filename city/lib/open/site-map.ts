@@ -32,9 +32,10 @@ export const CITY_PAGES: readonly CityPage[] = [
   { path: '/build', updated: '2026-11-01', priority: 0.6, changeFrequency: 'weekly' },
   { path: '/partners', updated: '2026-11-01', priority: 0.6, changeFrequency: 'monthly' },
   /* The documents the city's windows took over at their own addresses. */
-  { path: '/docs', updated: '2026-11-02', priority: 0.7, changeFrequency: 'weekly' },
-  /* The documentation's sections, each at its own address. */
-  ...['start', 'city', 'trade', 'orders', 'launch', 'earn', 'agent', 'money', 'partners', 'security', 'fees', 'guard', 'help'].map((id): CityPage => ({ path: `/docs/${id}`, updated: '2026-11-02', priority: 0.6, changeFrequency: 'weekly' })),
+  { path: '/docs', updated: '2026-11-18', priority: 0.7, changeFrequency: 'weekly' },
+  /* The documentation's sections, each at its own address — the terminal's (`app/docs/_book/book.ts`
+     SECTION_IDS); the city's old ones that lead there are not listed. */
+  ...['start', 'market', 'trade', 'spot', 'launch', 'bots', 'agent', 'earn', 'portfolio', 'money', 'rewards', 'meteora', 'keys', 'help'].map((id): CityPage => ({ path: `/docs/${id}`, updated: '2026-11-18', priority: 0.6, changeFrequency: 'weekly' })),
   { path: '/developers', updated: '2026-10-31', priority: 0.6, changeFrequency: 'monthly' },
   /* Ryntra in AI chats: the connector's documentation. */
   { path: '/connector', updated: '2026-10-31', priority: 0.6, changeFrequency: 'monthly' },

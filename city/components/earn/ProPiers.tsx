@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo } from 'react';
 import { PIER_GOALS, PIER_STYLES, STYLE_RISK, solShort } from '@/city/lib/earn/pier';
-import { EARN_PRO_OPEN, PRO_MAX_LAMPORTS, PRO_MIN_LAMPORTS, PRO_STOPS, bandPct, proAmounts, proChoice, proDepth, proIncome, proName, proOther, proPrice, proReach, proReward, proSol, proSolText, type ProBoat, type ProPier, type ProSummary } from '@/city/lib/earn/pro';
+import { EARN_PRO_OPEN, PRO_MAX_LAMPORTS, PRO_MIN_LAMPORTS, PRO_STOPS, bandPct, proAmounts, proChoice, proDepth, proIncome, proKnown, proName, proOther, proPrice, proReach, proReward, proSol, proSolText, type ProBoat, type ProPier, type ProSummary } from '@/city/lib/earn/pro';
 import { PRO_BUSY, PRO_LOCKED, proGoal, proNetwork, useProPier, type ProNotice, type ProTarget } from '@/city/lib/earn/pro-store';
 import type { Words } from '@/city/lib/earn/words';
 import { digits } from '@/city/lib/i18n/dict';
@@ -80,7 +80,9 @@ export function ProPiers({ words, owner }: { words: Words; owner: string | null 
       ) : null}
       <span className={s.kicker}>{w.piers}</span>
       <ul className={s.rows}>
-        {piers.map((pier) => {
+        {/* The city's window offers the piers it always did — SOL against a coin Earn checked (any other pool
+            is the terminal's, on the pool's own page); a boat in any pool stays above. */}
+        {piers.filter((pier) => list.value.network === 'devnet' || proKnown(pier)).map((pier) => {
           const other = proOther(pier);
           const reward = proReward(pier);
           const depth = proDepth(pier);

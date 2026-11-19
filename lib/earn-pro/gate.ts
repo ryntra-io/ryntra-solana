@@ -36,6 +36,23 @@ export function earnProGate(env: Env, ownerWord: boolean = DLMM_PRO_EARN_ON_MAIN
 /** Whether new money is stopped: the stop never holds money in. */
 export const earnProStopped = (env: Env): boolean => Boolean(env[EARN_PRO_STOP_ENV]?.trim());
 
+/**
+ * An opening from a shape of the person's own, painted on a grid. Closed unless a deployment sets it to
+ * `open` (exactly): then it is served wherever the surface itself is. The terminal's own switch
+ * (`NEXT_PUBLIC_RYNTRA_EARN_PRO_SHAPE=open`) only decides whether the ticket offers it.
+ */
+export const EARN_PRO_SHAPE_ENV = "RYNTRA_EARN_PRO_SHAPE";
+export const earnProShapeOpen = (env: Env): boolean => env[EARN_PRO_SHAPE_ENV]?.trim() === "open";
+
+/**
+ * A position of one's own in any pool of SOL against another coin (MET/SOL and the like), not only against
+ * the coins Earn checked (USDC and the staked SOL). Closed unless a deployment sets it to `open` (exactly). An agent's
+ * care stays where it knows the coin (`./coins.ts`): in any other pool the person looks after the position. The
+ * terminal's own switch (`NEXT_PUBLIC_RYNTRA_EARN_PRO_ANY_POOL=open`) only decides whether the pool's page offers it.
+ */
+export const EARN_PRO_ANY_POOL_ENV = "RYNTRA_EARN_PRO_ANY_POOL";
+export const earnProAnyPool = (env: Env): boolean => env[EARN_PRO_ANY_POOL_ENV]?.trim() === "open";
+
 /** The actions a person's wallet signs here. The first three put money in or give a right; the rest take out or take back. */
 export const EARN_PRO_ACTIONS = ["open", "compound", "care_on", "collect", "leave", "close", "care_off"] as const;
 export type EarnProAction = (typeof EARN_PRO_ACTIONS)[number];

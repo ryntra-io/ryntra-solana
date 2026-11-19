@@ -133,7 +133,6 @@ function Panel() {
   const busy = useAssistant((st) => st.busy);
   const shown = useAssistant((st) => st.shown);
   const details = useAssistant((st) => st.details);
-  const day = useAssistant((st) => st.day);
   const intent = useAssistant((st) => st.intent);
   const w = useWords(ASSISTANT);
   const [text, setText] = useState('');
@@ -287,7 +286,7 @@ function Panel() {
               {w.details}
               <ChevronGlyph />
             </button>
-            {more && <More id={moreId} details={details} voice={voice} busy={busy} day={day} />}
+            {more && <More id={moreId} details={details} voice={voice} busy={busy} />}
           </>
         )}
 
@@ -330,7 +329,7 @@ function TowerChip({ t: asked }: { t: Tower }) {
 const MARK: Record<Details['why'][number]['mark'], TextKey<typeof ASSISTANT>> = { fact: 'markFact', unverified: 'markReported', inference: 'markRead', unknown: 'markUnknown' };
 
 /** Behind «Details»: why it moved, what could make the reading wrong, what to check, the sources, and how Ryntra answers. */
-function More({ id, details, voice, busy, day }: { id: string; details: Details | null; voice: 'ryntra' | 'city'; busy: boolean; day: { used: number; allowance: number } | null }) {
+function More({ id, details, voice, busy }: { id: string; details: Details | null; voice: 'ryntra' | 'city'; busy: boolean }) {
   const w = useWords(ASSISTANT);
   const c = useWords(CREW_WORDS);
   return (
@@ -360,7 +359,6 @@ function More({ id, details, voice, busy, day }: { id: string; details: Details 
         <li>{w.adviceOnly}</li>
         <li>{c.credits}</li>
         {voice === 'city' && <li>{busy ? w.busyRead : w.awayRead}</li>}
-        {day && day.allowance > 0 && <li>{w.answersToday(Math.min(day.used, day.allowance), day.allowance)}</li>}
       </Part>
     </div>
   );

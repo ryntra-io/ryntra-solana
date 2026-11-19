@@ -42,7 +42,7 @@ export async function POST(request: Request) {
     const read = await ladderPoolOpen(address, gate);
     return read.ok ? { open: true, baseMint: read.facts.baseMint, quoteMint: read.facts.quoteMint, baseDecimals: read.facts.baseDecimals, quoteDecimals: read.facts.quoteDecimals, activePrice: read.activePrice } : null;
   };
-  const relayed = await relayLadder({ owner: body.owner, kind: body.kind, items: body.items, pools: gate.pools, network: gate.network, maxUsd: gate.maxUsd }, { pool });
+  const relayed = await relayLadder({ owner: body.owner, kind: body.kind, items: body.items, pools: gate.pools, network: gate.network }, { pool });
   if (!relayed.ok) return ladderFailure(relayed.code === "UNREACHABLE" ? 503 : 422, relayed.code, relayed.reason, gate.rate);
   return Response.json({ network: gate.network, legs: relayed.legs }, { headers: ladderHeaders(gate.rate) });
 }

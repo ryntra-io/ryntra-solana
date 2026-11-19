@@ -85,7 +85,7 @@ function starPattern(stem: string): string {
   return chars.map((char, index) => (chars[index + 1] === char ? "" : chars[index - 1] === char ? `(?:${char}|[*]){2,}` : `(?:${char}+|[*])`)).join("");
 }
 
-const ANYWHERE = ["nigger", "nigga", "faggot", "wetback", "retard", "hitler", "neonazi", "jigaboo", "rahowa"].map((stem) => pattern(skeleton(stem)));
+const ANYWHERE = ["nigger", "nigga", "niggy", "nigguh", "niglet", "faggot", "wetback", "retard", "hitler", "neonazi", "jigaboo", "rahowa"].map((stem) => pattern(skeleton(stem)));
 /* Read in the mild skeleton: «y» stays «y», so «Strannik» is not this word. */
 const ANYWHERE_MILD = ["tranny"].map((stem) => pattern(skeleton(stem, true)));
 /* Short stems, and ones that sit inside ordinary words («Beanery», «Draghead»): a word of their own, or with a meme word. */

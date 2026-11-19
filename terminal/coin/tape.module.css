@@ -1,0 +1,311 @@
+/* The trades and liquidity column beside the coin's chart: rows of numbers in the terminal's type, green a
+   buy, red a sale, a quiet bar behind each row for its weight. Colours are the terminal's tokens; no corner of its own. */
+
+.tape {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+
+.head {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 6px 12px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.head > :first-child {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.cols,
+.row,
+.depthRow,
+.poolRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr) minmax(44px, 0.7fr);
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+}
+
+.cols {
+  flex: none;
+  height: 30px;
+  font-size: var(--type-micro);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--dim);
+}
+
+.cols > span:not(:first-child),
+.size,
+.time,
+.total {
+  text-align: right;
+}
+
+.list,
+.asks,
+.bids {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.list {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--haze) transparent;
+}
+
+.row,
+.depthRow {
+  position: relative;
+  height: 24px;
+  font-family: var(--ui);
+  font-size: var(--type-small);
+  font-variant-numeric: tabular-nums;
+}
+
+.price {
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.row[data-side='buy'] .price,
+.depthRow[data-side='bid'] .price {
+  color: var(--mint);
+}
+
+.row[data-side='sell'] .price,
+.depthRow[data-side='ask'] .price {
+  color: var(--flare);
+}
+
+.size {
+  color: var(--ice);
+  white-space: nowrap;
+}
+
+.time,
+.total {
+  font-size: var(--type-caption);
+  color: var(--dim);
+  white-space: nowrap;
+}
+
+/* A trade that has just come: a breath of its side's colour, fading out. */
+.row[data-fresh] {
+  animation: lit 1.4s ease-out;
+}
+
+.row[data-side='buy'] {
+  --lit: color-mix(in srgb, var(--mint) 16%, transparent);
+}
+
+.row[data-side='sell'] {
+  --lit: color-mix(in srgb, var(--flare) 16%, transparent);
+}
+
+@keyframes lit {
+  from {
+    background: var(--lit);
+  }
+
+  to {
+    background: transparent;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .row[data-fresh] {
+    animation: none;
+  }
+}
+
+/* The buyers' and the sellers' shares of the dollars, at the column's foot. */
+.balance {
+  display: grid;
+  flex: none;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  height: 34px;
+  padding: 0 12px;
+  border-top: 1px solid var(--line);
+  font-size: var(--type-caption);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.buyShare {
+  color: var(--mint);
+}
+
+.sellShare {
+  color: var(--flare);
+}
+
+.bar {
+  height: 4px;
+  background: linear-gradient(90deg, var(--mint) var(--buy), var(--flare) var(--buy));
+}
+
+/* ── the pool's book by price ──────────────────────────────────────────── */
+
+.book {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--haze) transparent;
+}
+
+.asks {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+
+.bids {
+  flex: 1 1 0;
+}
+
+/* Each row's weight: a bar of its side's colour from the right, as long as its running total against the deepest. */
+.depthRow::before {
+  content: '';
+  position: absolute;
+  top: 2px;
+  right: 0;
+  bottom: 2px;
+  width: var(--share);
+  pointer-events: none;
+}
+
+.depthRow[data-side='ask']::before {
+  background: color-mix(in srgb, var(--flare) 14%, transparent);
+}
+
+.depthRow[data-side='bid']::before {
+  background: color-mix(in srgb, var(--mint) 14%, transparent);
+}
+
+.depthRow > span {
+  position: relative;
+}
+
+.mid {
+  display: flex;
+  flex: none;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 0;
+  padding: 8px 12px;
+  border-block: 1px solid var(--line);
+}
+
+.mid b {
+  font-family: var(--display);
+  font-size: var(--type-lead);
+  font-variant-numeric: tabular-nums;
+  color: var(--ice);
+}
+
+.mid span {
+  font-size: var(--type-caption);
+  color: var(--dim);
+}
+
+/* ── the coin's pools, deepest first ───────────────────────────────────── */
+
+.poolRow {
+  position: relative;
+  grid-template-columns: minmax(0, 1fr) auto;
+  height: 44px;
+  border-bottom: 1px solid var(--line);
+}
+
+.poolRow::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: var(--share);
+  background: color-mix(in srgb, var(--violet) 10%, transparent);
+  pointer-events: none;
+}
+
+.poolName {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.poolName b {
+  font-size: var(--type-small);
+  font-weight: 600;
+  color: var(--ice);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.poolName span {
+  font-size: var(--type-caption);
+  color: var(--dim);
+}
+
+.poolRow .size {
+  position: relative;
+  font-weight: 600;
+}
+
+.line {
+  display: grid;
+  flex: 1 1 auto;
+  place-items: center;
+  margin: 0;
+  padding: 24px 16px;
+  text-align: center;
+  font-size: var(--type-small);
+  font-weight: 600;
+  color: var(--dim);
+}
+
+.shimmer {
+  display: block;
+  width: 60%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--lilac), transparent);
+  animation: breathe 1.6s ease-in-out infinite;
+}
+
+@keyframes breathe {
+  50% {
+    opacity: 0.3;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shimmer {
+    animation: none;
+  }
+}
