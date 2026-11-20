@@ -187,6 +187,16 @@ export function showcase<T>(coins: readonly T[], read: (coin: T) => Showcased, m
   return out;
 }
 
+/**
+ * The rows a list of new coins shows, at most `max`, newest first as they came: only coins whose logo was read before the
+ * row was drawn (`seen` — true, read; false, did not come), and none that failed after (`missed`). A row is never drawn and
+ * then let go as its logo fails, so the rows around it never move (the «New» tab jumped 0.12 of a desk's
+ * screen), and the order stays the age order the tab writes.
+ */
+export function logoRows<T extends Readonly<{ id: string }>>(coins: readonly T[], seen: ReadonlyMap<string, boolean>, missed: ReadonlySet<string>, max = Number.POSITIVE_INFINITY): T[] {
+  return coins.filter((coin) => seen.get(coin.id) === true && !missed.has(coin.id)).slice(0, max);
+}
+
 /* ------------------------------------------------------------------ the agent's sentence */
 
 /** The command line reads whether a pool was asked for, never when (the city's own epoch for it). */

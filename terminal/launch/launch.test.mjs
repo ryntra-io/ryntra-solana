@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import test from "node:test";
 
 import { bookOf, parse } from "../../city/lib/command/parse.ts";
@@ -23,6 +24,7 @@ import {
   formatOf,
   freshLaunches,
   launchCommandOf,
+  logoRows,
   lineShareBpsOf,
   measured,
   mineOf,
@@ -316,7 +318,7 @@ test("the showcase shows coins with a logo, a market cap and a decent name; crud
   // One row per ticker, in the list's own order, at most as many as asked.
   const rows = [coin("DICE", "Dice"), coin("DICE", "Dice again"), coin("FART"), coin("KITE", "Kite"), coin("MOTH", "Moth")];
   assert.deepEqual(showcase(rows, (row) => row, 2).map((row) => row.name), ["Dice", "Kite"]);
-  for (const crude of ["FART", "SHIT", "$FART", "ShitCoin", "fart_inu", "BabyFart", "F A R T", "s.h.i.t", "SH1T", "Mr Poo", "PORNHUB", "pussycat", "хуйня", "CYKA"]) {
+  for (const crude of ["FART", "SHIT", "$FART", "ShitCoin", "fart_inu", "BabyFart", "F A R T", "s.h.i.t", "SH1T", "Mr Poo", "PORNHUB", "pussycat", "хуйня", "CYKA", "ASSHOLE", "ASSHOLES", "AssholeCoin"]) {
     assert.ok(rudeName(crude), crude);
     assert.ok(!showcased(coin(crude)), crude);
   }
@@ -327,4 +329,18 @@ test("the showcase shows coins with a logo, a market cap and a decent name; crud
   }
   // The market's own guard of hate words stands here too.
   assert.ok(rudeName("HITLER"));
+});
+
+/* A row is drawn only once its logo was
+   read, so no row is drawn and then let go — and the rows keep the age order the tab writes. */
+test("new coins: a row stands only once its logo was read; newest first as they came; none let go after", () => {
+  const coins = ["a", "b", "c", "d", "e", "f"].map((id) => ({ id }));
+  const ids = (rows) => rows.map((row) => row.id).join("");
+  const seen = new Map([["a", true], ["b", false], ["c", true], ["d", true], ["e", true]]);
+  assert.equal(ids(logoRows(coins, seen, new Set())), "acde", "a logo that did not come, or is not read yet, draws no row");
+  assert.equal(ids(logoRows(coins, seen, new Set(), 3)), "acd", "at most `max`, the newest");
+  assert.equal(ids(logoRows(coins, seen, new Set(["c"]))), "ade", "an image that failed on the row itself");
+  assert.equal(ids(logoRows(coins, new Map(), new Set())), "");
+  const lists = readFileSync(new URL("./Lists.tsx", import.meta.url), "utf8");
+  assert.equal((lists.match(/logoRows\(coins \?\? \[\], seen, missed/g) ?? []).length, 2, "both lists of new coins read the logos first");
 });

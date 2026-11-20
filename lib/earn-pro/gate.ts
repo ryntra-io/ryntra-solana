@@ -53,6 +53,17 @@ export const earnProShapeOpen = (env: Env): boolean => env[EARN_PRO_SHAPE_ENV]?.
 export const EARN_PRO_ANY_POOL_ENV = "RYNTRA_EARN_PRO_ANY_POOL";
 export const earnProAnyPool = (env: Env): boolean => env[EARN_PRO_ANY_POOL_ENV]?.trim() === "open";
 
+/**
+ * A position of one's own in a DLMM Pro pool of SOL against a **checked stock** of the stocks engine's shelf
+ * (`lib/stocks/**`: a listed company's token the venue verified and its issuer names — Anthropic's ANT by Backpack
+ * Securities was the first), without opening every pool of SOL (`RYNTRA_EARN_PRO_ANY_POOL`). Closed unless a deployment
+ * sets it to `open` (exactly). No agent looks after such a position (`./coins.ts` does not know the coin); taking out
+ * stays open whatever this says. The terminal's own switch (`NEXT_PUBLIC_RYNTRA_EARN_PRO_STOCKS=open`) only decides
+ * whether a screen offers it.
+ */
+export const EARN_PRO_STOCKS_ENV = "RYNTRA_EARN_PRO_STOCKS";
+export const earnProStocks = (env: Env): boolean => env[EARN_PRO_STOCKS_ENV]?.trim() === "open";
+
 /** The actions a person's wallet signs here. The first three put money in or give a right; the rest take out or take back. */
 export const EARN_PRO_ACTIONS = ["open", "compound", "care_on", "collect", "leave", "close", "care_off"] as const;
 export type EarnProAction = (typeof EARN_PRO_ACTIONS)[number];

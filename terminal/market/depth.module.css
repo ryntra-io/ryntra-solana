@@ -778,6 +778,11 @@
   text-align: right;
 }
 
+.cell[data-mid] {
+  justify-self: center;
+  text-align: center;
+}
+
 .sort {
   display: inline-flex;
   align-items: center;
@@ -1185,6 +1190,25 @@
   gap: 3px;
   color: #ff8a7a;
   font: 600 var(--type-micro) / 1 var(--ui);
+}
+
+/* A phone's row gives its name the room first (QA 19.11: «G…», «D…», «pip…» beside pump · 3 міс · ⚠): the launchpad's
+   mark waits for the coin's page, and the age and the risk sign stand only where they fit whole — the line is one row
+   tall, so a mark with no room drops under it out of sight instead of squeezing the name. */
+.phoneRow .pad {
+  display: none;
+}
+
+.phoneRow .coinSym {
+  flex-wrap: wrap;
+  align-content: flex-start;
+  height: 20px;
+  overflow: hidden;
+}
+
+.phoneRow .sym {
+  flex: 0 1 auto;
+  max-width: 100%;
 }
 
 .gap {

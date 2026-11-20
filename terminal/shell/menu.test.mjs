@@ -12,6 +12,8 @@ import { BRIDGE_HREF, MARKET_ITEM, MENU, MENU_GROUP_IDS, RXN_FUTURES, RXN_PREDIC
 import { MENU_BOOT_SCRIPT, MENU_KEY, MENU_OPEN_ATTR, MENU_SHUT_ATTR, groupOpen, parseChoice, toggledChoice } from "./menu-fold.ts";
 import { KIT_PATH, ownAddresses, REWARDS_PATH, SHELVES, shelfAt } from "./shelves.ts";
 import { PARTNERS_OPEN } from "../rewards/partners.ts";
+import { BOTS } from "../bots/words.ts";
+import { LAUNCH_SCREEN } from "../launch/words.ts";
 import { MENU_WORDS } from "./words.ts";
 
 /* The menu by groups and Futures and Predictions on RXN. */
@@ -24,10 +26,12 @@ const READY_SWAP = Object.fromEntries(Object.entries(SHELVES).map(([id, shelf]) 
 
 test("the groups and their items", () => {
   assert.deepEqual(MENU_GROUP_IDS, ["trade", "launch", "bots", "agents", "earn", "portfolio", "money", "rewards"]);
+  // A section's items are its tabs, by their names and in their order (decision 109) — the
+  // Launch's «New» and the Bots' «All bots» came in with the tabs they name.
   assert.deepEqual(ids(MENU), [
     ["trade", ["swap", "spot", "futures", "predict", "bridge"]],
-    ["launch", ["launchNew", "launchMine"]],
-    ["bots", ["recurring", "grid", "ladder", "copy", "signals", "keeper", "autopilot"]],
+    ["launch", ["launchNew", "launchMine", "launchFresh"]],
+    ["bots", ["allBots", "recurring", "grid", "ladder", "copy", "signals", "keeper", "autopilot"]],
     ["agents", ["aiTrader", "scout", "analyst", "ownAi"]],
     ["earn", ["pools", "dlmmPro", "staking", "lending", "earnMine"]],
     ["portfolio", ["overview", "positions", "history", "saved"]],
@@ -40,8 +44,8 @@ test("the groups and their items", () => {
 test("an item stands only once its screen is ready: today's menu, and no group without an item", () => {
   assert.deepEqual(ids(menuShown("live", DOORS_OPEN, "stand")), [
     ["trade", ["swap", "spot", "futures", "predict", "bridge"]],
-    ["launch", ["launchNew", "launchMine"]],
-    ["bots", ["recurring", "grid", "ladder", "signals", "autopilot"]],
+    ["launch", ["launchNew", "launchMine", "launchFresh"]],
+    ["bots", ["allBots", "recurring", "grid", "ladder", "signals", "autopilot"]],
     ["agents", ["analyst"]],
     ["earn", ["pools", "dlmmPro", "staking", "lending", "earnMine"]],
     ["portfolio", ["overview", "positions", "history", "saved"]],
@@ -64,10 +68,10 @@ test("an engine door that is shut takes its item away, and an empty group with i
   // The bots: each by its engine's door — the mandate's, the ladder's network, the money autopilot's switch;
   // the paper ones stand everywhere, so «Bots» never goes empty.
   const bots = (door) => menuShown("live", door, "stand").find((group) => group.id === "bots")?.items.map((item) => item.id);
-  assert.deepEqual(bots((gate) => gate !== "trader"), ["grid", "ladder", "signals", "autopilot"], "no mandate's engine here: no «Recurring buys»");
-  assert.deepEqual(bots((gate) => gate !== "ladder"), ["recurring", "grid", "signals", "autopilot"], "no ladder's network here: no «Order ladder»");
-  assert.deepEqual(bots((gate) => gate !== "pilot"), ["recurring", "grid", "ladder", "signals"], "the money autopilot only where its engine is open");
-  assert.deepEqual(bots(() => false), ["grid", "signals"], "on paper everywhere");
+  assert.deepEqual(bots((gate) => gate !== "trader"), ["allBots", "grid", "ladder", "signals", "autopilot"], "no mandate's engine here: no «Recurring buys»");
+  assert.deepEqual(bots((gate) => gate !== "ladder"), ["allBots", "recurring", "grid", "signals", "autopilot"], "no ladder's network here: no «Order ladder»");
+  assert.deepEqual(bots((gate) => gate !== "pilot"), ["allBots", "recurring", "grid", "ladder", "signals"], "the money autopilot only where its engine is open");
+  assert.deepEqual(bots(() => false), ["allBots", "grid", "signals"], "on paper everywhere; the catalogue always");
 });
 
 test("Futures and Predictions lead to RXN, in a new tab, with no mark RXN does not read", () => {
@@ -120,9 +124,10 @@ test("the item a person is at: the closest address, a coin's page is the Spot, a
   assert.equal(at("/swap", "?tab=limit"), "swap");
   assert.equal(at("/launch"), "launchNew");
   assert.equal(at("/launch", "?tab=mine"), "launchMine");
-  assert.equal(at("/launch", "?tab=fresh"), "launchNew");
+  assert.equal(at("/launch", "?tab=fresh"), "launchFresh", "the Launch's «New» lights its own item");
   assert.equal(at("/agent"), "analyst");
   assert.equal(at("/agent", "#new"), "analyst");
+  assert.equal(at("/bots"), "allBots", "the catalogue lights «All bots», not nothing");
   for (const bot of ["recurring", "grid", "ladder", "signals", "autopilot"]) assert.equal(at(`/bots/${bot}`), bot, `the bot's own page lights its item`);
   assert.equal(at("/bots/copy"), null, "a bot without a screen lights nothing");
   assert.equal(at("/earn"), "pools");
@@ -165,6 +170,15 @@ test("every group and item has its name in both languages", () => {
   const names = [...MENU_GROUP_IDS, "market", ...MENU.flatMap((group) => group.items.map((item) => item.id))];
   for (const lang of LANGS) for (const name of names) assert.ok(typeof MENU_WORDS[lang][name] === "string" && MENU_WORDS[lang][name].trim(), `${lang}: ${name}`);
   assert.deepEqual(MENU_GROUP_IDS.map((id) => MENU_WORDS.uk[id]), ["Торгівля", "Запуск", "Боти", "Агенти", "Заробіток", "Портфель", "Гроші", "Винагороди"]);
+  // An item that names a screen's tab says the tab's own word.
+  for (const lang of LANGS) {
+    assert.deepEqual(
+      [MENU_WORDS[lang].launchNew, MENU_WORDS[lang].launchMine, MENU_WORDS[lang].launchFresh],
+      [LAUNCH_SCREEN[lang].newCoin, LAUNCH_SCREEN[lang].mine, LAUNCH_SCREEN[lang].freshTab],
+      `${lang}: the Launch's items are its tabs`,
+    );
+    assert.equal(MENU_WORDS[lang].allBots, BOTS[lang].all, `${lang}: «All bots» is the Bots' first tab`);
+  }
 });
 
 test("the groups stand folded but the one the person is in; their own choice is kept and set on the root before the first paint", () => {

@@ -493,6 +493,9 @@ export type EarnProPiersResponse = {
       readonly endsAt: number;
     })[];
     readonly takesDeposits: boolean;
+    readonly stock?: {
+      readonly issuer: string;
+    } | null;
   })[];
   readonly at: string;
   readonly care: boolean;

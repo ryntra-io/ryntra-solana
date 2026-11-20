@@ -178,6 +178,13 @@
   gap: 6px;
 }
 
+/* Wrapped SOL picked by hand: it becomes the person's SOL — one line under what comes back. */
+.cleanUnwrap {
+  margin: 0;
+  font-size: var(--type-small);
+  color: var(--ice);
+}
+
 .cleanLists {
   display: flex;
   flex-direction: column;

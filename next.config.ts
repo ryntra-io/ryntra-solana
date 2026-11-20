@@ -116,8 +116,12 @@ const CSP = [
   /* `SEEKER_RELAY` is the Nostr relays Seeker Connect may carry its wallet session over (SKR-1): ciphertext only, end
      to end between this page and the phone's wallet. Primal's public relay (the default) and Solana Mobile's
      `relay.solanamobile.com` (the target, used once `NEXT_PUBLIC_SEEKER_RELAY_DOMAIN` names it), plus any other host
-     the variable names (`lib/solana/seeker-connect.ts`), WebSocket only. */
-  `connect-src 'self' https://api.arcus.xyz wss://api.arcus.xyz https://rpc.mainnet.chain.robinhood.com https://horizon-testnet.stellar.org https://soroban-testnet.stellar.org https://oauth.telegram.org ${SEEKER_RELAY}${isDev ? " ws:" : ""}`,
+     the variable names (`lib/solana/seeker-connect.ts`), WebSocket only.
+     `api.geckoterminal.com` is the chart's own source read from the person's browser, and only as a spare way
+     (the lead's word of 19.11): the engine reads it from the platform's shared addresses and the source
+     refused after about five calls a minute, so when the engine answers 429 with no bars held the page reads the same
+     pool's bars itself — the pool's address and the interval, no cookie, no referrer (`city/lib/chart/direct.ts`). */
+  `connect-src 'self' https://api.arcus.xyz wss://api.arcus.xyz https://rpc.mainnet.chain.robinhood.com https://horizon-testnet.stellar.org https://soroban-testnet.stellar.org https://oauth.telegram.org https://api.geckoterminal.com ${SEEKER_RELAY}${isDev ? " ws:" : ""}`,
   /* The only third-party frame this site embeds: a product film.
      `youtube-nocookie` rather than `youtube`, and the page renders a local
      poster with a play control instead of the iframe — so nothing is requested

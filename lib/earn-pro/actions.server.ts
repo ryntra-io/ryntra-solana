@@ -28,6 +28,7 @@ import { endProCare, holdProCare, proCareGate, recordProCare, type ProCareDeps, 
 import { SOL_MINT, coinKindOf } from "./coins.ts";
 import { EARN_PRO_ACTIONS, earnProGate, earnProShapeOpen, earnProStopped, heldByStop, type EarnProAction, type EarnProNetwork } from "./gate.ts";
 import { lamportsOf, priceOfTick, readPier, type ProPier } from "./piers.server.ts";
+import type { StockSeats } from "./stocks.ts";
 import { MAX_TICKET_MESSAGES, checkEarnProSigned, digestOf, issueEarnProTicket, openCosigners, readEarnProTicket, sealCosigners, ticketKeyHere, type Cosigner } from "./ticket.ts";
 import { CARE_RIGHTS, CUSTOM_GOAL, DlmmProRefusal, earnProConnection, earnProVenue, isEarnStyle, isOpenGoal, isShapeColumns, type DlmmProBuild, type DlmmProRefusalCode, type DlmmProTx, type DlmmProVenue, type EarnStyle, type OpenGoal } from "./venue.server.ts";
 
@@ -131,7 +132,8 @@ export type EarnProReview = Readonly<{
   summary: EarnProSummary;
 }>;
 
-export type EarnProDeps = Readonly<{ env?: Env; connection?: Connection; venue?: DlmmProVenue; now?: () => number; freshKey?: () => Keypair; care?: ProCareDeps; relayMs?: number; pollMs?: number }>;
+/** `stocks` — the stocks engine's shelf a deployment that opened stock pools reads; none — no coin is a stock. */
+export type EarnProDeps = Readonly<{ env?: Env; connection?: Connection; venue?: DlmmProVenue; now?: () => number; freshKey?: () => Keypair; care?: ProCareDeps; relayMs?: number; pollMs?: number; stocks?: StockSeats }>;
 
 const REFUSALS: Readonly<Partial<Record<DlmmProRefusalCode, Readonly<{ status: number; code: EarnProFailureCode }>>>> = {
   BAD_INPUT: { status: 422, code: "REFUSED" },
@@ -191,7 +193,7 @@ export async function reviewEarnPro(input: EarnProReviewInput, deps: EarnProDeps
   const connection = deps.connection ?? earnProConnection(gate.network);
   const venue = deps.venue ?? earnProVenue(gate.network, connection, env);
   try {
-    const read = await readPier(gate.network, input.pool, { env, connection, venue });
+    const read = await readPier(gate.network, input.pool, { env, connection, venue, ...(deps.stocks ? { stocks: deps.stocks } : {}) });
     if (!read) return fail(404, "NOT_A_PIER", "No DLMM Pro pier lives at this address.");
     /* New money and a new care only where the pier is served; taking out and taking back wherever the person holds. */
     if (heldByStop(input.action) && !read.served) return fail(404, "NOT_A_PIER", "No DLMM Pro pier lives at this address.");

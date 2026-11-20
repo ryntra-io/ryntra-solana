@@ -45,8 +45,9 @@ export function askLabel(command: Command, lang: Lang): string {
       return w.instruct;
     case 'instructions':
       return w.instructions;
+    // New launches bought early open the market's new coins (`targetOf`), not a budget: the row says where it leads.
     case 'autopilot':
-      return command.ask.kind === 'trade' ? w.agentTrade : w.agentLaunch;
+      return command.ask.kind !== 'trade' ? w.agentLaunch : command.ask.plan?.id === 'early' ? w.newCoins : w.agentTrade;
     case 'pilot':
       return w.pilot;
     case 'hire':

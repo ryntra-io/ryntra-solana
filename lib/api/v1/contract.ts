@@ -15985,6 +15985,12 @@ export const EarnProPierSchema = z
     depthLamports: EarnProRaw.nullable(),
     rewards: z.array(z.object({ index: z.number().int().min(0).max(1), mint: Address, symbol: z.string().min(1).max(10).nullable(), perDayRaw: EarnProRaw, running: z.boolean(), endsAt: z.number().int().min(0) }).strict()).max(2),
     takesDeposits: z.boolean(),
+    /**
+     * 1.103.0, additive: the other coin is a checked stock of the stocks engine — a listed company's token
+     * its issuer names — and `issuer` is that issuer's name; null or absent for any other coin. Such a pier is served
+     * where a deployment opened stock pools; no agent looks after a position there.
+     */
+    stock: z.object({ issuer: z.string().min(1).max(60) }).strict().nullable().optional(),
   })
   .strict();
 export type EarnProPier = z.infer<typeof EarnProPierSchema>;

@@ -16,6 +16,7 @@ import { readCoinFacts } from '@/city/lib/search/sources';
 import { TICKET_OPEN, iconOf } from '@/terminal/coin/Ticket';
 import { MONEY, payLogo } from '@/terminal/coin/staples';
 import { bare } from '@/terminal/coin/parts';
+import { logoChain } from '@/terminal/market/depth-view';
 import { coinHref, shelfOn } from '@/terminal/shell/shelves';
 import { useAskHere } from '@/terminal/shell/useAskHere';
 import { useMarket } from '@/terminal/shell/useMarket';
@@ -219,7 +220,7 @@ function Pair() {
     <div className={s.tiles} data-side="">
       {tiles.map((tile) => (
         <Link key={tile.mint} href={coinHref(tile.mint, 'live')} className={s.tile} aria-label={w.openCoin(tile.symbol)} data-swap-pair={tile.symbol}>
-          <CoinLogo src={tile.logo} symbol={tile.symbol} size="m" />
+          <CoinLogo {...logoChain(tile.mint, tile.logo, tile.logo)} symbol={tile.symbol} size="m" />
           <span className={s.tileName}>
             <b>
               {tile.symbol}

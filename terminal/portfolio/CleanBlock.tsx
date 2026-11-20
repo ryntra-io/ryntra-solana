@@ -7,9 +7,10 @@ import type { Lang } from '@/city/lib/i18n/langs';
 import { ExplainBox, ExplainButton } from '@/terminal/coin/parts';
 import { Action, CoinLogo, Figure, Icon, Kick, Panel, Quiet, Switch, Title, cx } from '@/terminal/ui';
 import { buildClean, readClean, runClean, setIncluded, useClean } from './clean';
-import { estimateSol, feeText, groupsOf, inClean, reviewedSol, solFigure, type CleanItem, type RiskReason } from './clean-view';
+import { estimateSol, feeText, groupsOf, inClean, reviewedSol, solFigure, unwrapOf, type CleanItem, type RiskReason } from './clean-view';
 import { CLEAN } from './clean-words';
 import { Glyph } from './glyphs';
+import { logosFor } from './logos';
 import p from './portfolio.module.css';
 
 const solText = (sol: number, lang: Lang) => digits(solFigure(sol), lang);
@@ -41,6 +42,9 @@ export function CleanPanel({ onClose }: { onClose: () => void }) {
   const working = phase === 'signing' || phase === 'sending';
   const estimate = estimateSol(read, choice);
   const sol = phase === 'done' && sent ? reviewedSol(sent.review) : review ? reviewedSol(review) : estimate;
+  // Wrapped SOL picked by hand: it becomes the person's SOL, said apart from what comes back — and when it waits for
+  // the next clean (this one swaps coins first), said so.
+  const unwrap = unwrapOf(read, choice);
   const fee = review ? feeText(review.summary.feeBps) : null;
 
   const status =
@@ -70,6 +74,7 @@ export function CleanPanel({ onClose }: { onClose: () => void }) {
           <div className={p.cleanFigure}>
             <Kick>{w.youGet}</Kick>
             <Figure value={sol === null ? '—' : `≈ ${solText(sol, lang)} SOL`} />
+            {unwrap !== null ? <p className={p.cleanUnwrap}>{unwrap.now ? w.unwrap(solText(unwrap.sol, lang)) : w.unwrapNext(solText(unwrap.sol, lang))}</p> : null}
           </div>
           <div className={p.cleanLists}>
             <Group title={w.small} items={groups.small} disabled={working} />
@@ -142,10 +147,14 @@ type CW = ReturnType<typeof useWords<(typeof CLEAN)['en']>>;
 function CleanRow({ item, on, disabled, lang, words: w }: { item: CleanItem; on: boolean; disabled: boolean; lang: Lang; words: CW }) {
   const [why, setWhy] = useState(false);
   const whyId = useId();
-  const value = item.kind === 'empty' ? w.emptyWord : item.kind === 'wrapped' ? solText(Number(item.amountRaw) / 1e9, lang) : item.valueUsd === null ? w.noPrice : `$${digits(item.valueUsd < 0.01 ? '<0.01' : item.valueUsd.toFixed(2), lang)}`;
+  // Wrapped SOL says its amount with its name: a bare figure beside «SOL» read as what comes back.
+  const wrapped = item.kind === 'wrapped' ? Number(item.amountRaw) / 1e9 : null;
+  // The coins' own queue of logos by the mint, then the market's: SOL's picture for wSOL even with the market unread.
+  const logos = [...new Set([...logosFor(item.mint), item.icon].filter((src): src is string => Boolean(src)))];
+  const value = item.kind === 'empty' || wrapped === 0 ? w.emptyWord : wrapped !== null ? `${solText(wrapped, lang)} wSOL` : item.valueUsd === null ? w.noPrice : `$${digits(item.valueUsd < 0.01 ? '<0.01' : item.valueUsd.toFixed(2), lang)}`;
   return (
     <div className={p.cleanRow}>
-      <CoinLogo src={item.icon} symbol={item.symbol} size="s" />
+      <CoinLogo src={logos[0] ?? null} also={logos.slice(1)} symbol={item.symbol} size="s" />
       <span className={p.rowMain}>
         <span className={p.cleanSym}>{item.symbol}</span>
         {item.risk.length ? (

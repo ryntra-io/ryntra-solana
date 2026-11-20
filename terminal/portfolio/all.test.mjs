@@ -280,6 +280,30 @@ test('a source that did not answer makes the screen offer to read again; the thi
   assert.equal(partial({ sources: [source('wallet'), source('kamino', 'stale')] }), true);
   assert.equal(partial({ sources: [source('wallet'), source('meteora-dlmm', 'unread')] }), true);
   assert.equal(partial({ sources: [source('wallet'), source('jupiter-portfolio', 'unread')] }), false);
+  // A source read only in part — the wallet's coins without its wrapped SOL — says so too.
+  const inPart = { ...source('wallet'), reason: 'TIMEOUT' };
+  assert.equal(partial({ sources: [inPart, source('kamino')] }), true);
+  assert.equal(summaryOf({ ...ANSWER, sources: [inPart, source('kamino')] }, groupsOf(ANSWER)).unread, true);
+  assert.equal(summaryOf({ ...ANSWER, sources: [inPart, source('kamino')] }, groupsOf(ANSWER)).complete, false, 'the total says «so far»');
+  // A coin nobody prices is not a part not read: the engine's `complete: false` for it alone is no «Not everything was read».
+  assert.equal(ANSWER.totals.complete, false);
+  assert.equal(summaryOf(ANSWER, groupsOf(ANSWER)).unread, false);
+});
+
+test('wrapped SOL is a coin of its own at SOL’s price, in the coins and in the total — never dust, never SOL itself', () => {
+  const wsol = coin(SOL, 'wSOL', 9, '86260508921310', 6_452_286.07);
+  const answer = { ...ANSWER, positions: [...POSITIONS, wsol], totals: { ...ANSWER.totals, usd: TOTAL + 6_452_286.07 } };
+  const groups = groupsOf(answer);
+  const coins = groups.find((group) => group.id === 'coins');
+  const row = coins.rows.find((entry) => entry.id === `wallet:${SOL}`);
+  assert.ok(row, 'it stands among the coins');
+  assert.equal(row.name, 'wSOL');
+  assert.ok(Math.abs(row.price - 6_452_286.07 / 86_260.50892131) < 1e-6, 'priced as SOL is');
+  assert.ok(coins.rows.some((entry) => entry.id === 'wallet:sol'), 'native SOL keeps its own row');
+  const sum = summaryOf(answer, groups);
+  assert.ok(Math.abs(sum.usd - (TOTAL + 6_452_286.07)) < 0.01);
+  assert.ok(Math.abs(sum.parts.find((part) => part.id === 'coins').usd - coins.usd) < 1e-6, 'the legend is the group');
+  assert.equal(groupOf(coin(SOL, 'wSOL', 9, '3000000', 0.45)), 'coins', 'a few cents of wrapped SOL is SOL, never dust');
 });
 
 /* ── the exit's review: the engine's own form ── */

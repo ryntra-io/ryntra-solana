@@ -3,7 +3,7 @@ import test from "node:test";
 
 import { bookOf, parse } from "../../city/lib/command/parse.ts";
 import { askLabel } from "./ask-label.ts";
-import { EVERY_GATE, askHref, askRows, gatesFor, targetOf } from "./ask-route.ts";
+import { EVERY_GATE, askHref, askRows, foundCoin, gatesFor, planAnswer, stayOn, targetOf, withShelf } from "./ask-route.ts";
 import { handOff, takeAsk, useAsk } from "./ask.ts";
 import { KIT_PATH, SHELF_IDS, SHELVES } from "./shelves.ts";
 
@@ -34,6 +34,15 @@ test("each reading opens its shelf: a coin's trade its screen, a swap the Swap, 
   assert.deepEqual(targetOf(read("why is JUP down?")), { shelf: "agents", mint: null });
   assert.deepEqual(targetOf({ kind: "money", place: "paylink", send: null }), null, "a pay link has no place in the terminal yet");
   assert.deepEqual(targetOf({ kind: "learn", chapter: null }), null);
+});
+
+test("a plain buy or sell said on the Swap screen stays on it; a limit and a coin still open the coin's screen (QA 19.11)", () => {
+  const rows = (text) => askRows(text, BOOK, NONE, ALL, EVERY_GATE);
+  assert.deepEqual(stayOn(rows("buy JUP for 50"), "swap", ALL)[0].target, { shelf: "swap", mint: null });
+  assert.deepEqual(stayOn(rows("купити BONK на 0,25 SOL"), "swap", ALL)[0].target, { shelf: "swap", mint: null });
+  assert.deepEqual(stayOn(rows("buy JUP for 50"), "market", ALL)[0].target, { shelf: "market", mint: JUP }, "elsewhere a buy opens the coin");
+  assert.deepEqual(stayOn(rows("JUP"), "swap", ALL)[0].target, { shelf: "market", mint: JUP }, "a coin is its own screen");
+  assert.deepEqual(stayOn(rows("buy JUP for 50"), "swap", ONLY("market"))[0].target, { shelf: "market", mint: JUP }, "a Swap shelf that is off takes nothing");
 });
 
 test("a reading's address is its shelf's, a coin's screen for a coin, and inside the kit on the kit page", () => {
@@ -98,4 +107,57 @@ test("a reading handed to the screen it opens is taken once, by the screen at th
   assert.equal(second.href, `/coin/${BONK}`);
   assert.equal(takeAsk(`/coin/${JUP}`), null, "a newer sentence replaces one not taken");
   assert.equal(takeAsk(`/coin/${BONK}`)?.said, "BONK");
+});
+
+/* Release 20.11: «buy ANT for 1 SOL» — the Anthropic share fell out of the market's top at night and the line said
+   «ANT is not on the market». The engine's shelf of verified stocks is a book of coins too. */
+const ANT = "ANTBTZQ1EUuTxUs3tfeampxdqTWPHmwyJmcWj4xoAyNe";
+const FAKE = "ANTfake1111111111111111111111111111111111111";
+const share = (id, symbol, extra = {}) => ({ id, symbol, name: `${symbol} share`, kind: "stock", verified: true, ...extra });
+const SHELF = [share(FAKE, "ANT", { verified: false }), share(ANT, "ANT"), share("XsYzw7XHj8K2WHeoeNQVyevMmzjzXfcJ8tQ4FmdN1DL", "ANTx")];
+
+test("a share out of the market's top: the line opens its page with the amount — by its real address, never a copy's", () => {
+  const book = withShelf(BOOK, SHELF);
+  for (const said of ["buy ANT for 1 SOL", "buy 1 SOL of ANT", "купи ANT на 1 SOL", "купити ANT на 1 SOL"]) {
+    const first = askRows(said, book, NONE, ALL, EVERY_GATE)[0];
+    assert.equal(first?.command.kind, "buy", said);
+    assert.equal(first.command.coin.mint, ANT, said);
+    assert.equal(first.command.amount, "1", said);
+    assert.equal(first.command.pay, "SOL", said);
+    assert.equal(askHref(first.target, "live"), `/coin/${ANT}`, said);
+  }
+  // Without the shelf the line knows no ANT: the sentence is a question, the model's reading is asked.
+  assert.equal(askRows("buy ANT for 1 SOL", BOOK, NONE, ALL, EVERY_GATE)[0]?.command.kind, "ask");
+});
+
+test("the shelf never takes the market's ticker, an unverified or copied coin never joins, other kinds stay out", () => {
+  const listed = bookOf([tower(JUP, "JUP", 9e8), tower(BONK, "BONK", 8e8), tower("ANTmarket111111111111111111111111111111111", "ANT", 1e6)]);
+  assert.equal(withShelf(listed, SHELF).coins.find((coin) => coin.symbol === "ANT").mint, "ANTmarket111111111111111111111111111111111");
+  const book = withShelf(BOOK, [share(FAKE, "ANT", { copyOf: "ANT" }), share(FAKE, "ANT", { verified: false }), { ...share(FAKE, "ANT"), kind: "meme" }]);
+  assert.equal(book, BOOK);
+  assert.equal(askRows("buy ANT for 1 SOL", book, NONE, ALL, EVERY_GATE)[0]?.command.kind, "ask");
+});
+
+test("the model's reading knows the shelf too; an unknown ticker is still «which coin?»", () => {
+  const draft = { understood: true, ask: "none", action: "trade", coin: "ANT", strategy: "none", cadence: "none", name: "", symbol: "", numbers: [{ name: "perTradeSol", value: 1 }] };
+  const plain = planAnswer(draft, "buy ANT for 1 SOL", BOOK, ALL, EVERY_GATE);
+  assert.equal(plain?.kind, "clarify");
+  assert.equal(plain.need, "coin");
+  const known = planAnswer(draft, "buy ANT for 1 SOL", withShelf(BOOK, SHELF), ALL, EVERY_GATE);
+  assert.equal(known?.kind, "row");
+  assert.ok(JSON.stringify(known.row.command).includes(ANT), "the plan stands on the share's real address");
+  assert.ok(!JSON.stringify(known.row.command).includes(FAKE));
+  const unknown = planAnswer({ ...draft, coin: "ZZQX" }, "buy ZZQX for 1 SOL", withShelf(BOOK, SHELF), ALL, EVERY_GATE);
+  assert.equal(unknown?.kind, "clarify");
+  assert.equal(unknown.need, "coin");
+});
+
+test("a token search names a coin only when exactly one verified coin wears that ticker as its own", () => {
+  const row = (mint, symbol, extra = {}) => ({ mint, symbol, name: symbol, isVerified: true, isSuspicious: false, ownTicker: true, ...extra });
+  assert.equal(foundCoin("ANT", [row(FAKE, "ANT", { isVerified: false }), row(ANT, "ANT"), row("Other111111111111111111111111111111111111111", "ANTX")])?.mint, ANT);
+  assert.equal(foundCoin("$ant", [row(ANT, "ANT")])?.mint, ANT);
+  assert.equal(foundCoin("ANT", [row(ANT, "ANT"), row(FAKE, "ANT")]), null, "two verified — which one is asked");
+  assert.equal(foundCoin("ANT", [row(FAKE, "ANT", { isSuspicious: true })]), null);
+  assert.equal(foundCoin("ANT", [row(FAKE, "ANT", { ownTicker: false })]), null);
+  assert.equal(foundCoin("ZZQX", [row(ANT, "ANT")]), null);
 });

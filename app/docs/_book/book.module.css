@@ -749,3 +749,16 @@
   outline: 2px solid var(--lilac);
   outline-offset: 2px;
 }
+
+/* A page's quiet foot of links (About: the Terms and the Privacy Policy), each a full-height target. */
+.footLinks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 24px;
+}
+
+.footLinks .inlineLink {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}

@@ -17,14 +17,16 @@ import { useCandles, useTimeframe } from '@/city/lib/chart/use-chart';
 import { useScrollThrough } from '@/city/lib/chart/use-gesture';
 import { isStale } from '@/city/lib/city/events';
 import { useCity } from '@/city/lib/city/store';
-import { useWords, type TextKey } from '@/city/lib/i18n/dict';
+import { digits, useWords, type TextKey } from '@/city/lib/i18n/dict';
 import { useLang } from '@/city/lib/i18n/lang';
 import type { Tower } from '@/city/lib/market/types';
 import { Chip, Icon, usdText } from '@/terminal/ui';
 import { badgeOf, decimalOf, linesOf, useChartLayer, type LayerLine } from './chart-layer';
 import { DESK } from './desk-words';
 import { useOffEdge } from './off-edge';
-import { bigTrades, type TokenTrade } from './tape-view';
+import { agoText } from './Tape';
+import { agoOf, bigTrades, liveOf, type TokenTrade } from './tape-view';
+import { useNow } from './useCoinMarket';
 import { TICK, TickSource } from './tick-source';
 import { usePoolLayer, type PoolPin } from './usePoolLayer';
 import { COIN } from './words';
@@ -64,17 +66,27 @@ function levelsOf(lines: readonly LayerLine[]) {
   const levels = [];
   const rules: string[] = [];
   const seen = new Set<string>();
+  /** The strips that carry a name so far, in the core's order of rows. */
+  const named: string[] = [];
   for (const line of lines) {
     const price = decimalOf(line.price);
     if (!price || seen.has(price)) continue;
     seen.add(price);
-    levels.push({ id: line.id, kind: 'level' as const, price, basis: PRICE_BASIS, label: line.tag ?? price });
-    const row = `[data-coin-layer] .ryntra-trade__row--level[data-price="${price}"]`;
+    levels.push({ id: line.id, kind: 'level' as const, price, basis: PRICE_BASIS, label: line.weight === undefined ? (line.tag ?? price) : price });
+    const cell = `.ryntra-trade__row--level[data-price="${price}"]`;
+    const row = `[data-coin-layer] ${cell}`;
     rules.push(`${row}{--tone:${TONE[line.tone]}}`);
     if (line.weight !== undefined) {
       // Not a rule across the plot: a strip at its right end, by the scale, as long as what lies at the price.
       const long = Math.round(STRIP_FLOOR + Math.min(1, Math.max(0, line.weight)) * (STRIP_LONG - STRIP_FLOOR));
       rules.push(`${row} .ryntra-trade__rule{left:calc(var(--plot-left) + var(--plot-width) - ${long}px);width:${long}px;border-top:3px solid var(--tone);opacity:.42;transform:translateY(-50%)}`);
+      // The strips' name, said once: just left of the first strip in sight, quiet, in its own colour. A strip
+      // past the prices on screen is `data-off` to the core; one with a strip in sight before it says nothing.
+      if (line.tag) {
+        rules.push(`${row}:not([data-off])::after{content:${JSON.stringify(line.tag)};position:absolute;top:0;right:calc(100% - var(--plot-left) - var(--plot-width) + ${long + 8}px);transform:translateY(-50%);font:600 var(--type-caption)/1 var(--ui);color:var(--tone);opacity:.8;white-space:nowrap;pointer-events:none}`);
+        if (named.length) rules.push(`[data-coin-layer] :is(${named.join(',')}):not([data-off]) ~ ${cell}::after{content:none}`);
+        named.push(cell);
+      }
       continue;
     }
     if (line.tag) rules.push(`${row}::after{content:${JSON.stringify(line.tag)}}`);
@@ -124,9 +136,11 @@ export function CoinChart({
   const d = useWords(DESK);
   const lang = useLang();
   const [timeframe, setTimeframe] = useTimeframe();
-  const data = useCandles(coin.id, timeframe);
+  // The price on screen: a refusal of the engine is followed by the browser's own read, drawn only if it agrees.
+  const data = useCandles(coin.id, timeframe, Number.isFinite(coin.price) && coin.price > 0 ? coin.price : null);
   const fresh = useCity((st) => st.snapshot.source === 'live' && !isStale(st.snapshot.fetchedAt));
   const livePrice = fresh && Number.isFinite(coin.price) && coin.price > 0 ? coin.price : null;
+  const now = useNow(5_000);
   const feed = useFeed(coin, data, livePrice, cap);
   const [basis, setBasis] = useBasis(cap !== null);
   const [tickKept, setTicks] = useKept(TICK_KEY);
@@ -154,8 +168,10 @@ export function CoinChart({
     return () => window.removeEventListener('keydown', key);
   }, [full]);
 
-  // «Live» as the screen always said it: the live price closes the newest bar of a fresh read; on «Tick», trades came.
-  const live = ticks ? trades.length > 0 && !tradesStale : fresh && data.status === 'ready' && !data.last?.stale;
+  // «Live» only while the market's newest trade is recent — and, over candles, their read is fresh with the live
+  // price closing the newest bar; else the newest trade's time, quietly; else «Delayed».
+  const chip = liveOf({ ticks, candlesFresh: fresh && data.status === 'ready' && !data.last?.stale, newestTradeAt: trades[0]?.at ?? null, tradesStale, now });
+  const ago = chip.kind === 'trade' ? agoOf(chip.at, now) : null;
   const poolLayer = usePoolLayer(coin.id, head, lang, pool);
   const overlay = useChartLayer();
   const lines = useMemo(() => linesOf(overlay, coin.id), [overlay, coin.id]);
@@ -201,9 +217,17 @@ export function CoinChart({
       ) : null}
       {badge ? <span className={c.badge}>{badge}</span> : null}
       <span className={c.live}>
-        <Chip tone={live ? 'ok' : 'warn'} dot>
-          {live ? w.live : w.delayed}
-        </Chip>
+        {chip.kind === 'live' ? (
+          <Chip tone="ok" dot>
+            {w.live}
+          </Chip>
+        ) : chip.kind === 'trade' && ago ? (
+          <Chip tone="plain">{digits(d.lastTrade(agoText(ago, d)), lang)}</Chip>
+        ) : (
+          <Chip tone="warn" dot>
+            {w.delayed}
+          </Chip>
+        )}
       </span>
       {poolLayer.there ? (
         <button type="button" className={c.round} aria-label={w.poolLayer} title={w.poolLayer} aria-pressed={poolLayer.on} onClick={() => poolLayer.setOn(!poolLayer.on)} data-coin="pool-layer">

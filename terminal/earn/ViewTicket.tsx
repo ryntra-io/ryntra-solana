@@ -1,32 +1,34 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { digits, useWords } from '@/city/lib/i18n/dict';
 import { useLang } from '@/city/lib/i18n/lang';
-import { Figure, Icon, Kick } from '@/terminal/ui';
+import { Action, Figure, Icon, Kick } from '@/terminal/ui';
 import { Pair } from './bits';
-import { TYPE_NAME } from './Chooser';
+import { TYPE_NAME, poolPage } from './Chooser';
 import { ageText, dayPctText, type ChooseRow } from './choose';
 import { feeText, shortUsd } from './rows';
 import { EARN } from './words';
 import e from './earn.module.css';
 
 /**
- * A pool shown to compare: its own figures from the venue and its page there. Adding to it from Ryntra is
- * not built yet — said in one line; the pools that take one approval from here are a tap away in the same table.
+ * A pool shown to compare: its own figures from the venue, and its one action — the pool's own desk here,
+ * its chart, trades and swap («Adding — coming» was a line with nothing to do); its page at the venue a quiet
+ * link under it. The pools that take one approval from here are a tap away in the same table.
  */
 export function ViewTicket({ row, nowMs }: { row: ChooseRow; nowMs: number }) {
   const w = useWords(EARN);
   const lang = useLang();
-  const step = row.step === null ? '—' : digits(String(row.step), lang);
+  const router = useRouter();
+  // DAMM v2 has no price step: its line says the kind and the fee only.
+  const caption = [TYPE_NAME[row.type], row.step === null ? null : w.stepOf(digits(String(row.step), lang)), w.feeOf(feeText(row.feePct, lang))].filter(Boolean).join(' · ');
   return (
     <div className={e.view}>
       <div className={e.ticketHead}>
         <Pair coins={row.coins} size="l" />
         <span className={e.cellWords}>
           <span className={e.sym}>{row.name}</span>
-          <span className={e.cap}>
-            {TYPE_NAME[row.type]} · {w.stepOf(step)} · {w.feeOf(feeText(row.feePct, lang))}
-          </span>
+          <span className={e.cap}>{caption}</span>
         </span>
       </div>
       <div className={e.viewDay}>
@@ -43,7 +45,9 @@ export function ViewTicket({ row, nowMs }: { row: ChooseRow; nowMs: number }) {
         <dt>{w.cAge}</dt>
         <dd>{ageText(row.createdAt, lang, nowMs)}</dd>
       </dl>
-      <p className={e.viewSoon}>{w.viewSoon}</p>
+      <Action onClick={() => router.push(poolPage(row))} data-earn-act="open-pool">
+        {w.openPool}
+      </Action>
       {row.page ? (
         <a className={e.venue} href={row.page} target="_blank" rel="noopener noreferrer">
           {w.openVenue}

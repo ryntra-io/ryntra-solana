@@ -1,4 +1,5 @@
 import type { PulseRow } from '../../lib/spot/pulse.ts';
+import { rudeName } from '../launch/rude.ts';
 
 /**
  * The Market's Pulse on screen: three live columns — New · Almost on a DEX · Out on a DEX — from
@@ -61,9 +62,12 @@ function busier(a: PulseRow, b: PulseRow): boolean {
 
 /**
  * A column's cards, in the engine's order: Ryntra's launches only while they live; in «New» only a coin someone holds
- * and traded; a ticker and name that stand twice — once, the busier coin in the first one's place.
+ * and traded; a ticker and name that stand twice — once, the busier coin in the first one's place. A crude name is not
+ * shown (`rudeName`, the Launch showcase's own list; release check 19.11: «ASSHOLE» came in live) — the coin stays
+ * reachable by its address.
  */
-export function pulseCards(column: PulseColumn, rows: readonly PulseRow[]): PulseRow[] {
+export function pulseCards(column: PulseColumn, all: readonly PulseRow[]): PulseRow[] {
+  const rows = all.filter((row) => !rudeName(row.symbol, row.name));
   const firm = rows.filter((row) => (row.ryntra ? ourLive(row) : column === 'new' ? alive(row) : (row.holders ?? 0) > 0));
   // A quiet hour: «New» adds the coins that do trade, in the engine's order, so the column is not an empty box.
   const kept =

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { NO_CHOICE, backSol, choiceFor, counts, estimateSol, feeText, groupsOf, inClean, outcomeOf, reviewFresh, reviewedSol, riskMap, solFigure, toggled } from './clean-view.ts';
+import { NO_CHOICE, backSol, choiceFor, counts, estimateSol, feeText, groupsOf, inClean, outcomeOf, reviewFresh, reviewedSol, riskMap, solFigure, toggled, unwrapOf } from './clean-view.ts';
 import { CLEAN } from './clean-words.ts';
 
 const item = (over = {}) => ({
@@ -47,6 +47,31 @@ test('the estimate: rent of every account taken and the small coins at the price
   assert.equal(estimateSol(r, NO_CHOICE), 0.004 + 0.02);
   assert.deepEqual(counts(r, NO_CHOICE), { coins: 1, accounts: 1 });
   assert.equal(estimateSol(read([marked]), NO_CHOICE), null);
+});
+
+test('wrapped SOL: off until the person picks it, then said apart — «unwraps … wSOL into SOL» — never in what comes back', () => {
+  const whale = item({ kind: 'wrapped', symbol: 'wSOL', amountRaw: '86260508921310', decimals: 9, valueUsd: null, lamports: 1_488_443, picked: false });
+  const emptyWrapped = item({ kind: 'wrapped', symbol: 'wSOL', amountRaw: '0', decimals: 9, valueUsd: null, lamports: 2_039_280, picked: true });
+  const r = read([whale, emptyWrapped]);
+  assert.equal(unwrapOf(r, NO_CHOICE), null, 'nothing is unwrapped unless the person picks it');
+  assert.equal(estimateSol(r, NO_CHOICE), 0.00203928, 'an empty wrapped account gives its rent');
+  const on = toggled(NO_CHOICE, whale, true);
+  assert.deepEqual(unwrapOf(r, on), { sol: 86_260.50892131, now: true });
+  assert.equal(estimateSol(r, on), 0.00203928 + 0.001488443, 'what comes back is the rent alone: the wrapped SOL is the person’s already');
+  assert.equal(CLEAN.uk.unwrap('86 260,51'), 'Розгорне 86 260,51 wSOL у SOL');
+  assert.equal(CLEAN.en.unwrap('86,260.51'), 'Unwraps 86,260.51 wSOL into SOL');
+});
+
+test('wrapped SOL beside a coin to swap waits for the next clean, as the engine plans it — never promised for this one', () => {
+  const whale = item({ kind: 'wrapped', symbol: 'wSOL', amountRaw: '86260508921310', decimals: 9, valueUsd: null, lamports: 1_488_443, picked: false });
+  const small = item({ valueUsd: 2, lamports: 2_000_000 });
+  const crumb = item({ valueUsd: 0.004, lamports: 2_000_000 });
+  const on = toggled(NO_CHOICE, whale, true);
+  assert.deepEqual(unwrapOf(read([whale, small]), on), { sol: 86_260.50892131, now: false });
+  assert.equal(estimateSol(read([whale, small], 100), on), 0.002 + 0.02, 'its rent does not come with this clean');
+  assert.deepEqual(unwrapOf(read([whale, crumb]), on), { sol: 86_260.50892131, now: true }, 'a crumb under a cent is burnt, not swapped: the unwrap goes now');
+  assert.deepEqual(unwrapOf(read([whale, small]), toggled(on, small, false)), { sol: 86_260.50892131, now: true }, 'the swap taken out — the unwrap goes now');
+  assert.equal(CLEAN.uk.unwrapNext('86 260,51'), '86 260,51 wSOL розгорнеться наступним очищенням');
 });
 
 test('groups: coins into SOL with wrapped SOL, litter, empty accounts', () => {

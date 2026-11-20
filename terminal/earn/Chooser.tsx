@@ -53,8 +53,12 @@ export function rowCaption(row: ChooseRow, w: W, lang: Lang, short = false): str
   return parts.join(' · ');
 }
 
-/** A pool's own page in the terminal: DLMM Pro's desk, and DLMM's once it stands; DAMM v2 has none. */
-export const poolPage = (row: ChooseRow): string | null => (row.type === 'damm-v2' ? null : `/pool/${row.address}`);
+/**
+ * A pool's own page in the terminal: every pool of Meteora has its desk — the chart, its trades and its
+ * swap; a DLMM and a DLMM Pro pool its liquidity by price too. A page offers a position only where one
+ * opens, so a DAMM v2 pool's page is a desk like any.
+ */
+export const poolPage = (row: ChooseRow): string => `/pool/${row.address}`;
 
 /* ── one filter: a chip that opens its choices under it ─────────────────────────────────────────────────────────── */
 
@@ -142,14 +146,16 @@ export function FilterBar({ filters, onFilters, sort, onSort, more, onMore, ever
               type="button"
               className={cx(e.chip, filters.strategy === strategy && e.chipOn)}
               aria-pressed={filters.strategy === strategy}
+              title={strategy === 'high' ? w.sHighRule(floorText(HIGH_MIN_TVL_USD, 'usd', lang).replace(/^> /, '')) : undefined}
               onClick={() => {
                 onFilters(filters.strategy === strategy ? START_FILTERS : strategyFilters(strategy));
                 onSort(filters.strategy === strategy ? sort : STRATEGY_SORT[strategy]);
               }}
             >
               {strategyName(strategy, w)}
-              {/* «High income» counts a pool from its depth: said on the chip while it holds (the rule was unseen). */}
-              {strategy === 'high' && filters.strategy === 'high' ? <span className={e.chipFloor}>{w.sHighFrom(floorText(HIGH_MIN_TVL_USD, 'usd', lang).replace(/^> /, ''))}</span> : null}
+              {/* «High income» counts a pool from its depth: said on the chip itself, before it is pressed (a
+                  pool with a higher figure but less in it was left out by a rule nobody saw). */}
+              {strategy === 'high' ? <span className={e.chipFloor}>{w.sHighFrom(floorText(HIGH_MIN_TVL_USD, 'usd', lang).replace(/^> /, ''))}</span> : null}
             </button>
           ))}
           <span className={e.stratSep} aria-hidden="true" />
@@ -189,8 +195,8 @@ export function FilterBar({ filters, onFilters, sort, onSort, more, onMore, ever
           while the order is by a column «Main» does not show (the newest first). */}
       {compact || !headSorted ? <Pick end name={w.sortBy} value={`${sortNames[sort.key]} ${sort.dir === 'desc' ? '↓' : '↑'}`} options={sorts.map((key) => ({ id: key, label: sortNames[key] }))} current={sort.key} onPick={(key) => onSort({ key, dir: 'desc' })} on={false} /> : null}
     </div>
-    {/* «+ Filters», the reset and the table's own «Columns» stand at the bar's end, outside the filters: the filters may
-        scroll on a laptop's desk, these stay whole and in reach («+ Фільтри» was cut on 1920 and 1440). */}
+    {/* «+ Filters», the reset and the table's own «Columns» stand at the bar's end, outside the filters: the filters wrap
+        onto a second line on a laptop's desk, these stay whole and in reach. */}
     {compact ? null : (
       <div className={e.filtersEnd}>
         {changed ? reset : null}
@@ -274,8 +280,8 @@ export function PoolsTable({ rows, every, sort, onSort, frontKey, held, onPick, 
               <Pair coins={row.coins} />
               <span className={e.cellWords}>
                 {/* The pair is the row's way to the pool's own page — never while a signature is out, when the ticket stays
-                    in front; a pool without a page of its own opens its ticket instead. */}
-                {page && !held ? (
+                    in front. */}
+                {!held ? (
                   <Link href={page} className={cx(e.sym, e.rowHit)}>
                     {row.name}
                   </Link>
@@ -330,12 +336,19 @@ export function pickKey(row: ChooseRow): string {
   return row.act === 'add' ? `pool:${row.address}` : row.act === 'pro' ? `pro:${row.address}` : `view:${row.address}`;
 }
 
-/** The phone's list: the pair and its type, a day's fees over the depth and in dollars. */
+/**
+ * The phone's list: the pair and its type, a day's fees over the depth and in dollars — under one quiet head that says
+ * what the figures are, as a table's head does on a desk (two numbers stood on the right with no name).
+ */
 export function PhoneRows({ rows, held, onPick }: { rows: readonly ChooseRow[]; held: boolean; onPick: (row: ChooseRow) => void }) {
   const w = useWords(EARN);
   const lang = useLang();
   return (
     <div className={e.pList}>
+      <div className={e.pListHead} aria-hidden="true">
+        <span>{`${w.cPool} · ${w.inPool}`}</span>
+        <span>{w.phoneFees}</span>
+      </div>
       {rows.map((row) => (
         <div key={row.key} className={e.pRow}>
           <Pair coins={row.coins} />

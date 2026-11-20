@@ -11,7 +11,8 @@ import type { DepthCoin } from '@/lib/market-depth/model';
 import { lookalikeOf } from '@/lib/world/text-safety/lookalike';
 import type { SpotMarket } from '@/lib/spot/markets';
 import { targetOf, useDepthRead } from '@/terminal/market/depth';
-import { KIND_TABS, logoOf, type KindTab } from '@/terminal/market/depth-view';
+import { KIND_TABS, logoChain, logoOf, type KindTab } from '@/terminal/market/depth-view';
+import { coinName } from '@/terminal/market/market-view';
 import { useSaved } from '@/terminal/market/saved';
 import { useDismiss } from '@/terminal/shell/useDismiss';
 import { Chip, CoinLogo, Icon, Search, Tabs, changeText, changeTone, cx, priceText, usdText } from '@/terminal/ui';
@@ -60,22 +61,24 @@ export function CoinHead({ coin, market, price, change, tools }: { coin: HeadCoi
     <div className={h.head}>
       <div className={h.anchor} ref={box}>
         <button type="button" className={u.pickBtn} aria-haspopup="dialog" aria-expanded={open} aria-label={`${sym} — ${d.pick}`} onClick={() => setOpen((was) => !was)}>
-          <CoinLogo src={coin.logo} symbol={sym} size="l" />
+          <CoinLogo {...logoChain(coin.mint, coin.logo, coin.logo)} symbol={sym} size="l" />
           <span className={h.names}>
             <span className={h.symRow}>
               <b className={h.sym}>{sym}</b>
               <Icon name="chevron" size="s" />
             </span>
-            <span className={h.name}>{coin.name}</span>
+            <span className={h.name}>{coinName({ id: coin.mint, name: coin.name })}</span>
           </span>
         </button>
         {open ? <Picker current={coin.mint} onClose={() => setOpen(false)} /> : null}
       </div>
       {coin.verified ? (
-        <span className={h.vetted} title={w.verified}>
+        <span className={h.vetted} title={w.verified} role="img" aria-label={w.verified}>
           <Chip tone="ok">
             <Icon name="check" size="s" />
-            {w.verified}
+            <span className={h.vettedWord} aria-hidden="true">
+              {w.verified}
+            </span>
           </Chip>
         </span>
       ) : null}
@@ -129,8 +132,9 @@ function About({ mint, market }: { mint: string; market: SpotMarket | null }) {
   return (
     <span className={h.anchor} ref={box}>
       <span className={h.links}>
+        {/* On a wide head the links stand beside «i»; where the four figures need the room, they wait behind it (QA 19.11). */}
         {links.map(([label, href, glyph]) => (
-          <a key={glyph} className={u.iconBtn} href={href} target="_blank" rel="noopener noreferrer nofollow" aria-label={label} title={label}>
+          <a key={glyph} className={cx(u.iconBtn, h.barLink)} href={href} target="_blank" rel="noopener noreferrer nofollow" aria-label={label} title={label}>
             <CoinGlyph name={glyph} />
           </a>
         ))}
@@ -140,6 +144,16 @@ function About({ mint, market }: { mint: string; market: SpotMarket | null }) {
       </span>
       {open ? (
         <div className={h.pop} role="dialog" aria-label={d.about}>
+          {links.length ? (
+            <span className={h.popLinks}>
+              {links.map(([label, href, glyph]) => (
+                <a key={glyph} className={h.popLink} href={href} target="_blank" rel="noopener noreferrer nofollow">
+                  <CoinGlyph name={glyph} />
+                  {label}
+                </a>
+              ))}
+            </span>
+          ) : null}
           <span className={h.popLabel}>{d.address}</span>
           <span className={h.addressRow}>
             <code className={h.address}>{mint}</code>
@@ -162,7 +176,7 @@ type CatalogRow = Awaited<ReturnType<typeof searchCatalog>>[number];
 
 type PickRow = Readonly<{ mint: string; symbol: string; name: string; logo: string | null; price: number | null; change: number | null; volume: number | null; mcap: number | null; verified: boolean }>;
 
-const rowOfDepth = (coin: DepthCoin): PickRow => ({ mint: coin.id, symbol: coin.symbol, name: coin.name, logo: logoOf(coin), price: coin.price, change: coin.stats['24h']?.change ?? null, volume: coin.stats['24h']?.volume ?? null, mcap: coin.mcap, verified: coin.verified });
+const rowOfDepth = (coin: DepthCoin): PickRow => ({ mint: coin.id, symbol: coin.symbol, name: coinName({ id: coin.id, name: coin.name }), logo: logoOf(coin), price: coin.price, change: coin.stats['24h']?.change ?? null, volume: coin.stats['24h']?.volume ?? null, mcap: coin.mcap, verified: coin.verified });
 /**
  * A coin the catalogue found, as a row — not one Jupiter marks suspicious, nor one whose ticker passes for a known coin's
  * on another mint. Its address, pasted whole, still opens it.
@@ -286,7 +300,7 @@ function Picker({ current, onClose }: { current: string; onClose: () => void }) 
         {rows.map((row, i) => (
           <li key={row.mint} role="option" aria-selected={i === at} data-at={i}>
             <button type="button" className={cx(h.pickRow, row.mint === current && h.pickHere)} onClick={() => go(row.mint)} onMouseEnter={() => setAt(i)} tabIndex={-1}>
-              <CoinLogo src={row.logo} symbol={bare(row.symbol)} size="m" eager />
+              <CoinLogo {...logoChain(row.mint, row.logo, row.logo)} symbol={bare(row.symbol)} size="m" eager />
               <span className={h.pickName}>
                 <b>
                   {bare(row.symbol)}

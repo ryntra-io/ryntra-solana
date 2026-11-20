@@ -207,7 +207,9 @@ export const EARN = words(
     sStable: 'Stable pairs',
     sStableLine: (pair: string) => `${pair} · main coins`,
     sHigh: 'High income',
-    sHighFrom: (floor: string) => `from ${floor}`,
+    sHighFrom: (floor: string) => `${floor}+ in pool`,
+    /** The rule behind «High income», said on its chip and as its title. */
+    sHighRule: (floor: string) => `The highest fees for what is in the pool, among pools that hold ${floor} or more`,
     sHighLine: (pair: string) => `${pair} · higher risk`,
     sSol: 'SOL pairs',
     sReward: 'Pool reward',
@@ -254,7 +256,8 @@ export const EARN = words(
     feeOf: (fee: string) => `fee ${fee}`,
     noMatch: 'No pool fits these filters.',
     view: 'View',
-    viewSoon: 'Adding to this pool from Ryntra — coming.',
+    /** A phone's list of pools: what its two figures on the right are. */
+    phoneFees: 'Fees 24h',
     openVenue: 'Open on Meteora',
     viewDayPct: 'Fees to the pool, 24h',
     cCoin: 'Coin',
@@ -267,6 +270,8 @@ export const EARN = words(
 
     // One layout for every tab, each with its own ticket.
     tabPro: 'DLMM Pro',
+    /** The same tab on a phone, where five tabs stand whole on its width. */
+    tabProShort: 'Pro',
     proActive: 'Active',
     /** The row of one of the city's own DLMM Pro pools that holds nothing yet. */
     beFirst: 'Be the first',
@@ -488,7 +493,8 @@ export const EARN = words(
     sStable: 'Стабільні пари',
     sStableLine: (pair: string) => `${pair} · основні монети`,
     sHigh: 'Високий дохід',
-    sHighFrom: (floor: string) => `від ${floor}`,
+    sHighFrom: (floor: string) => `у пулі від ${floor}`,
+    sHighRule: (floor: string) => `Найбільші комісії до того, що лежить у пулі, серед пулів, у яких від ${floor}`,
     sHighLine: (pair: string) => `${pair} · вищий ризик`,
     sSol: 'SOL-пари',
     sReward: 'Нагорода пулу',
@@ -535,7 +541,7 @@ export const EARN = words(
     feeOf: (fee: string) => `комісія ${fee}`,
     noMatch: 'Жоден пул не підходить під ці фільтри.',
     view: 'Огляд',
-    viewSoon: 'Додавання в цей пул з Ryntra — скоро.',
+    phoneFees: 'Комісії 24 год',
     openVenue: 'Відкрити на Meteora',
     viewDayPct: 'Комісії пулу за добу',
     cCoin: 'Монета',
@@ -547,6 +553,7 @@ export const EARN = words(
     stakeEmpty: 'Ставки стейкінгу не прочитались.',
 
     tabPro: 'DLMM Pro',
+    tabProShort: 'Pro',
     proActive: 'Активні',
     beFirst: 'Стати першим',
     cFeeTvlDay: 'Комісії / TVL',

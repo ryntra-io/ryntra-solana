@@ -2,7 +2,8 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { bookOf } from "../../city/lib/command/parse.ts";
-import { EVERY_GATE, askRows, modelWanted, planAnswer } from "./ask-route.ts";
+import { askLabel } from "./ask-label.ts";
+import { EVERY_GATE, NEW_COINS, askHref, askRows, modelWanted, newCoinsRow, planAnswer } from "./ask-route.ts";
 
 /* The line's own rules first and free; the model only where they did not understand — and its plan opens the
    card of a shelf that is on, or asks back «Уточни: …». Never a shelf that is off, never a signature. */
@@ -61,4 +62,33 @@ test("what the engine does not take is a question back, never a guess", () => {
   // A number the person did not type is not in the card.
   const made = planAnswer(draft({ action: "trade", coin: "JUP" }, { perDaySol: 5 }), "торгуй JUP за мене", BOOK, ALL, EVERY_GATE);
   assert.equal(made.row.command.ask.perDaySol, null);
+});
+
+/* «Find new coins for me» opened Recurring buys on JUP with «New launches that pass the
+   check» over it — a card for a scout the terminal does not run yet. New launches bought early open the market's new
+   coins instead, whether the model plans it or the line's own rules read it; the home page's ready sentence opens them
+   at once. */
+test("new coins open the market's new coins — never a bot's card the terminal cannot run", () => {
+  const scout = planAnswer(draft({ action: "scout" }), "знаходь нові монети", BOOK, ALL, EVERY_GATE);
+  assert.equal(scout.kind, "row");
+  assert.deepEqual(scout.row.target, NEW_COINS, "the model's scout: the Launch's «New» tab");
+  assert.deepEqual(NEW_COINS, { shelf: "launch", mint: null, path: "/launch?tab=fresh" });
+  assert.equal(askHref(NEW_COINS, "live"), "/launch?tab=fresh");
+  assert.equal(planAnswer(draft({ action: "scout" }), "знаходь нові монети", BOOK, ONLY("agents", "market"), EVERY_GATE), null, "Launch off: the line's own reading");
+  // The line's own rules: «buy new launches early» is the same plan.
+  const early = first("купуй нові запуски рано");
+  assert.equal(early?.command.kind, "autopilot");
+  assert.equal(early?.command.ask.plan?.id, "early");
+  assert.deepEqual(early?.target, NEW_COINS);
+  // Its row says where it leads — the new coins, not a budget it would drop.
+  assert.equal(askLabel(early.command, "uk"), "Нові на ринку");
+  assert.equal(askLabel(early.command, "en"), "New on the market");
+  assert.equal(askLabel(first("торгуй JUP за мене щодня на 2 SOL").command, "en"), "Trade within a daily budget");
+  // A budget a day stays Recurring buys.
+  assert.deepEqual(first("торгуй JUP за мене щодня на 2 SOL")?.target, { shelf: "agents", mint: null, path: "/bots/recurring" });
+  // The ready sentence's own row: no model is asked for it, it opens the new coins.
+  const row = newCoinsRow("Знайди нові монети");
+  assert.deepEqual(row.target, NEW_COINS);
+  assert.equal(row.command.kind, "ask");
+  assert.notEqual(row.key, first("Знайди нові монети")?.key, "a row of its own: the line takes it as picked, the model is not asked");
 });

@@ -15,6 +15,8 @@ import { existsSync, readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { APP_LINK_PATHS, APP_LINK_PREFIXES } from '../src/features/city/city-page.ts'
+
 const root = join(dirname(fileURLToPath(import.meta.url)), '..')
 const requireKey = process.argv.includes('--require-key')
 const PACKAGE = 'io.ryntra.app'
@@ -52,13 +54,19 @@ check('interface style follows the system', app.userInterfaceStyle === 'automati
 /* ---- the links the phone owns ---- */
 const filters = app.android?.intentFilters ?? []
 const paths = filters.flatMap((filter) =>
-  (filter.data ?? []).map((d) => `${d.scheme}://${d.host}${d.path ?? d.pathPrefix ?? ''}`),
+  (filter.data ?? []).map((d) =>
+    d.path !== undefined ? `${d.scheme}://${d.host}${d.path}` : `${d.scheme}://${d.host}${d.pathPrefix ?? ''}*`,
+  ),
 )
-// The app is the city (decision 75): it claims the city itself and a coin's tower, nothing else, auto-verified.
-const city = ['https://ryntra.io/', 'https://ryntra.io/c/']
+// The app is ryntra.io's terminal: it claims the home, each terminal page exactly and the
+// folders of a coin, a pool and a bot — the list the app's own link reader opens (`city-page.ts`) — auto-verified.
+const owned = [
+  ...APP_LINK_PATHS.map((path) => `https://ryntra.io${path}`),
+  ...APP_LINK_PREFIXES.map((prefix) => `https://ryntra.io${prefix}*`),
+]
 check(
-  'App Links intent filters for the city and its towers only, auto-verified',
-  paths.length === city.length && city.every((w) => paths.includes(w)) && filters.every((f) => f.autoVerify === true),
+  'App Links intent filters for the terminal pages the app opens only, auto-verified',
+  paths.length === owned.length && owned.every((w) => paths.includes(w)) && filters.every((f) => f.autoVerify === true),
   paths.join(', '),
 )
 

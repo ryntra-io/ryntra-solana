@@ -7,6 +7,7 @@ import { entryCostPct, exitSpreadPct, lamportsFromText, saverLine } from '@/city
 import { SAVER_BUSY, saverChoice, useSaver } from '@/city/lib/earn/saver-store';
 import { useEarnData } from '@/city/lib/earn/store';
 import { digits, useWords } from '@/city/lib/i18n/dict';
+import { fieldText, fieldValue } from '@/city/lib/i18n/figures';
 import { useLang } from '@/city/lib/i18n/lang';
 import { useWallet } from '@/city/lib/trade/wallet';
 import { explorerTxUrl } from '@/lib/solana/explorer';
@@ -105,11 +106,13 @@ export function StakeTicket({ onConnect }: { onConnect: () => void }) {
         <AmountField
           label={w.youPut}
           aside={sol !== null ? w.balance(digits(solText(sol), lang)) : undefined}
-          value={typed}
+          // The amount is written as the rest of the site writes it — «0,1» in Ukrainian — and kept with a point,
+          // as the ladder's field keeps it (`fieldText` / `fieldValue`): «1,234» is one SOL and a fraction, never a format error.
+          value={fieldText(typed, lang)}
           onChange={(text) => {
             // The screen's own order build for the last amount is let go (nothing goes to the wallet from it); the new amount stands.
             if (building && useSaver.getState().phase === 'preparing') useSaver.setState({ phase: 'idle' });
-            useSaver.getState().setTyped(text);
+            useSaver.getState().setTyped(fieldValue(text, lang));
           }}
           asset={{ symbol: 'SOL', icon: iconOf(SOL_MINT) }}
         />

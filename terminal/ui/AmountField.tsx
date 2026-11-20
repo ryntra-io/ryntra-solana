@@ -34,6 +34,7 @@ export function AmountField({
   size = 'l',
   unit,
   whole = false,
+  readOnly = false,
 }: {
   label: string;
   aside?: string;
@@ -49,6 +50,8 @@ export function AmountField({
   size?: 'l' | 's';
   unit?: string;
   whole?: boolean;
+  /** Shown, not changed: the sum a wallet is signing, or one at work. */
+  readOnly?: boolean;
 }) {
   const id = useId();
   return (
@@ -68,6 +71,7 @@ export function AmountField({
           autoComplete="off"
           spellCheck={false}
           value={value}
+          readOnly={readOnly}
           placeholder={placeholder}
           onChange={(event) => onChange(whole ? event.target.value.replace(/\D/g, '').slice(0, 6) : amountText(event.target.value))}
         />

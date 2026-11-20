@@ -12,11 +12,9 @@ import { searchCatalog } from '@/city/lib/search/sources';
 import { SOL } from '@/city/lib/trade/tiles';
 import { useWallet } from '@/city/lib/trade/wallet';
 import { MenuIcon } from '@/terminal/shell/menu-icons';
-import { coinHref, shelfOn } from '@/terminal/shell/shelves';
 import { useDismiss } from '@/terminal/shell/useDismiss';
 import { useMarket } from '@/terminal/shell/useMarket';
-import { AmountField, Chip, CoinLogo, Icon, Info, Kick, Panel, QuietLink, Search, Tile, Title, changeText, changeTone, coinIcon, priceText } from '@/terminal/ui';
-import { useDayMove } from '@/terminal/market/day-move';
+import { AmountField, Chip, CoinLogo, Icon, Info, Kick, Panel, Search, Title, coinIcon, priceText } from '@/terminal/ui';
 import type { BotId } from './kinds';
 import { coinChoices, searchable, type ChoiceCoin } from './rows';
 import { BOTS } from './words';
@@ -24,6 +22,9 @@ import b from './bots.module.css';
 
 /** A coin a bot works on, as its form keeps it; a coin found in the catalogue keeps its name and Jupiter's word on it. */
 export type PickedCoin = Readonly<{ mint: string; symbol: string; icon: string | null; name?: string; verified?: boolean | null }>;
+
+/** SOL as a bot shows it before the market's read of it comes: its own logo, its price «—» until then. */
+export const SOL_COIN: PickedCoin = { mint: SOL.mint, symbol: SOL.symbol, icon: SOL.icon ?? null, name: SOL.name ?? undefined, verified: true };
 
 export const coinOf = (tower: Pick<Tower, 'id' | 'symbol' | 'icon'> & Partial<Pick<Tower, 'name' | 'verified'>>): PickedCoin => ({ mint: tower.id, symbol: tower.symbol, icon: coinIcon(tower), name: tower.name, verified: tower.verified });
 
@@ -286,38 +287,6 @@ export function CoinAmount({
         </div>
       ) : null}
     </div>
-  );
-}
-
-/** The coin a bot works on, beside its form: its logo and name, its price now and its day — from the market's read. */
-export function CoinCard({ coin }: { coin: PickedCoin | null }) {
-  const w = useWords(BOTS);
-  const lang = useLang();
-  const towers = useTowers();
-  const tower = coin ? towers.get(coin.mint) : undefined;
-  // The day's move as every screen says it: the newest read of it.
-  const day = useDayMove(coin?.mint ?? null);
-  if (!coin) return null;
-  const priced = tower && !tower.unread?.includes('price') && tower.price > 0;
-  return (
-    <Panel gap={14} label={coin.symbol}>
-      <div className={b.coin}>
-        <CoinLogo src={coin.icon} symbol={coin.symbol} size="l" />
-        <span className={b.coinWords}>
-          <span className={b.coinSymbol}>{coin.symbol}</span>
-          {tower?.name ? <span className={b.coinName}>{tower.name}</span> : null}
-        </span>
-        {shelfOn('market') ? (
-          <QuietLink size="s" href={coinHref(coin.mint, 'live')}>
-            {w.openChart}
-          </QuietLink>
-        ) : null}
-      </div>
-      <div className={b.twoUp}>
-        <Tile label={w.priceNow} value={priced ? priceText(tower.price, lang) : '—'} />
-        <Tile label={w.day} value={day !== null ? changeText(day, lang) : '—'} tone={day !== null ? changeTone(day) : undefined} />
-      </div>
-    </Panel>
   );
 }
 

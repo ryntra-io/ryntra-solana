@@ -58,7 +58,10 @@ test("a link names its pair: the coin beyond SOL and USDC is the one the ticket 
   assert.deepEqual(pairOfLink("$USDT", BONK), { subject: BONK, side: "buy", counter: USDT_MINT });
   assert.equal(pairOfLink("SOL", "SOL"), null);
   assert.equal(pairOfLink("nonsense", null), null);
-  assert.equal(pairOfLink("JUP", "USDC"), null, "a coin named that is not one: no pair the link did not name");
+  assert.deepEqual(pairOfLink("SOL", "JUP"), { subject: JUP, side: "buy", counter: SOL.mint }, "«Main»'s tickers name their coins (QA 19.11)");
+  assert.deepEqual(pairOfLink("JUP", "USDC"), { subject: JUP, side: "sell", counter: USDC.mint });
+  assert.deepEqual(pairOfLink("bonk", "$jup"), { subject: JUP, side: "buy", counter: BONK });
+  assert.equal(pairOfLink("FARTBOY", "USDC"), null, "a ticker beyond «Main» is anybody's: no pair the link did not name");
   assert.equal(pairOfLink(null, null), null);
   assert.equal(mintOfParam("<script>"), null);
 });

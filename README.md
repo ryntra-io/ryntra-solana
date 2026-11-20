@@ -171,20 +171,6 @@ yours stops it.
 
 </details>
 
-## Grants and hackathons
-
-- **Colosseum Crypto World's Fair**, October 2026 — what was built during the hackathon, counted file by file
-  [below](#built-during-the-hackathon). *Judging.*
-- **Meteora's Dynamic Bonding Curve track**, October 2026 — launches on DBC with a move to DAMM v2. *Submitted; launches
-  live on mainnet.*
-- **Clock In by Solana Mobile**, October 2026 — the Android app in the Solana dApp Store. *Live.*
-- **Solana Foundation, AI**, November 2026 — the agent's safety layer as open code under Apache-2.0. *Applied: the
-  layer runs in production; the packages are not published yet.*
-- **Solana Mobile Builder Grants**, November 2026 — the agent's report as a native notification, launch from the
-  camera, Seeker. *Applied: the work starts with the grant.*
-
-**[GRANTS.md](GRANTS.md)** puts each promise beside the code that keeps it — and says plainly what is not built yet.
-
 ## Inside this repository
 
 | Path | What lives there |
@@ -198,8 +184,8 @@ yours stops it.
 | [`supabase/`](supabase) | The database schema, migration by migration |
 | [`public/`](public) | Static assets and these pictures |
 
-7,791 files, each test beside the code it tests. Every update of this repository is one commit named for what
-shipped; the latest is from 2026-11-19.
+7,818 files, each test beside the code it tests. Every update of this repository is one commit named for what
+shipped; the latest is from 2026-11-20.
 
 **Built with** Next.js 15 · React 19 · TypeScript · Solana Kit and web3.js · Jupiter · Meteora DLMM Pro, DLMM, DBC and
 DAMM v2 · Squads · Relay · Supabase · Expo and React Native · Vercel.
@@ -241,38 +227,21 @@ npm run release:android -- --unsigned --abi=arm64-v8a    # an APK in apps/mobile
 </details>
 
 <details>
-<summary><b>Open and closed</b></summary>
+<summary><b>About this repository</b></summary>
 
-This repository is the code of the product as it is released — public so that anyone can read and evaluate it. It is
-built from Ryntra's development repository by one command, never by hand: an allowlist decides which files are here;
-task numbers and development notes are taken out of comments; gates refuse any secret, private address or internal
-word, and any import that leaves this tree; a fresh clone is installed, typechecked, linted, tested and built — the web
-app and the Android app — before one commit, named for what shipped.
-
-**Deliberately closed:** keys and environment values; the plans, research and working notes of the team; the coding
-assistants' instructions; and the separate products of the development repository.
+This repository is the code of the product as it is released — public so that anyone can read and evaluate it. Each
+update is one commit, published only after a fresh clone is installed, typechecked, linted, tested and built — the
+web app and the Android app. Keys and environment values are never here.
 
 **Open source:** [ryntra-solana-evidence](https://github.com/ryntra-io/ryntra-solana-evidence), Ryntra's TypeScript kit
 for Solana tokens, is published separately under Apache-2.0.
 
 </details>
 
-## Built during the hackathon
-
-The code as it stood before the hackathon is tagged `pre-hackathon-baseline-2026-09-11` in the development repository (commit `7fc5776f`,
-2026-09-11). Since then, for the 7,791 files here:
-
-| New | Changed | Unchanged | Lines |
-|:---:|:---:|:---:|:---:|
-| 6,067 | 899 | 825 | +1,252,976 / −28,166 |
-
-[BOUNDARY.md](BOUNDARY.md) lists every new and every changed file.
-
 ## Learn more
 
 - **[LEARN.md](LEARN.md)** — every screen in plain words, with the code behind it
 - **[METEORA.md](METEORA.md)** — how Ryntra uses Meteora, DLMM Pro first, file by file
-- **[GRANTS.md](GRANTS.md)** — what we applied for, and the code behind each promise
 - **[SECURITY.md](SECURITY.md)** — reporting a vulnerability
 
 [hello@ryntra.io](mailto:hello@ryntra.io) · [@Ryntra_io on X](https://x.com/Ryntra_io) · [ryntra.io](https://ryntra.io)

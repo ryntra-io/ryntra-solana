@@ -9,7 +9,7 @@ import type { PulseRow } from '@/lib/spot/pulse';
 import { coinHref } from '@/terminal/shell/shelves';
 import { useNarrow } from '@/terminal/shell/useNarrow';
 import { CoinLogo, Tabs, changeText, changeTone, usdText } from '@/terminal/ui';
-import { ageParts, countText } from './depth-view';
+import { ageParts, countText, logoChain } from './depth-view';
 import { DEPTH, UNIT_WORD } from './depth-words';
 import { Bars, People } from './glyphs';
 import { PULSE_COLUMNS, PULSE_MOVE, PULSE_SHOWN, bornAt, cardLogo, curvePct, padWord, pulseBoard, type PulseColumn } from './pulse-view';
@@ -116,7 +116,7 @@ function Card({ row, column, now }: { row: PulseRow; column: PulseColumn; now: n
   const quick: QuickCoin = { id: row.mint, symbol: row.symbol, name: row.name, icon: row.icon, logo };
   return (
     <div className={d.card} data-card="" data-ours={row.ryntra ? '' : undefined} onClick={() => router.push(href)}>
-      <CoinLogo src={logo} symbol={row.symbol} size="m" className={d.cardLogo} />
+      <CoinLogo {...logoChain(row.mint, row.icon, logo)} symbol={row.symbol} size="m" className={d.cardLogo} />
       <span className={d.cardWords}>
         <span className={d.cardLine}>
           <Link href={href} className={d.cardSym} onClick={(event) => event.stopPropagation()}>

@@ -121,17 +121,18 @@
   white-space: normal;
 }
 
-/* «High income»'s floor, said on its chip while it holds. */
+/* «High income»'s floor, said on its chip. */
 .chipFloor {
   margin-left: 6px;
   font-weight: 500;
   opacity: 0.72;
 }
 
-/* The row of one of the city's own pools that holds nothing yet: its line invites the first position. */
+/* The row of one of the city's own pools that holds nothing yet: its line invites the first position, a
+   quiet line at the end of «Active», never a bright call over the pools that hold liquidity. */
 .cap.invite {
   font-weight: 600;
-  color: var(--amber);
+  color: var(--soft);
 }
 
 /* Where the pair's cell is narrow (a laptop beside the ticket), the invitation says its first words only; a phone's row
@@ -478,8 +479,21 @@
   border-top: 1px solid var(--line);
 }
 
-.pRow:first-child {
+.pRow:first-child,
+.pListHead + .pRow {
   border-top: 0;
+}
+
+/* A phone's list head: what the row's figures are, quiet, over the first row. */
+.pListHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 28px;
+  font-size: var(--type-caption);
+  font-weight: 600;
+  color: var(--dim);
 }
 
 .pMain {
@@ -774,8 +788,10 @@
   color: var(--ice);
 }
 
+/* A filter's menu stands over the list under it: the bar is lifted above the table's own layers. */
 .filtersWrap {
   position: relative;
+  z-index: 3;
   display: flex;
   align-items: flex-start;
   gap: 8px;
@@ -870,12 +886,6 @@
   gap: 12px;
 }
 
-.viewSoon {
-  font-size: var(--type-small);
-  line-height: 1.45;
-  color: var(--ice);
-}
-
 .venue {
   display: inline-flex;
   align-items: center;
@@ -925,28 +935,23 @@
   .deskMain > .cards .cardFigure {
     font-size: var(--type-lead);
   }
+
+  /* The card's line says itself whole on two lines, never «SOL · USDC · основні …». */
+  .deskMain > .cards .cardLine {
+    display: -webkit-box;
+    white-space: normal;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
 }
 
-/* A list narrower than the widest desk's: the pools' filters stay one row that scrolls sideways — every tab's table
-   then starts at the same place. A filter's menu opens under the whole row. */
+/* A list narrower than the widest desk's: the chips a step tighter, and «Columns» says its two choices without its name
+   (the name stays its label for a screen reader). The row wraps onto a second line where it must (QA 19.11:
+   a row that scrolled hid the filters that hold — «У пулі > $50K», «Перевірені» — and clipped every filter's menu, so
+   «Тип», «Монета» and the floors did not open on 1920 and 1440): every chip stays in sight, and each menu opens under
+   its own chip, over the table. */
 @container earnlist (min-width: 600px) and (max-width: 1400px) {
-  /* The row scrolls: its right edge fades, and its end leaves room past the last chip, so a chip under the edge reads as
-     more to scroll — never as one cut off. */
-  .deskMain .filters {
-    flex-wrap: nowrap;
-    padding-right: 32px;
-    overflow-x: auto;
-    scrollbar-width: none;
-    mask-image: linear-gradient(to right, var(--ink) calc(100% - 32px), transparent);
-  }
-
-  .deskMain .filters::-webkit-scrollbar {
-    display: none;
-  }
-
-  /* A laptop's desk fits the whole row where it can: the chips a step tighter, and «Columns» says its two choices
-     without its name (the name stays its label for a screen reader). */
-  .deskMain .filters {
+  .deskMain .filtersWrap {
     gap: 6px;
   }
 
@@ -957,13 +962,23 @@
   .deskMain .filtersEnd [data-terminal='columns'] > span:first-child {
     display: none;
   }
+}
 
-  .deskMain .filters > * {
-    flex: none;
+/* On a desk the chips and the bar's end («+ Filters», «Columns») wrap as one row of chips: a laptop's list takes two
+   lines, never three with one chip alone on the last (the filters wrapped inside their own box beside the
+   bar's end and left «Перевірені» on a third line at 1440). The bar's end keeps to the right of its line. */
+@container earnlist (min-width: 600px) {
+  .deskMain .filtersWrap {
+    flex-wrap: wrap;
+    align-items: center;
   }
 
-  .deskMain .filters .pickBox {
-    position: static;
+  .deskMain .filtersWrap > .filters {
+    display: contents;
+  }
+
+  .deskMain .filtersEnd {
+    margin-left: auto;
   }
 }
 
@@ -1175,6 +1190,15 @@
   /* The bar of DLMM Pro keeps its figures and its choice on one row: the venue's mark is the tab's own name here. */
   .barBadge {
     display: none;
+  }
+
+  /* The section's five tabs stand whole on a phone's width: a step tighter, short names, no counts. */
+  .headTabs {
+    gap: 0;
+  }
+
+  .headTabs > [role='tab'] {
+    padding: 0 8px;
   }
 
   .filters > .grow {

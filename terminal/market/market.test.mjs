@@ -85,6 +85,7 @@ test("the search finds a coin by its ticker, its name or its own address; a `$` 
   assert.ok(matches(MARKET_COINS[0], "solana"), "SOL answers to the network's own name");
   assert.equal(coinName(MARKET_COINS[0]), "Solana");
   assert.equal(coinName(jup), "Jupiter");
+  assert.equal(coinName({ id: "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB", name: "USDT" }), "Tether USD", "the dollars go by their issuers' names");
 });
 
 test("a column sorts both ways; a figure the source did not measure stands last either way", () => {
@@ -188,7 +189,9 @@ test("the first screen's promise: the agent's three sentences, each read as what
     assert.ok(!readySentences(hero, shut, HERO.length).some((s) => s.id === "tradeDaily"), lang);
   }
   assert.equal(MARKET.uk.sayTradeDaily("JUP"), "Торгуй JUP щодня");
-  assert.equal(MARKET.uk.sayScout, "Знаходь нові монети за мене");
+  // A one-time find — the market's new coins — never «keep finding for me» before the scout is.
+  assert.equal(MARKET.uk.sayScout, "Знайди нові монети");
+  assert.equal(MARKET.en.sayScout, "Find new coins");
 });
 
 test("«Trade … with 0.1 SOL a day» names JUP, else MET — never another coin (decision 108)", () => {

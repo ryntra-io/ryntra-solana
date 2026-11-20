@@ -33,6 +33,10 @@ const PATHS: Readonly<Record<MenuItemId | `group-${MenuGroupId}` | 'out', ReactN
       <path d="M12 8v8M9.5 10.5c0-1 1.1-1.8 2.5-1.8s2.5.8 2.5 1.8-1.1 1.5-2.5 1.5-2.5.6-2.5 1.6 1.1 1.7 2.5 1.7 2.5-.7 2.5-1.7" />
     </>
   ),
+  // The market's new coins: a sun coming up.
+  launchFresh: <path d="M3 19h18M7 19a5 5 0 0 1 10 0M12 7v3M5.6 10.6l2.1 2.1M18.4 10.6l-2.1 2.1" />,
+  // The catalogue of the bots: their list.
+  allBots: <path d="M9 6h11M9 12h11M9 18h11M4 6h1M4 12h1M4 18h1" />,
   recurring: <path d="M4 12a8 8 0 1 0 2.3-5.6M4 4v4h4" />,
   grid: <path d="M4 6h16M4 12h16M4 18h16M8 3v18M16 3v18" />,
   ladder: <path d="M4 20h4v-4h4v-4h4V8h4" />,

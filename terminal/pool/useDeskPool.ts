@@ -6,7 +6,7 @@ import type { EarnPool } from '../../lib/earn-pools/model.ts';
 import { readPools } from '../coin/usePoolLayer.ts';
 import { useBins } from '../earn/range/useBins.ts';
 import { deskOfBins, deskOfCatalog, deskOfPro, type DeskPool } from './desk-pool.ts';
-import { useProPool, type Read } from './usePro.ts';
+import { proKnownAt, useProPool, useProPools, type Read } from './usePro.ts';
 
 /**
  * The pool a page stands on, whichever of Meteora's pools the address is: a DLMM Pro pool from the program
@@ -27,8 +27,14 @@ export function useDeskPool(address: string): Read<DeskPool> {
     };
   }, []);
   const listed = useMemo(() => catalog?.find((pool) => pool.address === address) ?? null, [catalog, address]);
-  // A pool the catalogue lists is not DLMM Pro's: the program is not asked about it again.
-  const pro = useProPool(address, listed === null);
+  // A pool the catalogue lists is not DLMM Pro's: the program is not asked about it at all (a DLMM page
+  // asked `/api/pro/pools/<address>` before the catalogue came, and the browser logged its «not found»). DLMM Pro's own
+  // list, read beside the catalogue — the page reads it anyway —, names its pools at once: a Pro pool opened straight
+  // from its address does not wait for the whole catalogue first.
+  const knownPro = useMemo(() => proKnownAt(address), [address]);
+  const proList = useProPools().read;
+  const inProList = proList.status === 'ready' && proList.value.some((row) => row.address === address);
+  const pro = useProPool(address, knownPro || inProList || (catalog !== null && listed === null));
   // A DLMM pool's bins, until they first read: for a listed DLMM pool its decimals and first price; for one the catalogue
   // does not list, whether it is a pool at all (asked again every twenty seconds until it answers).
   const [kept, setKept] = useState<EarnBinsAnswer | null>(null);

@@ -16,9 +16,10 @@ const short = (value: number, stepBps: number, lang: ReturnType<typeof useLang>)
  * «Liquidity by price», as Meteora draws it beside a pool: a column a step of the pool's price, as tall as
  * what lies on it; under the price the coin it is priced in (mint), over it the coin itself (violet), the price's own
  * step both, and the pool's price as a dashed rule with its tag. Prices run left to right in the coin's own terms
- * («SOL per MET»). Every column is the chain's read (`/api/v1/earn/pro/bins`).
+ * («SOL per MET»). Every column is the chain's read (`/api/v1/earn/pro/bins`). `grow` — on a pool's own column, the
+ * bars take the room the book under them does not need.
  */
-export function Distribution({ bins, side, coin, quote }: { bins: BinsState; side: 'x' | 'y'; coin: string; quote: string }) {
+export function Distribution({ bins, side, coin, quote, grow = false }: { bins: BinsState; side: 'x' | 'y'; coin: string; quote: string; grow?: boolean }) {
   const w = useWords(POOL);
   const lang = useLang();
   const answer: EarnBinsAnswer | null = bins.status === 'ready' ? bins.value : null;
@@ -35,7 +36,7 @@ export function Distribution({ bins, side, coin, quote }: { bins: BinsState; sid
   }
   const pair = `${coin} / ${quote}`;
   return (
-    <figure className={p.dist} aria-label={w.distributionLabel(pair)}>
+    <figure className={grow ? `${p.dist} ${p.distGrow}` : p.dist} aria-label={w.distributionLabel(pair)}>
       <div className={p.distPlot} style={{ ['--here' as string]: `${view.herePct}%` }}>
         {view.columns.map((column) => (
           <span

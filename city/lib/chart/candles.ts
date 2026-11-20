@@ -1,6 +1,7 @@
 import type { NormalizedCandle } from '../../../lib/chart/types.ts';
 import { isSpotTimeframe, SPOT_TIMEFRAMES, TIMEFRAME_TTL_MS, type SpotTimeframe } from '../../../lib/spot/candles.ts';
 import { wordsNow } from '../i18n/dict.ts';
+import { namedPool, type DirectPool } from './direct.ts';
 import { CHART_READ } from './words.ts';
 
 /**
@@ -81,7 +82,15 @@ export type Ready = Readonly<{
 export type CandlesRead =
   | Ready
   | Readonly<{ status: 'none'; code: NoChart | null }>
-  | Readonly<{ status: 'unavailable'; reason: 'busy' | 'offline' | 'failed'; retryAfterMs?: number }>;
+  | Readonly<{
+      status: 'unavailable';
+      reason: 'busy' | 'offline' | 'failed';
+      retryAfterMs?: number;
+      /** The pool the engine would have read, as its refusal names it: the page may read it itself. */
+      pool?: DirectPool | null;
+      /** The engine's HTTP status: only a refusal (429, 503) lets the page read the source itself. */
+      http?: number;
+    }>;
 
 const positive = (value: unknown): value is number => typeof value === 'number' && Number.isFinite(value) && value > 0;
 
@@ -160,7 +169,8 @@ export async function fetchCandles(mint: string, timeframe: Timeframe, deps: Rea
   if (read.status !== 'unavailable') return read;
   // The engine says how long the source asked it to wait: the next try waits at least that long.
   const retryAfterMs = retryAfterOf(answer.headers?.get('retry-after'), deps.now());
-  return retryAfterMs === null ? read : { ...read, retryAfterMs };
+  const pool = namedPool(body);
+  return { ...read, ...(retryAfterMs === null ? {} : { retryAfterMs }), ...(pool ? { pool } : {}), ...(answer.status === 429 || answer.status === 503 ? { http: answer.status } : {}) };
 }
 
 /** What the window shows: the newest answer, and the last bars it had for this market and interval. */
@@ -201,9 +211,16 @@ export function settle(state: ChartData, read: CandlesRead): ChartData {
  */
 export const saysUnavailable = (data: ChartData): boolean => data.status === 'unavailable' && !data.last && !data.busy && data.misses >= QUIET_MISSES;
 
-/** When to read again after this answer: the interval's cadence after an answer, the quiet retry after a failure. */
+/** Held bars answered at once (stated stale) are followed soon by the read the engine makes behind them. */
+export const STALE_RECHECK_MS = 15_000;
+
+/**
+ * When to read again after this answer: the interval's cadence after an answer — sooner after held, stale bars — and
+ * the quiet retry after a failure.
+ */
 export function nextReadMs(read: CandlesRead, misses: number, timeframe: Timeframe): number {
-  return read.status === 'unavailable' ? retryDelayMs(misses, read.retryAfterMs ?? null) : refreshMs(timeframe);
+  if (read.status === 'unavailable') return retryDelayMs(misses, read.retryAfterMs ?? null);
+  return read.status === 'ready' && read.stale ? Math.min(STALE_RECHECK_MS, refreshMs(timeframe)) : refreshMs(timeframe);
 }
 
 /**

@@ -147,19 +147,16 @@ export const TICKET_TABS: readonly TicketTab[] = ['position', 'limit', 'swap'];
 /**
  * Which tabs the pool's ticket shows, in Meteora's order, and the one it opens on when the address names none. A limit
  * order rests only in a DLMM Pro pool, on the coin's ladders (`ladder` — open here); a swap where trading is
- * (`trade`); a position wherever the pool has a way to add to it or is DLMM Pro or DLMM (a quiet «soon» stands where
- * no way is open yet) — a DAMM v2 pool only with a way. Arriving from the Spot or the DLMM Pro list, a Pro pool opens
- * on its limits — unless it holds nothing yet (`empty`): a limit order there has nothing to fill it, and the first
- * position is the way in; from Earn the address names the position (`?tab=position`). A pool of another kind that Earn
- * does not add to opens on its swap.
+ * (`trade`); a position only where a position opens from here (`adds`, `usePositionWay`) — elsewhere the tab is not
+ * there at all (on most pools it said «soon» over an empty column). Arriving from the Spot or the DLMM Pro
+ * list, a Pro pool opens on its limits — unless it holds nothing yet (`empty`): a limit order there has nothing to fill
+ * it, and the first position is the way in; from Earn the address names the position (`?tab=position`). A pool without
+ * limits or a position opens on its swap.
  */
 export function ticketTabs(o: Readonly<{ venue: DeskVenue; ladder: boolean; trade: boolean; adds: boolean; empty?: boolean }>): Readonly<{ tabs: readonly TicketTab[]; first: TicketTab | null }> {
-  const tabs = TICKET_TABS.filter((tab) => (tab === 'position' ? o.venue !== 'damm' || o.adds : tab === 'limit' ? o.venue === 'pro' && o.ladder : o.trade));
+  const tabs = TICKET_TABS.filter((tab) => (tab === 'position' ? o.adds : tab === 'limit' ? o.venue === 'pro' && o.ladder : o.trade));
   const limitFirst = tabs.includes('limit') && !(o.empty && tabs.includes('position'));
-  // A DLMM or DAMM v2 pool Earn does not add to opens on its swap: its position is only a quiet «soon» («Огляд»
-  // led to a page whose ticket said «soon» and nothing else).
-  const swapFirst = o.venue !== 'pro' && !o.adds && tabs.includes('swap');
-  const first = limitFirst ? 'limit' : swapFirst ? 'swap' : (tabs[0] ?? null);
+  const first = limitFirst ? 'limit' : (tabs[0] ?? null);
   return { tabs, first };
 }
 
@@ -195,9 +192,3 @@ export function previewPier(row: ProPoolRow): EarnProPier | null {
 export function poolHref(address: string, tab: TicketTab | null = null): string {
   return tab ? `/pool/${address}?tab=${tab}` : `/pool/${address}`;
 }
-
-/**
- * Whether a row of Earn leads to a pool's page (for the Earn screen's rows): any DLMM Pro or DLMM pool — its page draws
- * its liquidity by price; a DAMM v2 pool only where its position has a form of its own (`adds`).
- */
-export const poolHasPage = (kind: 'pro' | 'dlmm' | 'damm-v2', adds: boolean): boolean => kind !== 'damm-v2' || adds;

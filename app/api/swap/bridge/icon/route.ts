@@ -2,7 +2,8 @@ import { consumeSpotIconRequest } from "@/lib/agent-control/http";
 import { publicHttps } from "@/city/lib/net";
 import { resolveRelayApiKey } from "@/lib/relay/api-key.server";
 import { chainById, fetchBridgeChains } from "@/lib/relay/bridge-chains";
-import { findBridgeToken } from "@/lib/relay/bridge-tokens";
+import { findBridgeToken, searchBridgeTokens } from "@/lib/relay/bridge-tokens";
+import type { BridgeToken } from "@/lib/relay/bridge-chains";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -23,15 +24,37 @@ const DAY = "public, max-age=86400, s-maxage=86400, stale-while-revalidate=60480
 const BUSY = "public, s-maxage=60";
 const none = (cache = DAY) => new Response(null, { status: 204, headers: { "Cache-Control": cache } });
 
+/* A chain's own list of coins (the one the picker opens on), kept a while: one ask of Relay serves its every logo. */
+const LIST_MS = 10 * 60_000;
+const lists = new Map<number, Readonly<{ at: number; tokens: Promise<readonly BridgeToken[]> }>>();
+
+function defaultList(chainId: number, apiKey: string | null): Promise<readonly BridgeToken[]> {
+  const kept = lists.get(chainId);
+  if (kept && Date.now() - kept.at < LIST_MS) return kept.tokens;
+  const tokens = searchBridgeTokens({ chainId }, { apiKey }).then((found) => {
+    if (!found.ok) lists.delete(chainId);
+    return found.ok ? found.tokens : [];
+  });
+  if (lists.size > 64) lists.clear();
+  lists.set(chainId, { at: Date.now(), tokens });
+  return tokens;
+}
+
+const same = (entry: Readonly<{ address: string }>, token: string) => (token.startsWith("0x") ? entry.address.toLowerCase() === token.toLowerCase() : entry.address === token);
+
 async function logoOf(chainId: number, token: string | null): Promise<string | null> {
   const apiKey = resolveRelayApiKey();
   const index = await fetchBridgeChains({ apiKey });
   const chain = index.ok ? chainById(index.chains, chainId) : null;
   if (!token) return chain?.icon ?? null;
   if (chain) {
-    const known = [chain.native, ...chain.featured].find((entry) => (token.startsWith("0x") ? entry.address.toLowerCase() === token.toLowerCase() : entry.address === token));
+    const known = [chain.native, ...chain.featured].find((entry) => same(entry, token));
     if (known?.logo) return known.logo;
   }
+  /* The coins the picker opens on are the chain's own list (QA 19.11: cbBTC, SNDKc, NVDAc stood as letters on Base);
+     an address alone finds nothing in Relay's own index, so that list is read first. */
+  const listed = (await defaultList(chainId, apiKey ?? null)).find((entry) => same(entry, token));
+  if (listed?.logo) return listed.logo;
   return (await findBridgeToken({ chainId, address: token, external: false }, { apiKey }))?.logo ?? null;
 }
 

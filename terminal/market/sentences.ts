@@ -14,7 +14,8 @@ export type SentenceId = (typeof SENTENCES)[number];
 
 /** What the agent's line must read each sentence as, for the sentence to say what it does. */
 export const READ_AS: Readonly<Record<SentenceId, readonly Kind[]>> = {
-  // «Find new coins for me»: the agent's analyst answers it until the scout does.
+  // «Find new coins»: the line reads a question; the hint itself opens the market's new coins (`newCoinsRow`)
+  // until the scout finds them for the person.
   scout: ['ask'],
   tradeDaily: ['autopilot'],
   dips: ['instruct'],

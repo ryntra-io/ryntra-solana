@@ -27,8 +27,12 @@ export type Page =
   | Readonly<{ kind: 'detail' }>
   | Readonly<{ kind: 'flow'; goal: Goal; step: 'pick' | 'confirm' }>;
 
-/** A coin's week: its hourly bars and their weather; `ready` with no bars is a coin without a price history yet. */
-export type PathEntry = Readonly<{ status: 'loading' | 'ready'; bars: readonly Bar[]; weather: Weather | null; at: number }>;
+/**
+ * A coin's week: its hourly bars and their weather; `ready` with no bars is a coin without a price history yet;
+ * `missed` — the read did not come (the source refused or did not answer), which says nothing of the coin: it is read
+ * again after `PATH_RETRY_MS`.
+ */
+export type PathEntry = Readonly<{ status: 'loading' | 'ready' | 'missed'; bars: readonly Bar[]; weather: Weather | null; at: number }>;
 
 /** What a coin is, as the window needs it: the tower it stands for and its price now. */
 export type Coin = Readonly<{ mint: string; symbol: string; price: number }>;
@@ -39,6 +43,8 @@ export const STORAGE = { bots: PAPER_KEY, strategies: 'ryntra.city.bots.strategi
 
 /** A path is read again after this long. */
 export const PATH_FRESH_MS = 5 * 60_000;
+/** A missed path is read again after this long. */
+export const PATH_RETRY_MS = 15_000;
 /** How long the hub waits for the candles; past it the coin has no week to try a bot on, and the hub says so. */
 export const PATH_WAIT_MS = 10_000;
 /** Fewer hourly bars than this is no week to try a bot on. */
@@ -278,15 +284,20 @@ export function createBotsStore(options: StoreOptions = {}) {
       loadPath: async (coin, force = false) => {
         const have = get().paths[coin.mint];
         const at = now();
-        if (have && !force && (have.status === 'loading' || at - have.at < PATH_FRESH_MS)) return;
+        if (have && !force && (have.status === 'loading' || at - have.at < (have.status === 'missed' ? PATH_RETRY_MS : PATH_FRESH_MS))) return;
         set({ paths: { ...get().paths, [coin.mint]: { status: 'loading', bars: have?.bars ?? [], weather: have?.weather ?? null, at } } });
         let bars: Bar[] = [];
+        // A read the source refused, or one that hung, is no answer about the coin — the coin is not said to
+        // have no week of prices (SOL was, under a 429); the path is `missed` and read again soon.
+        let answered = false;
         try {
-          // A read that hangs never holds the hub: past the limit the coin simply has no week yet.
+          // A read that hangs never holds the hub: past the limit the path is missed, not empty.
           const abort = new AbortController();
           const timer = setTimeout(() => abort.abort(), PATH_WAIT_MS);
           const read = await fetchCandles(coin.mint, '1h', { fetch: fetcher, now, signal: abort.signal }).finally(() => clearTimeout(timer));
           if (read.status === 'ready') bars = barsFromCandles(read.candles);
+          // Held bars, stated stale, too few for a week, are a stand-in under a refusal — no answer about the coin either.
+          answered = read.status === 'none' || (read.status === 'ready' && (!read.stale || bars.length >= MIN_BARS));
         } catch {
           bars = [];
         }
@@ -294,6 +305,12 @@ export function createBotsStore(options: StoreOptions = {}) {
         if (bars.length < MIN_BARS) bars = [];
         // A read that came back after a newer one started keeps the newer one's place.
         if (get().paths[coin.mint]?.at !== at) return;
+        if (!answered) {
+          // A week already read stays as it was; none yet — missed, read again soon.
+          const kept = have?.status === 'ready' && have.bars.length > 0;
+          set({ paths: { ...get().paths, [coin.mint]: kept ? { ...have, at } : { status: 'missed', bars: [], weather: null, at } } });
+          return;
+        }
         set({ paths: { ...get().paths, [coin.mint]: { status: 'ready', bars, weather: weatherOf(bars), at } } });
       },
       say: (text) => set({ notice: text ? { text, at: now() } : null }),

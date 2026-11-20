@@ -21,6 +21,9 @@ import {
 } from './bridge.ts'
 import { codeOfWalletError, createCityHost, signatureOf, WALLET_WAIT_MS } from './city-host.ts'
 import {
+  APP_LINK_PATHS,
+  APP_LINK_PREFIXES,
+  backHomeOf,
   CITY_LINK_KEYS,
   CITY_PATH,
   cityCoverOf,
@@ -32,8 +35,10 @@ import {
   loadDecisionOf,
   PAGE_BACK_SCRIPT,
   PAGE_GO_BACK,
+  PAGE_GO_HOME,
   pageBackOf,
   pageSpeaks,
+  TERMINAL_PAGES,
 } from './city-page.ts'
 
 const MINT = 'So11111111111111111111111111111111111111112'
@@ -779,15 +784,108 @@ test('Back: the page says whether it has a step back; only its exact word is rea
   new Function('window', PAGE_BACK_SCRIPT)(bare)
 })
 
-test('App Links: the app claims ryntra.io/ and ryntra.io/c/ only, verified', () => {
+test('App Links: the app claims the home, the terminal pages and the coin, pool and bot folders', () => {
   const app = JSON.parse(readFileSync(new URL('../../../app.json', import.meta.url), 'utf8')).expo
   const filters = app.android.intentFilters
   assert.ok(filters.every((filter) => filter.autoVerify === true))
   const data = filters.flatMap((filter) => filter.data)
+  // One host, https only: the domain-wide `assetlinks.json` verifies every path of it.
+  assert.ok(data.every((d) => d.scheme === 'https' && d.host === 'ryntra.io'))
   assert.deepEqual(
-    data.map((d) => `${d.scheme}://${d.host}${d.path ?? d.pathPrefix}`),
-    ['https://ryntra.io/', 'https://ryntra.io/c/'],
+    data.filter((d) => d.path !== undefined).map((d) => d.path),
+    [...APP_LINK_PATHS],
   )
+  assert.deepEqual(
+    data.filter((d) => d.path === undefined).map((d) => d.pathPrefix),
+    [...APP_LINK_PREFIXES],
+  )
+  // A page is claimed exactly: `/agent` never takes `/agents` or `/agent-control`, `/pro` never `/promo`, `/launch`
+  // never `/launches`; nothing of the documents, the admin, the API or a private link.
+  assert.ok(!data.some((d) => d.pathPrefix && !d.pathPrefix.endsWith('/')))
+  for (const away of ['/docs', '/admin', '/api', '/private', '/terminal', '/app', '/city', '/legal'])
+    assert.ok(!data.some((d) => (d.path ?? d.pathPrefix).startsWith(away)), away)
+  // Every page the app claims is one its link reader opens.
+  for (const path of APP_LINK_PATHS) assert.equal(cityPathOf(path), path, path)
+})
+
+test('a terminal page’s link opens that page in the app, with its own words', () => {
+  const route = (path) => `/?at=${encodeURIComponent(path)}`
+  const at = (link) => decodeURIComponent(cityRouteOfLink(link).slice('/?at='.length))
+  const POOL = 'JANXdizRntR7xoSbRDXEo2CCNDP9d5wzyCQCvv6Dxb6d'
+  for (const page of TERMINAL_PAGES) {
+    assert.equal(cityPathOf(page), page, page)
+    assert.equal(cityPathOf(`${page}/`), page, page)
+    assert.equal(cityRouteOfLink(`https://ryntra.io${page}`), route(page), page)
+    assert.equal(cityUrlOf(at(`https://ryntra.io${page}`)), `https://ryntra.io${page}`, page)
+  }
+  // A coin, a pool's desk, a bot's own page.
+  assert.equal(cityRouteOfLink(`https://ryntra.io/coin/${MINT}`), route(`/coin/${MINT}`))
+  assert.equal(cityRouteOfLink(`https://ryntra.io/pool/${POOL}`), route(`/pool/${POOL}`))
+  assert.equal(cityUrlOf(at(`https://ryntra.io/pool/${POOL}?tab=limit`)), `https://ryntra.io/pool/${POOL}?tab=limit`)
+  for (const bot of ['grid', 'ladder', 'recurring', 'autopilot', 'signals'])
+    assert.equal(cityRouteOfLink(`https://ryntra.io/bots/${bot}`), route(`/bots/${bot}`), bot)
+  // The tab a page opens on, the pair a swap opens on, the wallet the Portfolio watches, the panel it is asked for.
+  assert.equal(cityUrlOf('/earn?tab=pro'), 'https://ryntra.io/earn?tab=pro')
+  assert.equal(cityUrlOf('/swap?from=SOL&to=USDC'), 'https://ryntra.io/swap?from=SOL&to=USDC')
+  assert.equal(cityUrlOf(`/portfolio?owner=${ADDRESS}`), `https://ryntra.io/portfolio?owner=${ADDRESS}`)
+  assert.equal(cityUrlOf('/portfolio?act=send'), 'https://ryntra.io/portfolio?act=send')
+  assert.equal(cityRouteOfLink('ryntra://swap?from=SOL&to=JUP'), route('/swap?from=SOL&to=JUP'))
+  assert.equal(cityUrlOf('/agent?ref=AB12CD34EF56&s=x'), 'https://ryntra.io/agent?ref=AB12CD34EF56&s=x')
+  // A page's own words stay its own: another page, or the home, never reads them from a link.
+  assert.equal(cityUrlOf('/earn?from=SOL&owner=x&act=send'), 'https://ryntra.io/earn')
+  assert.equal(cityUrlOf('/?from=SOL'), 'https://ryntra.io/')
+  assert.equal(cityUrlOf('/swap?from=SOL&bridge=mock&quality=low'), 'https://ryntra.io/swap?from=SOL')
+  // What is not a page of the app is the home: a near name, a deeper path, a bad address, the documents, a private link.
+  for (const link of [
+    'https://ryntra.io/agents',
+    'https://ryntra.io/agent-control',
+    'https://ryntra.io/promo',
+    'https://ryntra.io/launches',
+    'https://ryntra.io/swap/more',
+    'https://ryntra.io/coin/not-a-mint',
+    `https://ryntra.io/coin/${MINT}/more`,
+    'https://ryntra.io/pool/x',
+    'https://ryntra.io/bots/Grid',
+    'https://ryntra.io/bots/grid/x',
+    'https://ryntra.io/docs',
+    'https://ryntra.io/admin',
+    'https://ryntra.io/api/v1/health',
+    'https://ryntra.io/private/claim#k=secret',
+    'https://ryntra.io/terminal/kit',
+    'https://evil.example/swap',
+    'https://ryntra.io.evil.example/swap',
+  ])
+    assert.equal(cityRouteOfLink(link), '/', link)
+})
+
+test('Back with nothing behind a page a link opened leads to the home, not out of the app', () => {
+  for (const url of [
+    'https://ryntra.io/agent',
+    'https://ryntra.io/swap?from=SOL',
+    `https://ryntra.io/coin/${MINT}`,
+    'https://ryntra.io/city',
+    'https://ryntra.io/bots/grid#x',
+  ])
+    assert.equal(backHomeOf(url), true, url)
+  for (const url of [
+    'https://ryntra.io',
+    'https://ryntra.io/',
+    'https://ryntra.io/?tab=new',
+    'https://ryntra.io/#top',
+    'https://ryntra.io.evil.example/agent',
+    'https://x.com/ryntra',
+    'about:blank',
+    undefined,
+  ])
+    assert.equal(backHomeOf(url), false, String(url))
+  // The home replaces the page: no step back to it from the home.
+  assert.equal(PAGE_GO_HOME, "location.replace('/'); true;")
+  const screen = readFileSync(new URL('../../screens/city/index.tsx', import.meta.url), 'utf8')
+  assert.match(
+    screen,
+    /if \(!showing \|\| !backHomeOf\(pageUrl\.current\)\) return false\s*view\.current\?\.injectJavaScript\(PAGE_GO_HOME\)/,
+  )
+  assert.match(screen, /if \(state\.url\) pageUrl\.current = state\.url/)
 })
 
 test('what loads in the city: its own site; another https page opens in the browser; other schemes never', () => {

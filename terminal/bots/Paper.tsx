@@ -2,21 +2,26 @@
 
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { draftIssues, type BotDraft } from '@/city/lib/bots/draft';
-import { useBots } from '@/city/lib/bots/store';
+import { PATH_RETRY_MS, useBots } from '@/city/lib/bots/store';
 import { dateText, digits, useWords } from '@/city/lib/i18n/dict';
 import { useLang } from '@/city/lib/i18n/lang';
 import type { Lang } from '@/city/lib/i18n/langs';
 import { SOL } from '@/city/lib/trade/tiles';
 import { Action, Cell, Chip, CoinLogo, Figure, Kick, Panel, Quiet, Shares, Table, TableHead, TableRow, Title, priceText } from '@/terminal/ui';
 import type { PaperBotId } from './kinds';
-import { BotHead, CoinAmount, CoinCard, HowInfo, MinePanel, Note, coinOf, useTowers, type PickedCoin } from './parts';
+import { BotChart } from './BotChart';
+import { BotHead, CoinAmount, HowInfo, MinePanel, Note, SOL_COIN, coinOf, useTowers, type PickedCoin } from './parts';
 import { PACES, paceOf, paperRows, paperStart, typedNumber, weekOnPaper, type Pace, type PaperRow } from './rows';
 import { BOTS } from './words';
 import b from './bots.module.css';
 
 type W = (typeof BOTS)['en'];
 
-export type BotParts = Readonly<{ form: ReactNode; side: ReactNode; mine: ReactNode }>;
+/**
+ * A bot's page in parts: its chart — the coin it works on, the terminal's own chart — its
+ * form, what helps the form, and the person's bots of its kind.
+ */
+export type BotParts = Readonly<{ chart: ReactNode; form: ReactNode; side: ReactNode; mine: ReactNode }>;
 
 /** Dollars with their cents, in the language's own way. */
 const dollars = (value: number, lang: Lang): string => digits(`$${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, lang);
@@ -74,6 +79,14 @@ export function PaperBot({ id, lay }: { id: PaperBotId; lay: (parts: BotParts) =
   }, [shown?.mint, price !== null]);
   const path = shown ? paths[shown.mint] : undefined;
   const weather = path?.status === 'ready' ? path.weather : null;
+  // A week the source refused is read again soon — «reading», never «no week of prices» for SOL under a 429.
+  const missed = path?.status === 'missed' ? path.at : null;
+  useEffect(() => {
+    if (missed === null || !shown || !price) return;
+    const timer = setTimeout(() => void useBots.getState().loadPath({ mint: shown.mint, symbol: shown.symbol, price }), PATH_RETRY_MS);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [missed]);
 
   const [amount, setAmount] = useState('100');
   const [pace, setPace] = useState<Pace>('steady');
@@ -134,7 +147,6 @@ export function PaperBot({ id, lay }: { id: PaperBotId; lay: (parts: BotParts) =
 
   const side = (
     <div className={b.side}>
-      <CoinCard coin={shown} />
       <Panel gap={10} label={w.weekTitle}>
         <Kick>{w.weekTitle}</Kick>
         {week && weekResult ? (
@@ -182,7 +194,10 @@ export function PaperBot({ id, lay }: { id: PaperBotId; lay: (parts: BotParts) =
     </MinePanel>
   );
 
-  return lay({ form, side, mine });
+  // The coin's chart beside the form: the terminal's own, its price and day in its head.
+  const chart = <BotChart coin={shown ?? SOL_COIN} label={w[id]} />;
+
+  return lay({ chart, form, side, mine });
 }
 
 /** A paper bot's own steps: pause or resume, and stop — in this browser, nothing signed. */

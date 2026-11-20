@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { Tower } from '../market/types.ts';
 import { useMine } from '../trade/mine-store.ts';
 import { useWallet } from '../trade/wallet.ts';
 import { fetchCandles, loading, nextReadMs, settle, TIMEFRAME_KEY, timeframeFrom, type ChartData, type Timeframe } from './candles.ts';
+import { directFetch, readCandlesDirect } from './direct.ts';
 import { entryPrice, knownBasis, readEntryBasis } from './entry.ts';
 import { kept } from './kept.ts';
 import { fetchMarks } from './marks.ts';
@@ -37,23 +38,39 @@ export function useTimeframe(): [Timeframe, (next: Timeframe) => void] {
  * One market's bars at one interval, read again at the interval's own cadence while the page is in view. A read that
  * failed is tried again quietly, sooner at first and then less often, never before the engine's `Retry-After`; its last
  * good bars stay on screen, stale, and with none the frame keeps waiting for a few tries before it says anything.
+ *
+ * `price` — the price on screen. Given, a refusal of the engine (429, 503) while the screen holds none of its bars is
+ * followed by the same source read from this browser (`direct.ts`), drawn only if its bars agree with it.
  */
-export function useCandles(mint: string, timeframe: Timeframe): ChartData {
+export function useCandles(mint: string, timeframe: Timeframe, price?: number | null): ChartData {
   const [data, setData] = useState<ChartData>(() => loading(mint, timeframe, null));
+  const priceRef = useRef<number | null | undefined>(price);
+  priceRef.current = price;
   useEffect(() => {
     const controller = new AbortController();
     let live = true;
     let timer: ReturnType<typeof setTimeout> | undefined;
     // Failed reads in a row, as the state counts them: the pause before the next try grows with them.
     let misses = 0;
+    // Whose bars the screen holds: none yet, the engine's, or this browser's own read of the source.
+    let shown: 'none' | 'engine' | 'direct' = 'none';
     setData((before) => loading(mint, timeframe, before));
     const read = async () => {
-      const answer = await fetchCandles(mint, timeframe, {
-        fetch: (url, init) => fetch(url, { ...init, headers: { accept: 'application/json' } }),
-        now: () => Date.now(),
-        signal: controller.signal,
-      });
+      const deps = { now: () => Date.now(), signal: controller.signal };
+      let answer = await fetchCandles(mint, timeframe, { ...deps, fetch: (url, init) => fetch(url, { ...init, headers: { accept: 'application/json' } }) });
       if (!live) return;
+      // The engine refused (its 429 or 503 — it answers held bars when it has any, so it has none) and the screen holds
+      // none of the engine's: the browser reads the same source, its bars drawn only if they agree with the price.
+      let direct = false;
+      if (answer.status === 'unavailable' && answer.http !== undefined && shown !== 'engine' && priceRef.current !== undefined) {
+        const own = await readCandlesDirect(mint, timeframe, answer.pool ?? null, priceRef.current, { ...deps, fetch: directFetch });
+        if (!live) return;
+        if (own.status === 'ready') {
+          answer = own;
+          direct = true;
+        }
+      }
+      if (answer.status === 'ready') shown = direct ? 'direct' : 'engine';
       misses = answer.status === 'unavailable' ? misses + 1 : 0;
       setData((before) => settle(before.mint === mint && before.timeframe === timeframe ? before : loading(mint, timeframe, null), answer));
       wait(nextReadMs(answer, misses, timeframe));

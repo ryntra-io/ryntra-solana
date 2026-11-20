@@ -77,7 +77,6 @@ export function BotsCatalog({ open, working }: { open: readonly BotId[]; working
                 {w.bonusLine(digits((bonus / 100).toFixed(2), lang))}
               </span>
             ) : null}
-            {lead ? <GridPicture /> : null}
             <span className={b.catalogGo}>
               {w.setUp}
               <Icon name="arrow" size="s" />
@@ -86,18 +85,5 @@ export function BotsCatalog({ open, working }: { open: readonly BotId[]; working
         );
       })}
     </div>
-  );
-}
-
-/** The grid's card picture: the band's levels, buys under the price and sells over it — the bot's own shape, drawn. */
-function GridPicture() {
-  const levels = [12, 22, 32, 42, 58, 68, 78, 88];
-  return (
-    <svg className={b.catalogPicture} viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
-      {levels.map((y) => (
-        <line key={y} x1={0} x2={100} y1={y} y2={y} className={y < 50 ? b.pictureSell : b.pictureBuy} vectorEffect="non-scaling-stroke" />
-      ))}
-      <polyline points="0,62 10,54 18,66 27,47 36,58 45,40 54,55 63,36 72,51 81,44 90,57 100,49" className={b.picturePrice} vectorEffect="non-scaling-stroke" />
-    </svg>
   );
 }

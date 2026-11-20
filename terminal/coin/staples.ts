@@ -50,6 +50,29 @@ export const MAIN_MINTS: readonly string[] = [
   '2zMMhcVQEXDtdE6vsFS7S7D5oUodfJHE8vd1gnBouauv', // PENGU
 ];
 
+/**
+ * «Main»'s coins by their tickers, lower case — for an address that names a pair by them (`/swap?from=SOL&to=JUP`, QA
+ * 19.11). Only these: a ticker beyond them is anybody's, and an address names that coin by its mint.
+ */
+export const MAIN_TICKERS: Readonly<Record<string, string>> = {
+  sol: SOL.mint,
+  usdc: USDC.mint,
+  usdt: USDT_MINT,
+  jitosol: MAIN_MINTS[3]!,
+  jupsol: MAIN_MINTS[4]!,
+  msol: MAIN_MINTS[5]!,
+  cbbtc: MAIN_MINTS[6]!,
+  jup: MAIN_MINTS[7]!,
+  met: MAIN_MINTS[8]!,
+  jto: MAIN_MINTS[9]!,
+  pyth: MAIN_MINTS[10]!,
+  ray: MAIN_MINTS[11]!,
+  bonk: MAIN_MINTS[12]!,
+  wif: MAIN_MINTS[13]!,
+  trump: MAIN_MINTS[14]!,
+  pengu: MAIN_MINTS[15]!,
+};
+
 /** The list's rows in the order the list names them; a coin the read did not bring is left out, never guessed. */
 export function inMainOrder<T extends Readonly<{ id: string }>>(coins: readonly T[]): T[] {
   const at = new Map(MAIN_MINTS.map((mint, i) => [mint, i]));

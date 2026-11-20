@@ -27,7 +27,11 @@ export const LIMIT = words(
     fewer: 'Fewer prices',
     more: 'More prices',
     moreFull: 'No more prices fit this distance — reach further for more',
+    /** The count's name where no more prices fit the distance: why «+» rests. */
+    pricesFull: 'Prices · max',
     average: 'Average',
+    /** The average in the coin it is priced in: the unit in the name, the figure whole in its tile. */
+    averageIn: (unit: string) => `Average, ${unit}`,
     youGet: (coin: string) => `You get ${coin}`,
     bonus: 'Bonus',
     agent: 'Agent collects what fills',
@@ -128,7 +132,9 @@ export const LIMIT = words(
     fewer: 'Менше цін',
     more: 'Більше цін',
     moreFull: 'На цій відстані більше цін не вміщається — відсунь далі',
+    pricesFull: 'Цін · макс.',
     average: 'Середня',
+    averageIn: (unit: string) => `Середня, ${unit}`,
     youGet: (coin: string) => `Отримаєш ${coin}`,
     bonus: 'Бонус',
     agent: 'Агент збере виконане',

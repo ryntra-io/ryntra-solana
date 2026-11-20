@@ -6,7 +6,7 @@ import { funnelSay } from '@/city/lib/crew/funnel-say';
 import { useWords } from '@/city/lib/i18n/dict';
 import type { Tower } from '@/city/lib/market/types';
 import { clearClarify, useAskNote } from '@/terminal/shell/ask-note';
-import { askRows } from '@/terminal/shell/ask-route';
+import { NEW_COINS, askRows, newCoinsRow } from '@/terminal/shell/ask-route';
 import { engineGates } from '@/terminal/shell/engine';
 import { useSay } from '@/terminal/shell/say';
 import { shelfOn, type ShelfId } from '@/terminal/shell/shelves';
@@ -47,14 +47,17 @@ export function HomeHero({ towers }: { towers: readonly Tower[] }) {
     const traded = offered.find((coin) => coin.symbol === named.current) ?? heroCoin(offered);
     if (traded) named.current = traded.symbol;
     // No sum in an example — the budget is the person's, chosen in the agent's card.
-    const candidates: Sentence[] = [{ id: 'scout', text: m.sayScout }, ...(traded ? [{ id: 'tradeDaily' as const, text: m.sayTradeDaily(traded.symbol) }] : []), { id: 'launch', text: m.sayLaunch }, { id: 'earn', text: m.sayEarn('SOL') }];
+    // «Find new coins» opens the market's new coins, the Launch's «New» tab: only where Launch stands.
+    const candidates: Sentence[] = [...(onShelf(NEW_COINS.shelf) ? [{ id: 'scout' as const, text: m.sayScout }] : []), ...(traded ? [{ id: 'tradeDaily' as const, text: m.sayTradeDaily(traded.symbol) }] : []), { id: 'launch', text: m.sayLaunch }, { id: 'earn', text: m.sayEarn('SOL') }];
     return readySentences(candidates, (said) => askRows(said, book, { subject: null }, onShelf, gates)[0]?.command.kind ?? null, HERO.length);
   }, [book, m]);
   const example = sentences.find((s) => s.id === 'tradeDaily')?.text ?? sentences[0]?.text ?? null;
 
-  const tap = (sentence: string) => {
+  // A ready sentence goes to the agent's line; «Find new coins» opens the market's new coins at once — the scout that
+  // would buy them is not here yet, so no card is filled with what the terminal cannot run.
+  const tap = (sentence: Sentence) => {
     funnelSay('agent_hint');
-    if (say(sentence)) funnelSay('agent_said');
+    if (say(sentence.text, sentence.id === 'scout' ? newCoinsRow(sentence.text) : undefined)) funnelSay('agent_said');
   };
   const submit = (event: FormEvent) => {
     event.preventDefault();
@@ -100,7 +103,7 @@ export function HomeHero({ towers }: { towers: readonly Tower[] }) {
           {sentences.length ? (
             <div className={h.says}>
               {sentences.map((sentence) => (
-                <button key={sentence.id} type="button" className={h.say} data-say={sentence.id} onClick={() => tap(sentence.text)}>
+                <button key={sentence.id} type="button" className={h.say} data-say={sentence.id} onClick={() => tap(sentence)}>
                   <Icon name="agents" size="s" />
                   <span>{sentence.text}</span>
                 </button>

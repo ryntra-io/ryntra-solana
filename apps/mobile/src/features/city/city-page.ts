@@ -44,12 +44,55 @@ export const CITY_LINK_KEYS: readonly string[] = [
   'utm_term',
 ]
 
+/**
+ * The terminal's own pages: since 2026-11-16 ryntra.io is the terminal, and each of its
+ * sections has an address of its own — the Market (`/` and `/market`), Swap, Bridge, DLMM Pro, Earn, Launch, Bots, the
+ * agent, Portfolio, Money and Rewards. A link to one opens the app on that page. Nothing else of the site is the app's to
+ * claim: a document, the admin, the API and a private link (its secret rides in the fragment, which the app never
+ * carries) keep opening in the browser.
+ */
+export const TERMINAL_PAGES: readonly string[] = [
+  '/market',
+  '/swap',
+  '/bridge',
+  '/pro',
+  '/earn',
+  '/launch',
+  '/bots',
+  '/agent',
+  '/portfolio',
+  '/money',
+  '/rewards',
+]
+
+/**
+ * The pages under a section, by their address: a coin's screen (`/coin/<mint>`, and the older share link `/c/<mint>`
+ * the site leads there) and a pool's desk (`/pool/<address>`) by a Solana address; a bot's own page by its name.
+ */
+const SITE_ITEM = /^\/(?:c|coin|pool)\/[1-9A-HJ-NP-Za-km-z]{32,44}$/
+const BOT_PAGE = /^\/bots\/[a-z][a-z0-9-]{0,31}$/
+
+/**
+ * What the app claims of ryntra.io (`app.json`'s App Links, auto-verified): the home and each terminal page exactly,
+ * and the folders of a coin, a pool and a bot by their start. The release check and the tests hold `app.json` to it.
+ */
+export const APP_LINK_PATHS: readonly string[] = ['/', ...TERMINAL_PAGES]
+export const APP_LINK_PREFIXES: readonly string[] = ['/c/', '/coin/', '/pool/', '/bots/']
+
+/**
+ * What a terminal page reads from its own address beside the words every link may carry (`CITY_LINK_KEYS`): the pair a
+ * swap opens on (`from`, `to`), the wallet the Portfolio watches (`owner`) and the panel it is asked for (`act`).
+ */
+const PAGE_LINK_KEYS: Readonly<Record<string, readonly string[]>> = {
+  '/swap': ['from', 'to'],
+  '/portfolio': ['owner', 'act'],
+}
+
 /** One value a link carries, at most: a code, a coin's mint, a market's id or a campaign's tag. */
 const MAX_LINK_VALUE = 128
 /** No control characters in a value the page will read. */
 const CONTROL = /[\u0000-\u001f\u007f]/
 
-const MINT = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/
 /** The site itself, and any of its pages — never another host that only starts like it (`ryntra.io.example`). */
 const ON_SITE = /^https:\/\/ryntra\.io(?:[/?#]|$)/i
 
@@ -71,11 +114,11 @@ const encodePart = (part: string): string | null => {
 }
 
 /**
- * The part of a link's query the city may read (`CITY_LINK_KEYS`), as the WebView's address asks for it: each key once
- * (the first wins), each value short and printable, in the link's order; '' when nothing is left. Read by hand — the
- * app's runtime has no full `URLSearchParams`.
+ * The part of a link's query the page may read (`CITY_LINK_KEYS`, or the page's own `keys`), as the WebView's address
+ * asks for it: each key once (the first wins), each value short and printable, in the link's order; '' when nothing is
+ * left. Read by hand — the app's runtime has no full `URLSearchParams`.
  */
-export function cityQueryOf(query: string): string {
+export function cityQueryOf(query: string, keys: readonly string[] = CITY_LINK_KEYS): string {
   const kept: string[] = []
   const seen = new Set<string>()
   for (const pair of query.replace(/^\?/, '').split('&')) {
@@ -83,7 +126,7 @@ export function cityQueryOf(query: string): string {
     const eq = pair.indexOf('=')
     const key = decodePart(eq < 0 ? pair : pair.slice(0, eq))
     const value = decodePart(eq < 0 ? '' : pair.slice(eq + 1))
-    if (key === null || value === null || !CITY_LINK_KEYS.includes(key) || seen.has(key)) continue
+    if (key === null || value === null || !keys.includes(key) || seen.has(key)) continue
     if (!value || value.length > MAX_LINK_VALUE || CONTROL.test(value)) continue
     const word = encodePart(value)
     if (word === null) continue
@@ -93,20 +136,24 @@ export function cityQueryOf(query: string): string {
   return kept.join('&')
 }
 
+/** Whether a path (no query, no trailing slash) is a page the app opens: the home, a terminal page, a coin, a pool, a bot. */
+const isAppPage = (page: string): boolean =>
+  page === '/' || TERMINAL_PAGES.includes(page) || SITE_ITEM.test(page) || BOT_PAGE.test(page)
+
 /**
- * The site's address the city opens on, from a link's path: `/` is the city itself, `/c/<mint>` a coin's tower — each
- * with what the link asks of the city (`cityQueryOf`); null for any other path, which the city does not own.
+ * The site's address the app opens on, from a link's path: `/` is the terminal's home, a terminal page is itself
+ * (`/swap`, `/pro`, `/coin/<mint>`, `/pool/<address>`, `/bots/grid`), `/c/<mint>` a coin's share link — each with what
+ * the link asks of it (`cityQueryOf`, and the page's own words); null for any other path, which the app does not own.
  */
 export function cityPathOf(path: string): string | null {
   const hash = path.indexOf('#')
   const bare = hash < 0 ? path : path.slice(0, hash)
   const mark = bare.indexOf('?')
   const page = (mark < 0 ? bare : bare.slice(0, mark)).replace(/\/+$/, '') || '/'
-  const query = mark < 0 ? '' : cityQueryOf(bare.slice(mark + 1))
-  const tail = query ? `?${query}` : ''
-  if (page === '/') return `/${tail}`
-  const coin = /^\/c\/([^/]+)$/.exec(page)
-  return coin && MINT.test(coin[1] ?? '') ? `/c/${coin[1]}${tail}` : null
+  if (!isAppPage(page)) return null
+  const keys = PAGE_LINK_KEYS[page] ? [...CITY_LINK_KEYS, ...(PAGE_LINK_KEYS[page] ?? [])] : CITY_LINK_KEYS
+  const query = mark < 0 ? '' : cityQueryOf(bare.slice(mark + 1), keys)
+  return `${page}${query ? `?${query}` : ''}`
 }
 
 /** The app's route for a city path: the city — on the coin, or with what the link asks of it, when there is any. */
@@ -122,9 +169,9 @@ export function cityUrlOf(at: string | null | undefined): string {
 
 /**
  * Every address the system opens the app with, as the app's route (Expo Router's `redirectSystemPath`): the site's
- * `/` and `/c/<mint>` — over https, `ryntra://` or as a bare path — are the city and that coin's tower, with what the
- * link asks of the city (`/?open=agent`, `/?early=<mint>`); anything else, an old page's address or a push's link
- * included, is the city itself. There is no other place to go.
+ * home, a terminal page and a coin's share link — over https, `ryntra://` or as a bare path — open that page, with what
+ * the link asks of it (`/swap?from=SOL&to=USDC`, `/?open=agent`, `/?early=<mint>`); anything else, an old page's address
+ * or a push's link included, is the home itself. There is no other place to go.
  */
 export function cityRouteOfLink(link: string): string {
   const text = link.trim()
@@ -185,6 +232,22 @@ export function pageBackOf(data: unknown): boolean | null {
 
 /** The page's own step back, as the WebView runs it. */
 export const PAGE_GO_BACK = 'history.back(); true;'
+
+/**
+ * Whether Back, with no step left behind the page, leads to the home instead of leaving the app. A link
+ * opens the app straight on a terminal page (`/agent`, `/swap`, a coin) with nothing under it — `/?open=agent` too, which
+ * the site now leads to `/agent` — and Back then goes to the terminal's first screen, as a window a link opened closed
+ * back onto the city in 1.21.0. On the home itself, or anywhere off the site, Back leaves the app as it always did.
+ */
+export function backHomeOf(url: string | undefined): boolean {
+  if (typeof url !== 'string' || !onCitySite(url)) return false
+  const rest = url.slice('https://ryntra.io'.length)
+  const page = (rest.split(/[?#]/)[0] ?? '').replace(/\/+$/, '')
+  return page !== ''
+}
+
+/** The step to the home in place of the page with nothing behind it: replaced, so the home has no step back to it. */
+export const PAGE_GO_HOME = "location.replace('/'); true;"
 
 /** Whether an address is a page of the city's site. */
 export const onCitySite = (url: string | undefined): boolean => typeof url === 'string' && ON_SITE.test(url)

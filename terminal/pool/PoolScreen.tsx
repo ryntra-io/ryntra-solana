@@ -9,7 +9,7 @@ import type { Tower } from '@/city/lib/market/types';
 import { useTrade } from '@/city/lib/trade/store';
 import { useWallet } from '@/city/lib/trade/wallet';
 import type { EarnPool } from '@/lib/earn-pools/model';
-import { coinPriceIn, pairOf, tickerOf } from '@/lib/pro-pools/model';
+import { coinPriceIn, pairOf, tickerOf, type ProPoolRow } from '@/lib/pro-pools/model';
 import { CoinFacts } from '@/terminal/coin/CoinFacts';
 import { useCoinDepth } from '@/terminal/coin/CoinDepth';
 import { CoinUnder, type UnderTab } from '@/terminal/coin/CoinUnder';
@@ -31,16 +31,15 @@ import { logoOf } from '@/terminal/market/depth-view';
 import { partOf, useAddressTail } from '@/terminal/shell/address';
 import { useMarket } from '@/terminal/shell/useMarket';
 import { useDismiss } from '@/terminal/shell/useDismiss';
-import { StockPoolFacts } from '@/terminal/stocks/StockPoolFacts';
 import { useNarrow } from '@/terminal/shell/useNarrow';
 import { setPoolKind } from '@/terminal/shell/pool-kind';
 import { CoinLogo, Icon, Info, Page, QuietLink, Tabs, Title, priceText, stepFigure, usdText } from '@/terminal/ui';
 import { binsVenueOf, carriedTab, pairGroups, pairPools, poolHref, VENUE_MARK, VENUE_SHORT, type DeskPool, type PairPool } from './desk-pool';
 import { Distribution } from './Distribution';
 import { distributionOf, pctOfBps, quoteFigure } from './pool-view';
-import { PoolSide } from './PoolSide';
+import { PoolSide, usePositionWay } from './PoolSide';
 import { useDeskPool } from './useDeskPool';
-import { useProPools } from './usePro';
+import { useProPools, type Read } from './usePro';
 import { POOL } from './words';
 import u from '@/terminal/coin/coin.module.css';
 import h from '@/terminal/coin/head.module.css';
@@ -135,6 +134,17 @@ function PoolDesk({ pool }: { pool: DeskPool }) {
 
   // The coin's dollar price: the chart's own, else the market's, else the catalogue's.
   const usd = chartPrice ?? market?.price ?? pair.coin.usd;
+  // DLMM Pro's pools, read once for the page: the pair's other pools beside its name, the pool a limit order rests in,
+  // and the dollar price of the coin a pool is priced in (SOL) where the pool itself has no price to read (DAMM v2).
+  const proPools = useProPools().read;
+  const quoteUsd = useMemo(() => {
+    const tower = towers.find((entry) => entry.id === pair.quote.mint);
+    if (tower && tower.price > 0) return tower.price;
+    if (pair.quote.usd !== null && pair.quote.usd > 0) return pair.quote.usd;
+    if (proPools.status !== 'ready') return null;
+    for (const row of proPools.value) for (const side of [row.x, row.y]) if (side.mint === pair.quote.mint && side.usd !== null && side.usd > 0) return side.usd;
+    return null;
+  }, [towers, pair.quote.mint, pair.quote.usd, proPools]);
   const sym = bare(coin.symbol);
   const logo = logoOf({ id: mint, icon: market?.icon ?? coin.icon ?? pair.coin.icon }) ?? `/api/icon/${mint}`;
   const ref = useMemo(() => ({ mint: coin.id, symbol: coin.symbol, name: coin.name, icon: coin.icon }), [coin.id, coin.symbol, coin.name, coin.icon]);
@@ -176,6 +186,33 @@ function PoolDesk({ pool }: { pool: DeskPool }) {
     });
     return () => cancelAnimationFrame(frame);
   }, [booked, columnTab, pool.address]);
+  // The column gives «Liquidity by price» the room the book does not need, so a tall desk has no gap over the book; a
+  // short one scrolls the book, and its last row, cut by the column's edge, fades out as more to scroll — never a row
+  // cut in half (2560 had ~120 px of nothing over the book, 1440 a row cut through).
+  // The box is held as state, not a ref: a column folded and opened again, or a desk turned phone, mounts a new box, and
+  // its watch starts on that one.
+  const [bookBox, setBookBox] = useState<HTMLDivElement | null>(null);
+  useEffect(() => {
+    const wrap = bookBox;
+    if (!wrap) return;
+    const mark = () => {
+      const box = wrap.querySelector<HTMLElement>(`.${t.book}`);
+      wrap.toggleAttribute('data-below', box !== null && box.scrollTop + box.clientHeight < box.scrollHeight - 2);
+    };
+    mark();
+    // A scroll does not bubble: the column hears its book's on the way down.
+    wrap.addEventListener('scroll', mark, true);
+    const size = new ResizeObserver(mark);
+    size.observe(wrap);
+    const rows = new MutationObserver(mark);
+    rows.observe(wrap, { childList: true, subtree: true });
+    return () => {
+      wrap.removeEventListener('scroll', mark, true);
+      size.disconnect();
+      rows.disconnect();
+    };
+  }, [bookBox]);
+  const way = usePositionWay(pool);
   const book = binsVenue ? <PoolBook address={pool.address} venue={binsVenue} side={side} usd={usd} name={pair.name} bins={bins} /> : null;
   const marketTab = (which: 'market' | 'holders' | 'traders' | 'depth'): ReactNode =>
     which === 'market' ? <MarketTrades tape={tape} sym={sym} /> : which === 'holders' ? <Holders mint={mint} sym={sym} /> : which === 'traders' ? <Traders tape={tape} /> : book;
@@ -183,7 +220,7 @@ function PoolDesk({ pool }: { pool: DeskPool }) {
   const chart = (phone: boolean) => <CoinChart coin={coin} sym={sym} cap={null} trades={tape.trades} tradesStale={tape.stale} onHead={setChartPrice} phone={phone} pool={pin} />;
   const ticket = (
     <div className={p.ticketCol}>
-      <PoolSide pool={pool} coin={ref} usd={usd} onOrders={onOrders} foot={<CoinFacts market={market} depth={depth} />} trade={TICKET_OPEN} />
+      <PoolSide pool={pool} coin={ref} usd={usd} pro={proPools} onOrders={onOrders} foot={<CoinFacts market={market} depth={depth} />} trade={TICKET_OPEN} />
     </div>
   );
   const column = (
@@ -202,18 +239,28 @@ function PoolDesk({ pool }: { pool: DeskPool }) {
       </div>
       {columnTab === 'pool' ? (
         <>
-          <StockPoolFacts mint={mint} />
+          {/* A tokenised stock's session is the ticket's, whole, over its limit and its swap — not a second, cut copy in this
+              narrow column («Біржа відкрита · закриється…» stood twice on 1440). */}
           {empty ? (
             <div className={p.emptyPool} role="status">
               <b>{w.emptyTitle}</b>
-              <QuietLink href={poolHref(pool.address, 'position')} size="s">
-                {w.emptyGo}
-              </QuietLink>
+              {/* «Be the first» only where a first position opens from here. */}
+              {way === 'open' ? (
+                <QuietLink href={poolHref(pool.address, 'position')} size="s">
+                  {w.emptyGo}
+                </QuietLink>
+              ) : null}
             </div>
           ) : (
             <>
-              {binsVenue ? <Distribution bins={bins} side={side} coin={sym} quote={quote} /> : null}
-              {book ?? <Trades tape={tape} />}
+              {binsVenue ? <Distribution bins={bins} side={side} coin={sym} quote={quote} grow /> : null}
+              {book ? (
+                <div className={p.bookBox} ref={setBookBox}>
+                  {book}
+                </div>
+              ) : (
+                <Trades tape={tape} />
+              )}
             </>
           )}
         </>
@@ -225,13 +272,13 @@ function PoolDesk({ pool }: { pool: DeskPool }) {
 
   return (
     <>
-      <PoolHead pool={priced} usd={usd} logoOf={(m) => logosOf(m, m === mint ? logo : logoOf({ id: m, icon: m === pair.quote.mint ? pair.quote.icon : null }))} spot={`/coin/${mint}`} sym={sym} />
+      <PoolHead pool={priced} usd={usd} quoteUsd={quoteUsd} pro={proPools} logoOf={(m) => logosOf(m, m === mint ? logo : logoOf({ id: m, icon: m === pair.quote.mint ? pair.quote.icon : null }))} spot={`/coin/${mint}`} sym={sym} />
       {narrow ? (
         <>
           <div className={u.phoneChart}>{chart(true)}</div>
           <div className={p.phoneBlock}>{column}</div>
           <div className={p.phoneTicket}>
-            <PoolSide pool={pool} coin={ref} usd={usd} onOrders={onOrders} trade={TICKET_OPEN} phone />
+            <PoolSide pool={pool} coin={ref} usd={usd} pro={proPools} onOrders={onOrders} trade={TICKET_OPEN} phone />
           </div>
           <div className={u.phoneUnder}>{under(['market'])}</div>
         </>
@@ -248,14 +295,17 @@ function PoolDesk({ pool }: { pool: DeskPool }) {
  * figures, and behind one «i» the rest. DLMM Pro's four: liquidity, what a limit order earns, the fee now, the price's
  * step; DLMM's and DAMM v2's: liquidity, the day's volume and fees, the fee now. The far right stays free.
  */
-function PoolHead({ pool, usd, logoOf: logo, spot, sym }: { pool: DeskPool; usd: number | null; logoOf: (mint: string) => readonly string[]; spot: string; sym: string }) {
+function PoolHead({ pool, usd, quoteUsd, pro, logoOf: logo, spot, sym }: { pool: DeskPool; usd: number | null; quoteUsd: number | null; pro: Read<readonly ProPoolRow[]>; logoOf: (mint: string) => readonly string[]; spot: string; sym: string }) {
   const w = useWords(POOL);
   const lang = useLang();
   const pair = pairOf(pool);
   const quote = tickerOf(pair.quote);
-  // A pool priced in dollars says its price once — in dollars; any other says it in the coin it is priced in too.
+  // A pool priced in dollars says its price once — in dollars; any other says it in the coin it is priced in too: from
+  // the pool's own price, else — a DAMM v2 pool, which has no bins to read it from — from the two coins' dollar prices
+  // (1WIN/SOL said «—» where Meteora says 0.000587 SOL).
   const dollars = DOLLAR_MINTS.has(pair.quote.mint);
-  const inQuote = !dollars && pool.price !== null && pool.price > 0 ? coinPriceIn({ x: pool.x, y: pool.y, price: pool.price }) : null;
+  const own = !dollars && pool.price !== null && pool.price > 0 ? coinPriceIn({ x: pool.x, y: pool.y, price: pool.price }) : null;
+  const inQuote = own ?? (!dollars && usd !== null && usd > 0 && quoteUsd !== null && quoteUsd > 0 ? usd / quoteUsd : null);
   const pct = (bps: number) => digits(pctOfBps(bps), lang);
   const pctOf = (value: number | null) => (value === null ? '—' : pct(value * 100));
   const usdOf = (value: number | null) => (value !== null ? usdText(value, lang) : '—');
@@ -283,10 +333,13 @@ function PoolHead({ pool, usd, logoOf: logo, spot, sym }: { pool: DeskPool; usd:
         [w.rewards, row.rewards > 0 ? w.rewardsOn(row.rewards) : '—'],
         [w.kind, row.kind === 'launch' ? w.kindLaunch : row.kind === 'dynamic' ? w.kindDynamic : w.kindStatic],
       ]
-    : [[w.step, pool.stepBps !== null ? pct(pool.stepBps) : '—']];
+    : // DAMM v2 has no price step: no row for it.
+      pool.stepBps !== null
+      ? [[w.step, pct(pool.stepBps)]]
+      : [];
   return (
     <div className={`${h.head} ${p.poolHead}`} data-pool-head="">
-      <PairPick pool={pool} logo={logo} />
+      <PairPick pool={pool} pro={pro} logo={logo} />
       <div className={h.quote}>
         {/* A price under a tenth of a cent folds its zeros as the chart does: «$0.0₅9698», not «$0.000009698» across the head. */}
         <b className={h.price}>{usd === null ? '—' : usd < 0.001 ? digits(`$${stepFigure(usd, null)}`, lang) : priceText(usd, lang)}</b>
@@ -335,12 +388,11 @@ function PoolHead({ pool, usd, logoOf: logo, spot, sym }: { pool: DeskPool; usd:
  * the page's own is marked. A tap opens that pool on the same page — its own mark and ticket — on the tab the person
  * stood on where that pool has it. A pair with one pool is its name alone.
  */
-function PairPick({ pool, logo }: { pool: DeskPool; logo: (mint: string) => readonly string[] }) {
+function PairPick({ pool, pro, logo }: { pool: DeskPool; pro: Read<readonly ProPoolRow[]>; logo: (mint: string) => readonly string[] }) {
   const w = useWords(POOL);
   const lang = useLang();
   const pair = pairOf(pool);
   const quote = tickerOf(pair.quote);
-  const pro = useProPools().read;
   const tab = partOf(useAddressTail(), 'tab');
   const [catalog, setCatalog] = useState<readonly EarnPool[]>([]);
   useEffect(() => {

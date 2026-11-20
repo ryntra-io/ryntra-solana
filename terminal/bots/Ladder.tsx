@@ -9,20 +9,23 @@ import { digits, useWords } from '@/city/lib/i18n/dict';
 import { useLang } from '@/city/lib/i18n/lang';
 import type { Lang } from '@/city/lib/i18n/langs';
 import { SOL } from '@/city/lib/trade/tiles';
+import { decimalOf, setLayer, type LayerLine } from '@/terminal/coin/chart-layer';
 import { useWallet } from '@/city/lib/trade/wallet';
 import type { LadderIssue } from '@/lib/bots/ladder/plan';
 import type { LiveState } from '@/lib/bots/ladder/orders';
 import { openPanel } from '@/terminal/shell/frame';
-import { NARROW } from '@/terminal/shell/useNarrow';
+import { NARROW, useNarrow } from '@/terminal/shell/useNarrow';
 import { connectWallet } from '@/terminal/shell/Wallet';
 import { WALLET } from '@/terminal/shell/words';
 import { useOffHoursRisk } from '@/terminal/stocks/useStockPoolFacts';
-import { Action, AmountField, Cell, Chip, CoinLogo, Figure, Kick, Panel, Quiet, Segment, Shares, Table, TableHead, TableRow, Tile, Title, amountOf, priceText, usdText } from '@/terminal/ui';
-import { BotHead, CoinAmount, CoinCard, HowInfo, MinePanel, Note, coinOf, useTowers, type PickedCoin } from './parts';
+import { Action, AmountField, Cell, Chip, CoinLogo, Figure, Info, Kick, Panel, Quiet, Segment, Shares, Table, TableHead, TableRow, Title, amountOf, priceText, usdText } from '@/terminal/ui';
+import { BotChart } from './BotChart';
+import { BotHead, CoinAmount, HowInfo, MinePanel, Note, SOL_COIN, coinOf, useTowers, type PickedCoin } from './parts';
 import type { BotParts } from './Paper';
 import { LADDER_STEP_CHOICES, ladderDraft, ladderRows, ladderStart, typedNumber, type LadderSide } from './rows';
 import { BOTS } from './words';
 import b from './bots.module.css';
+import g from './grid.module.css';
 
 type W = (typeof BOTS)['en'];
 
@@ -114,7 +117,8 @@ export function LadderBot({ lay }: { lay: (parts: BotParts) => ReactNode }) {
 
   const [coin, setCoin] = useState<PickedCoin | null>(null);
   const sol = towers.get(SOL.mint);
-  const shown = coin ?? (sol ? coinOf(sol) : null);
+  // SOL from the first paint, the market's read of it once it comes: the form and its coin never jump in.
+  const shown = useMemo(() => coin ?? (sol ? coinOf(sol) : SOL_COIN), [coin, sol]);
   const [side, setSide] = useState<LadderSide>('buy');
   const [amount, setAmount] = useState('100');
   const [steps, setSteps] = useState(5);
@@ -131,6 +135,14 @@ export function LadderBot({ lay }: { lay: (parts: BotParts) => ReactNode }) {
   }, [side]);
 
   const { pool, read } = usePool(shown?.mint ?? null);
+  // The pool's price as last read for this coin: a re-read each minute keeps it on the card, «—» only before the first.
+  const [lastPrice, setLastPrice] = useState<Readonly<{ mint: string; price: number }> | null>(null);
+  const shownMint = shown?.mint ?? null;
+  useEffect(() => {
+    if (read === 'ready' && pool && shownMint) setLastPrice({ mint: shownMint, price: pool.activePrice });
+  }, [read, pool, shownMint]);
+  const kept = lastPrice && lastPrice.mint === shownMint ? lastPrice.price : null;
+  const poolPrice = read === 'ready' && pool ? pool.activePrice : read === 'loading' ? (kept ?? ('reading' as const)) : undefined;
   /* A stock's coin while its exchange is shut: one line before the signature. */
   const risk = useOffHoursRisk(shown?.mint ?? null);
   const solUsd = sol && sol.price > 0 ? sol.price : null;
@@ -147,6 +159,37 @@ export function LadderBot({ lay }: { lay: (parts: BotParts) => ReactNode }) {
     [shown, pool, side, amountUsd, steps, firstPct, lastPct],
   );
   const composed = useMemo(() => (draft && pool ? composeLadder(draft, pool, solUsd) : null), [draft, pool, solUsd]);
+
+  /* The ladder over the chart: each price of it as a line
+     over the candles, the same price the list beside the form says. On mainnet the pool quotes in dollars, as the chart
+     is drawn; a test network's pool has prices of its own, so there each line stands at the same distance from the
+     market's price as it stands from the pool's. Written to the chart's layer; a re-read of the pool (each minute) keeps
+     the lines where they stand, never off and on again; cleared when the screen goes or the coin changes. */
+  const phone = useNarrow();
+  const marketUsd = (() => {
+    const tower = shownMint ? towers.get(shownMint) : undefined;
+    return tower && !tower.unread?.includes('price') && tower.price > 0 ? tower.price : null;
+  })();
+  const scale = LADDER_NET === 'mainnet' ? 1 : pool && pool.activePrice > 0 && marketUsd !== null ? marketUsd / pool.activePrice : null;
+  const rungsKey = composed && pool ? `${composed.prices.join(',')}@${pool.activePrice}` : '';
+  useEffect(() => {
+    if (!shownMint || read === 'loading') return;
+    if (!composed || !pool || !composed.prices.length || scale === null) {
+      setLayer(shownMint, 'ladder', null);
+      return;
+    }
+    const lines: LayerLine[] = composed.prices.map((price, at) => {
+      const usd = price * scale;
+      return { id: `bot-ladder-${at}`, price: usd, tone: 'draft', tag: decimalOf(usd) ? priceText(usd, lang).replace(/^\$/, '') : null };
+    });
+    // A phone's chart bar has no room for the badge: the lines say it.
+    setLayer(shownMint, 'ladder', { lines, badge: phone ? null : `${w.rungsTitle} · ${digits(String(lines.length), lang)}` });
+    // The prices and the pool's price are the key: the chart is not redrawn on every read of the same ladder.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rungsKey, shownMint, read === 'loading', scale === null ? null : scale.toPrecision(4), lang, phone]);
+  useEffect(() => () => {
+    if (shownMint) setLayer(shownMint, 'ladder', null);
+  }, [shownMint]);
 
   // A changed ladder is a new line: the server's earlier reading no longer stands for it, nor does a «no» said to it.
   useEffect(() => {
@@ -185,7 +228,7 @@ export function LadderBot({ lay }: { lay: (parts: BotParts) => ReactNode }) {
   const gets = composed && composed.prices.length ? (side === 'buy' ? w.approxCoin(amountOf(composed.receives, 4, lang), symbol) : w.approxUsd(usdText(composed.receives, lang))) : '—';
 
   const form = (
-    <Panel tone="hi" pad="l" gap={16} label={w.ladder}>
+    <Panel tone="hi" pad="l" label={w.ladder} className={`${g.sheet} ${g.sheetStack}`}>
       <BotHead id="ladder" kick={w.newBot} info={<HowInfo lines={[w.ladderHow, w.ladderSafe]} />} />
       <Segment
         label={w.sideLabel}
@@ -205,11 +248,23 @@ export function LadderBot({ lay }: { lay: (parts: BotParts) => ReactNode }) {
         <AmountField size="s" label={w.firstLabel} unit={side === 'buy' ? w.pctBelow : w.pctAbove} value={first} onChange={setFirst} />
         <AmountField size="s" label={w.lastLabel} unit={side === 'buy' ? w.pctBelow : w.pctAbove} value={last} onChange={setLast} />
       </div>
+      {/* Two small figures in a row, as the Grid's: the form and its action stand on the first screen of a 1366×768 desk. */}
       <div className={b.twoUp}>
-        <Tile label={w.putIn} value={amountUsd !== null ? usdText(amountUsd, lang) : '—'} />
-        <Tile label={w.getsAll} value={gets} />
+        <div className={g.stat}>
+          {/* The label whole, on two lines where the column is narrow — never cut short. */}
+          <Kick>{w.putIn}</Kick>
+          <Figure size="s" value={amountUsd !== null ? usdText(amountUsd, lang) : '—'} />
+        </div>
+        <div className={g.stat}>
+          <Kick>{w.getsAll}</Kick>
+          <Figure size="s" value={gets} />
+        </div>
       </div>
-      {costs ? <CostLine text={`${netWord} · ${w.costLine(lamportsSol(costs.networkLamports, lang), lamportsSol(costs.rentBackLamports, lang))}`} /> : <span className={b.line}>{netWord}</span>}
+      {/* Before the signature, one line: real or test money and Ryntra's fee; the network and the deposit behind its «i». */}
+      <div className={g.costRow}>
+        <CostLine text={`${netWord} · ${w.feeZero}`} />
+        {costs ? <Info label={w.costHow}>{w.costMore(lamportsSol(costs.networkLamports, lang), lamportsSol(costs.rentBackLamports, lang))}</Info> : null}
+      </div>
       {risk ? (
         <p className={b.risk} data-bot-risk="">
           {risk}
@@ -234,7 +289,6 @@ export function LadderBot({ lay }: { lay: (parts: BotParts) => ReactNode }) {
 
   const side_ = (
     <div className={b.side}>
-      <CoinCard coin={shown} />
       <Panel gap={10} label={w.rungsTitle}>
         <Kick>{w.rungsTitle}</Kick>
         {composed && composed.prices.length && pool ? (
@@ -259,7 +313,12 @@ export function LadderBot({ lay }: { lay: (parts: BotParts) => ReactNode }) {
     </div>
   );
 
-  return lay({ form, side: side_, mine: <MyLadders who={who} /> });
+  /* The coin's chart beside the form, the ladder's prices over its candles. One price on the screen: on mainnet the
+     pool's, which the ladder's steps are measured from, «—» while it is read; a test network's pool has a
+     price of its own, so there the head says the market's. */
+  const chart = <BotChart coin={shown} price={LADDER_NET !== 'mainnet' ? undefined : poolPrice} label={w.ladder} />;
+
+  return lay({ chart, form, side: side_, mine: <MyLadders who={who} /> });
 }
 
 /** The wallet's ladders on the network, read back from the chain every half minute while one still stands. */

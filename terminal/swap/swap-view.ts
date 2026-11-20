@@ -2,7 +2,9 @@ import type { SolanaWalletAction } from '../../lib/solana/action-ledger.ts';
 import { exactDecimal } from '../../lib/solana/amounts.ts';
 import { formatUnits } from '../../city/lib/trade/format.ts';
 import { SWAP_SOL_RESERVE_LAMPORTS } from '../../city/lib/trade/size.ts';
-import { SOL, USDC, USDT_MINT, type Balance, type PayAsset, type Side } from '../../city/lib/trade/tiles.ts';
+import { SOL, USDC, isBase, type Balance, type PayAsset, type Side } from '../../city/lib/trade/tiles.ts';
+import { MAIN_TICKERS } from '../coin/staples.ts';
+import { foldZeros } from '../ui/figures.ts';
 
 /**
  * The Swap screen's own rules, without React: the rate the price on screen implies, what a coin picked from either
@@ -17,14 +19,17 @@ import { SOL, USDC, USDT_MINT, type Balance, type PayAsset, type Side } from '..
 
 export type Rate = Readonly<{ one: string; price: string; other: string }>;
 
-/** A price for the eye, the English way (the screen writes it in its language): 72.22, 0.002917, 65,017.26. */
+/**
+ * A price for the eye, the English way (the screen writes it in its language): 72.22, 0.002917, 65,017.26 — and a tiny
+ * one with its run of zeros folded as the chart writes it, 0.0₇3194 (QA 19.11: «1 Bonk = 0,00000003194 SOL»).
+ */
 export function priceFigure(value: number): string {
   if (!Number.isFinite(value) || value <= 0) return '—';
   if (value >= 1000) return value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   if (value >= 1) return value.toFixed(2);
   // Below one: four significant digits.
-  const places = Math.min(12, -Math.floor(Math.log10(value)) + 3);
-  return value.toFixed(places).replace(/0+$/, '').replace(/\.$/, '');
+  const places = Math.min(14, -Math.floor(Math.log10(value)) + 3);
+  return foldZeros(value.toFixed(places).replace(/0+$/, '').replace(/\.$/, ''));
 }
 
 /**
@@ -80,6 +85,26 @@ export function pickPlan(input: Readonly<{ side: Side; subject: string; counter:
   if (picked.mint === here) return { kind: 'none' };
   if (picked.mint === there) return { kind: 'flip' };
   return field === subjectField ? { kind: 'subject', asset: picked, side } : { kind: 'counter', asset: picked };
+}
+
+/**
+ * What a new subject coin carries over from the ticket it replaces (a `subject` pick): the coin on the other field, as
+ * the screen showed it — its key for the card's `setPay` (SOL and USDC by symbol, any other coin by mint, with the
+ * coin itself for `pickCoin`) — and the typed amount when it stands in that other field.
+ *
+ * `counter` is the coin the screen showed, not the card's stored choice: on SOL's ticket the card keeps «SOL» and
+ * shows USDC, the first coin SOL allows (`payAssetFor`), and on the next coin that stored «SOL» would come true —
+ * 25 USDC turned into 25 SOL when «You get» changed (release check 19.11). A coin picked for «You get» while buying
+ * leaves «You pay» as it was, coin and amount; a coin picked for «You pay» while selling starts its own amount, the
+ * coin it is sold into stays. Never the same digits in another coin.
+ */
+export type Carry = Readonly<{ pay: string; other: PayAsset | null; amount: string | null }>;
+
+export function subjectCarry(input: Readonly<{ field: Field; typed: string; counter: PayAsset }>): Carry {
+  const { field, typed, counter } = input;
+  const base = isBase(counter);
+  const amount = field === 'get' && /^\d*\.?\d+$/.test(typed) && Number(typed) > 0 ? typed : null;
+  return { pay: base ? counter.symbol : counter.mint, other: base ? null : counter, amount };
 }
 
 /**
@@ -231,10 +256,10 @@ export function reasonOf(input: Readonly<{ code: string | null | undefined; solT
 
 /* ── a pair from the address ──────────────────────────────────────────── */
 
-/** SOL, USDC and USDT by their tickers in an address; any other coin by its mint. */
-const BY_TICKER: Readonly<Record<string, string>> = { sol: SOL.mint, usdc: USDC.mint, usdt: USDT_MINT };
+/** «Main»'s coins by their tickers in an address (SOL, USDC, USDT, JUP, BONK …); any other coin by its mint. */
+const BY_TICKER: Readonly<Record<string, string>> = MAIN_TICKERS;
 
-/** A coin named in an address — a ticker of the three, or a mint's shape — or null. */
+/** A coin named in an address — a ticker of «Main», or a mint's shape — or null. */
 export function mintOfParam(value: string | null | undefined): string | null {
   if (!value) return null;
   const text = value.trim();

@@ -19,7 +19,8 @@ import { AGENTS } from '@/terminal/agents/words';
 import { useAskHere } from '@/terminal/shell/useAskHere';
 import { useMarket } from '@/terminal/shell/useMarket';
 import { Figure, Kick, Panel } from '@/terminal/ui';
-import { CoinCard, coinOf, useTowers } from './parts';
+import { BotChart } from './BotChart';
+import { SOL_COIN, coinOf, useTowers } from './parts';
 import type { BotParts } from './Paper';
 import { BOTS } from './words';
 import b from './bots.module.css';
@@ -127,10 +128,10 @@ export function RecurringBot({ lay }: { lay: (parts: BotParts) => ReactNode }) {
   const days = run && run.toMs > run.fromMs ? String(Math.max(1, Math.round((run.toMs - run.fromMs) / 86_400_000))) : null;
 
   const form = <Trader note={mandateNote} onAct={() => undefined} />;
-  const side = (
-    <div className={b.side}>
-      <CoinCard coin={shownCoin} />
-      {run && days && run.resultPct !== null ? (
+  // What the plan did on the coin's history, once it was tried on paper; nothing before — the chart says the coin.
+  const side =
+    run && days && run.resultPct !== null ? (
+      <div className={b.side}>
         <Panel gap={10} label={w.picture}>
           <Kick>{w.picture}</Kick>
           <div className={b.figureCol} data-bot-tested="">
@@ -138,9 +139,10 @@ export function RecurringBot({ lay }: { lay: (parts: BotParts) => ReactNode }) {
             {run.holdPct !== null ? <span className={b.cap}>{w.weekHold(signedPct(run.holdPct, lang))}</span> : null}
           </div>
         </Panel>
-      ) : null}
-    </div>
-  );
+      </div>
+    ) : null;
+  // The coin's chart beside the form: the terminal's own — SOL until a coin is picked.
+  const chart = <BotChart coin={shownCoin ?? (towerMap.get(SOL.mint) ? coinOf(towerMap.get(SOL.mint)!) : SOL_COIN)} label={w.recurring} />;
   // Under the bots at work, their trades as their books keep them and the ones that are over — once there is any.
   const past = Object.values(data.views).some((view) => view.last?.length) || data.past.length > 0;
   const mine = (
@@ -149,7 +151,7 @@ export function RecurringBot({ lay }: { lay: (parts: BotParts) => ReactNode }) {
       {past ? <History views={data.views} past={data.past} /> : null}
     </>
   );
-  return lay({ form, side, mine });
+  return lay({ chart, form, side, mine });
 }
 
 /**
@@ -157,6 +159,7 @@ export function RecurringBot({ lay }: { lay: (parts: BotParts) => ReactNode }) {
  * the plan at work; under it, its row with «Stop». A sentence for one plan fills the card; it never signs.
  */
 export function AutopilotBot({ lay }: { lay: (parts: BotParts) => ReactNode }) {
+  const w = useWords(BOTS);
   const towers = useMarket().towers;
   const solUsd = useSolUsd();
   const data = useAgentsData();
@@ -175,17 +178,18 @@ export function AutopilotBot({ lay }: { lay: (parts: BotParts) => ReactNode }) {
   const pilot = data.pilot;
   const shares = working && pilot ? (pilot.care?.shares ?? pilot.plan.shares) : null;
   const form = <PilotPropose solUsd={solUsd} />;
-  const side = (
+  // The plan at work beside the form; none yet — nothing: the chart says the coin.
+  const side = working ? (
     <div className={b.side}>
-      {working ? (
-        <AgentCard row={working} view={null} solUsd={solUsd} stopping={stopping} onStop={stop}>
-          {shares && pilot ? <Split shares={shares} plan={pilot.plan} solUsd={null} /> : null}
-        </AgentCard>
-      ) : (
-        <CoinCard coin={sol ? coinOf(sol) : null} />
-      )}
+      <AgentCard row={working} view={null} solUsd={solUsd} stopping={stopping} onStop={stop}>
+        {shares && pilot ? <Split shares={shares} plan={pilot.plan} solUsd={null} /> : null}
+      </AgentCard>
     </div>
-  );
+  ) : null;
+  // The chart of the coin the plan trades — SOL from the first paint until the plan names one.
+  const traded = usePilot((st) => st.coin);
+  const tradedTower = traded ? towerMap.get(traded.mint) : undefined;
+  const chart = <BotChart coin={tradedTower ? coinOf(tradedTower) : traded ? { mint: traded.mint, symbol: traded.symbol, icon: traded.icon ?? null } : sol ? coinOf(sol) : SOL_COIN} label={w.autopilot} />;
   const mine = <BudgetMine rows={rows} owner={data.owner} views={data.views} solUsd={solUsd} note={note} stopping={stopping} onStop={stop} />;
-  return lay({ form, side, mine });
+  return lay({ chart, form, side, mine });
 }

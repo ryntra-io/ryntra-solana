@@ -168,6 +168,9 @@ test("a refused read is tried again quietly: sooner first, then less often, neve
   assert.equal(nextReadMs({ status: "none", code: "THIN" }, 0, "1m"), refreshMs("1m"));
   assert.equal(nextReadMs({ status: "unavailable", reason: "busy", retryAfterMs: 9_000 }, 1, "1d"), 9_000);
   assert.equal(nextReadMs({ status: "unavailable", reason: "offline" }, 2, "1d"), 4_000);
+  // Held bars answered at once, stated stale, are read again soon — the engine reads the source behind them.
+  assert.equal(nextReadMs({ status: "ready", stale: true, candles: [] }, 0, "1d"), 15_000);
+  assert.equal(nextReadMs({ status: "ready", stale: false, candles: [] }, 0, "1d"), refreshMs("1d"));
   assert.ok(retryDelayMs(1) < refreshMs("1m"), "a failed read is tried again before the next regular one");
 });
 
@@ -184,9 +187,11 @@ test("Retry-After is read in both of HTTP's forms", () => {
 test("a 429 carries the engine's Retry-After to the next try; an answer without one carries nothing", async () => {
   const headers = (map) => ({ get: (name) => map[name.toLowerCase()] ?? null });
   const deps = (status, map) => ({ fetch: async () => ({ status, json: async () => ({ error: { code: "RATE_LIMITED" } }), headers: headers(map) }), now: () => NOW });
-  assert.deepEqual(await fetchCandles(JUP, "15m", deps(429, { "retry-after": "20" })), { status: "unavailable", reason: "busy", retryAfterMs: 20_000 });
-  assert.deepEqual(await fetchCandles(JUP, "15m", deps(503, { "retry-after": "3" })), { status: "unavailable", reason: "failed", retryAfterMs: 3_000 });
-  assert.deepEqual(await fetchCandles(JUP, "15m", deps(429, {})), { status: "unavailable", reason: "busy" });
+  /* A refusal (429, 503) says so — only then may the page read the source itself; a 500 does not. */
+  assert.deepEqual(await fetchCandles(JUP, "15m", deps(429, { "retry-after": "20" })), { status: "unavailable", reason: "busy", retryAfterMs: 20_000, http: 429 });
+  assert.deepEqual(await fetchCandles(JUP, "15m", deps(503, { "retry-after": "3" })), { status: "unavailable", reason: "failed", retryAfterMs: 3_000, http: 503 });
+  assert.deepEqual(await fetchCandles(JUP, "15m", deps(429, {})), { status: "unavailable", reason: "busy", http: 429 });
+  assert.deepEqual(await fetchCandles(JUP, "15m", deps(500, {})), { status: "unavailable", reason: "failed" });
   // A 404 is a market without a chart whatever the headers say.
   assert.deepEqual(await fetchCandles(JUP, "15m", deps(404, { "retry-after": "5" })), { status: "none", code: null });
 });
@@ -235,11 +240,12 @@ test("«Delayed» says how long, in the language on screen", () => {
   try {
     useLangStore.setState({ lang: "en" });
     assert.equal(delayLine("1m"), "Delay ≤ 20 s");
-    assert.equal(delayLine("15m"), "Delay ≤ 1 min");
+    /* The quarter hours ride the five minutes' read, the four hours the hours' — their cache times with them. */
+    assert.equal(delayLine("15m"), "Delay ≤ 45 s");
     assert.equal(delayLine("1d"), "Delay ≤ 10 min");
     useLangStore.setState({ lang: "uk" });
     assert.equal(delayLine("5m"), "Затримка ≤ 45 с");
-    assert.equal(delayLine("4h"), "Затримка ≤ 5 хв");
+    assert.equal(delayLine("4h"), "Затримка ≤ 2 хв");
   } finally {
     useLangStore.setState({ lang: "en" });
   }

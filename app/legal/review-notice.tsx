@@ -8,9 +8,9 @@ import type { PublicLocale } from "@/lib/site/locale";
  * governing law, the transfer and retention schedules, and the signatures of
  * the founder and a qualified lawyer on this exact version.
  */
-export function LegalReviewNotice({ locale = "en" }: { locale?: PublicLocale }) {
+export function LegalReviewNotice({ locale = "en", className = "legal-review" }: { locale?: PublicLocale; className?: string }) {
   return (
-    <aside className="legal-review" role="status" aria-label={locale === "uk" ? "Статус юридичного перегляду" : "Legal review status"}>
+    <aside className={className} role="status" aria-label={locale === "uk" ? "Статус юридичного перегляду" : "Legal review status"}>
       {locale === "uk" ? (
         <>
           <strong>Кандидат на юридичний перегляд — не чинний</strong>

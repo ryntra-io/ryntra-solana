@@ -8,6 +8,7 @@ import { PRO_MIN_LAMPORTS, bandPct, proAmounts, proChoice, proOther, proReward, 
 import { PRO_LOCKED, proGoal, proNetwork, useProPier } from '@/city/lib/earn/pro-store';
 import { digits, useWords } from '@/city/lib/i18n/dict';
 import { useLang } from '@/city/lib/i18n/lang';
+import { StockPositionLine } from '@/terminal/stocks/StockPositionLine';
 import { stepBpsOfSpacing } from '@/lib/earn-pools/bins';
 import { useWallet } from '@/city/lib/trade/wallet';
 import { explorerTxUrl } from '@/lib/solana/explorer';
@@ -54,7 +55,8 @@ function edit(change: () => void): void {
  *
  * On a pool's own page the page names the pool, so `bare` leaves out the ticket's head, and `peek` shows the
  * range over the pool's liquidity — its bars and edges — before «Tune» opens the rest; `risk` is the one
- * line said before the signature in a pool of a volatile pair; `soon` stands in place of the action where the signature
+ * line said before the signature in a pool of a volatile pair — in a pool of a checked stock the stock's own
+ * line stands in its place: the issuer's rights over its token and the exchange's hours; `soon` stands in place of the action where the signature
  * is not open here yet — the form is there to try, nothing is built or signed from it.
  */
 export function ProTicket({ pier, row, onConnect, bare = false, peek = false, risk, soon }: { pier: ProPier; row: PoolRow; onConnect: () => void; bare?: boolean; peek?: boolean; risk?: ReactNode; soon?: ReactNode }) {
@@ -239,7 +241,7 @@ export function ProTicket({ pier, row, onConnect, bare = false, peek = false, ri
       </OneLine>
       {problem ? <Note>{problem}</Note> : unpainted ? <Note>{fault === 'detail' ? digits(sw.detail(String(proShapeRanges(shape!, style))), lang) : sw.paintBoth}</Note> : null}
       {notice ? <Note tone={notice.tone}>{w[said ?? 'notSent']}</Note> : null}
-      {risk}
+      {pier.stock ? <StockPositionLine mint={other.mint} issuer={pier.stock.issuer} /> : risk}
       {soon ?? (
         <Action onClick={press} busy={waiting} disabled={waiting || (connection !== null && (Boolean(choice.problem) || unpainted || !pier.takesDeposits))}>
           {connection ? label : w.connect}

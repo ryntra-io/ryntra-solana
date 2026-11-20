@@ -42,6 +42,8 @@ test("a price is written the English way with its own places; the screen puts it
   assert.equal(priceFigure(65017.256), "65,017.26");
   assert.equal(priceFigure(0.0029174), "0.002917");
   assert.equal(priceFigure(0.5), "0.5");
+  assert.equal(priceFigure(0.00000003194), "0.0₇3194", "a tiny rate folds its zeros as the chart does");
+  assert.equal(priceFigure(0.0001234), "0.0001234", "three zeros stay written out");
   assert.equal(priceFigure(0), "—");
 });
 

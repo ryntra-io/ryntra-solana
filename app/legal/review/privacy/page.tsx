@@ -14,7 +14,6 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-export default async function PrivacyPage() {
-  const locale = await publicServerLocale();
-  return <CandidateDocument document={CANDIDATE_PRIVACY} locale={locale} version={LEGAL_PACKAGE.id} />;
+export default function PrivacyPage() {
+  return <CandidateDocument document={CANDIDATE_PRIVACY} version={LEGAL_PACKAGE.id} />;
 }

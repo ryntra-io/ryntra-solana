@@ -71,6 +71,8 @@ export const COIN = words(
     delayed: 'Delayed',
     tools: 'Indicators and drawing',
     poolLayer: 'Pool liquidity and my positions on the chart',
+    /** The name by the deepest of the pool's strips at the price scale: what the violet strips are. */
+    liquidityTag: 'Pool liquidity',
     full: 'Full screen',
     exitFull: 'Leave full screen',
     noChart: (coin: string) => `No chart for ${coin} yet`,
@@ -140,6 +142,7 @@ export const COIN = words(
     delayed: 'Із затримкою',
     tools: 'Індикатори й малювання',
     poolLayer: 'Ліквідність пулу й мої позиції на графіку',
+    liquidityTag: 'Ліквідність пулу',
     full: 'На весь екран',
     exitFull: 'Згорнути',
     noChart: (coin: string) => `Графіка ${coin} поки немає`,

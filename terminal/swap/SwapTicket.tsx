@@ -21,10 +21,11 @@ import { actionOf, retryShown, type ActionLabel } from '@/terminal/coin/ticket-r
 import { useTicket } from '@/terminal/coin/useTicket';
 import { WalletPick } from '@/terminal/coin/WalletPick';
 import { TICKET } from '@/terminal/coin/words';
+import { logoChain } from '@/terminal/market/depth-view';
 import { useMarket } from '@/terminal/shell/useMarket';
 import { Action, CoinLogo, Icon, Kick, Quiet, Shares, amountText, cx, priceText } from '@/terminal/ui';
-import { FILL_LIFE_MS, pickSubject, useSwapScreen } from './state';
-import { feeShort, flipText, pickList, pickPlan, pickStart, rateOf, reasonOf, searchable, solThin, unitsOf, usdWorth, withFound, type Field } from './swap-view';
+import { FILL_LIFE_MS, pickSubject, putFill, useSwapScreen } from './state';
+import { feeShort, flipText, pickList, pickPlan, pickStart, rateOf, reasonOf, searchable, solThin, subjectCarry, unitsOf, usdWorth, withFound, type Field } from './swap-view';
 import { useDepthCoins } from './useDepthCoins';
 import { SWAP } from './words';
 import t from '@/terminal/coin/ticket.module.css';
@@ -71,22 +72,7 @@ function useSaidFill(): void {
   const fill = useSwapScreen((st) => st.fill);
   useEffect(() => {
     if (!fill) return;
-    const put = (): boolean => {
-      const screen = useSwapScreen.getState();
-      if (screen.fill?.id !== fill.id) return true;
-      if (Date.now() - fill.at > FILL_LIFE_MS) {
-        useSwapScreen.setState({ fill: null });
-        return true;
-      }
-      const card = useTrade.getState();
-      if (!card.open || card.view !== 'swap' || card.tower?.mint !== screen.subject.id || card.phase !== 'idle' || card.held) return false;
-      useSwapScreen.setState({ fill: null });
-      if (card.side !== fill.side) card.setSide(fill.side);
-      if (fill.pay) useTrade.getState().setPay(fill.pay);
-      if (fill.amount) useTrade.getState().setTyped(fill.amount);
-      else if (fill.share !== null) useTrade.getState().setShare(fill.share);
-      return true;
-    };
+    const put = (): boolean => putFill(fill);
     if (put()) return;
     let done = false;
     const unsubscribe = useTrade.subscribe(() => {
@@ -134,7 +120,9 @@ export function pickInto(field: Field, picked: PayAsset, prices: ReadonlyMap<str
   const choice = choiceOf(tower, card.side, holdings, { pay: card.pay, typed: card.typed, other: card.other, overPriced: true });
   const plan = pickPlan({ side: card.side, subject: tower.mint, counter: choice.pay.mint, field, picked });
   // Another coin for the card: the screen names it, and the card follows it as soon as it rests (`useTicket`).
-  if (plan.kind === 'subject') return pickSubject({ id: plan.asset.mint, symbol: plan.asset.symbol, name: plan.asset.name ?? plan.asset.symbol, icon: plan.asset.icon ?? null }, plan.side);
+  // The new coin keeps the other field as the screen showed it — its coin always, its amount where it was typed there
+  // (`subjectCarry`): picking what you get never changes what you pay (release check 19.11: 25 USDC became 25 SOL).
+  if (plan.kind === 'subject') return pickSubject({ id: plan.asset.mint, symbol: plan.asset.symbol, name: plan.asset.name ?? plan.asset.symbol, icon: plan.asset.icon ?? null }, plan.side, subjectCarry({ field, typed: card.typed, counter: choice.pay }));
   if (plan.kind === 'none') return;
   const side: Side = card.side === 'buy' ? 'sell' : 'buy';
   const usable = plan.kind === 'counter' && (isBase(plan.asset) || choice.options.some((option) => option.mint === plan.asset.mint));
@@ -347,7 +335,7 @@ function BigField({
   children: ReactNode;
 }) {
   const symbol = bare(unitOf(asset));
-  const logo = <CoinLogo src={iconOf(asset)} symbol={symbol} size="m" className={s.coinLogo} />;
+  const logo = <CoinLogo {...logoChain(asset.mint, asset.icon, iconOf(asset))} symbol={symbol} size="m" className={s.coinLogo} />;
   return (
     <div className={s.big}>
       <div className={s.bigHead}>
@@ -423,6 +411,8 @@ function GetField({ asset, balance, choice, onAsset }: { asset: PayAsset; balanc
 
 /** The figures on screen: the exact order's when it stands for this choice, else the price's. */
 function useFigures(choice: Choice, quote: ReturnType<typeof useTrade.getState>['quote'], review: ReturnType<typeof useTrade.getState>['review']): Figures | null {
+  // The figures are written in the language on screen: a switch of it writes them again (QA 19.11: «Fee 0,1%» in English).
+  const lang = useLang();
   const shown = review && review.key === choice.key ? review : null;
   const priced = quote.status === 'ready' && quote.key === choice.key ? quote.body : null;
   const outputDecimals = shown ? decimalsOf(shown.order, choice.outputMint) : priced ? decimalsOf(priced, choice.outputMint) : null;
@@ -430,7 +420,8 @@ function useFigures(choice: Choice, quote: ReturnType<typeof useTrade.getState>[
     if (outputDecimals === null) return null;
     if (shown) return figuresOf(shown.order.order, outputDecimals, 'order');
     return priced ? figuresOf(priced.order, outputDecimals, 'quote') : null;
-  }, [shown, priced, outputDecimals]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `lang` is read by `figuresOf` through the dictionary
+  }, [shown, priced, outputDecimals, lang]);
 }
 
 /** How long typing rests before the engine's search over every coin is asked. */
@@ -509,8 +500,10 @@ function Picker({
     }
     return coins;
   }, [holdings]);
-  // The Market's engine reads «Main» and the wallet's coins by mint: their names, logos, prices and Jupiter's word.
-  const wanted = useMemo(() => [...MAIN_MINTS, ...held.map((asset) => asset.mint)].slice(0, 50), [held]);
+  const found = useFound(query);
+  // The Market's engine reads «Main», the wallet's coins and what a search found by mint: their names, logos, prices and
+  // Jupiter's word — a price beside every coin of a search, not the first alone (QA 19.11).
+  const wanted = useMemo(() => [...MAIN_MINTS, ...held.map((asset) => asset.mint), ...found.map((asset) => asset.mint)].slice(0, 50), [held, found]);
   const depth = useDepthCoins(wanted);
   const byTower = useMemo(() => new Map(towers.map((tower) => [tower.id, tower])), [towers]);
   const main = useMemo<PayAsset[]>(
@@ -537,7 +530,6 @@ function Picker({
     () => towers.filter((tower) => tower.verified).map((tower) => ({ mint: tower.id, symbol: bare(tower.symbol), decimals: null, name: tower.id === SOL.mint ? 'Solana' : tower.name, verified: true, icon: towerLogo(tower.id, tower.icon) })),
     [towers],
   );
-  const found = useFound(query);
   const searching = query.trim().length > 0;
   const hits = searching ? withFound(pickList({ field, held, market: [...main, ...market], query, most: LIST_MOST }), searchable(query) ? found : [], LIST_MOST) : [];
   const sections: readonly Readonly<{ title: string | null; list: readonly PayAsset[] }>[] = searching
@@ -603,7 +595,7 @@ function Picker({
                   const worth = has ? worthOf(asset) : null;
                   return (
                     <button key={asset.mint} type="button" role="menuitemradio" aria-checked={asset.mint === current.mint} className={s.pickRow} onClick={() => onPick(withLogo(asset))}>
-                      <CoinLogo src={iconOf(withLogo(asset))} symbol={symbol} size="m" />
+                      <CoinLogo {...logoChain(asset.mint, asset.icon, iconOf(withLogo(asset)))} symbol={symbol} size="m" eager />
                       <span className={s.pickNames}>
                         <b>
                           {symbol}

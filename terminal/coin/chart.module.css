@@ -127,6 +127,13 @@
   margin-left: auto;
 }
 
+/* No chart drawn — none for the coin, unavailable, or on its way: the chip says nothing of a chart that is not there
+   (HOLDFAST said «Delayed» over «Chart in a moment»). It keeps its place, so the pane's controls after it do
+   not jump when the chart comes. */
+.pane:has(> .state, > .wait) .live {
+  visibility: hidden;
+}
+
 /* The drawing tools down the left, quiet until the hand comes. */
 .pane .core :global(.ryntra-draw__rail) {
   border-right-color: transparent;
@@ -192,11 +199,6 @@
 
 /* A narrower chart keeps its bar on one line: the intervals closer, «Live» or «Delayed» said by its dot alone. */
 @container coinchart (max-width: 720px) {
-  .frame {
-    min-width: 0;
-    padding: 0 6px;
-  }
-
   /* The chip keeps its dot; its word waits for a wider chart. */
   .live > span {
     gap: 0;
@@ -205,6 +207,20 @@
   }
 
   .pane .core :global(.ryntra-chart__ind-label) {
+    display: none;
+  }
+}
+
+/* The chart of a 1440 desk (about 550 wide, QA 19.11: «Live» and «Full screen» stood past the edge): the intervals and
+   the switch closer still, and the drawing tools wait for the full screen, where the chart is wide again. «Live» and the
+   pane's two controls always stand in view; the intervals scroll before they go (`.frames`). The intervals' own
+   steps stand after their base rules below: a container query adds no weight, so the later rule would win. */
+@container coinchart (max-width: 620px) {
+  .pane .core :global(.ryntra-chart__bar) {
+    gap: 4px;
+  }
+
+  .pane .core :global(.ryntra-chart__draw-toggle) {
     display: none;
   }
 }
@@ -243,6 +259,14 @@
   flex: none;
   align-items: center;
   gap: 2px;
+}
+
+/* Where the bar has no room left, the intervals scroll in their own row: what stands after them stays in view. */
+.frames {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
 }
 
 .basis {
@@ -296,6 +320,28 @@
   color: var(--ice);
   background: var(--chosen);
   border-color: var(--chosen-edge);
+}
+
+/* A narrower chart (the container steps above): the intervals closer. Here, after the base rules, so they apply. */
+@container coinchart (max-width: 720px) {
+  .frame {
+    min-width: 0;
+    padding: 0 6px;
+  }
+}
+
+@container coinchart (max-width: 620px) {
+  .frames {
+    gap: 0;
+  }
+
+  .frame {
+    padding: 0 4px;
+  }
+
+  .basis {
+    padding-left: 4px;
+  }
 }
 
 .badge {

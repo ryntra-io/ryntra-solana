@@ -34,6 +34,14 @@
   color: var(--soft);
 }
 
+/* A short desk (a 1366×768 or 1440×900 laptop): a form's line of what the bot does gives its room to the action — it stays behind
+   the «i» and on the catalogue's card. */
+@media (min-width: 1100px) and (max-height: 920px) {
+  .head .job {
+    display: none;
+  }
+}
+
 .badge {
   display: flex;
   flex: none;
@@ -191,17 +199,44 @@
 
 /* ── the side column ───────────────────────────────────────────────────── */
 
+/* What helps a bot's form (the ladder's prices) under the form, beside the person's bots: the chart's row is the chart
+   and the form alone, so it never runs past the window (`BotsScreen.tsx`). */
+.botDesk.botDesk[data-side] {
+  grid-template-areas:
+    'chart form'
+    'mine side';
+}
+
+.deskSide {
+  grid-area: side;
+  align-self: start;
+  min-width: 0;
+}
+
+/* A narrow desk (a tablet): the chart on top, the form under it the whole width, the person's bots under that — their
+   tables keep the width they were made for (the Grid's own desk sets the form beside its cards instead). */
+@media (min-width: 768px) and (max-width: 1099px) {
+  .botDesk.botDesk {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      'chart'
+      'form'
+      'mine';
+  }
+
+  .botDesk.botDesk[data-side] {
+    grid-template-areas:
+      'chart'
+      'form'
+      'side'
+      'mine';
+  }
+}
+
 .side {
   display: flex;
   flex-direction: column;
   gap: 16px;
-  min-width: 0;
-}
-
-.coin {
-  display: flex;
-  align-items: center;
-  gap: 12px;
   min-width: 0;
 }
 
@@ -213,21 +248,6 @@
   min-width: 0;
 }
 
-.coinSymbol {
-  font-family: var(--display);
-  font-weight: 800;
-  font-stretch: 125%;
-  font-size: var(--type-lead);
-}
-
-.coinName {
-  font-size: var(--type-caption);
-  font-weight: 500;
-  color: var(--dim);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
 
 .figureCol {
   display: flex;
@@ -404,17 +424,19 @@
   text-align: center;
 }
 
-/* ── the catalogue: a card a bot, the grid's first and twice as wide ─────────────────────────────────────── */
+/* ── the catalogue: a card a bot, the grid's first ───────────────────────────────────────────────────── */
 
-/* The catalogue stands on the head's line, at the left of the working area as the head and the Grid's desk do — not in
-   the middle under a head at the left. Stronger than the action page's centred container on purpose. */
-.catalogBody.catalogBody.catalogBody[data-page-body] {
-  margin-inline: 0;
+/* The section's lists — the catalogue, and «My bots» under a bot's form — stand on the head's line, as everything under
+   it does, and run the desk's whole working width, as «My grids» under the Grid's chart does: on 1920 the
+   catalogue stood in a form's 1120 px with a third of the screen empty to its right (QA 19.11). A form keeps its width. */
+.wideBody.wideBody.wideBody[data-page-body] {
+  max-width: none;
 }
 
+/* A wide desk: every bot in one row. No card draws a chart of its own — a drawn price is not the market: each bot's page stands on the terminal's chart. */
 .catalog {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 20px;
 }
 
@@ -442,11 +464,6 @@
   outline-offset: -2px;
 }
 
-/* The lead card: its words on the left, the bot's own shape drawn on the right. */
-.catalogCard[data-lead] {
-  grid-column: span 2;
-  padding-right: calc(42% + 24px);
-}
 
 .catalogTop {
   display: flex;
@@ -512,38 +529,24 @@
   color: var(--ice);
 }
 
-/* Its height said outright: a drawing keeps its own proportions between a top and a bottom otherwise. */
-.catalogPicture {
-  position: absolute;
-  top: 24px;
-  right: 24px;
-  width: 42%;
-  height: calc(100% - 48px);
-  background: var(--well);
-  border: 1px solid var(--line);
-}
+/* A narrower desk: three to a row, the grid's card twice as wide — five cards, two full rows. */
+@media (min-width: 1100px) and (max-width: 1679px) {
+  .catalog {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
 
-.pictureBuy {
-  stroke: var(--mint);
-  stroke-width: 1.5;
-  opacity: 0.6;
-}
-
-.pictureSell {
-  stroke: var(--flare);
-  stroke-width: 1.5;
-  opacity: 0.6;
-}
-
-.picturePrice {
-  fill: none;
-  stroke: var(--lilac);
-  stroke-width: 2;
+  .catalogCard[data-lead] {
+    grid-column: span 2;
+  }
 }
 
 @media (max-width: 1099px) {
   .catalog {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .catalogCard[data-lead] {
+    grid-column: span 2;
   }
 }
 
@@ -568,10 +571,5 @@
 
   .catalogCard[data-lead] {
     grid-column: auto;
-    padding-right: 16px;
-  }
-
-  .catalogPicture {
-    display: none;
   }
 }

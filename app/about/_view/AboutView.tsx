@@ -29,6 +29,9 @@ export const ABOUT_WORDS = {
     docs: "Docs",
     roadmap: "Roadmap",
     help: "Help",
+    legal: "Legal",
+    terms: "Terms of Use",
+    privacy: "Privacy Policy",
   },
   uk: {
     title: "Про Ryntra",
@@ -49,12 +52,15 @@ export const ABOUT_WORDS = {
     docs: "Документи",
     roadmap: "Дорожня карта",
     help: "Допомога",
+    legal: "Правове",
+    terms: "Умови використання",
+    privacy: "Політика приватності",
   },
 } as const;
 
 /**
- * `/about` in the terminal's frame and language: Ryntra in one line, three facts, how to reach it. The one
- * amber action opens the terminal.
+ * `/about` in the terminal's frame and language: Ryntra in one line, three facts, how to reach it; at its
+ * foot the Terms and the Privacy Policy. The one amber action opens the terminal.
  */
 export function AboutView() {
   const lang = useDocsLang();
@@ -130,6 +136,14 @@ export function AboutView() {
               </li>
             </ul>
           </section>
+          <nav className={b.footLinks} aria-label={w.legal}>
+            <Link href="/legal/terms" className={b.inlineLink}>
+              {w.terms}
+            </Link>
+            <Link href="/legal/privacy" className={b.inlineLink}>
+              {w.privacy}
+            </Link>
+          </nav>
         </div>
       </ActionBody>
     </Page>

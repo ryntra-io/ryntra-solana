@@ -37,11 +37,122 @@ export const TIMEFRAME_SOURCE: Readonly<Record<SpotTimeframe, Readonly<{ path: "
 export const TIMEFRAME_TTL_MS: Readonly<Record<SpotTimeframe, number>> = {
   "1m": 20_000,
   "5m": 45_000,
-  "15m": 60_000,
+  "15m": 45_000,
   "1h": 120_000,
-  "4h": 300_000,
+  "4h": 120_000,
   "1d": 600_000,
 };
+
+/**
+ * The source's reads behind the six intervals: four, not six. The chart source refuses after a few calls a
+ * minute from the platform's shared addresses (measured 19.11: MET's fifth read was a 429), so the quarter hours are the
+ * five-minute bars three by three and the four hours the hours four by four — one read serves two intervals, and a
+ * person going through the intervals costs the source four reads at most. Each read asks the source's own ceiling of
+ * bars (a thousand), so the coarser interval still has days of them.
+ */
+export const SPOT_SOURCE_READS = ["m1", "m5", "h1", "d1"] as const;
+export type SpotSourceRead = (typeof SPOT_SOURCE_READS)[number];
+
+export const SOURCE_READ: Readonly<Record<SpotSourceRead, Readonly<{ path: "minute" | "hour" | "day"; aggregate: 1 | 5; seconds: number; limit: number; ttlMs: number }>>> = {
+  m1: { path: "minute", aggregate: 1, seconds: 60, limit: 300, ttlMs: TIMEFRAME_TTL_MS["1m"] },
+  m5: { path: "minute", aggregate: 5, seconds: 300, limit: 1000, ttlMs: TIMEFRAME_TTL_MS["5m"] },
+  h1: { path: "hour", aggregate: 1, seconds: 3_600, limit: 1000, ttlMs: TIMEFRAME_TTL_MS["1h"] },
+  /* A year and a day of daily bars: «1Р» on a company page is a year. */
+  d1: { path: "day", aggregate: 1, seconds: 86_400, limit: 366, ttlMs: TIMEFRAME_TTL_MS["1d"] },
+};
+
+/** Which read each interval is drawn from, and how many of its bars make one of the interval's. */
+export const TIMEFRAME_READ: Readonly<Record<SpotTimeframe, Readonly<{ read: SpotSourceRead; group: number }>>> = {
+  "1m": { read: "m1", group: 1 },
+  "5m": { read: "m5", group: 1 },
+  "15m": { read: "m5", group: 3 },
+  "1h": { read: "h1", group: 1 },
+  "4h": { read: "h1", group: 4 },
+  "1d": { read: "d1", group: 1 },
+};
+
+/** The most bars an interval answers: the chart's window (a year and a day of daily bars). */
+export const TIMEFRAME_LIMIT: Readonly<Record<SpotTimeframe, number>> = { "1m": 300, "5m": 300, "15m": 300, "1h": 300, "4h": 300, "1d": 366 };
+
+/** The source's OHLCV path of a pool for one read: the price of `side` in dollars. Pool address and interval only. */
+export function ohlcvPath(pool: Readonly<{ address: string; side: "base" | "quote" }>, read: SpotSourceRead): string {
+  const source = SOURCE_READ[read];
+  return `/pools/${encodeURIComponent(pool.address)}/ohlcv/${source.path}?aggregate=${source.aggregate}&limit=${source.limit}&currency=usd&token=${pool.side}`;
+}
+
+/**
+ * Bars gathered `seconds` long: each bar of the interval opens at a multiple of `seconds` (UTC), opens at its first
+ * bar's open, closes at its last close, its high and low the extremes, its volume the sum (absent when none of its bars
+ * stated one). Oldest first in, oldest first out.
+ */
+export function groupCandles(candles: readonly NormalizedCandle[], seconds: number): NormalizedCandle[] {
+  if (!(seconds > 0)) return [...candles];
+  const out: NormalizedCandle[] = [];
+  for (const candle of candles) {
+    const time = (Math.floor(candle.time / seconds) * seconds) as UTCTimestamp;
+    const last = out[out.length - 1];
+    if (last && last.time === time) {
+      last.high = Math.max(last.high, candle.high);
+      last.low = Math.min(last.low, candle.low);
+      last.close = candle.close;
+      if (candle.volume !== undefined) last.volume = (last.volume ?? 0) + candle.volume;
+    } else {
+      out.push({ time, open: candle.open, high: candle.high, low: candle.low, close: candle.close, ...(candle.volume !== undefined ? { volume: candle.volume } : {}) });
+    }
+  }
+  return out;
+}
+
+/**
+ * An interval's bars from finer or equal bars — its own read's, or a finer read standing in: gathered to the interval
+ * (bars already of its size stay as they are, the source's bars open on their interval), the newest of its window.
+ */
+export function candlesOfTimeframe(readBars: readonly NormalizedCandle[], timeframe: SpotTimeframe): NormalizedCandle[] {
+  return groupCandles(readBars, TIMEFRAME_SOURCE[timeframe].seconds).slice(-TIMEFRAME_LIMIT[timeframe]);
+}
+
+/**
+ * The reads an interval can be drawn from when its own was refused and none of it is held, finest last: the
+ * neighbouring read's bars gathered to the interval — the same trades, fewer bars back. Only finer reads stand in: a coarse bar cannot be cut into fine ones.
+ */
+export const STAND_INS: Readonly<Record<SpotSourceRead, readonly SpotSourceRead[]>> = {
+  m1: [],
+  m5: ["m1"],
+  h1: ["m5", "m1"],
+  d1: ["h1", "m5"],
+};
+
+/**
+ * Bars counted from trades: a coin too young for the source's bars — its pool a curve that opened minutes
+ * ago — still has its trades, and each is a price at a moment. A bar of `seconds` opens at its first trade's price and
+ * closes at its last; its volume is the dollars traded in it. A trade without a price, or at no price, is no bar.
+ * Trades may come newest first; bars leave oldest first. Nothing is filled between trades: an empty minute is no bar.
+ */
+export function candlesFromTrades(trades: readonly Readonly<{ at: string; priceUsd: number | null; usd: number | null }>[], seconds: number): NormalizedCandle[] {
+  if (!(seconds > 0)) return [];
+  const points = trades
+    .map((trade) => ({ t: Date.parse(trade.at) / 1000, price: trade.priceUsd, usd: trade.usd }))
+    .filter((point): point is { t: number; price: number; usd: number | null } => Number.isFinite(point.t) && point.price !== null && Number.isFinite(point.price) && point.price > 0)
+    .sort((a, b) => a.t - b.t);
+  const out: NormalizedCandle[] = [];
+  for (const point of points) {
+    const time = (Math.floor(point.t / seconds) * seconds) as UTCTimestamp;
+    const last = out[out.length - 1];
+    const usd = point.usd !== null && Number.isFinite(point.usd) && point.usd > 0 ? point.usd : 0;
+    if (last && last.time === time) {
+      last.high = Math.max(last.high, point.price);
+      last.low = Math.min(last.low, point.price);
+      last.close = point.price;
+      last.volume = (last.volume ?? 0) + usd;
+    } else {
+      out.push({ time, open: point.price, high: point.price, low: point.price, close: point.price, volume: usd });
+    }
+  }
+  return out;
+}
+
+/** Fewer bars than this from trades is no chart: two prices are a line, not a market's picture. */
+export const TRADE_BARS_MIN = 3;
 
 export type SpotPool = Readonly<{
   address: string;
@@ -70,8 +181,16 @@ const STABLE_QUOTES: ReadonlySet<string> = new Set([
 const WRAPPED_SOL = "So11111111111111111111111111111111111111112";
 const MAJOR_QUOTES: ReadonlySet<string> = new Set([...STABLE_QUOTES, WRAPPED_SOL]);
 
-/** A pool thinner than this cannot be called the market for anything. */
+/** A pool against a major quote thinner than this is not the market of a coin that has a deeper one. */
 export const SPOT_POOL_MIN_RESERVE_USD = 10_000;
+
+/**
+ * The floor of a young coin's own market: when no pool against USDC, USDT or SOL holds
+ * {@link SPOT_POOL_MIN_RESERVE_USD}, the pool the coin trades in most is its market, whatever it is paired with (a
+ * pump.fun coin launched against another coin — Lucia/DCTY, Sparrow/ANTHRP on 19.11), if it holds at least this much.
+ * The source prices it in dollars and the close must still agree with the market price (`candlesDescribe`).
+ */
+export const SPOT_MARKET_MIN_RESERVE_USD = 250;
 
 function asNumber(value: unknown): number | null {
   if (typeof value === "number") return Number.isFinite(value) ? value : null;
@@ -87,7 +206,8 @@ function tokenIdMint(id: unknown): string | null {
 }
 
 export type SpotPoolChoice =
-  | Readonly<{ pool: SpotPool; reason: null }>
+  /** `market` — the coin's own market pool, chosen because no major pool qualified: drawn only against a known price. */
+  | Readonly<{ pool: SpotPool; reason: null; market?: true }>
   | Readonly<{ pool: null; reason: "NO_POOL" | "NO_MAJOR_QUOTE" | "THIN" | "QUIET" }>;
 
 /**
@@ -109,6 +229,14 @@ export type SpotPoolChoice =
  * first» for everyone charted Bonk from a side pool against USDC whose last
  * trade was 18 minutes old while BONK/SOL traded every second (B15): a meme's
  * market is where it trades.
+ *
+ * A young coin often has no such pool at all — its curve or its first
+ * pool is paired with another coin, or holds a few thousand dollars — and the
+ * rule left fourteen of fifteen Pulse coins without a chart on 19.11. When no
+ * major pool qualifies, the coin's own market stands in: the pool it traded in
+ * most over the day that holds at least {@link SPOT_MARKET_MIN_RESERVE_USD},
+ * whatever its other side. SOL keeps its rule alone. The chart is still refused
+ * if its close misses the market price (`candlesDescribe`).
  */
 export function chooseSpotPool(body: unknown, mint: string): SpotPoolChoice {
   const data = body && typeof body === "object" && Array.isArray((body as { data?: unknown }).data) ? ((body as { data: unknown[] }).data as GeckoPoolRow[]) : null;
@@ -116,7 +244,9 @@ export function chooseSpotPool(body: unknown, mint: string): SpotPoolChoice {
   let anyPool = false;
   let anyMajor = false;
   let anyDeep = false;
+  let anyActive = false;
   let best: { pool: SpotPool; rank: number } | null = null;
+  let market: SpotPool | null = null;
   for (const row of data) {
     const address = typeof row.attributes?.address === "string" ? row.attributes.address : null;
     if (!address) continue;
@@ -126,15 +256,8 @@ export function chooseSpotPool(body: unknown, mint: string): SpotPoolChoice {
     if (!side) continue;
     anyPool = true;
     const other = side === "base" ? quote : base;
-    if (other === null || !MAJOR_QUOTES.has(other)) continue;
-    anyMajor = true;
     const reserve = asNumber(row.attributes?.reserve_in_usd);
-    if (reserve === null || reserve < SPOT_POOL_MIN_RESERVE_USD) continue;
-    anyDeep = true;
     const volume24h = asNumber(row.attributes?.volume_usd?.h24);
-    if (volume24h === null || volume24h <= 0) continue;
-    /* SOL by the quote it is stated against; everything else by where it trades. */
-    const rank = mint === WRAPPED_SOL ? (side === "base" ? (STABLE_QUOTES.has(other) ? 3 : 2) : 1) : volume24h;
     const pool: SpotPool = {
       address,
       name: typeof row.attributes?.name === "string" ? row.attributes.name : address,
@@ -143,13 +266,29 @@ export function chooseSpotPool(body: unknown, mint: string): SpotPoolChoice {
       reserveUsd: reserve,
       volume24hUsd: volume24h,
     };
+    const active = volume24h !== null && volume24h > 0;
+    if (active) anyActive = true;
+    /* The coin's own market, whatever it is paired with: the busiest pool over the floor (ties by depth). */
+    if (active && reserve !== null && reserve >= SPOT_MARKET_MIN_RESERVE_USD && other !== null && mint !== WRAPPED_SOL) {
+      if (!market || volume24h > (market.volume24hUsd ?? 0) || (volume24h === market.volume24hUsd && reserve > (market.reserveUsd ?? 0))) market = pool;
+    }
+    if (other === null || !MAJOR_QUOTES.has(other)) continue;
+    anyMajor = true;
+    if (reserve === null || reserve < SPOT_POOL_MIN_RESERVE_USD) continue;
+    anyDeep = true;
+    if (!active) continue;
+    /* SOL by the quote it is stated against; everything else by where it trades. */
+    const rank = mint === WRAPPED_SOL ? (side === "base" ? (STABLE_QUOTES.has(other) ? 3 : 2) : 1) : volume24h;
     if (!best || rank > best.rank || (rank === best.rank && reserve > (best.pool.reserveUsd ?? 0))) best = { pool, rank };
   }
   if (best) return { pool: best.pool, reason: null };
+  if (market) return { pool: market, reason: null, market: true };
   if (!anyPool) return { pool: null, reason: "NO_POOL" };
-  if (!anyMajor) return { pool: null, reason: "NO_MAJOR_QUOTE" };
-  if (!anyDeep) return { pool: null, reason: "THIN" };
-  return { pool: null, reason: "QUIET" };
+  /* SOL's chart is a major pool or none. Any other coin: no pool traded in the day, or every pool that did holds less
+     than a market's floor. A coin paired only with coins of no dollar price is no longer refused for that — the source
+     prices its pool, and the close is checked against the market. */
+  if (mint === WRAPPED_SOL) return { pool: null, reason: !anyMajor ? "NO_MAJOR_QUOTE" : !anyDeep ? "THIN" : "QUIET" };
+  return { pool: null, reason: anyActive ? "THIN" : "QUIET" };
 }
 
 /**

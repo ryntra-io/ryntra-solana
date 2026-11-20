@@ -398,6 +398,33 @@ export function logoOf(coin: Readonly<{ id: string; icon: string | null }>): str
   return `/api/spot/icon?mint=${encodeURIComponent(coin.id)}&u=${encodeURIComponent(coin.icon)}`;
 }
 
+/** An IPFS picture's content id and path, from a path gateway (`…/ipfs/<cid>/…`) or a subdomain one (`<cid>.ipfs.…`). */
+const IPFS_PATH = /^https:\/\/[^/?#]+\/ipfs\/(Qm[1-9A-HJ-NP-Za-km-z]{44}|b[a-z2-7]{58,})(\/[^?#]*)?/;
+const IPFS_HOST = /^https:\/\/(Qm[1-9A-HJ-NP-Za-km-z]{44}|b[a-z2-7]{58,})\.ipfs\.[^/?#]+(\/[^?#]*)?/;
+
+/**
+ * Where a coin's logo is tried next when its first address does not load (`CoinLogo`'s `also`; QA 19.11: LetsBONK,
+ * BONKAI, WANTED stood as letters): the same IPFS picture through the public gateway the engine's own proxy spreads
+ * over its mirrors — a creator's own pinning gateway refuses strangers — then the city's logo route by mint. Every
+ * address is the engine's own route; the page never loads a picture from elsewhere. `icon` is the catalogue's address,
+ * raw or already through `/api/spot/icon`; `src`, the first address, is not repeated.
+ */
+export function logoAlso(mint: string, icon: string | null | undefined, src?: string | null): string[] {
+  let raw = icon ?? null;
+  if (raw?.startsWith('/api/spot/icon?')) raw = new URLSearchParams(raw.slice(raw.indexOf('?') + 1)).get('u');
+  const also: string[] = [];
+  const ipfs = raw ? (IPFS_PATH.exec(raw) ?? IPFS_HOST.exec(raw)) : null;
+  if (ipfs && !raw!.startsWith('https://ipfs.io/')) also.push(`/api/spot/icon?mint=${encodeURIComponent(mint)}&u=${encodeURIComponent(`https://ipfs.io/ipfs/${ipfs[1]}${ipfs[2] ?? ''}`)}`);
+  also.push(`/api/icon/${encodeURIComponent(mint)}`);
+  return also.filter((address) => address !== src);
+}
+
+/** `CoinLogo`'s two props for a coin: its first address, else the first of the others — never a letter while one is left. */
+export function logoChain(mint: string, icon: string | null | undefined, src: string | null): Readonly<{ src: string | null; also: string[] }> {
+  const also = logoAlso(mint, icon, src);
+  return src ? { src, also } : { src: also[0] ?? null, also: also.slice(1) };
+}
+
 /** The rows a list shows before «Show more», and how many more each tap adds. */
 export const ROWS_FIRST = 12;
 export const ROWS_PHONE = 8;
@@ -432,13 +459,16 @@ export function fitColumns<T extends Readonly<{ min: number; rank: number }>>(co
   return columns.filter((column) => kept.has(column));
 }
 
-/** A count, short: 16K, 1.2M — «16 тис.», «1,2 млн» in Ukrainian. */
+/**
+ * A count, short: 16K, 1.2M — in Ukrainian «16K», «1,2M» too: the table writes its counts the way it writes its sums
+ * ($1,7M), one style across a row (QA 19.11: «77 тис.» beside «$19,0M»).
+ */
 export function countText(n: number | null, lang: Lang): string {
   if (n === null || !Number.isFinite(n)) return '—';
   const units: [number, string][] = [
-    [1e9, lang === 'uk' ? ' млрд' : 'B'],
-    [1e6, lang === 'uk' ? ' млн' : 'M'],
-    [1e3, lang === 'uk' ? ' тис.' : 'K'],
+    [1e9, 'B'],
+    [1e6, 'M'],
+    [1e3, 'K'],
   ];
   // Rounded first, then the unit: 999,950 reads «1M», not «1000K».
   const round = (v: number) => (v < 10 ? Math.round(v * 10) / 10 : Math.round(v));

@@ -111,6 +111,20 @@
   font-stretch: 125%;
 }
 
+/* The coin's own name beside its ticker, quiet (a bot's chart head, `BotChart.tsx`). */
+.headName {
+  overflow: hidden;
+  font-size: var(--type-small);
+  color: var(--soft);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* A head that opens nothing (the Market is off): words, not a door. */
+.chartHead[data-still] {
+  pointer-events: none;
+}
+
 .headPrice {
   font-family: var(--display);
   font-size: var(--type-base);
@@ -333,6 +347,34 @@
   padding: 10px 12px;
   background: color-mix(in srgb, var(--ink-deep) 55%, transparent);
   border: 1px solid var(--line);
+}
+
+/* A desk's form, its rows one under the other (the Grid's and the Ladder's). */
+.sheetStack {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* A short desk (a 1366×768 or 1440×900 laptop): the form closes up, so its action stands on the first screen beside the chart. */
+@media (min-width: 1100px) and (max-height: 920px) {
+  .sheetStack.sheetStack {
+    gap: 6px;
+    padding: 16px;
+  }
+
+  .sheetStack .group {
+    gap: 6px;
+  }
+
+  .sheetStack .stat {
+    padding: 8px 12px;
+  }
+}
+
+/* A long figure («≈ 10,000,000 BONK») breaks inside its box, never past it. */
+.stat {
+  overflow-wrap: anywhere;
 }
 
 .statLabel {

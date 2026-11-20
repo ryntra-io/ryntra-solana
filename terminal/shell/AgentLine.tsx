@@ -1,17 +1,22 @@
 'use client';
 
-import { useEffect, useId, useRef, useState } from 'react';
+import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { isCommandKey, typingIn } from '@/city/lib/command/keys';
+import type { Coin, Command } from '@/city/lib/command/parse';
 import { funnelSay } from '@/city/lib/crew/funnel-say';
 import { COMMAND_MAX } from '@/city/lib/command/parse';
 import { useWords } from '@/city/lib/i18n/dict';
 import { useLang } from '@/city/lib/i18n/lang';
-import { Icon } from '@/terminal/ui';
+import { spotIcon } from '@/city/lib/search/rank';
+import { logoChain } from '@/terminal/market/depth-view';
+import { CoinLogo, Icon, priceText } from '@/terminal/ui';
 import { askLabel } from './ask-label';
 import { useAsk } from './ask';
 import { clearClarify, useAskNote } from './ask-note';
 import { closePanel } from './frame';
 import { useAskRows, useSay } from './say';
+import type { ShelfId } from './shelves';
+import { useMarket } from './useMarket';
 import { useNarrow, useTiny } from './useNarrow';
 import { SHELL } from './words';
 import s from './shell.module.css';
@@ -181,11 +186,54 @@ export function AgentLine() {
             onMouseEnter={() => setActive(index)}
             onClick={() => go(index)}
           >
-            <Icon name={row.target.shelf} />
+            <RowMark command={row.command} shelf={row.target.shelf} />
             <span>{askLabel(row.command, lang)}</span>
+            <RowPrice command={row.command} />
           </div>
         ))}
       </div>
     </div>
   );
+}
+
+/** The coin a row is about, if it is about one: a trade, an order, a ladder, a chart or the coin itself. */
+function coinOf(command: Command): Coin | null {
+  switch (command.kind) {
+    case 'buy':
+    case 'sell':
+    case 'order':
+    case 'chart':
+    case 'coin':
+      return command.coin;
+    case 'ladder':
+      return command.ask.coin;
+    default:
+      return null;
+  }
+}
+
+/** A row's mark: the coin's own logo where the row is about a coin (QA 19.11: «BONK» wore the Market's sign), else its shelf's. */
+function RowMark({ command, shelf }: { command: Command; shelf: ShelfId }) {
+  const coin = coinOf(command);
+  if (!coin) return <Icon name={shelf} />;
+  const symbol = coin.symbol.replace(/^\$+/u, '');
+  const first = coin.tower && coin.icon ? `/api/icon/${coin.mint}` : spotIcon(coin.mint, coin.icon);
+  return (
+    <i className={s.rowMark}>
+      <CoinLogo {...logoChain(coin.mint, coin.icon, first)} symbol={symbol} size="s" eager />
+    </i>
+  );
+}
+
+/** The coin's price as the market read it, at the row's right; nothing where the market has none. */
+function RowPrice({ command }: { command: Command }) {
+  const lang = useLang();
+  const towers = useMarket().towers;
+  const coin = coinOf(command);
+  const price = useMemo(() => {
+    if (!coin) return null;
+    const tower = towers.find((each) => each.id === coin.mint);
+    return tower && !tower.unread?.includes('price') && tower.price > 0 ? tower.price : null;
+  }, [coin, towers]);
+  return price === null ? null : <b className={s.rowPrice}>{priceText(price, lang)}</b>;
 }

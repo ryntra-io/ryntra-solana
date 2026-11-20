@@ -61,7 +61,8 @@ export function groupOf(position: Position, litter: ReadonlySet<string> = new Se
   if (position.kind === 'deposit' || position.kind === 'borrow') return 'lending';
   if (position.state === 'unread') return 'coins';
   const mint = mintOf(position);
-  if (isNativeSol(position) || mint === USDC_MINT || mint === null) return 'coins';
+  // SOL — native or wrapped — is never dust: a clean takes wrapped SOL only when the person picks it.
+  if (isNativeSol(position) || mint === NATIVE_SOL_MINT || mint === USDC_MINT || mint === null) return 'coins';
   const usd = position.value.usd;
   if (usd === null) return litter.has(mint) ? 'dust' : 'coins';
   return usd <= DUST_USD ? 'dust' : 'coins';
@@ -446,9 +447,13 @@ export function wholeOf(answer: Pick<Answer, 'sources' | 'solUsd'>, groups: read
   return groups.filter((group) => group.id === 'pools' || group.id === 'staking' || group.id === 'lending').every((group) => group.rows.every((row) => row.usd !== null));
 }
 
-/** Whether anything shown is older than now, or missing: the screen then offers to read again. */
+/**
+ * Whether anything shown is older than now, or missing — a source not read, or read only in part (the wallet's wrapped
+ * SOL beside the rest of its coins): the screen then says so in one line and offers to read again. A coin
+ * nobody prices is not missing: it is listed «No price», and the line does not stand for it.
+ */
 export function partial(answer: Pick<Answer, 'sources'>): boolean {
-  return answer.sources.some((source) => source.source !== 'jupiter-portfolio' && (source.state === 'stale' || source.state === 'unread'));
+  return answer.sources.some((source) => source.source !== 'jupiter-portfolio' && (source.state === 'stale' || source.state === 'unread' || (source.state === 'read' && source.reason !== null)));
 }
 
 export { NATIVE_SOL_MINT, USDC_MINT };

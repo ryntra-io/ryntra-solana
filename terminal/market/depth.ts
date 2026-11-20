@@ -100,12 +100,19 @@ export const setWindow = (window: DepthWindow) => (useDepth.setState({ window })
 export const setFilters = (filters: Filters) => (useDepth.setState({ filters }), keep());
 export const setQuick = (quick: QuickSol) => (useDepth.setState({ quick }), keep());
 
-const flying = new Set<string>();
+const flying = new Map<string, Promise<void>>();
 
-async function read(target: Target, window: DepthWindow, mints: readonly string[]): Promise<void> {
+/** One read of a list at a time: a second ask while it flies waits for the same answer. */
+function read(target: Target, window: DepthWindow, mints: readonly string[]): Promise<void> {
   const key = readKey(target, window, mints);
-  if (flying.has(key)) return;
-  flying.add(key);
+  const flown = flying.get(key);
+  if (flown) return flown;
+  const once = readOnce(key, target, window, mints).finally(() => flying.delete(key));
+  flying.set(key, once);
+  return once;
+}
+
+async function readOnce(key: string, target: Target, window: DepthWindow, mints: readonly string[]): Promise<void> {
   const had = useDepth.getState().reads[key];
   if (!had) useDepth.setState((st) => ({ reads: { ...st.reads, [key]: { status: 'reading', coins: [], at: 0 } } }));
   const [kind, list] = target.split('/');
@@ -126,8 +133,6 @@ async function read(target: Target, window: DepthWindow, mints: readonly string[
   } catch {
     // A failed read keeps what was on screen; with nothing yet, the list says it did not come.
     useDepth.setState((st) => ({ reads: { ...st.reads, [key]: had?.coins.length ? { ...had, status: 'ready' } : { status: 'failed', coins: [], at: Date.now() } } }));
-  } finally {
-    flying.delete(key);
   }
 }
 
@@ -155,11 +160,19 @@ export function useDepthRead(list: Target, window: DepthWindow, mints: readonly 
   return now ?? { status: 'reading', coins: [], at: 0 };
 }
 
-/** Reads lists ahead — each kind's view on screen — so the count over a tab is there before it is opened. */
+/**
+ * Reads lists ahead — each kind's view on screen — so the count over a tab is there before it is opened. A view or a
+ * window just picked has every kind's list asked at once (QA 19.11: on «Rising» the counts came one by one, seconds
+ * apart, and stood missing meanwhile); after that they are read again one at a time.
+ */
 export function useDepthAhead(lists: readonly Target[], window: DepthWindow): void {
   const key = lists.join(',');
   useEffect(() => {
     const ahead = key.split(',') as Target[];
+    for (const list of ahead) {
+      const had = useDepth.getState().reads[readKey(list, window)];
+      if (!had || had.status === 'failed') void read(list, window, []);
+    }
     let i = 0;
     // One after another, a moment apart: the first list on screen goes first; the counts are read again every
     // `AHEAD_MS` while the page is in view.
@@ -170,4 +183,35 @@ export function useDepthAhead(lists: readonly Target[], window: DepthWindow): vo
     }, 1_200);
     return () => clearInterval(timer);
   }, [key, window]);
+}
+
+/** The engine's shelf of verified stocks and private companies: the lists the agent's line also knows coins from. */
+export const SHELF_TARGETS: readonly Target[] = [targetOf('stock', 'trending'), targetOf('preipo', 'trending')];
+
+/** The shelf's coins as last read (any window), each once. */
+export function shelfNow(reads: DepthState['reads'] = useDepth.getState().reads): DepthCoin[] {
+  const seen = new Set<string>();
+  const out: DepthCoin[] = [];
+  for (const [key, value] of Object.entries(reads)) {
+    if (!SHELF_TARGETS.some((target) => key.startsWith(`${target}:`)) || value.status !== 'ready') continue;
+    for (const coin of value.coins) {
+      if (seen.has(coin.id)) continue;
+      seen.add(coin.id);
+      out.push(coin);
+    }
+  }
+  return out;
+}
+
+/**
+ * The shelf read now unless a fresh read stands (release 20.11: a share out of the market's top was «not on the
+ * market» to the agent's line). Resolves once both lists have answered or failed; never throws.
+ */
+export async function readShelf(): Promise<void> {
+  await Promise.all(
+    SHELF_TARGETS.map((target) => {
+      const had = useDepth.getState().reads[readKey(target, DEFAULT_WINDOW)];
+      return had?.status === 'ready' && Date.now() - had.at < AHEAD_MS ? null : read(target, DEFAULT_WINDOW, []);
+    }),
+  );
 }

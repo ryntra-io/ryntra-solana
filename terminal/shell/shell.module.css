@@ -616,6 +616,21 @@
   color: var(--amber);
 }
 
+/* A row about a coin wears the coin's logo and says its price at the right (QA 19.11). */
+.rowMark {
+  display: inline-flex;
+  flex: none;
+  font-style: normal;
+}
+
+.rowPrice {
+  flex: none;
+  font-size: var(--type-small);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--soft);
+}
+
 /* The line's one quiet word while the agent reads a sentence, or its «Уточни: …» — never a row to tap. */
 .note {
   cursor: default;
@@ -978,6 +993,19 @@
   color: var(--flare);
 }
 
+/* An unverified coin's new pool: news, said quietly — never in the colour of a rise. */
+.event[data-tone='quiet'] .eventLine {
+  color: var(--dim);
+}
+
+.eventGlyph {
+  display: inline-grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  color: var(--lilac);
+}
+
 .eventTime {
   align-self: start;
   padding-top: 4px;
@@ -1035,6 +1063,34 @@
 
 .door > svg:last-child {
   color: var(--dim);
+}
+
+/* The Terms and the Privacy Policy under the doors: one quiet row, each a full-height target. */
+.legalRow {
+  display: flex;
+  justify-content: center;
+  gap: 24px;
+  margin-top: -4px;
+}
+
+.legalRow > a {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 4px;
+  font-size: var(--type-body);
+  font-weight: 600;
+  color: var(--soft);
+  transition: color 0.15s;
+}
+
+.legalRow > a:hover {
+  color: var(--ice);
+}
+
+.legalRow > a:focus-visible {
+  outline: 2px solid var(--lilac);
+  outline-offset: 2px;
 }
 
 /* ── the phone: tabs and the sections sheet ────────────────────────────── */

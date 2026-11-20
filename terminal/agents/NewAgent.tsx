@@ -15,7 +15,7 @@ import { sayCoin, sayCoins } from '@/city/lib/crew/say';
 import { digits, useWords } from '@/city/lib/i18n/dict';
 import { useLang } from '@/city/lib/i18n/lang';
 import type { Lang } from '@/city/lib/i18n/langs';
-import { readPilotAsk } from '@/city/lib/pilot/read';
+import { readPilotAsk, type PilotAsk } from '@/city/lib/pilot/read';
 import { goLive, PILOT_NET, startPaper as startPilotPaper, usePilot } from '@/city/lib/pilot/store';
 import { walletShort } from '@/city/lib/pilot/wallet-check';
 import { useWallet } from '@/city/lib/trade/wallet';
@@ -283,11 +283,14 @@ function Budget() {
     >
       <AmountField label={w.budgetDay} aside={spendRaw !== null ? w.balance(solPlain(spendRaw.toString(), lang)) : undefined} value={fields.day} onChange={(day) => write({ ...fields, day })} asset={SOL_ASSET} />
       {shares.length ? <Shares label={w.shares} value={share} onPick={pickShare} options={shares.map((s) => ({ id: String(s), label: s === 100 ? w.max : digits(`${s}%`, lang) }))} /> : null}
+      {/* The trade and the term follow from the day: until a day is written they say so with «—», never a 0 that reads
+          as a limit of nothing — and no sum of Ryntra's is put in (decision 108). */}
       <div className={a.tiles}>
         <AmountField
           size="s"
           label={w.perTrade}
           unit="SOL"
+          placeholder="—"
           value={fields.trade}
           onChange={(trade) => {
             own.current.trade = true;
@@ -299,6 +302,7 @@ function Budget() {
           label={w.term}
           unit={w.daysUnit(fields.days || '0')}
           whole
+          placeholder="—"
           value={fields.days}
           onChange={(days) => {
             own.current.days = true;
@@ -536,7 +540,90 @@ function PilotInfo() {
   );
 }
 
-/** The money autopilot's plan for the whole budget, before the signature: its shares, what it holds, its one action. */
+/** The city's example sum in its starter's words («0.2 SOL»): the person's own sum takes its place. */
+const STARTER_SUM: Readonly<Record<Lang, string>> = { en: '0.2', uk: '0,2' };
+const LANG_IDS: readonly Lang[] = ['en', 'uk'];
+const escaped = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&');
+
+/** The starter's words with the person's own sum, for the plan's record. */
+function starterSaid(lang: Lang, sum: string): string {
+  return PILOT_STARTER[lang].split(STARTER_SUM[lang]).join(sum);
+}
+
+/** The longest words a plan keeps — the agent's line's own (`COMMAND_MAX`); the book takes no more. */
+const SAID_MAX = 140;
+
+/**
+ * A sentence's words with the sum the person typed in place of its SOL sum (any way the line reads SOL: «SOL», «sol»,
+ * «сол», «солана», «2sol»); none, when its sum is not in SOL or the words would grow past what the book keeps.
+ */
+function sentenceSaid(said: string, sum: string): string {
+  const at = /\d[\d.,]*(?=\s*(?:sol|сол|солан\p{L}*|соль)(?![\p{L}\d]))/iu;
+  if (!at.test(said)) return '';
+  const words = said.replace(at, sum);
+  return words.length <= SAID_MAX ? words : '';
+}
+
+/** Whether a plan's words are the starter's — none yet, or the starter's with a sum the person typed. */
+function isStarter(said: string): boolean {
+  return said === '' || LANG_IDS.some((lang) => new RegExp(`^${escaped(PILOT_STARTER[lang]).split(escaped(STARTER_SUM[lang])).join('[\\d.,]+')}$`, 'u').test(said));
+}
+
+/**
+ * The sum the autopilot puts to work: the person's own — never a sum of Ryntra's (decision 108). A sentence's sum stands
+ * in it; a sum typed here spreads by the plan's parts as they are — the sentence's, or the city's starter ones.
+ */
+function PilotSum({ shape }: { shape: PilotAsk | null }) {
+  const w = useWords(AGENTS);
+  const lang = useLang();
+  const ask = usePilot((st) => st.ask);
+  const towers = useMarket().towers;
+  const owner = useWallet((st) => st.connection?.address ?? null);
+  const spendable = useWallet((st) => (st.holdingsRead === 'ready' && st.holdings && st.holdings.owner === owner ? (st.holdings.sol?.spendableRaw ?? null) : null));
+  const spendRaw = PILOT_NET === 'mainnet' && spendable && /^\d{1,20}$/u.test(spendable) ? spendable : null;
+  const phase = usePilot((st) => st.phase);
+  const working = usePilot((st) => st.view?.status === 'working');
+  // While the wallet signs, the plan works or stops, the sum at work is the one signed: the field only shows it. A plan
+  // stopped gives the field back.
+  const locked = phase === 'signing' || phase === 'stopping' || (phase === 'live' && working);
+  const [text, setText] = useState('');
+  const typing = useRef(false);
+  // The plan's sum into the field — a sentence's — while the person is not writing.
+  useEffect(() => {
+    if (typing.current) return;
+    setText(ask?.solRaw ? budgetText(BigInt(ask.solRaw), lang) : '');
+  }, [ask, lang]);
+  const write = (typed: string) => {
+    const st = usePilot.getState();
+    if (st.phase === 'signing' || st.phase === 'stopping' || (st.phase === 'live' && st.view?.status === 'working')) return;
+    typing.current = true;
+    setText(typed);
+    const base = st.ask ?? shape;
+    if (!base) return;
+    const raw = lamportsTyped(typed);
+    // The starter's words carry the person's own sum; a sentence she said keeps its words with the sum she typed now
+    // (its SOL sum rewritten; a sentence whose sum is not in SOL keeps no words rather than a sum that is not at work).
+    const said = isStarter(base.said) ? (raw === null ? '' : starterSaid(lang, budgetText(raw, lang))) : raw === null ? base.said : sentenceSaid(base.said, budgetText(raw, lang));
+    const first = st.coin ?? sayCoin(bookOf(towers));
+    // The field is the whole sum, in SOL: a sentence's USDC sum gives way to it.
+    st.show({ ...base, said, solRaw: raw === null ? null : raw.toString(), usdcRaw: raw === null ? base.usdcRaw : null }, st.solUsd, first ? { mint: first.mint, symbol: first.symbol, icon: first.icon } : null);
+  };
+  return (
+    <div
+      onBlur={() => {
+        typing.current = false;
+      }}
+    >
+      <AmountField label={w.pilotSum} aside={spendRaw !== null ? w.balance(solPlain(spendRaw, lang)) : undefined} value={text} onChange={write} asset={SOL_ASSET} readOnly={locked} />
+    </div>
+  );
+}
+
+/**
+ * The money autopilot's plan for the whole budget, before the signature: the sum the person puts to work, its shares and
+ * what they hold, its one action. Before a sum is written — the parts the plan will spread it into, in words, and the
+ * action waits for the sum (QA 19.11: a «$15 to put to work» nobody wrote, with no field to change it).
+ */
 export function PilotPropose({ solUsd }: { solUsd: number | null }) {
   const w = useWords(AGENTS);
   const lang = useLang();
@@ -552,23 +639,33 @@ export function PilotPropose({ solUsd }: { solUsd: number | null }) {
   const towers = useMarket().towers;
   const fee = agentFeeFigures(lang);
 
-  // Nothing said yet: the city's own starter plan, for the person to read before anything is signed.
-  useEffect(() => {
-    if (usePilot.getState().ask) return;
+  // The city's own starter plan — its parts, not its sum: the sum is the person's (decision 108).
+  const shape = useMemo<PilotAsk | null>(() => {
     const book = bookOf(towers);
     const starter = readPilotAsk(PILOT_STARTER[lang], book) ?? readPilotAsk(PILOT_STARTER.en, book);
-    const first = sayCoin(book);
-    if (starter) usePilot.getState().show(starter, solUsd, first ? { mint: first.mint, symbol: first.symbol, icon: first.icon } : null);
-  }, [towers, lang, solUsd]);
+    return starter ? { ...starter, said: '', solRaw: null, usdcRaw: null } : null;
+  }, [towers, lang]);
+  // Nothing said yet: the starter's parts, for the person to read and give a sum to before anything is signed.
+  useEffect(() => {
+    if (usePilot.getState().ask || !shape) return;
+    const first = sayCoin(bookOf(towers));
+    usePilot.getState().show(shape, solUsd, first ? { mint: first.mint, symbol: first.symbol, icon: first.icon } : null);
+  }, [shape, towers, solUsd]);
   useEffect(() => usePilot.getState().reprice(solUsd), [solUsd]);
 
-  if (!ask || !split || !plan) {
+  const sized = Boolean(ask && (ask.solRaw || ask.usdcRaw));
+  if (!ask || !sized || !split || !plan) {
     return (
       <Panel tone="hi" pad="l" gap={16} label={w.newAgent}>
         <Head role="pilot" kick={w.newAgent}>
           <PilotInfo />
         </Head>
-        <span className={a.cap}>{w.readingPrices}</span>
+        <PilotSum shape={shape} />
+        <span className={a.cap}>{sized ? w.readingPrices : w.pilotParts}</span>
+        <span className={a.cap}>{w.pilotRisk}</span>
+        <Action disabled data-agent-practice="">
+          {w.practice}
+        </Action>
       </Panel>
     );
   }
@@ -583,6 +680,7 @@ export function PilotPropose({ solUsd }: { solUsd: number | null }) {
       <Head role="pilot" kick={w.newAgent}>
         <PilotInfo />
       </Head>
+      <PilotSum shape={shape} />
       {total !== null ? <span className={a.plan}>{w.toWork(usdText(total, lang))}</span> : null}
       <Split shares={split.shares} plan={plan} solUsd={short ? null : priced} />
       {onPaper ? (

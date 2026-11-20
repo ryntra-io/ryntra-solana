@@ -22,7 +22,7 @@ import { useDismiss } from '@/terminal/shell/useDismiss';
 import { useNarrow } from '@/terminal/shell/useNarrow';
 import { CoinLogo, Icon, Quiet } from '@/terminal/ui';
 import { setQuick, useDepth } from './depth';
-import { QUICK_SOL } from './depth-view';
+import { QUICK_SOL, logoChain } from './depth-view';
 import { DEPTH } from './depth-words';
 import { Zap } from './glyphs';
 import d from './depth.module.css';
@@ -212,7 +212,7 @@ function PopBody({ coin, anchor }: { coin: QuickCoin; anchor: HTMLElement }) {
   return (
     <div ref={box} className={d.quickPop} data-sheet={narrow ? '' : undefined} style={narrow ? undefined : place} role="dialog" aria-label={w.quickBuy(fieldText(quick, lang), bare(coin.symbol))} data-terminal="quick-pop">
       <div className={d.popHead}>
-        <CoinLogo src={coin.logo} symbol={coin.symbol} size="m" />
+        <CoinLogo {...logoChain(coin.id, coin.icon, coin.logo)} symbol={coin.symbol} size="m" />
         <Link
           className={d.popName}
           href={coinHref(coin.id, 'live')}
@@ -269,7 +269,8 @@ function PopTrade({ coin, quick, press }: { coin: QuickCoin; quick: string; pres
     if (outputDecimals === null) return null;
     if (shown) return figuresOf(shown.order.order, outputDecimals, 'order');
     return priced ? figuresOf(priced.order, outputDecimals, 'quote') : null;
-  }, [shown, priced, outputDecimals]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- the dictionary reads the language `figuresOf` writes in
+  }, [shown, priced, outputDecimals, lang]);
   const off = shown ? friendDiscountOf(priced?.order ?? null, shown.order.order) : null;
   const symbol = bare(coin.symbol);
 

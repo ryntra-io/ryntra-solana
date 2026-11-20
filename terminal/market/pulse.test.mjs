@@ -113,3 +113,20 @@ test("a copy with more holders never takes the place of Ryntra's own live launch
   assert.equal(cards.length, 1);
   assert.equal(cards[0].mint, live.mint);
 });
+
+test("a crude name never stands in the Pulse — «ASSHOLE» came in live (release check 19.11); the board reads the same rule", () => {
+  const base = RECORDED.dex[0];
+  const crude = [
+    { ...base, mint: "Crude11111111111111111111111111111111111111", symbol: "ASSHOLE", name: "ASSHOLE" },
+    { ...base, mint: "Crude21111111111111111111111111111111111111", symbol: "KITE", name: "Assholes Club" },
+    { ...base, mint: "Crude31111111111111111111111111111111111111", symbol: "A$$HOLE", name: "token" },
+  ];
+  for (const column of PULSE_COLUMNS) {
+    const cards = pulseCards(column, [...crude, ...RECORDED[column]]);
+    assert.ok(!cards.some((row) => row.mint.startsWith("Crude")), column);
+  }
+  const board = pulseBoard({ new: [...crude, ...RECORDED.new], soon: RECORDED.soon, dex: [...crude, ...RECORDED.dex] });
+  assert.ok(!PULSE_COLUMNS.some((id) => board[id].some((row) => row.mint.startsWith("Crude"))));
+  assert.ok(pulseCards("dex", RECORDED.dex).length > 0, "the ordinary coins stay");
+  assert.equal(pulseCards("dex", [{ ...base, mint: "Plain11111111111111111111111111111111111111", symbol: "CLASS", name: "Classic Pass" }]).length, 1, "«ass» inside an ordinary word stays");
+});

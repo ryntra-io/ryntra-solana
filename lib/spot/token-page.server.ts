@@ -20,7 +20,7 @@ import { getAddressDecoder } from "@solana/kit";
 import { PublicKey } from "@solana/web3.js";
 
 import { createSolanaRpcHandle } from "../solana/rpc.ts";
-import { GECKO_SOLANA_BASE, getJson, readTokenPoolsBody, scaledUnitMultiplier } from "./candles.server.ts";
+import { GECKO_SOLANA_BASE, POOL_TRADES_TTL_MS, getJson, readMarketTrades, readTokenPoolsBody, scaledUnitMultiplier } from "./candles.server.ts";
 import type { SpotMarket } from "./markets.ts";
 import { readSpotTokenFacts } from "./markets.server.ts";
 import {
@@ -28,10 +28,10 @@ import {
   honeypotOf,
   isNativeToken,
   marksOf,
+  mergeTrades,
   poolsOf,
   riskFactsOf,
   tradesOf,
-  tradesPoolOf,
   tradesSpan,
   type HolderAccount,
   type HolderRead,
@@ -42,7 +42,14 @@ import {
   type TokenTrade,
 } from "./token-page.ts";
 
-export type TokenPageFailure = Readonly<{ ok: false; code: "NOT_LISTED" | "NO_POOL" | "UNREACHABLE" | "RATE_LIMITED" | "REFUSED" | "MALFORMED" | "NOT_READ"; reason: string; retryAfterMs?: number | null }>;
+export type TokenPageFailure = Readonly<{
+  ok: false;
+  code: "NOT_LISTED" | "NO_POOL" | "UNREACHABLE" | "RATE_LIMITED" | "REFUSED" | "MALFORMED" | "NOT_READ";
+  reason: string;
+  retryAfterMs?: number | null;
+  /** The pools a refused trades read would have read: the page may read them from the person's browser. */
+  pools?: readonly TokenPool[];
+}>;
 
 type Cached<T> = { value: T; readAt: number };
 /** The most mints a cache keeps: the oldest read leaves first. */
@@ -105,8 +112,10 @@ export async function readTokenPools(mint: string): Promise<TokenPoolsRead | Tok
 export type TokenTradesRead = Readonly<{
   ok: true;
   trades: readonly TokenTrade[];
-  /** The pool the trades are of — where the token traded most in the last day. */
+  /** The pool the trades are of — where the token trades most now (the busiest of `pools`). */
   pool: TokenPool;
+  /** Every pool the trades were read from, the busiest first. */
+  pools: readonly TokenPool[];
   span: Readonly<{ from: string; to: string }> | null;
   /** Whether the capitalisation at each trade was counted (not for a tokenized stock). */
   capCounted: boolean;
@@ -116,26 +125,34 @@ export type TokenTradesRead = Readonly<{
   stale: boolean;
 }>;
 
-const TRADES_TTL_MS = 45_000;
+/* The tape is as fresh as the source's read of the pools' trades (`POOL_TRADES_TTL_MS`, shared by every instance). */
+const TRADES_TTL_MS = POOL_TRADES_TTL_MS;
 const trades = new Map<string, Cached<TokenTradesRead>>();
 
+/**
+ * The token's latest trades where it trades now: the busiest two of its pools by the last five minutes'
+ * trades, merged newest first — one pool chosen by the day's dollars left BONK's and JUP's tapes minutes behind the
+ * market. A refused read keeps the last trades for ten minutes, stated stale; with none it says why and names the pools
+ * it would read, so the page can read them from the person's browser.
+ */
 export function readTokenTrades(mint: string): Promise<TokenTradesRead | TokenPageFailure> {
   const hit = fresh(trades, mint, TRADES_TTL_MS);
   if (hit) return Promise.resolve(withTopHolders(hit.value, mint));
   return once(`trades:${mint}`, async () => {
-    const [facts, pools] = await Promise.all([readFacts(mint), readTokenPools(mint)]);
+    const [facts, market] = await Promise.all([readFacts(mint), readMarketTrades(mint, "page")]);
     const kept = fresh(trades, mint, STALE_GRACE_MS);
-    if (!pools.ok) return kept ? withTopHolders({ ...kept.value, stale: true }, mint) : pools;
-    const pool = tradesPoolOf(pools.pools);
-    if (!pool) return { ok: false, code: "NO_POOL", reason: "No pool of this token traded in the last day." } as const;
-    const read = await getJson(`${GECKO_SOLANA_BASE}/pools/${encodeURIComponent(pool.address)}/trades?token=${encodeURIComponent(mint)}`, "page");
-    if (!read.ok) return kept ? withTopHolders({ ...kept.value, stale: true }, mint) : geckoFailure(read.code, read.reason, read.retryAfterMs);
-    const market = facts.ok ? facts.market : null;
-    const stock = market?.category === "stock";
-    const capSupply = stock ? null : capSupplyOf(market, facts.ok ? facts.facts : null);
+    if (!market.ok) {
+      if (kept) return withTopHolders({ ...kept.value, stale: true }, mint);
+      if (market.code === "QUIET" || market.code === "NO_POOL") return { ok: false, code: "NO_POOL", reason: "No pool of this token traded in the last day." } as const;
+      return { ...geckoFailure(market.code, market.reason, market.retryAfterMs), pools: market.pools ?? [] };
+    }
+    const info = facts.ok ? facts.market : null;
+    const stock = info?.category === "stock";
+    const capSupply = stock ? null : capSupplyOf(info, facts.ok ? facts.facts : null);
     const multiplier = stock ? await scaledUnitMultiplier(mint, Date.now()) : null;
-    const list = tradesOf(read.body, mint, capSupply, multiplier);
-    const value: TokenTradesRead = { ok: true, trades: list, pool, span: tradesSpan(list), capCounted: capSupply !== null, topHolders: [], observedAt: new Date().toISOString(), stale: false };
+    const list = mergeTrades(market.bodies.map((body) => (body ? tradesOf(body, mint, capSupply, multiplier) : [])));
+    const pool = market.pools[0]!;
+    const value: TokenTradesRead = { ok: true, trades: list, pool, pools: market.pools, span: tradesSpan(list), capCounted: capSupply !== null, topHolders: [], observedAt: market.observedAt, stale: market.stale };
     remember(trades, mint, value);
     return withTopHolders(value, mint);
   });

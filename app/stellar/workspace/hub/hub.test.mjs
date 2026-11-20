@@ -88,10 +88,8 @@ function walk(dir, test_, found = []) {
 const STYLESHEETS = walk(ROOT, (name) => name.endsWith(".css"));
 const CORE_TOKENS = [createRequire(import.meta.url).resolve("@ryntra/core/tokens.css")];
 
-/* The pages that stand in the terminal's frame (`/docs`, `/roadmap`) paint with the terminal root's own
-   tokens (`terminal/styles/terminal.module.css`, `.root`): those references resolve there, and only those. */
 const TERMINAL_ROOT = fileURLToPath(new URL("../../../../terminal/styles/terminal.module.css", import.meta.url));
-const ON_TERMINAL_ROOT = [join("app", "docs", "_book"), join("app", "roadmap")];
+const ON_TERMINAL_ROOT = [join("app", "docs", "_book"), join("app", "roadmap"), join("app", "legal", "_view")];
 const TERMINAL_TOKENS = new Set([...readFileSync(TERMINAL_ROOT, "utf8").replace(/\/\*[\s\S]*?\*\//g, "").matchAll(/(?<!var\(\s*)(--[a-zA-Z0-9_-]+)\s*:/g)].map((m) => m[1]));
 const SOURCES = walk(ROOT, (name) => name.endsWith(".ts") || name.endsWith(".tsx"));
 

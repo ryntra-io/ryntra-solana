@@ -29,7 +29,8 @@
 .depthRow,
 .poolRow {
   display: grid;
-  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr) minmax(44px, 0.7fr);
+  /* The price takes the room it needs first («$0.000002…» was cut at 1440); a size is a few figures. */
+  grid-template-columns: minmax(max-content, 1.4fr) minmax(0, 0.8fr) minmax(44px, 0.7fr);
   align-items: center;
   gap: 8px;
   padding: 0 12px;
@@ -175,15 +176,17 @@
   scrollbar-color: var(--haze) transparent;
 }
 
+/* Each side as tall as its levels (one ask over a half-column of nothing read as a broken book): the price
+   line stands right under the asks, the bids under it. */
 .asks {
   display: flex;
-  flex: 1 1 0;
+  flex: none;
   flex-direction: column;
   justify-content: flex-end;
 }
 
 .bids {
-  flex: 1 1 0;
+  flex: none;
 }
 
 /* Each row's weight: a bar of its side's colour from the right, as long as its running total against the deepest. */

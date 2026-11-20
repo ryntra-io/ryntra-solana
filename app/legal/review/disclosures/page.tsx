@@ -14,7 +14,6 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-export default async function DisclosuresPage() {
-  const locale = await publicServerLocale();
-  return <CandidateDocument document={CANDIDATE_DISCLOSURES} locale={locale} version={LEGAL_PACKAGE.id} />;
+export default function DisclosuresPage() {
+  return <CandidateDocument document={CANDIDATE_DISCLOSURES} version={LEGAL_PACKAGE.id} />;
 }

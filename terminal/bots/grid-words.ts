@@ -64,6 +64,7 @@ export const GRID = words(
     dragLow: 'Drag the low price',
     off: 'The pool takes no orders right now',
     reading: 'Reading the pool…',
+    pricesWait: 'Waiting for live prices…',
     fewer: (n: string) => `The pool fits ${n} prices here — fewer levels`,
     // What a step answered.
     placed: 'Grid placed',
@@ -164,6 +165,7 @@ export const GRID = words(
     dragLow: 'Тягни нижню ціну',
     off: 'Пул зараз не приймає ордерів',
     reading: 'Читаємо пул…',
+    pricesWait: 'Чекаємо живі ціни…',
     fewer: (n: string) => `Тут пул вміщає ${n} цін — менше рівнів`,
     placed: 'Сітку поставлено',
     taken: 'Забрано — усе в гаманці',

@@ -59,7 +59,7 @@ export const AWAITING_CITY = [
   '/security',
   '/methodology',
   '/stats',
-  /* The library notices and the drafts for signature still stand in the old frame. */
+  /* The library notices and the drafts for signature: in the terminal's frame, and out of the index. */
   '/legal/licenses',
   '/legal/review/:path*',
 ] as const;

@@ -1,15 +1,24 @@
 import type { Metadata, Viewport } from "next";
 
-import { CityDocument } from "@/city/components/pages/CityDocument";
 import { PALETTE } from "@/city/lib/palette";
 import { buildCityPageMetadata } from "@/app/seo";
 
-/* `/legal/privacy` — the Privacy Policy as a page of the city: the published words exactly (`lib/legal/texts/privacy.ts`); the store listing links `#android`, which opens that section. */
+import { TerminalFrame } from "../../docs/_book/frame";
+import { PublishedView } from "../_view/PublishedView";
+
+/* `/legal/privacy` — the Privacy Policy in the terminal's frame and language: the published words exactly
+   (`lib/legal/texts/privacy.ts`); the store listing links `#android`, which brings that part into view. */
+
+export const dynamic = "force-static";
 
 export const metadata: Metadata = buildCityPageMetadata("privacy", "/legal/privacy");
 
-export const viewport: Viewport = { themeColor: PALETTE.inkDeep, colorScheme: "dark" };
+export const viewport: Viewport = { themeColor: PALETTE.inkDeep, colorScheme: "dark", viewportFit: "cover" };
 
 export default function Page() {
-  return <CityDocument id="privacy" />;
+  return (
+    <TerminalFrame>
+      <PublishedView id="privacy" />
+    </TerminalFrame>
+  );
 }

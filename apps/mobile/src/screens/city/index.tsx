@@ -7,11 +7,13 @@ import { WebView, type WebViewMessageEvent } from 'react-native-webview'
 import { userAgentNameOf } from '@/features/city/bridge'
 import { CITY_GROUND } from '@/features/city/city-look'
 import {
+  backHomeOf,
   cityCoverOf,
   cityUrlOf,
   loadDecisionOf,
   PAGE_BACK_SCRIPT,
   PAGE_GO_BACK,
+  PAGE_GO_HOME,
   pageBackOf,
   pageSpeaks,
 } from '@/features/city/city-page'
@@ -54,6 +56,8 @@ export function CityScreen({ at, onAtSeen }: { at: string | null; onAtSeen: () =
   const [canGoBack, setCanGoBack] = useState(false)
   /** The page's own word on a step back (`PAGE_BACK_SCRIPT`): null until it speaks, or where it cannot. */
   const pageBack = useRef<boolean | null>(null)
+  /** The page's address now, as the WebView last said it (a link's redirect and the page's own moves included). */
+  const pageUrl = useRef(target.url)
   const instance = target.instance
   const loaded = loadedFor === instance
   const failed = failedFor === instance
@@ -81,6 +85,7 @@ export function CityScreen({ at, onAtSeen }: { at: string | null; onAtSeen: () =
       host.detach()
       setCanGoBack(false)
       pageBack.current = null
+      pageUrl.current = url
       setTarget((current) => ({ url, instance: current.instance + 1 }))
     },
     [host],
@@ -123,8 +128,9 @@ export function CityScreen({ at, onAtSeen }: { at: string | null; onAtSeen: () =
     wasOffline.current = offline
   }, [offline, showing, openAt, target.url])
 
-  // Back walks the page's history; at its start, Back does what it always does — it leaves the app. The page's own
-  // word comes first: the WebView does not count a step a link's window added before the person touched the page.
+  // Back walks the page's history; at its start on a page a link opened, it leads to the home; on the home, Back does
+  // what it always does — it leaves the app. The page's own word comes first: the WebView does not count a step a
+  // link's window added before the person touched the page.
   const backRef = useRef<() => boolean>(() => false)
   useEffect(() => {
     backRef.current = () => {
@@ -133,8 +139,12 @@ export function CityScreen({ at, onAtSeen }: { at: string | null; onAtSeen: () =
         view.current?.injectJavaScript(PAGE_GO_BACK)
         return true
       }
-      if (!canGoBack) return false
-      view.current?.goBack()
+      if (canGoBack) {
+        view.current?.goBack()
+        return true
+      }
+      if (!showing || !backHomeOf(pageUrl.current)) return false
+      view.current?.injectJavaScript(PAGE_GO_HOME)
       return true
     }
   })
@@ -209,7 +219,10 @@ export function CityScreen({ at, onAtSeen }: { at: string | null; onAtSeen: () =
             if (event.nativeEvent.statusCode >= 500) fail()
           }}
           onRenderProcessGone={fail}
-          onNavigationStateChange={(state) => setCanGoBack(state.canGoBack)}
+          onNavigationStateChange={(state) => {
+            setCanGoBack(state.canGoBack)
+            if (state.url) pageUrl.current = state.url
+          }}
           onMessage={onMessage}
           injectedJavaScript={PAGE_BACK_SCRIPT}
           javaScriptEnabled

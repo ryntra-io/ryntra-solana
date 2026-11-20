@@ -5,6 +5,7 @@ import { DOLLAR_MINT, dollarText, rateText, type DollarAsset, type DollarSide } 
 import { DOLLAR_BUSY, dollarChoice, setDollarRefusals, useDollar } from '@/city/lib/earn/dollar-store';
 import { RISK } from '@/city/lib/earn/flag';
 import { digits, useWords } from '@/city/lib/i18n/dict';
+import { fieldText, fieldValue } from '@/city/lib/i18n/figures';
 import { useLang } from '@/city/lib/i18n/lang';
 import { useWallet } from '@/city/lib/trade/wallet';
 import { explorerTxUrl } from '@/lib/solana/explorer';
@@ -91,8 +92,9 @@ export function LendTicket({ onConnect }: { onConnect: () => void }) {
       <AmountField
         label={side === 'deposit' ? w.youPut : w.youTake}
         aside={side === 'deposit' && max !== null ? w.balance(digits(dollarText(max, asset), lang)) : undefined}
-        value={typed}
-        onChange={(value) => useDollar.getState().setTyped(value)}
+        // Written as the rest of the site writes an amount — «0,1» in Ukrainian — and kept with a point.
+        value={fieldText(typed, lang)}
+        onChange={(value) => useDollar.getState().setTyped(fieldValue(value, lang))}
         asset={{ symbol: asset, icon: iconOf(DOLLAR_MINT[asset]) }}
       />
       </fieldset>

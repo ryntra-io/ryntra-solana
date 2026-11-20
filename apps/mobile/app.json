@@ -3,14 +3,14 @@
     "name": "Ryntra",
     "slug": "ryntra",
     "scheme": "ryntra",
-    "version": "1.21.0",
+    "version": "1.22.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "userInterfaceStyle": "automatic",
     "backgroundColor": "#0B0A14",
     "android": {
       "package": "io.ryntra.app",
-      "versionCode": 27,
+      "versionCode": 28,
       "blockedPermissions": [
         "android.permission.SYSTEM_ALERT_WINDOW",
         "android.permission.READ_EXTERNAL_STORAGE",
@@ -33,16 +33,22 @@
           "action": "VIEW",
           "autoVerify": true,
           "data": [
-            {
-              "scheme": "https",
-              "host": "ryntra.io",
-              "path": "/"
-            },
-            {
-              "scheme": "https",
-              "host": "ryntra.io",
-              "pathPrefix": "/c/"
-            }
+            { "scheme": "https", "host": "ryntra.io", "path": "/" },
+            { "scheme": "https", "host": "ryntra.io", "path": "/market" },
+            { "scheme": "https", "host": "ryntra.io", "path": "/swap" },
+            { "scheme": "https", "host": "ryntra.io", "path": "/bridge" },
+            { "scheme": "https", "host": "ryntra.io", "path": "/pro" },
+            { "scheme": "https", "host": "ryntra.io", "path": "/earn" },
+            { "scheme": "https", "host": "ryntra.io", "path": "/launch" },
+            { "scheme": "https", "host": "ryntra.io", "path": "/bots" },
+            { "scheme": "https", "host": "ryntra.io", "path": "/agent" },
+            { "scheme": "https", "host": "ryntra.io", "path": "/portfolio" },
+            { "scheme": "https", "host": "ryntra.io", "path": "/money" },
+            { "scheme": "https", "host": "ryntra.io", "path": "/rewards" },
+            { "scheme": "https", "host": "ryntra.io", "pathPrefix": "/c/" },
+            { "scheme": "https", "host": "ryntra.io", "pathPrefix": "/coin/" },
+            { "scheme": "https", "host": "ryntra.io", "pathPrefix": "/pool/" },
+            { "scheme": "https", "host": "ryntra.io", "pathPrefix": "/bots/" }
           ],
           "category": ["BROWSABLE", "DEFAULT"]
         }

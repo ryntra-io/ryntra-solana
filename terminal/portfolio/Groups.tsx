@@ -5,14 +5,11 @@ import { Fragment, useId, useState, type ReactNode } from 'react';
 import { digits, useWords } from '@/city/lib/i18n/dict';
 import { useLang } from '@/city/lib/i18n/lang';
 import type { Lang } from '@/city/lib/i18n/langs';
-import { USDC } from '@/city/lib/trade/tiles';
 import { resultShown, solPlain, usdShown, type Shown } from '@/terminal/agents/figures';
 import { RoleBadge } from '@/terminal/agents/glyphs';
 import { workerPath, type MineRow, type RowState } from '@/terminal/agents/rows';
 import { AGENTS } from '@/terminal/agents/words';
 import { TICKET_OPEN } from '@/terminal/coin/Ticket';
-import { USDC_LOGO, spotLogo } from '@/terminal/coin/staples';
-import { logoOf as marketLogo } from '@/terminal/market/depth-view';
 import { ExplainBox, ExplainButton } from '@/terminal/coin/parts';
 import { sumText } from '@/terminal/earn/rows';
 import { coinHref, shelfOn } from '@/terminal/shell/shelves';
@@ -23,7 +20,8 @@ import { RiskMark } from './CleanBlock';
 import { solFigure, type CleanRead, type RiskReason } from './clean-view';
 import { CLEAN } from './clean-words';
 import type { ExitDoor } from './exit-view';
-import { unitsFigure } from './portfolio-view';
+import { logoFor, logosFor } from './logos';
+import { tinyPrice, unitsFigure } from './portfolio-view';
 import type { AllData } from './useAll';
 import type { AgentsHeld } from './useAgentsHeld';
 import { PORTFOLIO } from './words';
@@ -50,18 +48,7 @@ export type GroupsProps = Readonly<{
   onClean: () => void;
 }>;
 
-/** SOL's own picture, kept with the site — native SOL is no tower, and the logo route answers nothing for it. */
-const SOL_LOGO = '/site/universe/SOL.png';
-
-/**
- * A coin's logo and the addresses tried after it, each once (as the pool's desk does): SOL's and USDC's own
- * pictures kept with the site; the picture the market lists for the mint, through the engine's proxy; the engine's
- * logo of a market coin; the catalogue's logo by the mint. The first that loads stands; none — the ticker's letter.
- */
-export function logosFor(mint: string, fact: MarketFact | null = null): readonly string[] {
-  const all = [mint === USDC.mint ? USDC_LOGO : null, mint === NATIVE_SOL_MINT ? SOL_LOGO : null, fact?.icon ? marketLogo({ id: mint, icon: fact.icon }) : null, `/api/icon/${mint}`, spotLogo(mint)];
-  return [...new Set(all.filter((src): src is string => Boolean(src)))];
-}
+export { logoFor, logosFor };
 
 /** A coin's logo with its whole queue of addresses. */
 function Logo({ mint, symbol, fact, size = 'm' }: { mint: string; symbol: string; fact: MarketFact | null; size?: 's' | 'm' }) {
@@ -69,10 +56,13 @@ function Logo({ mint, symbol, fact, size = 'm' }: { mint: string; symbol: string
   return <CoinLogo src={list[0] ?? null} also={list.slice(1)} symbol={symbol} size={size} />;
 }
 
-/** The ticket's own logo address for a coin: the first of its queue. */
-export const logoFor = (mint: string, fact: MarketFact | null = null): string | null => logosFor(mint, fact)[0] ?? null;
-
 const unitsText = (units: number, lang: Lang): string => digits(unitsFigure(units), lang);
+
+/** A coin's price: a tiny one with its zeros folded («$0,0₅1036»), the rest as the terminal writes a price. */
+export const coinPrice = (price: number, lang: Lang): string => {
+  const tiny = tinyPrice(price);
+  return tiny === null ? priceText(price, lang) : digits(tiny, lang);
+};
 
 /** A row's name: its coin or its pair; a row without one is named by what it is. */
 function nameOf(row: Row, w: W): string {
@@ -456,8 +446,8 @@ const STAKE_COLUMNS = 'minmax(180px, 1.5fr) minmax(130px, 1fr) minmax(110px, 1fr
 
 function stakeWord(row: Row, w: W): Readonly<{ word: string; tone: 'ok' | 'warn' | 'plain' }> | null {
   const state = stakeState(row.position);
-  if (state === 'coin') return null;
-  if (state === 'active') return { word: w.stakeActive, tone: 'ok' };
+  // A staked coin (JitoSOL, mSOL…) earns as it is held: its «State» says so, never an empty cell (QA 19.11, B-19).
+  if (state === 'coin' || state === 'active') return { word: w.stakeActive, tone: 'ok' };
   if (state === 'cooling') return { word: w.stakeCooling, tone: 'warn' };
   return { word: state === 'free' ? w.stakeFree : w.stakeHeld, tone: 'plain' };
 }
@@ -685,6 +675,8 @@ type CoinView = Readonly<{ row: Row; mint: string; symbol: string; name: string;
 
 /** Native SOL is Solana itself — never «Wrapped SOL», the market's name of the token account's coin. */
 const isNative = (row: Row): boolean => row.position.id === 'wallet:sol';
+/** Wrapped SOL: SOL's ticket trades native SOL, so its row has no «Buy · Sell» — «Clean wallet» unwraps it. */
+const isWrapped = (row: Row): boolean => !isNative(row) && mintOf(row.position) === NATIVE_SOL_MINT;
 
 function coinView(row: Row, data: AllData, risk: GroupsProps['risk'], solana: string): CoinView | null {
   const mint = mintOf(row.position);
@@ -761,7 +753,7 @@ function CoinsGroup({ data, group, own, narrow, risk, onTrade }: GroupsProps & {
                 value={valueText(coin.row.usd, lang, p.noPrice)}
                 second={coin.dayPct !== null ? changeText(coin.dayPct, lang) : null}
                 secondTone={coin.dayPct !== null ? changeTone(coin.dayPct) : undefined}
-                onPress={trades ? () => onTrade(coin.ask, 'buy') : undefined}
+                onPress={trades && !isWrapped(coin.row) ? () => onTrade(coin.ask, 'buy') : undefined}
               />
             ))}
           </ul>
@@ -790,7 +782,7 @@ function CoinsGroup({ data, group, own, narrow, risk, onTrade }: GroupsProps & {
                   {coin.row.units === null ? '—' : unitsText(coin.row.units, lang)}
                 </Cell>
                 <Cell end tone="dim">
-                  {coin.row.price === null ? '—' : priceText(coin.row.price, lang)}
+                  {coin.row.price === null ? '—' : coinPrice(coin.row.price, lang)}
                 </Cell>
                 <Cell end tone={coin.dayPct === null ? 'dim' : changeTone(coin.dayPct)}>
                   {coin.dayPct === null ? '—' : changeText(coin.dayPct, lang)}
@@ -798,12 +790,16 @@ function CoinsGroup({ data, group, own, narrow, risk, onTrade }: GroupsProps & {
                 <Cell end>{valueText(coin.row.usd, lang, p.noPrice)}</Cell>
                 {trades ? (
                   <Cell end className={a.rowActs}>
-                    <Quiet size="s" aria-label={p.buyCoin(coin.symbol)} onClick={() => onTrade(coin.ask, 'buy')}>
-                      {p.buy}
-                    </Quiet>
-                    <Quiet size="s" aria-label={p.sellCoin(coin.symbol)} onClick={() => onTrade(coin.ask, 'sell')}>
-                      {p.sell}
-                    </Quiet>
+                    {isWrapped(coin.row) ? null : (
+                      <>
+                        <Quiet size="s" aria-label={p.buyCoin(coin.symbol)} onClick={() => onTrade(coin.ask, 'buy')}>
+                          {p.buy}
+                        </Quiet>
+                        <Quiet size="s" aria-label={p.sellCoin(coin.symbol)} onClick={() => onTrade(coin.ask, 'sell')}>
+                          {p.sell}
+                        </Quiet>
+                      </>
+                    )}
                   </Cell>
                 ) : null}
               </TableRow>

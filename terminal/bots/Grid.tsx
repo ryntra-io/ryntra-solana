@@ -25,7 +25,9 @@ import { connectWallet } from '@/terminal/shell/Wallet';
 import { WALLET } from '@/terminal/shell/words';
 import { useOffHoursRisk } from '@/terminal/stocks/useStockPoolFacts';
 import { Action, AmountField, Chip, CoinLogo, Figure, Icon, Info, Kick, Panel, Quiet, Shares, Slider, Title, amountOf, changeText, changeTone, priceText, usdText } from '@/terminal/ui';
+import { useMarket } from '@/terminal/shell/useMarket';
 import { BotBadge, CoinAmount, HowInfo, Note, coinOf, useTowers, type PickedCoin } from './parts';
+import { pricesLive, startPrice, startStep, type Started } from './grid-start';
 import { GRID } from './grid-words';
 import { CLASSIC_NET, GRID_NET, MET_MINT, WARN_NOTES, netOf, ordersKey, useGrid, type GridAction } from './grid-store';
 import { venueOf, type CoinVenue } from './rows';
@@ -201,44 +203,98 @@ export function GridBot({ lay }: { lay: (parts: GridParts) => ReactNode }) {
   const decimals = market ? { coin: market.coin.decimals, quote: market.quote.decimals } : classic.pool ? { coin: classic.pool.facts.baseDecimals, quote: classic.pool.facts.quoteDecimals } : null;
   /* Dollars from the venue's own price: the pool's price of the coin times what its quote coin is worth. The market's
      row of the coin is the fallback only for a picture with no venue. */
-  const perQuote = quoteUsd(market ? market.quote.mint : classic.pool ? classic.pool.facts.quoteMint : null, towers);
+  const quoteMint = market ? market.quote.mint : classic.pool ? classic.pool.facts.quoteMint : null;
+  const perQuote = quoteUsd(quoteMint, towers);
+  /* The first frame paints the bundled market (SOL at its price of the day it was bundled): nothing is counted on it —
+     no band, no plan, no order (`grid-start.ts`, release check 19.11). */
+  const marketLive = useMarket().source === 'live';
+  const quoteIsDollar = quoteMint !== null && DOLLARS.has(quoteMint);
+  const live = pricesLive({ venue, quoteIsDollar, marketLive });
   const towerUsd = tower && tower.price > 0 ? tower.price : null;
-  const coinUsd = marketPrice !== null && marketPrice > 0 && perQuote ? marketPrice * perQuote : towerUsd;
+  const coinUsd = !live ? null : marketPrice !== null && marketPrice > 0 && perQuote ? marketPrice * perQuote : towerUsd;
   /* Without a venue's market the grid is drawn in dollars on the coin's own price: a picture, and no button that signs. */
   /* A venue without its quote coin's dollars draws nothing: the picture basis is for no venue at all, never a venue's units. */
-  const basis = marketPrice !== null ? (perQuote && decimals ? { price: marketPrice, coinDecimals: decimals.coin, quoteDecimals: decimals.quote, perQuote } : null) : coinUsd ? { price: coinUsd, coinDecimals: 6, quoteDecimals: 6, perQuote: 1 } : null;
+  const basis = !live ? null : marketPrice !== null ? (perQuote && decimals ? { price: marketPrice, coinDecimals: decimals.coin, quoteDecimals: decimals.quote, perQuote } : null) : coinUsd ? { price: coinUsd, coinDecimals: 6, quoteDecimals: 6, perQuote: 1 } : null;
 
   const [amount, setAmount] = useState('200');
   const [low, setLow] = useState('');
   const [high, setHigh] = useState('');
   const [levels, setLevels] = useState(START_LEVELS);
 
-  /** A band of `pct` either way of the price now. */
-  const band = (pct: number) => {
-    if (!coinUsd) return;
-    setLow(fieldOf(coinUsd * (1 - pct / 100), lang));
-    setHigh(fieldOf(coinUsd * (1 + pct / 100), lang));
+  /*
+   * The one price the band starts on (`grid-start.ts`): the venue's own, in dollars, once it is read — the pool the levels
+   * are counted from, its quote coin's dollars live; where no venue takes the coin, the market's live price of it. Until
+   * then the form reads, and says so — no numbers. The same on every screen.
+   */
+  const venuesKnown = venue !== null || (read !== 'loading' && classic.read !== 'loading');
+  const startUsd = startPrice({ venue, venuesKnown, venuePrice: marketPrice, perQuote, quoteIsDollar, marketLive, coinUsd: towerUsd });
+
+  /** A band of `pct` either way of the start price. */
+  const band = (pct: number, at: number | null = startUsd) => {
+    if (!at) return;
+    setLow(fieldOf(at * (1 - pct / 100), lang));
+    setHigh(fieldOf(at * (1 + pct / 100), lang));
   };
   /*
-   * A new coin starts on its own band, once its price is known — and again once its venue's own price comes. The start
-   * is the same on every screen (it was fitted to the prices the chart showed, so a phone and a desk started
-   * on different bands); on a classic pool it fits the pool's bins.
+   * A coin starts on its own band once its start price is read — its width and, on a classic pool, its levels fitted
+   * to the pool's bins. That price read again re-centres a band the person has not touched, at the width it stood, and
+   * leaves the levels as they are; a band she typed, picked or dragged — even before the price came — stays hers.
+   * Another coin clears the band until its own price is read.
    */
-  const started = useRef<string | null>(null);
-  /* On a classic pool the fit waits for the quote coin's dollars too: the start is made again once they come. */
-  const startKey = shown && coinUsd ? `${shown.mint}:${venue ?? 'none'}${venue === 'dlmm' && basis ? ':fit' : ''}` : null;
+  const started = useRef<Started | null>(null);
+  const width = useRef(START_BAND);
+  /* A quick width picked before the price came: the first start takes it. */
+  const picked = useRef<Readonly<{ mint: string; pct: number }> | null>(null);
+  /* The coin whose band the person touched since it was opened: forgotten when another coin is picked. */
+  const [ownFor, setOwnFor] = useState<string | null>(null);
+  const own = ownFor === shown.mint;
+  const pickCoin = (next: PickedCoin) => {
+    // The coin on screen picked again (its row tapped to close the list): her band stays.
+    if (next.mint !== shown.mint) {
+      setOwnFor(null);
+      picked.current = null;
+    }
+    setCoin(next);
+  };
   useEffect(() => {
-    if (!startKey || started.current === startKey) return;
-    started.current = startKey;
-    const fit = venue === 'dlmm' && classic.pool && basis ? classicStart(classic.pool, basis, (typed(amount) ?? 0) / basis.perQuote) : null;
-    band(fit?.band ?? START_BAND);
-    setLevels(fit?.levels ?? START_LEVELS);
+    const step = startStep(started.current, shown.mint, venue, startUsd, own);
+    if (step === 'none') return;
+    if (step === 'clear' || startUsd === null) {
+      started.current = null;
+      setLow('');
+      setHigh('');
+      return;
+    }
+    started.current = { mint: shown.mint, venue, usd: startUsd };
+    if (step === 'note') return;
+    if (step === 'first') {
+      const fit = venue === 'dlmm' && classic.pool && basis ? classicStart(classic.pool, basis, (typed(amount) ?? 0) / basis.perQuote) : null;
+      const chosen = picked.current?.mint === shown.mint ? picked.current.pct : null;
+      width.current = chosen ?? fit?.band ?? START_BAND;
+      setLevels(fit?.levels ?? START_LEVELS);
+    }
+    band(width.current, startUsd);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [startKey]);
-  /* The person's own band: a typed edge, a quick width, an edge dragged on the chart. */
-  const ownLow = setLow;
-  const ownHigh = setHigh;
-  const ownBand = band;
+  }, [shown.mint, venue, startUsd, own]);
+  /* The person's own band: a typed edge, a quick width, an edge dragged on the chart — it stays hers. */
+  const ownLow = (text: string) => {
+    setOwnFor(shown.mint);
+    setLow(text);
+  };
+  const ownHigh = (text: string) => {
+    setOwnFor(shown.mint);
+    setHigh(text);
+  };
+  const ownBand = (pct: number) => {
+    width.current = pct;
+    // Before the price came: the width waits for it, and the band starts on it.
+    if (!startUsd) {
+      picked.current = { mint: shown.mint, pct };
+      return;
+    }
+    setOwnFor(shown.mint);
+    band(pct);
+  };
 
   const lowUsd = typed(low);
   const highUsd = typed(high);
@@ -251,7 +307,7 @@ export function GridBot({ lay }: { lay: (parts: GridParts) => ReactNode }) {
   const legs = useMemo(() => (venue === 'dlmm' && classic.pool && plan && !plan.issue ? classicGrid(plan, classic.pool.activePrice, classic.pool.facts) : null), [venue, classic.pool, plan]);
   const legCosts = useMemo(() => (legs && !legs.issue && classic.pool ? ladderCosts(legs.plans, { existingArrays: new Set(classic.pool.existingArrays), bitmapExtension: classic.pool.bitmapExtension }, classic.pool.terms ?? DEFAULT_TERMS) : null), [legs, classic.pool]);
 
-  const quick = BANDS.find((one) => coinUsd && lowUsd && highUsd && Math.abs(lowUsd - coinUsd * (1 - Number(one) / 100)) / coinUsd < 0.002 && Math.abs(highUsd - coinUsd * (1 + Number(one) / 100)) / coinUsd < 0.002) ?? null;
+  const quick = BANDS.find((one) => startUsd && lowUsd && highUsd && Math.abs(lowUsd - startUsd * (1 - Number(one) / 100)) / startUsd < 0.002 && Math.abs(highUsd - startUsd * (1 + Number(one) / 100)) / startUsd < 0.002) ?? null;
 
   const busy = useGrid((st) => st.busy);
   const note = useGrid((st) => (st.note?.id === 'new' ? st.note : null));
@@ -269,7 +325,11 @@ export function GridBot({ lay }: { lay: (parts: GridParts) => ReactNode }) {
   const venueIssue = none && read === 'closed' ? w.soon : unreachable ? w.unreachable : null;
   /* A band far past the price is no grid: said, and no step or earning is counted for it. */
   const far = Boolean(coinUsd && lowUsd !== null && highUsd !== null && (lowUsd < coinUsd * FAR_LOW || highUsd > coinUsd * FAR_HIGH));
-  const issue = noPool ? null : (venueIssue ?? (far ? w.issueFar : !plan ? null : plan.issue ? issueWord(w, plan.issue) : legs?.issue ? (legs.issue === 'classicSide' ? w.issueClassicSide : w.issueClassicStep) : market && !market.placing ? w.off : null));
+  /* The start price not read yet: the form reads — no warning over fields that wait for it, but a venue's «off» is said;
+     a pool read while the market's prices are not live says that, not «reading the pool». */
+  const waiting = startUsd === null && !lowUsd && !highUsd;
+  const waitWord = venue && startUsd === null ? w.pricesWait : waiting ? w.reading : null;
+  const issue = noPool ? null : (venueIssue ?? (waiting || !live ? (market && !market.placing ? w.off : null) : far ? w.issueFar : !plan ? null : plan.issue ? issueWord(w, plan.issue) : legs?.issue ? (legs.issue === 'classicSide' ? w.issueClassicSide : w.issueClassicStep) : market && !market.placing ? w.off : null));
   /* No venue takes the coin's orders: no grid is counted or drawn for it — no step, no cycle, no buys and sells. */
   const bare = noPool || venueIssue !== null;
   // The grid over the candles: buys under the price, sells over it, the band's two edges.
@@ -279,7 +339,8 @@ export function GridBot({ lay }: { lay: (parts: GridParts) => ReactNode }) {
   /* A pool whose own price stands away from the market's (a thin pool): said before the signature — its orders fill at
      the pool's price, and the band is drawn around it, not around the market's candles. Said too whenever a buy would
      stand over the market's price or a sell under it, however small the gap. */
-  const marketUsd = inMarket && !inMarket.unread?.includes('price') && inMarket.price > 0 ? inMarket.price : null;
+  /* The market's own price of the coin, live only: the bundled one is not compared with the pool. */
+  const marketUsd = marketLive && inMarket && !inMarket.unread?.includes('price') && inMarket.price > 0 ? inMarket.price : null;
   const apart = venue && coinUsd && marketUsd ? coinUsd / marketUsd - 1 : 0;
   const crossing = Boolean(venue && marketUsd && plan && basis && !plan.issue && (plan.split.buys.some((level) => level * basis.perQuote > marketUsd) || plan.split.sells.some((level) => level * basis.perQuote < marketUsd)));
   const apartPct = Math.abs(apart) * 100;
@@ -299,9 +360,10 @@ export function GridBot({ lay }: { lay: (parts: GridParts) => ReactNode }) {
   // The band's edges, dragged on the chart: the field takes the price the hand left it at.
   const onEdge = useCallback(
     (edge: 'low' | 'high', usd: number) => {
+      setOwnFor(shown.mint);
       (edge === 'low' ? setLow : setHigh)(fieldOf(usd, lang));
     },
-    [lang],
+    [lang, shown.mint],
   );
 
   const step = far ? 0 : (plan?.step ?? 0);
@@ -356,7 +418,7 @@ export function GridBot({ lay }: { lay: (parts: GridParts) => ReactNode }) {
   );
 
   const form = (
-    <Panel tone="hi" pad="l" gap={16} label={w.title} className={g.sheet}>
+    <Panel tone="hi" pad="l" label={w.title} className={`${g.sheet} ${g.sheetStack}`}>
       <div className={b.head}>
         <BotBadge id="grid" on />
         <div className={b.headWords}>
@@ -367,11 +429,12 @@ export function GridBot({ lay }: { lay: (parts: GridParts) => ReactNode }) {
         </div>
         <HowInfo lines={venue === 'dlmm' ? [w.howOrdersDlmm, w.howCycleDlmm, w.howSafe] : [w.howOrders, w.howCycle, w.howEarned, w.howAuto, w.howSafe]} />
       </div>
-      <CoinAmount coin={shown} amount={amount} onAmount={setAmount} onCoin={(next) => setCoin(next)} anyCoin mark={markOf} onShown={onShown} openAsk={openAsk} />
+      <CoinAmount coin={shown} amount={amount} onAmount={setAmount} onCoin={pickCoin} anyCoin mark={markOf} onShown={onShown} openAsk={openAsk} />
       <div className={g.group}>
         <div className={b.twoUp}>
-          <AmountField size="s" label={w.low} unit="$" value={low} onChange={ownLow} />
-          <AmountField size="s" label={w.high} unit="$" value={high} onChange={ownHigh} />
+          {/* Until the start price is read: «—», never a number the band does not stand on. */}
+          <AmountField size="s" label={w.low} unit="$" value={low} onChange={ownLow} placeholder={waiting ? '—' : undefined} />
+          <AmountField size="s" label={w.high} unit="$" value={high} onChange={ownHigh} placeholder={waiting ? '—' : undefined} />
         </div>
         {/* The band's width: three quick ones here, any other typed above or dragged on the chart. */}
         <Shares label={w.band} value={quick} onPick={(id) => ownBand(Number(id))} options={BANDS.map((id) => ({ id, label: w.bandValue(digits(id, lang)) }))} />
@@ -417,7 +480,7 @@ export function GridBot({ lay }: { lay: (parts: GridParts) => ReactNode }) {
             </button>
           </span>
         ) : (
-          (issue ?? said ?? (reading ? w.reading : null))
+          (issue ?? said ?? (waitWord && !venueIssue ? waitWord : reading ? w.reading : null))
         )}
       </Note>
       {/* Why there is no grid here: opened in place under its line, never over the action. */}

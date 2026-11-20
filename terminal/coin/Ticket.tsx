@@ -4,6 +4,7 @@ import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from 'rea
 import { TRADE, riskWords } from '@/city/components/trade/words';
 import { dateText, digits, useWords } from '@/city/lib/i18n/dict';
 import { fieldText, fieldValue } from '@/city/lib/i18n/figures';
+import { useLang } from '@/city/lib/i18n/lang';
 import { decimalsOf, figuresOf, friendDiscountOf, type Figures } from '@/city/lib/trade/figures';
 import { formatUnits } from '@/city/lib/trade/format';
 import { SPOT_OPEN, TRADE_OPEN } from '@/city/lib/trade/gates';
@@ -415,11 +416,14 @@ function MarketPart({ tower, choice, press, onTopUp, idle, desk = false }: { tow
   const coin = bare(tower.symbol);
   const getUnit = side === 'buy' ? coin : bare(unitOf(choice.pay));
   const outputDecimals = shown ? decimalsOf(shown.order, choice.outputMint) : priced ? decimalsOf(priced, choice.outputMint) : null;
+  // Written in the language on screen: a switch of it writes the fee and the rest again (QA 19.11: «Fee 0,1%»).
+  const figuresLang = useLang();
   const figures = useMemo<Figures | null>(() => {
     if (outputDecimals === null) return null;
     if (shown) return figuresOf(shown.order.order, outputDecimals, 'order');
     return priced ? figuresOf(priced.order, outputDecimals, 'quote') : null;
-  }, [shown, priced, outputDecimals]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- the dictionary reads the language `figuresOf` writes in
+  }, [shown, priced, outputDecimals, figuresLang]);
   // A partner's friend: the order the wallet signs states the discounted fee of the one the ticket quoted.
   const off = shown ? friendDiscountOf(priced?.order ?? null, shown.order.order) : null;
 

@@ -1,4 +1,5 @@
 import type { WalletCleanItem, WalletCleanReadResponse, WalletCleanReviewResponse, WalletCleanSubmitResponse } from '../../lib/api/v1/contract.ts';
+import { SWAP_MIN_USD } from '../../lib/wallet-clean/rules.ts';
 
 /**
  * «Clean the wallet» on the Portfolio — its rules, without React: which accounts a clean takes with the person's own
@@ -53,15 +54,37 @@ export function groupsOf(items: readonly CleanItem[]): Groups {
 const LAMPORTS = 1_000_000_000;
 
 /**
- * What a clean gives back before the engine built it, in SOL: the rent of every account it closes, wrapped SOL, and
- * the small coins at the market's price in SOL — an estimate, said with «≈». Null — nothing is in it.
+ * Whether the clean with these items swaps anything — the engine's own rule (`planOf`, `lib/wallet-clean/rules.ts`): a
+ * small coin worth a cent or more is swapped, and then the wrapped SOL account waits for a clean without swaps, which
+ * may use it themselves.
+ */
+function swapsIn(taken: readonly CleanItem[]): boolean {
+  return taken.some((item) => item.kind === 'small' && (item.valueUsd ?? 0) >= SWAP_MIN_USD);
+}
+
+/**
+ * What a clean gives back before the engine built it, in SOL: the rent of every account it closes — a wrapped SOL
+ * account's only when it closes now — and the small coins at the market's price in SOL; an estimate, said with «≈».
+ * Null — nothing is in it.
  */
 export function estimateSol(read: CleanRead, choice: Choice): number | null {
   const taken = read.items.filter((item) => inClean(item, choice));
   if (!taken.length) return null;
-  const lamports = taken.reduce((sum, item) => sum + item.lamports, 0);
+  const waits = swapsIn(taken);
+  const lamports = taken.reduce((sum, item) => sum + (waits && item.kind === 'wrapped' ? 0 : item.lamports), 0);
   const usd = taken.reduce((sum, item) => sum + (item.kind === 'small' && item.valueUsd !== null ? item.valueUsd : 0), 0);
   return lamports / LAMPORTS + (read.solUsd ? usd / read.solUsd : 0);
+}
+
+/**
+ * The wrapped SOL a clean unwraps with this choice, in whole SOL: closing a wrapped account turns what is in
+ * it into the person's own SOL — nothing is lost, nor «got back», so the panel says it apart. `now` false — the same
+ * clean swaps coins, so the unwrap waits for the next one (the engine's own order). Null — none is in it.
+ */
+export function unwrapOf(read: Pick<CleanRead, 'items'>, choice: Choice): Readonly<{ sol: number; now: boolean }> | null {
+  const taken = read.items.filter((item) => inClean(item, choice));
+  const raw = taken.filter((item) => item.kind === 'wrapped' && /^\d+$/.test(item.amountRaw)).reduce((sum, item) => sum + BigInt(item.amountRaw), 0n);
+  return raw > 0n ? { sol: Number(raw) / LAMPORTS, now: !swapsIn(taken) } : null;
 }
 
 /** What the built clean gives back, in SOL: its own summary — the rent and the swaps' quotes. */

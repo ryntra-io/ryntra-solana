@@ -5,12 +5,12 @@ import { useWords } from '@/city/lib/i18n/dict';
 import { useLang } from '@/city/lib/i18n/lang';
 import { Ticket } from '@/terminal/coin/Ticket';
 import { BridgePanel } from '@/terminal/swap/Bridge';
-import { CoinLogo, Figure, Icon, changeText, changeTone, priceText } from '@/terminal/ui';
+import { CoinLogo, Figure, Icon, changeText, changeTone } from '@/terminal/ui';
 import { CleanPanel, RiskMark } from './CleanBlock';
 import { ExitPanel } from './ExitPanel';
 import { useClean } from './clean';
 import { riskMap } from './clean-view';
-import { logoFor, logosFor } from './Groups';
+import { coinPrice, logoFor, logosFor } from './Groups';
 import type { Act } from './state';
 import type { AllData } from './useAll';
 import { PORTFOLIO } from './words';
@@ -42,7 +42,7 @@ export function ActPanel({ act, data, onClose, onTopUp, price }: { act: Act; dat
               </span>
               {price.usd !== null ? (
                 <span className={p.coinPrice}>
-                  <Figure value={priceText(price.usd, lang)} size="s" />
+                  <Figure value={coinPrice(price.usd, lang)} size="s" />
                   {price.dayPct !== null ? (
                     <span className={p.coinChange} data-tone={changeTone(price.dayPct)}>
                       {changeText(price.dayPct, lang)}

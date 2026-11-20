@@ -19,7 +19,11 @@ const page = (path) => new URL(`../../app/(terminal)${path}/page.tsx`, import.me
 /* ------------------------------------------------------------------------------------------------ the bots */
 
 test("the bots are the menu's, in its order, each at its own page", () => {
-  const menu = MENU.find((group) => group.id === "bots").items.filter((item) => item.ready);
+  const items = MENU.find((group) => group.id === "bots").items.filter((item) => item.ready);
+  // «All bots» — the catalogue at the section's own address — stands first, as the section's first tab.
+  assert.deepEqual([items[0].id, items[0].href, items[0].shelf], ["allBots", BOTS_PATH, "agents"], "the catalogue first, as the tabs stand");
+  assert.equal(BOTS.uk.all, "Усі боти", "the item's name is the tab's");
+  const menu = items.slice(1);
   assert.deepEqual(
     menu.map((item) => item.id),
     [...BOT_IDS],
@@ -112,8 +116,8 @@ test("a coin's venue: DLMM Pro first, the classic pool next, «no pool» only on
   assert.equal(venueOf(ready({ pool: "p" }), undefined, { pro: false, classic: false }), null, "no venue open: nothing said");
 });
 
-test("each bot stands on the page of its category: the grid is a terminal with a chart, the others are forms", () => {
-  assert.deepEqual(BOT_PAGE, { recurring: "form", grid: "chart", ladder: "form", signals: "form", autopilot: "form" });
+test("each bot stands on the page of its category: every bot a terminal with a chart", () => {
+  assert.deepEqual(BOT_PAGE, { recurring: "chart", grid: "chart", ladder: "chart", signals: "chart", autopilot: "chart" });
   const grid = source("./Grid.tsx");
   assert.match(grid, /const MET = MET_MINT/, "MET opens the grid where DLMM Pro is open: its pool is Pro's");
   /** The props a screen gives its one coin field, however the line wraps. */

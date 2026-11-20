@@ -2,7 +2,8 @@ import { create } from 'zustand';
 import type { DepositNetwork } from '../../lib/relay/deposit-address.ts';
 import { useMoney } from '../../city/lib/money/open.ts';
 import { BUSY, useTrade, type CoinRef, type Phase } from '../../city/lib/trade/store.ts';
-import { SOL, type Side } from '../../city/lib/trade/tiles.ts';
+import { SOL, type PayAsset, type Side } from '../../city/lib/trade/tiles.ts';
+import type { Carry } from './swap-view.ts';
 
 /**
  * The Swap and Bridge screens' own state — what they show, never what they trade: the coin the ticket stands on and its
@@ -37,9 +38,10 @@ export function cardBusy(card: Readonly<{ held: boolean; phase: Phase }>): boole
 
 /**
  * What a sentence said for the ticket — its side, what pays or is paid, the amount or a share — written once the ticket
- * stands on the sentence's coin. A fill older than a minute is let go unwritten.
+ * stands on the sentence's coin; or what a coin picked by hand carries over to it (`pickSubject`). `pay` — SOL or USDC
+ * by symbol, any other coin by mint with the coin itself in `other`. A fill older than a minute is let go unwritten.
  */
-export type Fill = Readonly<{ id: number; side: Side; pay: 'SOL' | 'USDC' | null; amount: string | null; share: number | null; at: number }>;
+export type Fill = Readonly<{ id: number; side: Side; pay: string | null; other?: PayAsset | null; amount: string | null; share: number | null; at: number; own?: boolean }>;
 
 export const FILL_LIFE_MS = 60_000;
 
@@ -71,9 +73,39 @@ export function addFill(patch: Partial<Pick<Fill, 'pay' | 'amount' | 'share'>>):
   if (fill) useSwapScreen.setState({ fill: { ...fill, ...patch } });
 }
 
-/** The person picked a coin themselves: a sentence's fill still waiting is let go. */
-export function pickSubject(subject: CoinRef, side: Side): void {
-  useSwapScreen.setState({ subject, side, fill: null });
+/**
+ * The person picked a coin themselves: a sentence's fill still waiting is let go. `carry` — the coin of the other field
+ * and the amount it held (`subjectCarry`), written back once the card stands on the new coin: picking what you get
+ * never changes what you pay.
+ */
+export function pickSubject(subject: CoinRef, side: Side, carry?: Carry, now = Date.now()): void {
+  if (!carry) return useSwapScreen.setState({ subject, side, fill: null });
+  fills += 1;
+  useSwapScreen.setState({ subject, side, fill: { id: fills, side, pay: carry.pay, other: carry.other, amount: carry.amount, share: null, at: now, own: true } });
+}
+
+/**
+ * The waiting fill, written into the card once it stands on the screen's coin and side: the side, what pays, then the
+ * amount or a share — through the card's own setters, as the person's typing would. Nothing is ordered, nothing is
+ * signed. True — done with this fill (written, let go or replaced); false — the card is not there yet.
+ */
+export function putFill(fill: Fill, now = Date.now()): boolean {
+  const screen = useSwapScreen.getState();
+  if (screen.fill?.id !== fill.id) return true;
+  // A hand pick's carry never lapses: the card may stand on a result for minutes before it opens on the new coin.
+  if (!fill.own && now - fill.at > FILL_LIFE_MS) {
+    useSwapScreen.setState({ fill: null });
+    return true;
+  }
+  const card = useTrade.getState();
+  if (!card.open || card.view !== 'swap' || card.tower?.mint !== screen.subject.id || card.phase !== 'idle' || card.held) return false;
+  useSwapScreen.setState({ fill: null });
+  if (card.side !== fill.side) card.setSide(fill.side);
+  if (fill.other) useTrade.getState().pickCoin(fill.other);
+  else if (fill.pay) useTrade.getState().setPay(fill.pay);
+  if (fill.amount) useTrade.getState().setTyped(fill.amount);
+  else if (fill.share !== null) useTrade.getState().setShare(fill.share);
+  return true;
 }
 
 /**

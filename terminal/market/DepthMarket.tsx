@@ -33,6 +33,7 @@ import {
   fitColumns,
   filtersFor,
   isKindTab,
+  logoChain,
   logoOf,
   mixedRows,
   nextSort,
@@ -101,20 +102,22 @@ function TabParam() {
   return null;
 }
 
-/** How long the Market's list is kept in view while the blocks above it are still drawing. */
-const HOLD_MS = 2500;
+/** How long the Market's list is kept in view while the blocks above it are still drawing — a phone's Pulse comes late. */
+const HOLD_MS = 6000;
 
 /**
  * The Market's list brought to the top of the view, and kept there while the blocks above it finish drawing — until the
- * person scrolls, taps or types themselves.
+ * person scrolls, taps or types themselves. Each step is instant: the page scrolls smoothly by default, and a smooth
+ * scroll aimed while the Pulse above still grows ends where the list was, not where it is (QA 19.11 day, B-18: on a
+ * phone «Saved» opened on the Pulse with the list below the fold).
  */
 function bringIntoView(): () => void {
   const place = () => document.getElementById('market-title')?.closest('section') ?? null;
   const go = () => {
     const section = place();
-    section?.scrollIntoView({ block: 'start' });
+    section?.scrollIntoView({ block: 'start', behavior: 'instant' });
     // A phone's row of tabs scrolls sideways: «Saved» stands at its end, so the row brings it in too.
-    section?.querySelector<HTMLElement>('[role="tab"][aria-selected="true"]')?.scrollIntoView({ block: 'nearest', inline: 'center' });
+    section?.querySelector<HTMLElement>('[role="tab"][aria-selected="true"]')?.scrollIntoView({ block: 'nearest', inline: 'center', behavior: 'instant' });
   };
   const frame = requestAnimationFrame(go);
   const watch = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(go);
@@ -196,10 +199,13 @@ export function DepthMarket() {
   );
   const kinds = useMemo(() => {
     const out: { kind: DepthKind; count: number | null }[] = [];
+    // «All» counts once both of its tabs are read: a count that grows by itself a moment later is not one (QA 19.11).
+    const halves = (['meme', 'crypto'] as const).every((kind) => reads[readKey(targetOf(kind, list), window)]?.status === 'ready');
     for (const kind of KINDS) {
       const r = reads[readKey(targetOf(kind, list), window)];
       const view = { filters: filtersFor(filters, kind), window, sort: DEFAULT_SORT, query: '', now, ryntra };
-      const count = r?.status === 'ready' ? (kind === 'all' ? mixedRows(everyCoin, view) : depthRows(r.coins, view)).length : null;
+      const counted = r?.status === 'ready' && (kind !== 'all' || halves);
+      const count = counted ? (kind === 'all' ? mixedRows(everyCoin, view) : depthRows(r.coins, view)).length : null;
       // A kind the market has nothing of shows no tab — unless it is the one on screen. A filter never hides a tab.
       if (r?.status === 'ready' && r.coins.length === 0 && kind !== tab && kind !== 'all') continue;
       out.push({ kind, count });
@@ -436,7 +442,7 @@ function CoinWords({ coin, now, sub, aside }: { coin: DepthCoin; now: number; su
   const company = coin.kind === 'stock' || coin.kind === 'preipo';
   return (
     <span className={d.coin}>
-      <CoinLogo src={logoOf(coin)} symbol={coin.symbol} size="m" />
+      <CoinLogo {...logoChain(coin.id, coin.icon, logoOf(coin))} symbol={coin.symbol} size="m" />
       <span className={d.coinWords}>
         <span className={d.coinSym}>
           <span className={d.sym}>{company ? companyOf(coin.name) : coin.symbol}</span>
@@ -467,6 +473,8 @@ type Column = Readonly<{
   group?: string;
   cell: (coin: DepthCoin, index: number) => ReactNode;
   end?: boolean;
+  /** Centred under its head: a sign, not a figure (QA 19.11: «Трейдери» and «Ризик» read as one word). */
+  mid?: boolean;
   tone?: (coin: DepthCoin) => 'up' | 'down' | undefined;
 }>;
 
@@ -537,7 +545,7 @@ function DeskTable({ rows, window, now, all: every, kind, moving, sort, onSort }
     ...(kind === 'meme' ? [{ id: 'top', key: null, head: w.top10, min: 64, grow: 0.6, rank: 6.5, end: true, cell: (coin: DepthCoin) => (coin.topHolders === null ? '—' : digits(`${Math.round(coin.topHolders)}%`, lang)) }] : []),
     { id: 'bs', key: 'trades', head: w.buysSells, min: 124, grow: 1.2, rank: 8, end: true, cell: (coin) => <BuysSells coin={coin} window={window} /> },
     ...(every ? [{ id: 'traders', key: 'traders' as SortKey, head: w.traders, min: 76, grow: 0.7, rank: 14, end: true, cell: (coin: DepthCoin) => countText(statsOf(coin, window)?.traders ?? null, lang) }] : []),
-    { id: 'risk', key: null, head: w.risk, min: 52, grow: 0, rank: 1.5, cell: (coin) => <RiskSign coin={coin} /> },
+    { id: 'risk', key: null, head: w.risk, min: 60, grow: 0, rank: 1.5, mid: true, cell: (coin) => <RiskSign coin={coin} /> },
     { id: 'quick', key: null, head: '', min: 72, grow: 0, rank: 0.5, end: true, cell: (coin) => <ZapButton coin={quickOf(coin)} /> },
     { id: 'star', key: null, head: '', min: 28, grow: 0, rank: 1.2, cell: (coin) => <Star coin={coin} /> },
   ];
@@ -557,7 +565,7 @@ function DeskTable({ rows, window, now, all: every, kind, moving, sort, onSort }
       <div role="table" aria-label={w.market} className={d.tbl} style={{ gridTemplateColumns: template }}>
         <div role="row" className={d.th}>
           {columns.map((c) => (
-            <span key={c.id} role="columnheader" className={d.cell} data-end={c.end ? '' : undefined}>
+            <span key={c.id} role="columnheader" className={d.cell} data-end={c.end ? '' : undefined} data-mid={c.mid ? '' : undefined}>
               {c.key ? (
                 <button type="button" className={d.sort} aria-label={w.sortBy(typeof c.head === 'string' ? c.head : '')} aria-pressed={sort.key === c.key} data-dir={sort.key === c.key ? sort.dir : undefined} onClick={() => onSort(nextSort(sort, c.key!))}>
                   {c.head}
@@ -571,7 +579,7 @@ function DeskTable({ rows, window, now, all: every, kind, moving, sort, onSort }
         {rows.map((coin, index) => (
           <div key={coin.id} role="row" className={d.tr} onClick={() => open(coin)}>
             {columns.map((c) => (
-              <span key={c.id} role="cell" className={d.cell} data-end={c.end ? '' : undefined} data-tone={c.tone?.(coin)}>
+              <span key={c.id} role="cell" className={d.cell} data-end={c.end ? '' : undefined} data-mid={c.mid ? '' : undefined} data-tone={c.tone?.(coin)}>
                 {c.cell(coin, index)}
               </span>
             ))}
@@ -627,17 +635,18 @@ function PhoneRows({ rows, window, now, kind }: { rows: readonly DepthCoin[]; wi
                 now={now}
                 aside={
                   <>
-                    {age === null ? null : (
-                      <span className={d.age}>
-                        <AgeText ms={age} />
-                      </span>
-                    )}
+                    {/* The risk sign before the age: where only one fits beside the name, the warning stays. */}
                     {facts ? (
                       <span className={d.phoneRisk} role="img" aria-label={w.riskOf(digits(String(facts), lang))}>
                         <Warn />
                         {digits(String(facts), lang)}
                       </span>
                     ) : null}
+                    {age === null ? null : (
+                      <span className={d.age}>
+                        <AgeText ms={age} />
+                      </span>
+                    )}
                   </>
                 }
                 sub={

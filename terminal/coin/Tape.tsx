@@ -5,9 +5,9 @@ import { digits, useWords } from '@/city/lib/i18n/dict';
 import { useLang } from '@/city/lib/i18n/lang';
 import type { EarnBinsVenue } from '@/lib/earn-pools/bins';
 import { useBins, type BinsState } from '@/terminal/earn/range/useBins';
-import { Tabs, priceText, sumText, usdText } from '@/terminal/ui';
+import { Tabs, sumText, usdText } from '@/terminal/ui';
 import { DESK } from './desk-words';
-import { agoOf, buyShareOf, depthBook, dexName, type DepthRow, type TokenPool } from './tape-view';
+import { agoOf, buyShareOf, depthBook, dexName, tapePrice, type DepthRow, type TokenPool } from './tape-view';
 import { usePools, useNow, type Tape as TapeRead } from './useCoinMarket';
 import { useCoinPool } from './useCoinPool';
 import t from './tape.module.css';
@@ -67,7 +67,7 @@ export function Trades({ tape, rows = 60 }: { tape: TapeRead; rows?: number }) {
           const ago = agoOf(trade.at, now);
           return (
             <li key={`${trade.signature}:${trade.side}`} className={t.row} data-side={trade.side} data-fresh={tape.fresh.has(trade.signature) || undefined}>
-              <span className={t.price}>{trade.priceUsd !== null ? priceText(trade.priceUsd, lang) : '—'}</span>
+              <span className={t.price}>{trade.priceUsd !== null ? tapePrice(trade.priceUsd, lang) : '—'}</span>
               <span className={t.size}>{trade.usd !== null ? sumText(trade.usd, lang) : '—'}</span>
               <span className={t.time}>{ago ? digits(agoText(ago, d), lang) : ''}</span>
             </li>
@@ -150,7 +150,7 @@ export function PoolBook({ address, venue = 'dlmm', side, usd, name, bins: given
   }
   const row = (r: DepthRow) => (
     <li key={r.key} className={t.depthRow} data-side={r.side} style={{ ['--share' as string]: `${Math.round(r.share * 100)}%` }}>
-      <span className={t.price}>{priceText(r.price, lang)}</span>
+      <span className={t.price}>{tapePrice(r.price, lang)}</span>
       <span className={t.size}>{sumText(r.usd, lang)}</span>
       <span className={t.total}>{sumText(r.total, lang)}</span>
     </li>
@@ -165,7 +165,7 @@ export function PoolBook({ address, venue = 'dlmm', side, usd, name, bins: given
       <div className={t.book} aria-label={d.poolBook(name)}>
         <ol className={t.asks}>{[...book.asks].reverse().map(row)}</ol>
         <p className={t.mid}>
-          <b>{usd !== null ? priceText(usd, lang) : '—'}</b>
+          <b>{usd !== null ? tapePrice(usd, lang) : '—'}</b>
           <span>{name}</span>
         </p>
         <ol className={t.bids}>{book.bids.map(row)}</ol>

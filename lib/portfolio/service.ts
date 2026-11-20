@@ -40,7 +40,8 @@ import {
 import { OWN_PLATFORMS } from "./projection.ts";
 
 export type SourceRead =
-  | Readonly<{ ok: true; positions: readonly PortfolioPosition[]; readAt: string; solUsd?: number | null }>
+  /** `partial` — the source answered, but a part of it did not read (the wallet's wrapped SOL beside DAS): why. */
+  | Readonly<{ ok: true; positions: readonly PortfolioPosition[]; readAt: string; solUsd?: number | null; partial?: SourceReason | null }>
   | Readonly<{ ok: false; reason: SourceReason }>;
 
 export type PortfolioReader = (owner: string, signal: AbortSignal) => Promise<SourceRead>;
@@ -215,7 +216,8 @@ async function readAll(owner: string, deps: PortfolioDeps): Promise<PortfolioAns
     } else if (read.ok) {
       keep(lastGood, key, { at: now(), read });
       shown = read;
-      status = { source, state: "read", reason: null, readAt: read.readAt, positions: read.positions.length };
+      /* Read, but not all of it: the status keeps the part's reason, and the total is not whole. */
+      status = { source, state: "read", reason: read.partial ?? null, readAt: read.readAt, positions: read.positions.length };
     } else if (OFF_REASONS.has(read.reason)) {
       status = { source, state: "off", reason: read.reason, readAt: null, positions: 0 };
     } else {
@@ -270,7 +272,7 @@ async function readAll(owner: string, deps: PortfolioDeps): Promise<PortfolioAns
   let earnedUsd = 0;
   let projectedUsd = 0;
   /* The projection is summed apart: its silence leaves the total as complete as the engine's own reads make it. */
-  let complete = statuses.every((status) => status.source === "jupiter-portfolio" || status.state === "read" || status.state === "off");
+  let complete = statuses.every((status) => status.source === "jupiter-portfolio" || (status.state === "read" && status.reason === null) || status.state === "off");
   for (const position of positions) {
     if (position.state === "unread") continue;
     if (position.origin === "projection") {

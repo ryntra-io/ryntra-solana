@@ -1,6 +1,6 @@
 /**
- * The app's words around the city: the states that cover the page while it cannot show. The city itself
- * speaks the site's own words. «ти», neutral to gender.
+ * The app's own words around the page: the states that cover ryntra.io while it
+ * cannot show. The page itself speaks the site's own words. «ти», neutral to gender.
  */
 
 import type { Copy } from '../../lib/i18n.ts'
@@ -16,17 +16,17 @@ export type CityCopy = Readonly<{
 
 export const CITY_COPY: Copy<CityCopy> = {
   en: {
-    label: 'Ryntra City',
-    loading: 'Opening the city',
+    label: 'Ryntra',
+    loading: 'Opening Ryntra',
     noConnection: 'No connection',
-    notOpened: 'The city did not open',
+    notOpened: "Couldn't open Ryntra",
     tryAgain: 'Try again',
   },
   uk: {
-    label: 'Ryntra City',
-    loading: 'Відкриваємо місто',
+    label: 'Ryntra',
+    loading: 'Відкриваємо Ryntra',
     noConnection: "Немає з'єднання",
-    notOpened: 'Місто не відкрилося',
+    notOpened: 'Не вдалося відкрити Ryntra',
     tryAgain: 'Спробувати ще',
   },
 }

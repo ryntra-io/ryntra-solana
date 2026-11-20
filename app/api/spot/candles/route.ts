@@ -24,8 +24,10 @@ export const maxDuration = 30;
 
 const BASE58 = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
 
-function failure(status: number, code: string, message: string, rate: RateLimitDecision, retryAfterMs?: number | null) {
-  return Response.json({ error: { code, message } }, { status, headers: { ...rateLimitHeaders(rate), ...retryAfterHeader(retryAfterMs), "cache-control": "private, no-store" } });
+/* A refusal by the source names the pool the chart would read, so the page can read that pool from the
+   person's own browser (`city/lib/chart/direct.ts`) — the pool's address and the venue, nothing of anyone. */
+function failure(status: number, code: string, message: string, rate: RateLimitDecision, retryAfterMs?: number | null, pool?: Readonly<{ address: string; side: "base" | "quote" }> | null) {
+  return Response.json({ error: { code, message }, ...(pool ? { pool } : {}) }, { status, headers: { ...rateLimitHeaders(rate), ...retryAfterHeader(retryAfterMs), "cache-control": "private, no-store" } });
 }
 
 export async function GET(request: Request) {
@@ -39,13 +41,15 @@ export async function GET(request: Request) {
   const limitParam = url.searchParams.get("limit");
   const limit = limitParam === null ? null : Number(limitParam);
   if (limit !== null && (!Number.isInteger(limit) || limit < 1 || limit > 300)) return failure(400, "VALIDATION_ERROR", "limit must be a whole number from 1 to 300.", rate);
+  /* Bars held past fresh are answered at once; their next read runs behind the answer, kept alive by the request. */
   const read = await readSpotCandles(mint, timeframe);
   if (!read.ok) {
     /* 404: this market has no chart, for a stated reason — the frame prints it.
        429/503: the source, not the market; the last read stays on screen. */
     const noChart = read.code === "NO_POOL" || read.code === "NO_MAJOR_QUOTE" || read.code === "THIN" || read.code === "QUIET" || read.code === "STALE" || read.code === "PRICE_MISMATCH";
     const status = noChart ? 404 : read.code === "RATE_LIMITED" ? 429 : 503;
-    return failure(status, `CANDLES_${read.code}`, read.reason, rate, read.retryAfterMs);
+    const pool = !noChart && read.pool ? { address: read.pool.address, side: read.pool.side, name: read.pool.name, dex: read.pool.dex } : null;
+    return failure(status, `CANDLES_${read.code}`, read.reason, rate, read.retryAfterMs, pool);
   }
   const ttl = Math.max(5, Math.floor(TIMEFRAME_TTL_MS[timeframe] / 1000));
   return Response.json(

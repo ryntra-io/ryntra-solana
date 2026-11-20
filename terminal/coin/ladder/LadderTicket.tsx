@@ -11,6 +11,7 @@ import { LADDER_BUSY, LADDER_MAX_RUNGS, choiceOf, useLadder } from '@/city/lib/t
 import type { TowerRef } from '@/city/lib/trade/store';
 import { useWallet } from '@/city/lib/trade/wallet';
 import { Action, AmountField, Figure, Kick, Quiet, Segment, Slider, SwitchRow, Tabs, cx, priceText } from '@/terminal/ui';
+import { placedFigure, placesFor } from '@/terminal/ui/figures';
 import { setLayer } from '../chart-layer';
 import { ExplainBox, ExplainButton, LONG_LABEL, Rows, bare, connectOrPick } from '../parts';
 import { coinLogo, payLogo } from '../staples';
@@ -22,10 +23,20 @@ import l from './ladder.module.css';
 
 type W = (typeof LIMIT)['en'];
 
+/**
+ * A figure of a price as the chart's scale writes it: four significant figures, a run of four zeros or more after the
+ * point folded into a small figure — 0.0₆1381, never 0.0000001381 across the ticket.
+ */
+function priceFigure(value: number): string {
+  if (!(value > 0 && value < 0.01)) return plainFigure(value, { places: 4, significant: 4 });
+  // No zeros at the end: «0.0035», never «0.003500».
+  return placedFigure(value, placesFor(value, 4)).replace(/0+$/, '').replace(/\.$/, '');
+}
+
 /** A price in the quote coin as the person reads it: dollars for USDC, the coin's own figure for SOL. */
 export function quotePrice(value: number, unit: string, lang: Lang): string {
-  if (unit === 'USDC') return priceText(value, lang);
-  return `${digits(plainFigure(value, { places: 4, significant: 4 }), lang)} ${unit}`;
+  if (unit === 'USDC') return value > 0 && value < 0.01 ? digits(`$${priceFigure(value)}`, lang) : priceText(value, lang);
+  return `${digits(priceFigure(value), lang)} ${unit}`;
 }
 
 // A fraction of a basis point is said, never rounded to «+0%» (JitoSOL's bonus is 0.004 %, as the pool's head says).
@@ -101,7 +112,7 @@ function Fields({ coin, market, usd }: { coin: TowerRef; market: Market; usd: nu
 
   // The ladder over the chart: the engine's prices as they are quoted, in the chart's dollars at that moment — drawn once
   // a quote, so the lines stand where the quote's prices are, not a tick away, and the chart is not redrawn every tick.
-  const tag = useMemo(() => (value: number) => priceText(value, lang).replace(/^\$/, ''), [lang]);
+  const tag = useMemo(() => (value: number) => (value > 0 && value < 0.01 ? digits(priceFigure(value), lang) : priceText(value, lang).replace(/^\$/, '')), [lang]);
   const usdNow = useRef(usd);
   useEffect(() => {
     usdNow.current = usd;
@@ -116,6 +127,8 @@ function Fields({ coin, market, usd }: { coin: TowerRef; market: Market; usd: nu
 
   const far = quote ? farPrice(quote) : farBps !== null ? priceAt(market, farBps, action) : null;
   const count = quote?.rungs.length ?? rungs ?? LADDER_START_RUNGS;
+  // The pool fits fewer prices than asked at this distance: one more would change nothing.
+  const full = quote !== null && rungs !== null && quote.rungs.length < rungs;
   const balance = choice?.max != null ? digits(formatUnits(choice.max.toString(), choice.decimals, 'down'), lang) : null;
   const problem: Problem | null = connection ? (choice?.problem ?? null) : 'connect';
   const bonus = (quote ?? market).bonus;
@@ -190,7 +203,8 @@ function Fields({ coin, market, usd }: { coin: TowerRef; market: Market; usd: nu
       ) : null}
       <div className={l.tiles}>
         <div className={l.tile}>
-          <Kick>{w.prices}</Kick>
+          {/* Where the pool fits no more prices at this distance, the count's name says so — «+» rests for a reason seen. */}
+          <Kick>{shape === 'ladder' && full ? w.pricesFull : w.prices}</Kick>
           <span className={l.count}>
             <Figure value={digits(String(count), lang)} size="m" />
             {shape === 'ladder' ? (
@@ -203,8 +217,8 @@ function Fields({ coin, market, usd }: { coin: TowerRef; market: Market; usd: nu
                   className={l.step}
                   aria-label={w.more}
                   // The pool fits fewer prices than asked where the distance is short: more would change nothing — said on the control.
-                  disabled={busy || count >= LADDER_MAX_RUNGS || (quote !== null && rungs !== null && quote.rungs.length < rungs)}
-                  title={quote !== null && rungs !== null && quote.rungs.length < rungs ? w.moreFull : undefined}
+                  disabled={busy || count >= LADDER_MAX_RUNGS || full}
+                  title={full ? w.moreFull : undefined}
                   onClick={() => state.setRungs(Math.min(LADDER_MAX_RUNGS, count + 1))}
                 >
                   +
@@ -214,10 +228,11 @@ function Fields({ coin, market, usd }: { coin: TowerRef; market: Market; usd: nu
           </span>
         </div>
         <div className={l.tile}>
-          <Kick>{w.average}</Kick>
-          {/* The coin it is priced in stands small beside the figure: «0.003528 SOL» whole in a quarter of the ticket. */}
+          {/* The coin it is priced in stands in the tile's name, so the figure is whole in a quarter of a laptop's ticket
+              («0,00352…» was cut on 1440). */}
+          <Kick>{market.quote.symbol !== 'USDC' ? w.averageIn(market.quote.symbol) : w.average}</Kick>
           {quote && market.quote.symbol !== 'USDC' ? (
-            <Figure value={digits(plainFigure(quote.averagePrice, { places: 4, significant: 4 }), lang)} unit={market.quote.symbol} size="m" />
+            <Figure value={digits(priceFigure(quote.averagePrice), lang)} size="m" />
           ) : (
             <Figure value={quote ? quotePrice(quote.averagePrice, market.quote.symbol, lang) : '—'} size="m" />
           )}

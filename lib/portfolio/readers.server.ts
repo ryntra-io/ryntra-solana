@@ -4,7 +4,7 @@
  *
  * | Source | Read | Needs |
  * |---|---|---|
- * | `wallet` | Helius DAS `getAssetsByOwner` where the mainnet node is Helius; else the token accounts of both programs and the lamports | `RYNTRA_SOLANA_RPC_MAINNET` (Helius) for DAS; nothing for the rest |
+ * | `wallet` | Helius DAS `getAssetsByOwner` where the mainnet node is Helius, with wrapped SOL from the chain by its mint (DAS's reading did not carry it); else the token accounts of both programs and the lamports | `RYNTRA_SOLANA_RPC_MAINNET` (Helius) for DAS; nothing for the rest |
  * | `native-stake` | `getProgramAccounts` of the stake program, by staker and by withdrawer; the epoch | a node that serves indexed reads (Helius does) |
  * | `meteora-dlmm`, `meteora-damm-v2` | the pools reader of the engine (`readWalletPositions`) | — |
  * | `meteora-dlmm-pro` | earning's door (`earnProPositionsAnswer`, `earnProPiersAnswer`), mainnet only | |
@@ -34,11 +34,11 @@ import { jupiterBackgroundAllowed, noteJupiterResponse } from "../solana/jupiter
 import { createSolanaRpcHandle, readBoundedRpcResponse, resolveEndpoints, withRpcDiscipline, type SolanaEndpoint } from "../solana/rpc.ts";
 import { KAMINO_API_BASE, KAMINO_MAIN_MARKET, jupiterLendPosition, kaminoPositions, kaminoReservesFrom, type KaminoReserve } from "./lend.ts";
 import { dlmmProPosition, liquidityPosition } from "./meteora.ts";
-import { STAKE_PROGRAM, TOKEN_2022_PROGRAM, TOKEN_PROGRAM, type PortfolioPosition, type SourceReason } from "./model.ts";
+import { NATIVE_SOL_MINT, STAKE_PROGRAM, TOKEN_2022_PROGRAM, TOKEN_PROGRAM, type PortfolioPosition, type SourceReason } from "./model.ts";
 import { JUPITER_PORTFOLIO_BASE_URL, projectionPositions } from "./projection.ts";
 import { minuteBudget, type PortfolioDeps, type PortfolioReader, type PriceRead, type SourceRead } from "./service.ts";
 import { STAKER_OFFSET, WITHDRAWER_OFFSET, stakeAccountsFrom, stakePositions } from "./stake.ts";
-import { walletFromAccounts, walletFromDas, walletPositions, type WalletRead } from "./wallet.ts";
+import { walletFromAccounts, walletFromDas, walletPositions, withWrapped, type WalletRead } from "./wallet.ts";
 
 type Env = Readonly<Record<string, string | undefined>>;
 
@@ -99,26 +99,52 @@ async function readAccounts(owner: string, signal: AbortSignal): Promise<WalletR
   return walletFromAccounts({ [TOKEN_PROGRAM]: (classic as { value?: unknown }).value, [TOKEN_2022_PROGRAM]: (extended as { value?: unknown }).value }, (balance as { value?: unknown }).value);
 }
 
+/** The wallet's wrapped SOL accounts, by the native mint (`jsonParsed`): DAS's reading did not carry them. */
+async function readWrapped(owner: string, signal: AbortSignal): Promise<unknown> {
+  const handle = createSolanaRpcHandle({ network: "mainnet", timeoutMs: 4_000, retries: 0 });
+  const answer = await withRpcDiscipline(handle, (abortSignal) =>
+    handle.rpc.getTokenAccountsByOwner(owner as never, { mint: NATIVE_SOL_MINT as never }, { encoding: "jsonParsed", commitment: "confirmed" }).send({ abortSignal: AbortSignal.any([abortSignal, signal]) }),
+  );
+  return (answer as { value?: unknown }).value;
+}
+
+type WalletOnce = Readonly<{ read: WalletRead; readAt: string; partial: SourceReason | null }>;
+type WrappedRead = Readonly<{ ok: true; value: unknown }> | Readonly<{ ok: false; reason: SourceReason }>;
+
+/** Once DAS has answered, its wrapped SOL is waited for this long more: the wallet's own budget is never spent on it. */
+const WRAPPED_AFTER_DAS_MS = 2_000;
+
 /**
  * One wallet read shared by the coins and by Jupiter Lend's share count within one portfolio read — kept shorter than
- * «Ще раз» waits, so a read asked again after an action never shows the wallet as it was.
+ * «Ще раз» waits, so a read asked again after an action never shows the wallet as it was. `partial` — DAS answered but
+ * its wrapped SOL did not read: the coins stand, and the answer says it is not whole.
  */
-const walletReads = new Map<string, Readonly<{ at: number; promise: Promise<Readonly<{ read: WalletRead; readAt: string }>> }>>();
+const walletReads = new Map<string, Readonly<{ at: number; promise: Promise<WalletOnce> }>>();
 const WALLET_TTL_MS = 4_000;
 
-function readWalletOnce(owner: string, signal: AbortSignal): Promise<Readonly<{ read: WalletRead; readAt: string }>> {
+function readWalletOnce(owner: string, signal: AbortSignal): Promise<WalletOnce> {
   const hit = walletReads.get(owner);
   if (hit && Date.now() - hit.at < WALLET_TTL_MS) return hit.promise;
-  const promise = (async () => {
+  const promise = (async (): Promise<WalletOnce> => {
     const helius = heliusEndpoint();
     if (helius) {
+      const wrapped = readWrapped(owner, signal).then(
+        (value): WrappedRead => ({ ok: true, value }),
+        (failure: unknown): WrappedRead => ({ ok: false, reason: failure instanceof Error && /timeout|abort|did not answer/i.test(failure.name + failure.message) ? "TIMEOUT" : "REFUSED" }),
+      );
       try {
-        return { read: await readDas(helius, owner, signal), readAt: iso() };
+        const das = await readDas(helius, owner, signal);
+        let timer: ReturnType<typeof setTimeout> | undefined;
+        const late = new Promise<WrappedRead>((resolve) => {
+          timer = setTimeout(() => resolve({ ok: false, reason: "TIMEOUT" }), WRAPPED_AFTER_DAS_MS);
+        });
+        const chain = await Promise.race([wrapped, late]).finally(() => clearTimeout(timer));
+        return chain.ok ? { read: withWrapped(das, chain.value), readAt: iso(), partial: null } : { read: das, readAt: iso(), partial: chain.reason };
       } catch {
-        /* The engine's own reading answers instead. */
+        /* The engine's own reading answers instead: it reads wrapped SOL with every other account. */
       }
     }
-    return { read: await readAccounts(owner, signal), readAt: iso() };
+    return { read: await readAccounts(owner, signal), readAt: iso(), partial: null };
   })();
   if (walletReads.size > 500) walletReads.delete(walletReads.keys().next().value!);
   walletReads.set(owner, { at: Date.now(), promise });
@@ -127,8 +153,8 @@ function readWalletOnce(owner: string, signal: AbortSignal): Promise<Readonly<{ 
 }
 
 const walletReader: PortfolioReader = async (owner, signal) => {
-  const { read, readAt } = await readWalletOnce(owner, signal);
-  return { ok: true, positions: walletPositions(read, readAt), readAt, solUsd: read.solUsd };
+  const { read, readAt, partial } = await readWalletOnce(owner, signal);
+  return { ok: true, positions: walletPositions(read, readAt), readAt, solUsd: read.solUsd, partial };
 };
 
 /* ------------------------------------------------------------------ native stake */

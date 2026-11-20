@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { LaunchMarketRow } from '@/lib/api/v1/contract';
 import { num } from '@/city/lib/i18n/dict';
 import { useLang } from '@/city/lib/i18n/lang';
@@ -11,7 +11,7 @@ import { coinHref } from '@/terminal/shell/shelves';
 import { CoinLogo, Kick, Panel, usdText } from '@/terminal/ui';
 import { logoOf } from '@/terminal/market/depth-view';
 import { useMarket } from '@/terminal/shell/useMarket';
-import { ageOf, ageText, freshLaunches, measured, showcase } from './launch-view';
+import { ageOf, ageText, freshLaunches, logoRows, measured, showcase } from './launch-view';
 import { rudeName } from './rude';
 import type { LaunchModel } from './useLaunchModel';
 import { useSeconds } from './useSeconds';
@@ -186,6 +186,57 @@ function useMissed(): [ReadonlySet<string>, (id: string) => void] {
   return [missed, miss];
 }
 
+/** How long the lists wait for the new coins' logos before drawing the ones that came. */
+const LOGO_WAIT_MS = 2500;
+
+/**
+ * Each new coin's logo read before its row is drawn: a logo that does not come draws no row, so no row is
+ * drawn and then let go. `settled` — every logo of the first read decided, or the wait over; a logo still on its way then
+ * draws no row, so none comes in between the rows already drawn.
+ */
+function useLogos(coins: readonly FreshCoin[] | null): Readonly<{ seen: ReadonlyMap<string, boolean>; settled: boolean }> {
+  const [seen, setSeen] = useState<ReadonlyMap<string, boolean>>(() => new Map());
+  const [waited, setWaited] = useState(false);
+  const asked = useRef(new Set<string>());
+  const decide = useCallback((id: string, ok: boolean) => setSeen((was) => (was.has(id) ? was : new Map([...was, [id, ok]]))), []);
+  useEffect(() => {
+    if (!coins) return;
+    for (const coin of coins) {
+      if (asked.current.has(coin.id)) continue;
+      asked.current.add(coin.id);
+      const src = logoOf(coin);
+      if (!src) {
+        decide(coin.id, false);
+        continue;
+      }
+      const image = new window.Image();
+      image.decoding = 'async';
+      image.onload = () => decide(coin.id, true);
+      image.onerror = () => decide(coin.id, false);
+      image.src = src;
+    }
+  }, [coins, decide]);
+  useEffect(() => {
+    if (!coins || waited) return;
+    const timer = setTimeout(() => {
+      // The wait is over: a logo still on its way draws no row now.
+      setSeen((was) => {
+        const late = coins.filter((coin) => !was.has(coin.id));
+        return late.length ? new Map([...was, ...late.map((coin) => [coin.id, false] as const)]) : was;
+      });
+      setWaited(true);
+    }, LOGO_WAIT_MS);
+    return () => clearTimeout(timer);
+  }, [coins, waited]);
+  const decided = coins !== null && coins.length > 0 && coins.every((coin) => seen.has(coin.id));
+  // Settled once, settled for good: coins read later never bring the skeleton back over rows already drawn.
+  useEffect(() => {
+    if (decided && !waited) setWaited(true);
+  }, [decided, waited]);
+  const settled = waited || decided || (coins !== null && coins.length === 0);
+  return { seen, settled };
+}
+
 /** A new coin's logo through the engine's proxy; one that does not come tells its list, which lets the row go. */
 function Logo({ coin, onMiss }: { coin: FreshCoin; onMiss: (id: string) => void }) {
   const src = logoOf(coin);
@@ -214,8 +265,10 @@ export function FreshSolana({ m, coins, fallback = null }: { m: LaunchModel; coi
   const { w } = m;
   const lang = useLang();
   const [missed, miss] = useMissed();
-  const rows = (coins ?? []).filter((coin) => !missed.has(coin.id)).slice(0, FRESH_MOST);
-  if (coins === null) {
+  // A row is drawn once its logo was read: none is drawn and then let go.
+  const { seen, settled } = useLogos(coins);
+  const rows = logoRows(coins ?? [], seen, missed, FRESH_MOST);
+  if (coins === null || !settled) {
     return (
       <Panel pad="none" edge label={w.newSolana} className={l.list}>
         <div className={l.listHead}>
@@ -263,7 +316,21 @@ export function FreshTab({ m, coins, fallback = null }: { m: LaunchModel; coins:
   const lang = useLang();
   const now = useSeconds(30_000);
   const [missed, miss] = useMissed();
-  const rows = (coins ?? []).filter((coin) => !missed.has(coin.id));
+  const { seen, settled } = useLogos(coins);
+  const rows = logoRows(coins ?? [], seen, missed);
+  // The logos on their way: the tab's place held, not another panel shown a moment.
+  if (coins !== null && coins.length && !settled) {
+    return (
+      <Panel pad="none" edge label={w.fresh} className={l.freshTab}>
+        <span className={l.skeleton} aria-hidden="true">
+          <span />
+          <span />
+          <span />
+          <span />
+        </span>
+      </Panel>
+    );
+  }
   if (!rows.length || now === null) return <>{fallback}</>;
   return (
     <Panel pad="none" edge label={w.fresh} className={l.freshTab}>

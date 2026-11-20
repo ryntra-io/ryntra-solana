@@ -29,7 +29,8 @@ export const MARKET = words(
     howAgentText: 'Say it in your own words. Your agent fills in the trade and shows it; you read it and sign in your wallet. Your keys stay with you.',
     // «торгуй … на 0,1 SOL в день — це взагалі фігня»: an example names no sum.
     sayTradeDaily: (coin: string) => `Trade ${coin} every day`,
-    sayScout: 'Find new coins for me',
+    // What it opens today — the market's new coins — not the scout that buys them, not yet here.
+    sayScout: 'Find new coins',
     sayDips: (coin: string) => `Buy ${coin} on dips`,
     sayLaunch: 'Launch me a token',
     sayBuy: (coin: string) => `Buy ${coin} for 10 USDC`,
@@ -69,7 +70,7 @@ export const MARKET = words(
     howAgent: 'Як працює агент',
     howAgentText: 'Скажи своїми словами. Агент заповнить угоду й покаже її; ти читаєш і підписуєш у гаманці. Ключі лишаються в тебе.',
     sayTradeDaily: (coin: string) => `Торгуй ${coin} щодня`,
-    sayScout: 'Знаходь нові монети за мене',
+    sayScout: 'Знайди нові монети',
     sayDips: (coin: string) => `Купуй ${coin} на просіданнях`,
     sayLaunch: 'Запусти мені токен',
     sayBuy: (coin: string) => `Купи ${coin} на 10 USDC`,

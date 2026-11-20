@@ -130,6 +130,9 @@ export const AGENTS = words(
     partPool: 'Pools',
     partReserve: 'Stays in your wallet',
     toWork: (usd: string) => `${usd} to put to work`,
+    // The sum is the person's own; before it is written, the parts it will spread into.
+    pilotSum: 'To put to work',
+    pilotParts: 'Write a sum — the bot spreads it: trading, savings, pools',
     pilotRisk: 'Can end in minus · stop anytime · keys stay yours',
     pilotPay: (low: string, high: string) => `You pay only when the bot trades · ${low}–${high}% a trade`,
     pilotShort: (asset: string) => `Not enough ${asset} in your wallet for this plan`,
@@ -276,6 +279,8 @@ export const AGENTS = words(
     partPool: 'Пули',
     partReserve: 'Лишається в гаманці',
     toWork: (usd: string) => `${usd} — у роботу`,
+    pilotSum: 'У роботу',
+    pilotParts: 'Впиши суму — бот розкладе її: торгівля, скарбничка, пули',
     pilotRisk: 'Може бути мінус · стоп будь-коли · ключі в тебе',
     pilotPay: (low: string, high: string) => `Платиш лише коли бот торгує · ${low}–${high}% з угоди`,
     pilotShort: (asset: string) => `У гаманці бракує ${asset} для цього плану`,

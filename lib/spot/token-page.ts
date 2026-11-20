@@ -213,6 +213,9 @@ export type TokenPool = Readonly<{
   volume24hUsd: number | null;
   buys24h: number | null;
   sells24h: number | null;
+  /** Trades in the pool over the last five minutes and the last hour, as the source counts them. */
+  trades5m?: number | null;
+  trades1h?: number | null;
   createdAt: string | null;
 }>;
 
@@ -237,6 +240,12 @@ export function poolsOf(body: unknown, mint: string, limit = 8): TokenPool[] {
     const volume = attributes.volume_usd && typeof attributes.volume_usd === "object" ? (attributes.volume_usd as Record<string, unknown>) : {};
     const transactions = attributes.transactions && typeof attributes.transactions === "object" ? (attributes.transactions as Record<string, unknown>) : {};
     const day = transactions.h24 && typeof transactions.h24 === "object" ? (transactions.h24 as Record<string, unknown>) : {};
+    const count = (window: unknown): number | null => {
+      const row = window && typeof window === "object" ? (window as Record<string, unknown>) : null;
+      const buys = row ? asNumber(row.buys) : null;
+      const sells = row ? asNumber(row.sells) : null;
+      return buys === null && sells === null ? null : (buys ?? 0) + (sells ?? 0);
+    };
     const dex = row.relationships?.dex?.data?.id;
     pools.push({
       address,
@@ -247,6 +256,8 @@ export function poolsOf(body: unknown, mint: string, limit = 8): TokenPool[] {
       volume24hUsd: asNumber(volume.h24),
       buys24h: asNumber(day.buys),
       sells24h: asNumber(day.sells),
+      trades5m: count(transactions.m5),
+      trades1h: count(transactions.h1),
       createdAt: asIso(attributes.pool_created_at),
     });
   }
@@ -261,12 +272,48 @@ export function poolsOf(body: unknown, mint: string, limit = 8): TokenPool[] {
  * against — but a pool that did not trade has nothing to list.
  */
 export function tradesPoolOf(pools: readonly TokenPool[]): TokenPool | null {
-  let best: TokenPool | null = null;
-  for (const pool of pools) {
-    if (pool.volume24hUsd === null || pool.volume24hUsd <= 0) continue;
-    if (!best || pool.volume24hUsd > (best.volume24hUsd ?? 0)) best = pool;
+  return tradePoolsOf(pools, 1)[0] ?? null;
+}
+
+/** How many pools the trades are read from: the coin's busiest, where its trades are now. */
+export const TRADE_POOLS = 2;
+
+/**
+ * The pools the trades are read from: the ones the coin trades in most right now — by the trades of the
+ * last five minutes, then of the hour, then the day's dollars — at most `most`. The day's dollars alone chose BONK's
+ * USDC pool and JUP's Meteora pool on 19.11, whose newest trades on the source were 571 s and 351 s old while JUP's
+ * ZeroFi pool had 63 trades in five minutes: «where it trades» is where it trades now. A pool that did not trade in the
+ * day has nothing to list.
+ */
+export function tradePoolsOf(pools: readonly TokenPool[], most = TRADE_POOLS): TokenPool[] {
+  const ranked = pools
+    .filter((pool) => (pool.volume24hUsd !== null && pool.volume24hUsd > 0) || (pool.trades1h ?? 0) > 0)
+    .sort((a, b) => (b.trades5m ?? 0) - (a.trades5m ?? 0) || (b.trades1h ?? 0) - (a.trades1h ?? 0) || (b.volume24hUsd ?? 0) - (a.volume24hUsd ?? 0) || a.address.localeCompare(b.address));
+  const first = ranked[0];
+  if (!first || most < 1) return [];
+  /* A pool after the busiest is read only where it trades too — a quarter of the busiest's five minutes, five trades at
+     least: each pool is one more read of a source that refuses after a few a minute. */
+  const floor = Math.max(TRADE_POOL_MIN_5M, (first.trades5m ?? 0) / 4);
+  return [first, ...ranked.slice(1).filter((pool) => (pool.trades5m ?? 0) >= floor)].slice(0, most);
+}
+
+/** The fewest trades in five minutes that earn a pool after the busiest its own read. */
+export const TRADE_POOL_MIN_5M = 5;
+
+/** Several pools' trades as one tape: each trade once, newest first, at most `keep`. */
+export function mergeTrades(lists: readonly (readonly TokenTrade[])[], keep = 300): TokenTrade[] {
+  const seen = new Set<string>();
+  const all: TokenTrade[] = [];
+  for (const list of lists) {
+    for (const trade of list) {
+      const key = `${trade.signature}:${trade.side}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      all.push(trade);
+    }
   }
-  return best;
+  all.sort((a, b) => Date.parse(b.at) - Date.parse(a.at));
+  return all.slice(0, keep);
 }
 
 /* --------------------------------------------------------------- trades */

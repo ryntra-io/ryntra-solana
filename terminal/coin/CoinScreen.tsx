@@ -83,7 +83,7 @@ export function CoinScreen({ mint }: { mint: string }) {
   const outside = useMemo(() => (look?.status === 'ready' ? standIn(look.coin) : null), [look]);
   const coin: Tower | null = live ?? fromMarket ?? outside;
   const depth = useCoinDepth(mint);
-  const tape = useTape(mint);
+  const tape = useTape(mint, true, coin && coin.price > 0 ? coin.price : null);
   const [chartPrice, setChartPrice] = useState<number | null>(null);
   const [tab, setTab] = useState<UnderTab>('position');
   const [tapeTab, setTapeTab] = useState<TapeTab>('trades');
@@ -254,11 +254,12 @@ function PhoneTicket({ coin, sym, price, market, depth, onOrders }: { coin: Read
     <>
       <div className={u.barRoom} aria-hidden="true" />
       <div className={u.buyBar}>
-        <button type="button" className={u.buyBtn} data-side="buy" onClick={() => start('buy')}>
-          {d.buyCoin(sym)}
+        {/* The verb alone: the coin stands in the head above, and a long name never breaks the button (QA 19.11). */}
+        <button type="button" className={u.buyBtn} data-side="buy" aria-label={d.buyCoin(sym)} onClick={() => start('buy')}>
+          {d.buyNow}
         </button>
-        <button type="button" className={u.buyBtn} data-side="sell" onClick={() => start('sell')}>
-          {d.sellCoin(sym)}
+        <button type="button" className={u.buyBtn} data-side="sell" aria-label={d.sellCoin(sym)} onClick={() => start('sell')}>
+          {d.sellNow}
         </button>
       </div>
       {/* The ticket stays mounted under the sheet, so what the person typed is still there when it opens again. */}

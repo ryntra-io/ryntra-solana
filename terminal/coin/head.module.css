@@ -89,13 +89,16 @@
   color: var(--flare);
 }
 
-/* The trader's figures: a word over a number, side by side, quiet rules between them. */
+/* The trader's figures: a word over a number, side by side, quiet rules between them. A figure that does not fit whole
+   drops to a second row nobody sees (the row's own height), never cut to «Власн…» (QA 19.11). */
 .figures {
   display: flex;
   flex: 0 1 auto;
+  flex-wrap: wrap;
   align-items: center;
   gap: 0;
   min-width: 0;
+  height: 40px;
   margin: 0;
   overflow: hidden;
 }
@@ -103,7 +106,9 @@
 .figure {
   display: flex;
   flex-direction: column;
+  justify-content: center;
   gap: 4px;
+  height: 40px;
   padding: 0 16px;
   border-left: 1px solid var(--line);
   white-space: nowrap;
@@ -132,6 +137,77 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
+}
+
+/* The links again inside «i», for a head that gave their room to the figures. */
+.popLinks {
+  display: none;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--line);
+}
+
+.popLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 36px;
+  padding: 0 12px;
+  border: 1px solid var(--glass-edge);
+  font-size: var(--type-small);
+  font-weight: 600;
+  color: var(--ice);
+  transition: background-color 0.15s;
+}
+
+.popLink:hover {
+  background: var(--chosen);
+}
+
+.popLink svg {
+  color: var(--lilac);
+}
+
+/* The desk's head measures itself: what it shows follows its own width, whether the menu beside it is open or folded. */
+@media (min-width: 768px) {
+  .head {
+    container: coinhead / inline-size;
+  }
+}
+
+/* A head below a wide desk's (1440 with the menu open): the four figures stand whole — the links go behind «i», the
+   check of a verified coin says itself by its mark alone (its word stays its name), the gaps close a little. */
+@container coinhead (max-width: 1500px) {
+  .barLink {
+    display: none;
+  }
+
+  .popLinks {
+    display: flex;
+  }
+
+  .vettedWord {
+    display: none;
+  }
+
+  .vetted > span {
+    justify-content: center;
+    width: 28px;
+    gap: 0;
+    padding: 0;
+  }
+
+  .figure {
+    padding: 0 12px;
+  }
+}
+
+/* The head's own gaps close a little on a desk narrower than 1600 (a box cannot read its own width). */
+@media (min-width: 768px) and (max-width: 1600px) {
+  .head {
+    gap: 14px;
+  }
 }
 
 /* ── the address behind «i» ────────────────────────────────────────────── */
@@ -315,8 +391,9 @@ li[aria-selected='true'] > .pickRow {
   color: var(--dim);
 }
 
-/* A narrower desk keeps the coin, the price and as many figures as fit; the rest wait for room. */
-@media (max-width: 1360px) {
+/* A narrower desk keeps the coin, the price and as many figures as fit whole (`.figures` drops the rest); the holders
+   go first, by the head's own width. */
+@container coinhead (max-width: 1040px) {
   .figure:nth-child(n + 4) {
     display: none;
   }

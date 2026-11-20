@@ -5,7 +5,8 @@ import test from "node:test";
 import { bookOf, parse } from "../../city/lib/command/parse.ts";
 import { targetOf } from "../shell/ask-route.ts";
 import { SHELVES, shelfOn, takenByTerminal } from "../shell/shelves.ts";
-import { agentsHeld, mayClose, unitsFigure } from "./portfolio-view.ts";
+import { digits } from "../../city/lib/i18n/dict.ts";
+import { agentsHeld, mayClose, tinyPrice, unitsFigure } from "./portfolio-view.ts";
 import { PORTFOLIO } from "./words.ts";
 
 /* The Portfolio's older rules the new screen still stands on — what the agents hold, a coin amount for the eye, when a
@@ -46,6 +47,18 @@ test("a coin amount for the eye: large ones whole, one coin or more to the cent,
   assert.equal(unitsFigure(0.30264), "0.3026");
   assert.equal(unitsFigure(0.0000425), "0.0000425");
   assert.equal(unitsFigure(0), "0");
+});
+
+test("a tiny price folds its zeros as the chart writes it (QA 19.11): $0.000001036 → $0.0₅1036; a cent and more is the terminal's own", () => {
+  assert.equal(tinyPrice(0.000001036), "$0.0₅1036");
+  assert.equal(tinyPrice(0.00000486), "$0.0₅486");
+  assert.equal(tinyPrice(4.2e-11), "$0.0₁₀42", "however small, its figures stay");
+  assert.equal(digits(tinyPrice(0.000001036), "uk"), "$0,0₅1036");
+  assert.equal(tinyPrice(0.0002293), null, "three zeros read as they are");
+  assert.equal(tinyPrice(0.009035), null);
+  assert.equal(tinyPrice(74.77), null);
+  assert.equal(tinyPrice(0), null);
+  assert.equal(tinyPrice(Number.NaN), null);
 });
 
 test("the panel in front never closes while money is mid-way", () => {

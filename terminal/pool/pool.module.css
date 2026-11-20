@@ -186,6 +186,33 @@
   color: var(--ice);
 }
 
+/* On a pool's own column the bars take the room the book under them does not need (a tall desk had a gap
+   over the book), up to a height that still reads as one strip; the book keeps its rows' height and scrolls on a short
+   desk, its cut last row fading out as more to scroll. */
+.distGrow {
+  display: flex;
+  flex: 1 0 auto;
+  flex-direction: column;
+  max-height: 360px;
+}
+
+.distGrow .distPlot {
+  flex: 1 1 auto;
+  height: auto;
+  min-height: 112px;
+}
+
+.bookBox {
+  display: flex;
+  flex: 0 1 auto;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.bookBox[data-below] {
+  mask-image: linear-gradient(to bottom, var(--ink) calc(100% - 24px), transparent);
+}
+
 .distWait {
   flex: none;
   height: 146px;
@@ -243,6 +270,28 @@
 .bonusWords b {
   font-size: var(--type-body);
   color: var(--ice);
+}
+
+/* A card that names another pool: the figure and its words on one line, the way to that pool under the words — never
+   the words squeezed into a column beside the button. */
+.bonus[data-elsewhere] {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  row-gap: 8px;
+}
+
+.bonus[data-elsewhere] > :last-child {
+  grid-column: 2;
+  justify-self: start;
+}
+
+/* A laptop's short desk (a window 900 px tall or less): the ticket's own «Bonus» tile and the head say the
+   figure, so the card steps aside and the ladder's action stands on the first screen; a card that names another pool
+   stays. A 1920 × 1080 screen's window keeps the card. */
+@media (min-width: 768px) and (max-height: 900px) {
+  .bonus:not([data-elsewhere]) {
+    display: none;
+  }
 }
 
 /* ── the ticket's three tabs: Position · Limit · Swap ───────── */

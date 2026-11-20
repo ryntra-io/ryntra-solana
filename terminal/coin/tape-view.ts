@@ -1,5 +1,8 @@
 import type { TokenHolder, TokenPool, TokenTrade } from '../../lib/spot/token-page.ts';
 import type { EarnBinsAnswer } from '../../lib/earn-pools/bins.ts';
+import { digits } from '../../city/lib/i18n/dict.ts';
+import type { Lang } from '../../city/lib/i18n/langs.ts';
+import { placedFigure, placesFor, priceText } from '../ui/figures.ts';
 
 /**
  * The market of one coin as its desk shows it: the trades as they come, who traded most, who holds it, its
@@ -84,6 +87,34 @@ export function bigTrades(trades: readonly TokenTrade[], most = MARK_MOST, min =
     .map((trade) => ({ id: `trade:${trade.signature}:${trade.side}`, t: Date.parse(trade.at), price: trade.priceUsd!, side: trade.side, usd: trade.usd! }))
     .filter((mark) => Number.isFinite(mark.t))
     .sort((a, b) => a.t - b.t);
+}
+
+/** A trade this recent is «now»: the market is live while its newest trade is at most this old. */
+export const LIVE_TRADE_MS = 90_000;
+
+/**
+ * What the chart's chip says («Live» stood over a tape whose newest trade was five minutes old). `live` only
+ * while the newest trade read is at most `LIVE_TRADE_MS` old and the read did not fail — and, over candles, while their
+ * read is fresh too; else the newest trade's time, quietly, where there is one; else «Delayed».
+ */
+export function liveOf(input: Readonly<{ ticks: boolean; candlesFresh: boolean; newestTradeAt: string | null; tradesStale: boolean; now: number }>): Readonly<{ kind: 'live' } | { kind: 'trade'; at: string } | { kind: 'delayed' }> {
+  const at = input.newestTradeAt;
+  const t = at ? Date.parse(at) : Number.NaN;
+  const known = at !== null && Number.isFinite(t);
+  const tradesLive = known && !input.tradesStale && input.now - t <= LIVE_TRADE_MS;
+  const fed = input.ticks || input.candlesFresh;
+  if (fed && (input.ticks ? tradesLive : tradesLive || !known)) return { kind: 'live' };
+  if (fed && known) return { kind: 'trade', at: at! };
+  return { kind: 'delayed' };
+}
+
+/**
+ * A price for the narrow trades column («$0.000002…» was cut at 1440): a run of four zeros or more after
+ * the point folds into a small figure — $0.0₅2389 — as the chart's scale writes it; four significant figures.
+ */
+export function tapePrice(price: number, lang: Lang): string {
+  if (!Number.isFinite(price) || price <= 0 || price >= 0.01) return priceText(price, lang);
+  return digits(`$${placedFigure(price, placesFor(price, 4))}`, lang);
 }
 
 /** A wallet short, as a trader reads it: the first four and the last four. */

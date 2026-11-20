@@ -20,6 +20,8 @@ import {
   filtersOn,
   fitColumns,
   isRisky,
+  logoAlso,
+  logoChain,
   logoOf,
   nextSort,
   passes,
@@ -186,7 +188,8 @@ test("the day's line, a short count, the buys' share and a table that fits its w
   assert.deepEqual(line[0], { x: 0, price: 1 });
   assert.match(timePath(line, 96, 28), /^M\d/);
   assert.equal(countText(999_950, "en"), "1M");
-  assert.equal(countText(153_246, "uk"), "153 тис.");
+  assert.equal(countText(153_246, "uk"), "153K", "a count is written as the sums beside it are: K, M, B");
+  assert.equal(countText(1_234_567, "uk"), "1,2M");
   assert.equal(countText(null, "en"), "—");
   assert.equal(buyShare(stats(1)), 0.75);
   assert.equal(buyShare(stats(1, { buys: 0, sells: 0 })), null);
@@ -254,4 +257,21 @@ test("the address names the table's tab: `?tab=` (a kind, or saved) read on arri
   assert.match(screen, /<Suspense fallback=\{null\}>\s*<TabParam \/>/, "the read waits in its own boundary: the page still renders on the server");
   assert.ok(screen.includes("if (tab === 'all') url.searchParams.delete('tab')"));
   assert.ok(screen.includes("window.history.replaceState"));
+});
+
+test("a logo that does not load is tried at the engine's other routes: the IPFS picture through the public gateway, then by mint (QA 19.11)", () => {
+  const mint = "CDBdbNqmrLu1PcgjrFG52yxg71QnFhBZcUE6PSFdbonk";
+  const cid = "bafkreigsmirfebog72ttc2egkfk7udsjjlu2ue7hi73bijzupyyatsopgm";
+  const pinned = `https://sapphire-working-koi-276.mypinata.cloud/ipfs/${cid}`;
+  const viaIpfs = `/api/spot/icon?mint=${mint}&u=${encodeURIComponent(`https://ipfs.io/ipfs/${cid}`)}`;
+  assert.deepEqual(logoAlso(mint, pinned), [viaIpfs, `/api/icon/${mint}`]);
+  // The same from an address already through the proxy, and a subdomain gateway.
+  assert.deepEqual(logoAlso(mint, `/api/spot/icon?mint=${mint}&u=${encodeURIComponent(pinned)}`), [viaIpfs, `/api/icon/${mint}`]);
+  assert.deepEqual(logoAlso(mint, `https://${cid}.ipfs.w3s.link/logo.png`)[0], `/api/spot/icon?mint=${mint}&u=${encodeURIComponent(`https://ipfs.io/ipfs/${cid}/logo.png`)}`);
+  // A picture not on IPFS has the route by mint alone; the first address is never repeated.
+  assert.deepEqual(logoAlso(mint, "https://static.jup.ag/a.png"), [`/api/icon/${mint}`]);
+  assert.deepEqual(logoAlso(mint, null, `/api/icon/${mint}`), []);
+  // No address of its own: the first of the others stands first.
+  assert.deepEqual(logoChain(mint, null, null), { src: `/api/icon/${mint}`, also: [] });
+  assert.deepEqual(logoChain(mint, pinned, "/x.png"), { src: "/x.png", also: [viaIpfs, `/api/icon/${mint}`] });
 });

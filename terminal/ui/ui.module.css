@@ -1009,7 +1009,8 @@
 
 /* An action page of a section whose other tabs are desks (`head="desk"` — the Bots' forms beside the Grid):
    the page runs the working width as the desk does, so the head and its tabs stand on the desk's line on every tab; what
-   is under the head keeps the action page's container, in the middle. */
+   is under the head keeps the action page's width and stands on the same line, under the head's first letter — one axis
+   for the head and the form (QA 19.11: the head at the desk's line, the form in the middle, two axes). */
 .page[data-page='action'][data-head='desk'] {
   max-width: none;
   margin-inline: 0;
@@ -1018,7 +1019,7 @@
 .page[data-head='desk'] > :not(.pageHead) {
   width: 100%;
   max-width: var(--page);
-  margin-inline: auto;
+  margin-inline: 0;
 }
 
 /* The two columns of an action page — the same on every one of them; without a side column the main one takes the
@@ -1067,9 +1068,9 @@
       radial-gradient(closest-side at 52% 66%, color-mix(in srgb, var(--amber) 8%, transparent), transparent 80%) 0 0 / 100% 640px no-repeat;
   }
 
-  /* The light stays behind the container, not the whole working width. */
+  /* The light stays behind the container, on the head's line, not the whole working width. */
   .page[data-page='action'][data-head='desk'] {
-    background-position: center top;
+    background-position: left top;
     background-size: min(100%, var(--page)) 640px;
   }
 }

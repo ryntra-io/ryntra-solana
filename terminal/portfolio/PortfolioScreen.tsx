@@ -117,23 +117,33 @@ export function PortfolioScreen() {
   const door = useExit((st) => st.door);
   const exitLanded = useExit((st) => st.landed);
 
-  // A link that carries an address opens on it; the address on screen stays in the link, so it can be shared.
+  // A link that carries an address opens on it; the address on screen stays in the link, so it can be shared — and
+  // reloaded: the menu's «Positions» and «History» lead within the page by addresses that carry no wallet
+  // (`/portfolio#history`), and the wallet looked at is written back into them (QA 19.11, B-19).
+  const tail = useAddressTail();
   const linked = useRef(false);
+  const lastWatch = useRef(watch);
   useEffect(() => {
     const url = new URL(window.location.href);
+    const asked = addressOf(url.searchParams.get('owner') ?? '');
+    const moved = lastWatch.current !== watch;
+    lastWatch.current = watch;
     if (!linked.current) {
       linked.current = true;
-      const asked = addressOf(url.searchParams.get('owner') ?? '');
       if (asked && asked !== usePortfolioScreen.getState().watch) {
         setWatch(asked);
         return;
       }
+    } else if (!moved && asked && asked !== watch) {
+      // The address was led to another wallet while the screen stood: the link wins.
+      setWatch(asked);
+      return;
     }
     if ((url.searchParams.get('owner') ?? null) === watch) return;
     if (watch) url.searchParams.set('owner', watch);
     else url.searchParams.delete('owner');
     window.history.replaceState(window.history.state, '', url);
-  }, [watch]);
+  }, [watch, tail]);
   // The person's own address, looked at: it is simply their wallet.
   useEffect(() => {
     if (watch && watch === owner) setWatch(null);

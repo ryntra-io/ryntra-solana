@@ -167,3 +167,29 @@ test("«Tick» is a bar a trade from the trades read, in order, a millisecond ap
   assert.deepEqual(heard, ["10.00"], "only the trade after what history gave");
   stop();
 });
+
+test("«Live» only while the newest trade is recent; else its time, quietly; else «Delayed»", async () => {
+  const { LIVE_TRADE_MS, liveOf } = await import("./tape-view.ts");
+  const now = Date.parse("2026-11-19T12:00:00Z");
+  const ago = (ms) => new Date(now - ms).toISOString();
+  const base = { ticks: false, candlesFresh: true, tradesStale: false, now };
+  assert.deepEqual(liveOf({ ...base, newestTradeAt: ago(9_000) }), { kind: "live" });
+  /* JUP on 19.11: «Live» over a tape whose newest trade was 314 s old. */
+  assert.deepEqual(liveOf({ ...base, newestTradeAt: ago(314_000) }), { kind: "trade", at: ago(314_000) });
+  assert.deepEqual(liveOf({ ...base, newestTradeAt: ago(LIVE_TRADE_MS - 1) }), { kind: "live" });
+  assert.equal(liveOf({ ...base, newestTradeAt: ago(5_000), tradesStale: true }).kind, "trade", "a failed read's trades are not live");
+  assert.deepEqual(liveOf({ ...base, newestTradeAt: null }), { kind: "live" }, "no trades read yet: the candles speak");
+  assert.deepEqual(liveOf({ ...base, candlesFresh: false, newestTradeAt: ago(5_000) }), { kind: "delayed" });
+  assert.deepEqual(liveOf({ ...base, ticks: true, candlesFresh: false, newestTradeAt: null }), { kind: "delayed" }, "on «Tick» trades are the feed");
+  assert.deepEqual(liveOf({ ...base, ticks: true, candlesFresh: false, newestTradeAt: ago(5_000) }), { kind: "live" });
+});
+
+test("a tiny price fits the trades column folded, as the chart's scale writes it", async () => {
+  const { tapePrice } = await import("./tape-view.ts");
+  assert.equal(tapePrice(0.000002389, "en"), "$0.0₅2389", "BONK at 1440 was «$0.000002…»");
+  assert.equal(tapePrice(0.000002389, "uk"), "$0,0₅2389");
+  assert.equal(tapePrice(0.00006456, "en"), "$0.0₄6456");
+  assert.equal(tapePrice(0.0005, "en"), "$0.0005000", "no fold under four zeros");
+  assert.equal(tapePrice(0.2693, "en"), "$0.2693");
+  assert.equal(tapePrice(74.54, "en"), "$74.54");
+});

@@ -10,6 +10,8 @@
  * 2. **The engine's own reading** — the wallet's token accounts of both token programs (`getTokenAccountsByOwner`,
  *    `jsonParsed`) and its lamports; prices come from the engine's catalogue afterwards.
  *
+ * Beside DAS, wrapped SOL is read from the chain by its mint ({@link withWrapped}): DAS's reading did not carry it.
+ *
  * An LST is a coin whose mint is in {@link LST_MINTS}: it is the same row, drawn as staking, and it leaves the same way —
  * one swap. NFTs (a pool position's own, among them) are left out: a balance of exactly one of a zero-decimal mint.
  *
@@ -160,6 +162,24 @@ export function walletFromAccounts(byProgram: Readonly<Record<string, unknown>>,
     }
   }
   return { coins: mergeByMint(coins), lamports: rawText(lamports), solUsd: null };
+}
+
+/**
+ * The wallet's wrapped SOL, as the chain states it, in place of whatever the first reading said of it.
+ *
+ * The DAS reading of a wallet that kept ~86 000 SOL wrapped carried no wrapped SOL at all, only its lamports (QA 19.11:
+ * «SOL 95,83», the total short by ~$6,8M). So wrapped SOL is always read from the chain itself —
+ * `getTokenAccountsByOwner` by the native mint, `jsonParsed` — and every account of it is one coin: the reading's own row
+ * of it, if it had one, gives way.
+ */
+export function withWrapped(read: WalletRead, wrapped: unknown): WalletRead {
+  const chain = walletFromAccounts({ [TOKEN_PROGRAM]: wrapped }, null).coins.filter((coin) => coin.mint === NATIVE_SOL_MINT);
+  const said = read.coins.find((coin) => coin.mint === NATIVE_SOL_MINT);
+  const coins = read.coins.filter((coin) => coin.mint !== NATIVE_SOL_MINT);
+  /* The reading's price and symbol stay with the chain's amount; with none, wrapped SOL is worth what SOL is (DAS's own
+     price of SOL), so a price read that misses never leaves the biggest row unpriced. */
+  for (const coin of chain) coins.push({ ...coin, symbol: said?.symbol ?? coin.symbol, priceUsd: said?.priceUsd ?? read.solUsd ?? coin.priceUsd });
+  return { ...read, coins };
 }
 
 /** Several accounts of one mint: one coin, their amounts added; the first account named. */

@@ -98,7 +98,7 @@ test("a price in the other coin, short: four significant digits under one, two p
 
 /* Any pool's page: a DLMM Pro pool, a DLMM pool, a DAMM v2 pool; the pair's other pools; the ticket's tabs. */
 
-const { deskOfPro, deskOfCatalog, deskOfBins, pairPools, pairGroups, carriedTab, ticketTabs, proOffer, previewPier, poolHref, poolHasPage, binsVenueOf, VENUE_MARK } = await import("./desk-pool.ts");
+const { deskOfPro, deskOfCatalog, deskOfBins, pairPools, pairGroups, carriedTab, ticketTabs, proOffer, previewPier, poolHref, binsVenueOf, VENUE_MARK } = await import("./desk-pool.ts");
 const { proKnown, proOffered } = await import("../../city/lib/earn/pro.ts");
 
 const proRow = (over = {}) => ({
@@ -194,18 +194,19 @@ test("the picker's groups: DLMM Pro first, then DLMM, then DAMM v2, each the dee
   );
 });
 
-test("the ticket's tabs, Meteora's order: a Pro pool opens on its limits, a DLMM pool on its position where Earn adds to it and else on its swap; a DAMM v2 pool shows a position only with a form", () => {
+test("the ticket's tabs, Meteora's order: a Position tab only where a position opens from here; a Pro pool opens on its limits, a DLMM pool on its position where Earn adds to it and else on its swap", () => {
   assert.deepEqual(ticketTabs({ venue: "pro", ladder: true, trade: true, adds: true }), { tabs: ["position", "limit", "swap"], first: "limit" });
   assert.deepEqual(ticketTabs({ venue: "pro", ladder: false, trade: true, adds: true }), { tabs: ["position", "swap"], first: "position" });
   assert.deepEqual(ticketTabs({ venue: "pro", ladder: true, trade: true, adds: true, empty: true }), { tabs: ["position", "limit", "swap"], first: "position" }, "an empty pool opens on its first position");
-  assert.deepEqual(ticketTabs({ venue: "dlmm", ladder: true, trade: true, adds: false }), { tabs: ["position", "swap"], first: "swap" }, "limit orders rest in DLMM Pro only; a pool not added to from here opens on its swap, never on «soon»");
+  assert.deepEqual(ticketTabs({ venue: "pro", ladder: true, trade: true, adds: false }), { tabs: ["limit", "swap"], first: "limit" }, "a Pro pool no position opens in has no Position tab at all (MET/SOL said «soon»)");
+  assert.deepEqual(ticketTabs({ venue: "pro", ladder: true, trade: true, adds: false, empty: true }), { tabs: ["limit", "swap"], first: "limit" });
+  assert.deepEqual(ticketTabs({ venue: "dlmm", ladder: true, trade: true, adds: false }), { tabs: ["swap"], first: "swap" }, "limit orders rest in DLMM Pro only; a pool not added to from here is its swap, never «soon»");
   assert.deepEqual(ticketTabs({ venue: "dlmm", ladder: false, trade: true, adds: true }), { tabs: ["position", "swap"], first: "position" }, "a pool Earn adds to opens on its position");
-  assert.deepEqual(ticketTabs({ venue: "dlmm", ladder: false, trade: false, adds: false }), { tabs: ["position"], first: "position" });
+  assert.deepEqual(ticketTabs({ venue: "dlmm", ladder: false, trade: false, adds: false }), { tabs: [], first: null });
   assert.deepEqual(ticketTabs({ venue: "damm", ladder: false, trade: true, adds: false }), { tabs: ["swap"], first: "swap" });
   assert.deepEqual(ticketTabs({ venue: "damm", ladder: false, trade: false, adds: false }), { tabs: [], first: null });
   assert.equal(poolHref("P"), "/pool/P");
   assert.equal(poolHref("P", "position"), "/pool/P?tab=position");
-  assert.deepEqual([poolHasPage("pro", false), poolHasPage("dlmm", false), poolHasPage("damm-v2", false), poolHasPage("damm-v2", true)], [true, true, false, true]);
 });
 
 test("a DLMM Pro pool's position: the form where it is served and offered, the form without its signature where not yet, a line where there is no SOL", () => {
@@ -234,8 +235,8 @@ test("a pier is offered where Earn checked its coin, or where the terminal's swi
 
 /* The QA of 19.11 night: DLMM Pro's list in order, and the names a person should not meet first. */
 
-test("the list: MET/SOL first, the city's empty pool second and never first, «Active» without test, crude and look-alike names", async () => {
-  const { proListRows, proInvites, proQuiet } = await import("./pool-view.ts");
+test("the list: the card's pool first, then by trust and depth, the city's empty pools last in «Active»; no test, crude or look-alike name in either list", async () => {
+  const { proListRows, proInvites, proQuiet, proLead } = await import("./pool-view.ts");
   const at = (n) => `${String(n).padStart(2, "0")}${"1".repeat(42)}`;
   const named = (n, symbol, name, tvlUsd, verified = true) => proRow({ address: at(n), x: { ...coin(`M${n}${"1".repeat(41)}`, symbol, 6, 1), name, verified }, tvlUsd });
   const met = proRow({ tvlUsd: 590 });
@@ -247,23 +248,30 @@ test("the list: MET/SOL first, the city's empty pool second and never first, «A
   const twin = named(6, "Nеil", "Nеil The Lеmur", 2.6, null);
   const nameless = proRow({ address: at(7), x: { ...coin(`M7${"1".repeat(42)}`, null, 6, null), verified: null }, tvlUsd: null });
   const dust = named(8, "Rings", "Rings", 0, null);
-  const rows = [hold, met, bp, butt, test1, twin, nameless, dust, jito];
-  const adds = (row) => row.address === jito.address;
-  const active = proListRows(rows, { which: "deep", adds, deepUsd: 1 }).map((row) => row.x.symbol);
-  assert.deepEqual(active, ["MET", "JitoSOL", "BP", "HOLDFAST"], "the deepest verified pool first, the city's empty pool next, then by trust and depth");
-  const every = proListRows(rows, { which: "every", adds, deepUsd: 1 }).map((row) => row.x.symbol);
-  assert.equal(every[0], "MET");
-  assert.equal(every[1], "JitoSOL");
-  assert.equal(every.length, rows.length, "«All» keeps every pool");
-  assert.deepEqual(every.slice(-4).sort(), ["BUTTHOLE", "Nеil", "TEST", null].sort(), "the quiet names last");
+  // The QA of 19.11 day: TTWO/SOL is the deepest pool of verified coins, MET/SOL pays the best limit bonus — the card's.
+  const ttwo = named(12, "TTWO", "Take-Two Interactive Software - Backed", 2932);
+  const ttwoRow = { ...ttwo, bonusBps: 6 };
+  const jito2 = proRow({ address: "Duivmy1111111111111111111111111111111111111", x: coin(JITO, "JitoSOL", 9, 97), tvlUsd: 0, bonusBps: 1.6 });
+  const rows = [hold, ttwoRow, met, bp, butt, test1, twin, nameless, dust, jito, jito2];
+  const adds = (row) => row.address === jito.address || row.address === jito2.address;
+  const input = { adds, deepUsd: 1, leadUsd: 100 };
+  const active = proListRows(rows, { ...input, which: "deep" }).map((row) => row.x.symbol);
+  assert.deepEqual(active, ["MET", "TTWO", "BP", "HOLDFAST", "JitoSOL", "JitoSOL"], "the card's pool first, then verified by depth, then the rest, the city's empty pools last");
+  assert.equal(proLead(rows, input), met, "the card and the first row name one pool: the best bonus among verified pools from $100");
+  const every = proListRows(rows, { ...input, which: "every" }).map((row) => row.x.symbol);
+  assert.deepEqual(every, ["MET", "TTWO", "BP", "HOLDFAST", "JitoSOL", "JitoSOL", "Rings"], "«All» goes on with the pools that hold nothing; no test, nameless, crude or look-alike name in it");
   assert.equal(proInvites(jito, { adds, deepUsd: 1 }), true);
   assert.equal(proInvites(met, { adds, deepUsd: 1 }), false);
   assert.equal(proInvites({ ...jito, tvlUsd: 900 }, { adds, deepUsd: 1 }), false, "a city's pool with liquidity stands by its depth");
-  assert.deepEqual(proListRows([met, { ...jito, tvlUsd: 900 }], { which: "deep", adds, deepUsd: 1 }).map((row) => row.x.symbol), ["JitoSOL", "MET"]);
+  assert.deepEqual(proListRows([met, { ...jito, tvlUsd: 900 }], { ...input, which: "deep" }).map((row) => row.x.symbol), ["JitoSOL", "MET"], "a tie of bonus goes to the deeper pool");
+  assert.equal(proLead([hold, dust], input), hold, "where no verified pool stands, the deepest");
+  assert.equal(proLead([butt], input), null, "never a name kept out of sight");
   assert.deepEqual([proQuiet(met), proQuiet(butt), proQuiet(test1), proQuiet(twin), proQuiet(nameless)], [null, "crude", "test", "lookalike", "unnamed"]);
   assert.equal(proQuiet(named(9, "S0L", "Not Solana", 5)), "lookalike", "a known ticker in other letters");
   assert.equal(proQuiet(named(10, "TTWO", "Take-Two Interactive", 23)), null);
   assert.equal(proQuiet(named(11, "BASS", "Classic Bass", 5)), null, "a short crude word counts only as a word of its own");
+  assert.equal(proQuiet(named(13, "FARTCOIN", "Fartcoin", 5, null)), "crude", "the Launch showcase's crude words too (`rudeName`)");
+  assert.equal(proQuiet(named(14, "FARTCOIN", "Fartcoin", 5)), null, "a pool of verified coins keeps its place whatever its name");
 });
 
 test("a range's edges and the price between them: as many figures as the step needs, one column of places, zeros folded", async () => {

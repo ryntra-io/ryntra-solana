@@ -50,6 +50,16 @@ export { PIER_GOALS as PRO_GOALS, PIER_STYLES as PRO_STYLES };
  */
 export const EARN_PRO_ANY_POOL_OPEN = process.env.NEXT_PUBLIC_RYNTRA_EARN_PRO_ANY_POOL === 'open';
 
+/**
+ * The terminal's switch for a position in a pool of SOL against a checked stock of the stocks engine's shelf
+ * (Anthropic's ANT was the first): `NEXT_PUBLIC_RYNTRA_EARN_PRO_STOCKS=open` (exactly). The server's own switch
+ * (`RYNTRA_EARN_PRO_STOCKS`) decides what it serves and marks such a pier (`stock`); this one, whether a screen offers it.
+ */
+export const EARN_PRO_STOCKS_OPEN = process.env.NEXT_PUBLIC_RYNTRA_EARN_PRO_STOCKS === 'open';
+
+/** Whether a pier's other coin is a checked stock: its issuer's name, or null. */
+export const proStock = (pier: ProPier): string | null => pier.stock?.issuer ?? null;
+
 /** Whether a pier's other coin is one Earn checked — USDC, a staked SOL: there an agent may look after a position. */
 export function proKnown(pier: ProPier): boolean {
   const other = proOther(pier).mint;
@@ -58,10 +68,11 @@ export function proKnown(pier: ProPier): boolean {
 
 /**
  * Whether a screen offers a new position in a pier: a pier of a coin Earn checked always; any other where the terminal's
- * switch is open. Devnet's stand is offered as served. A position already held is shown wherever it is, whatever this says.
+ * switch is open; a pier of a checked stock where the stocks' switch is. Devnet's stand is offered as served.
+ * A position already held is shown wherever it is, whatever this says.
  */
-export function proOffered(pier: ProPier, network: 'devnet' | 'mainnet', anyOpen: boolean = EARN_PRO_ANY_POOL_OPEN): boolean {
-  return network === 'devnet' || anyOpen || proKnown(pier);
+export function proOffered(pier: ProPier, network: 'devnet' | 'mainnet', anyOpen: boolean = EARN_PRO_ANY_POOL_OPEN, stocksOpen: boolean = EARN_PRO_STOCKS_OPEN): boolean {
+  return network === 'devnet' || anyOpen || proKnown(pier) || (stocksOpen && proStock(pier) !== null);
 }
 
 /** The pier's other coin — the one that is not SOL. */

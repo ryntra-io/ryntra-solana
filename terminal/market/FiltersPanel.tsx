@@ -134,7 +134,7 @@ export function FiltersPanel({
           <span className={d.groupWord}>{w.volumeHolders}</span>
           <div className={d.pair}>
             <SumField prefix={w.volumeFrom} value={draft.volume} onChange={(volume) => set({ volume })} placeholder={w.anyF} label={w.volumeFrom} />
-            <SumField prefix={w.holdersFrom} value={draft.holders} onChange={(holders) => set({ holders })} placeholder="0" label={w.holdersFrom} />
+            <SumField prefix={w.holdersFrom} value={draft.holders} onChange={(holders) => set({ holders })} placeholder={w.anyF} label={w.holdersFrom} />
           </div>
         </div>
         <div className={d.group}>

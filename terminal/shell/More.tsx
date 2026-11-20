@@ -13,9 +13,15 @@ const DOORS: readonly Readonly<{ href: string; icon: IconName; word: 'docs' | 'h
   { href: '/about', icon: 'globe', word: 'about' },
 ];
 
+/** The legal documents: quieter than the doors, one row under them. */
+const LEGAL: readonly Readonly<{ href: string; word: 'terms' | 'privacy' }>[] = [
+  { href: '/legal/terms', word: 'terms' },
+  { href: '/legal/privacy', word: 'privacy' },
+];
+
 /**
  * «More»: the language — English or Ukrainian, the same choice the city keeps on this device, every word repainted in
- * place — and the site's documentation, help and «About».
+ * place — the site's documentation, help and «About», and under them the Terms and the Privacy Policy.
  */
 export function More() {
   const w = useWords(SHELL);
@@ -33,6 +39,13 @@ export function More() {
           <Icon name="arrow" size="s" />
         </a>
       ))}
+      <nav className={s.legalRow} aria-label={w.legal}>
+        {LEGAL.map((doc) => (
+          <a key={doc.href} href={doc.href}>
+            {w[doc.word]}
+          </a>
+        ))}
+      </nav>
     </>
   );
 }

@@ -165,7 +165,9 @@ function rentOnly(account: ChainAccount): number {
 
 /**
  * The wallet's accounts as a clean sees them. An empty account — any coin — gives its rent back and is always picked:
- * closing it touches no coin. Wrapped SOL is unwrapped by closing; only its rent counts as got back. A coin worth up to
+ * closing it touches no coin. Wrapped SOL is unwrapped by closing; only its rent counts as got back. Wrapped SOL with a
+ * balance is listed, never picked by default (a wallet keeping ~86 000 SOL wrapped had it in the clean, said
+ * as «≈ 0.43 SOL»): unwrapping turns it into the person's SOL, which they choose, and the screen says so. A coin worth up to
  * `DUST_MAX_USD` with a price is small. A coin with no price — litter — is listed and never picked by default: «no
  * price» may only mean the market was not asked. Never litter, whatever the market says: a known coin (SOL, USDC, USDT)
  * and anything shaped like an NFT (no decimals) — a pool position, a collectible. Anything worth more stays out. A
@@ -191,7 +193,7 @@ export function cleanItems(owner: string, accounts: readonly ChainAccount[], fac
       withheldRaw: account.withheldRaw,
     };
     if (account.native || account.mint === WSOL_MINT) {
-      items.push({ ...base, kind: "wrapped", symbol: "SOL", valueUsd: null, lamports: rentOnly(account), risk: [], picked: true });
+      items.push({ ...base, kind: "wrapped", symbol: "wSOL", valueUsd: null, lamports: rentOnly(account), risk: [], picked: raw === 0n });
       continue;
     }
     if (raw === 0n) {
@@ -211,7 +213,7 @@ export function cleanItems(owner: string, accounts: readonly ChainAccount[], fac
   return items.sort((a, b) => order[a.kind] - order[b.kind] || (b.valueUsd ?? 0) - (a.valueUsd ?? 0) || a.symbol.localeCompare(b.symbol));
 }
 
-/** What a clean of these items gives back: the rent of every account it closes, and wrapped SOL itself. */
+/** What a clean of these items gives back: the rent of every account it closes — a wrapped SOL account's rent only. */
 export function rentBackLamports(items: readonly CleanItem[]): number {
   return items.reduce((sum, item) => sum + item.lamports, 0);
 }
@@ -276,15 +278,16 @@ export function closeSteps(item: CleanItem): Readonly<{ harvest: boolean; burnRa
 export type BackRead = Readonly<{ lamports: number; accounts: number }>;
 
 /**
- * «You can get ≈ … SOL back» without a market read: the rent of every empty account the owner alone may close, and
- * of wrapped SOL's account (its balance is the person's own, not got back). A coin still held is not counted.
+ * «You can get ≈ … SOL back» without a market read: the rent of every empty account the owner alone may close — an
+ * empty wrapped SOL account among them. A coin still held is not counted, nor wrapped SOL with a balance: a clean does
+ * not take it unless the person picks it ({@link cleanItems}).
  */
 export function backOf(owner: string, accounts: readonly ChainAccount[]): BackRead {
   let lamports = 0;
   let count = 0;
   for (const account of accounts) {
     if (stuckOf(account, owner)) continue;
-    if (account.native || account.mint === WSOL_MINT || rawOf(account.amountRaw) === 0n) {
+    if (rawOf(account.amountRaw) === 0n) {
       lamports += rentOnly(account);
       count += 1;
     }

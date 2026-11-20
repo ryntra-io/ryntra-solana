@@ -64,7 +64,9 @@ export const BOTS = words(
     signing: 'Check your wallet',
     realSol: 'Real SOL',
     testSol: 'Test SOL',
-    costLine: (network: string, rent: string) => `Ryntra fee 0 · network ≈ ${network} SOL · ${rent} SOL deposit comes back`,
+    feeZero: 'Ryntra fee 0',
+    costMore: (network: string, rent: string) => `Network ≈ ${network} SOL · ${rent} SOL deposit comes back`,
+    costHow: 'What it costs',
     ladderHow:
       'Each price is a limit order of your own in the coin’s Meteora pool, placed with one signature. What fills lands in your wallet; the rest waits as orders only your signature takes back.',
     ladderSafe: 'Your keys stay with you. Take the ladder back anytime — the money and the deposit come back to your wallet.',
@@ -205,7 +207,9 @@ export const BOTS = words(
     signing: 'Підтвердь у гаманці',
     realSol: 'Справжні SOL',
     testSol: 'Тестові SOL',
-    costLine: (network: string, rent: string) => `Комісія Ryntra 0 · мережа ≈ ${network} SOL · застава ${rent} SOL повернеться`,
+    feeZero: 'Комісія Ryntra 0',
+    costMore: (network: string, rent: string) => `Мережа ≈ ${network} SOL · застава ${rent} SOL повернеться`,
+    costHow: 'Скільки коштує',
     ladderHow:
       'Кожна ціна — твій лімітний ордер у пулі монети на Meteora, усі одним підписом. Що спрацювало — одразу в гаманці; решта чекає ордерами, які забирає лише твій підпис.',
     ladderSafe: 'Ключі лишаються в тебе. Забери драбину будь-коли — гроші й застава повернуться в гаманець.',

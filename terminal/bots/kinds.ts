@@ -24,14 +24,15 @@ export const BOT_IDS = ['recurring', 'grid', 'ladder', 'signals', 'autopilot'] a
 export type BotId = (typeof BOT_IDS)[number];
 
 /**
- * Each bot's page in its category: a form — one container in the middle (`BotsScreen`, the page «action»);
- * a terminal with a chart — the whole working width (`GridScreen`, the page «desk»). `docs/terminal/DESIGN.md`,
- * «Сторінка», holds the rule; `terminal/styles/page.test.mjs` keeps it.
+ * Each bot's page in its category. Every bot is a terminal with a chart — the whole working width, the
+ * page «desk»: the Grid on its own desk
+ * (`GridScreen`), the others on the section's (`BotsScreen`). `docs/terminal/DESIGN.md`, «Сторінка», holds the rule;
+ * `terminal/styles/page.test.mjs` keeps it.
  */
-export const BOT_PAGE = { recurring: 'form', grid: 'chart', ladder: 'form', signals: 'form', autopilot: 'form' } as const satisfies Record<BotId, 'form' | 'chart'>;
+export const BOT_PAGE = { recurring: 'chart', grid: 'chart', ladder: 'chart', signals: 'chart', autopilot: 'chart' } as const satisfies Record<BotId, 'form' | 'chart'>;
 
-/** A bot whose page is a form. */
-export type FormBotId = { [K in BotId]: (typeof BOT_PAGE)[K] extends 'form' ? K : never }[BotId];
+/** A bot drawn by the section's own desk (`BotsScreen.tsx`): every one but the Grid, which has a desk of its own. */
+export type DeskBotId = Exclude<BotId, 'grid'>;
 
 /** The bots' addresses: `/bots/<bot>`, each a page of its own on the Agents shelf. */
 export const BOTS_PATH = '/bots';

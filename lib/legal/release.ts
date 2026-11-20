@@ -12,7 +12,7 @@ export type LegalSignoff = {
 
 export const LEGAL_PACKAGE = {
   ...LEGAL_RELEASE_FACTS,
-  contentDigest: "sha256:7406041118274517c4826b1506889ee09abc24350862336154684a8aab149c2c",
+  contentDigest: "sha256:0b53bfd7d94532f43f0fbfaff00e58ba485f41fc1a0e03668818077b9911e0bd",
   founderSignoff: {
     name: null,
     role: null,

@@ -64,10 +64,11 @@ export const POOL = words(
     looking: 'Reading the pool…',
     // the ticket's head
     bonusTitle: 'Limit orders that pay',
-    bonusLine: (pct: string) => `+${pct} of the fee on every fill`,
     bonusWhy:
       'A limit order rests on one exact price inside the pool. When a swap fills it, the order gets the coin it asked for at that price — no slippage — and half of the pool’s fee on what it filled; Ryntra keeps a fifth of that half. The rest of the figures are in the order’s details before you sign.',
-    elsewhere: (sym: string) => `Limit orders of ${sym} rest in its deepest DLMM Pro pool`,
+    /** The pool a limit order of the coin rests in, where it is not this page's own — by its pair («MET · USDC », where
+     * it is another pair) and its fee. */
+    elsewhereIn: (sym: string, pair: string, fee: string) => `${sym} limit orders go into the ${pair}pool with a ${fee} fee`,
     elsewhereGo: 'Open that pool',
     trade: 'Trade',
     // Any pool's page: the ticket's three tabs, the pair's other pools, a DLMM pool's head
@@ -167,10 +168,9 @@ export const POOL = words(
     toList: 'Усі пули DLMM Pro',
     looking: 'Читаємо пул…',
     bonusTitle: 'Лімітки, що платять',
-    bonusLine: (pct: string) => `+${pct} комісії з кожного виконання`,
     bonusWhy:
       'Лімітка стоїть на одній точній ціні всередині пулу. Коли обмін її виконує, вона отримує монету за цією ціною — без прослизання — і половину комісії пулу з виконаного; Ryntra бере п’яту частину цієї половини. Решта цифр — у деталях ордера до підпису.',
-    elsewhere: (sym: string) => `Лімітки ${sym} стоять у найглибшому пулі DLMM Pro`,
+    elsewhereIn: (sym: string, pair: string, fee: string) => `Лімітки ${sym} ставляться в пул ${pair}з комісією ${fee}`,
     elsewhereGo: 'Відкрити той пул',
     trade: 'Торгувати',
     ticket: 'Квиток',

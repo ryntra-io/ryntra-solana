@@ -341,10 +341,15 @@ test("candles that never come do not hold the hub, and no week is ever made up i
   const store = createBotsStore({ storage: () => null, fetch: hang, now: () => T0 });
   const started = Date.now();
   await store.getState().loadPath({ mint: SOL.mint, symbol: "SOL", price: 100 });
-  assert.equal(store.getState().paths[SOL.mint].status, "ready");
-  assert.deepEqual(store.getState().paths[SOL.mint].bars, [], "a coin without candles has no week, said as such");
+  /* Candles that never came say nothing of the coin — the week is missed and read again, never «no week». */
+  assert.equal(store.getState().paths[SOL.mint].status, "missed");
+  assert.deepEqual(store.getState().paths[SOL.mint].bars, [], "no week is made up");
   assert.equal(store.getState().paths[SOL.mint].weather, null);
   assert.ok(Date.now() - started < 15_000);
+  /* A refusal for rate (the engine's 429) is the same: missed, not empty. */
+  const busy = createBotsStore({ storage: () => null, fetch: async () => ({ status: 429, json: async () => ({ error: { code: "CANDLES_RATE_LIMITED" } }), headers: { get: () => null } }), now: () => T0 });
+  await busy.getState().loadPath({ mint: SOL.mint, symbol: "SOL", price: 100 });
+  assert.equal(busy.getState().paths[SOL.mint].status, "missed");
   const missing = createBotsStore({ storage: () => null, fetch: async () => ({ status: 404, json: async () => ({ error: { code: "CANDLES_NO_POOL" } }) }), now: () => T0 });
   await missing.getState().loadPath({ mint: SOL.mint, symbol: "SOL", price: 100 });
   assert.deepEqual(missing.getState().paths[SOL.mint].bars, []);

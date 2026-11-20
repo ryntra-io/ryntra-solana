@@ -2,6 +2,7 @@ import { EarnProReviewRequestSchema, type EarnProReviewResponse } from "@/lib/ap
 import { apiFailure, apiJson } from "@/lib/api/v1/http";
 import { parseEarnProReview, reviewEarnPro } from "@/lib/earn-pro/actions.server";
 import { earnProFailure, openEarnProDoor } from "@/lib/earn-pro/http.server";
+import { readStockSeats } from "@/lib/earn-pro/stocks.server";
 import { rateLimitHeaders } from "@/lib/http-control";
 
 export const runtime = "nodejs";
@@ -23,7 +24,7 @@ export async function POST(request: Request) {
   const input = parsed.success ? parseEarnProReview(parsed.data) : null;
   if (!input) return apiFailure("VALIDATION_ERROR", "The body is not a Review's request.", { headers });
   if (door.mismatch(input.owner)) return apiFailure("WALLET_MISMATCH", "The session's wallet is not this action's wallet.", { headers });
-  const reviewed = await reviewEarnPro(input);
+  const reviewed = await reviewEarnPro(input, { stocks: readStockSeats });
   if (!reviewed.ok) return earnProFailure(reviewed, door.rate);
   const { expiresAt, ...rest } = reviewed.value;
   /* The engine's summary is the contract's own shape, read-only there. */

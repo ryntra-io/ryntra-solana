@@ -199,13 +199,17 @@ function SayRow({ m }: { m: LaunchModel }) {
 
 /**
  * The ready formats as cards, the same on a desk and a phone: «Quick start» is the curve and trades at once;
- * «Straight to a pool» — a Meteora DLMM Pro pool of its own — only where the pool's door is open (D-M4). A tap sets the
- * form below; nothing is built or signed.
+ * «Own pool» — a Meteora DLMM Pro pool of its own, trading from the time picked, never «at once» — only where
+ * the pool's door is open (D-M4). A tap sets the form below; nothing is built or signed.
  */
 function Formats({ m }: { m: LaunchModel }) {
   const { w } = m;
-  const still = m.working || m.settled || m.halfWay;
-  if (!m.poolOpen) return null;
+  // Whether the pool's door opens is known once the engine's presets are read: where the deployment's switch is open the
+  // cards hold their place meanwhile, quiet, so the form under them never jumps down (0.14 of a phone's screen).
+  const switchOpen = usePool((st) => st.switchOpen);
+  const reading = !m.poolOpen && m.status === 'reading' && switchOpen;
+  const still = m.working || m.settled || m.halfWay || reading;
+  if (!m.poolOpen && !reading) return null;
   const cards: { id: 'curve' | 'pool'; glyph: 'bolt' | 'pool'; name: string; why: string; tag: string | null }[] = [
     { id: 'curve', glyph: 'bolt', name: w.fmtQuick, why: w.fmtQuickWhy, tag: null },
     { id: 'pool', glyph: 'pool', name: w.fmtPool, why: w.fmtPoolWhy, tag: w.fmtPoolTag },

@@ -54,10 +54,15 @@ export function MarketTrades({ tape, sym }: { tape: Tape; sym: string }) {
   const head = narrow ? [d.colTime, d.colSide, d.colPrice, d.colValue, d.colWallet] : [d.colTime, d.colSide, d.colPrice, `${d.colAmount}, ${sym}`, d.colValue, d.colCap, d.colWallet];
   return (
     <Grid cols={narrow ? TRADE_COLS_PHONE : TRADE_COLS} label={d.marketTrades} head={head} narrow={narrow}>
-      {tape.trades.slice(0, narrow ? 40 : 100).map((trade) => {
+      {tape.trades.slice(0, narrow ? 40 : 100).map((trade, at) => {
         const ago = agoOf(trade.at, now);
+        const fresh = tape.fresh.has(trade.signature);
+        // On a phone the list stands in the page itself: a new trade rewrites the rows where they stand, so nothing
+        // under the finger jumps down a row (QA 19.11: SOL's page moved 0.078 by its trades). On a desk it has its own box.
+        // A fresh trade's row is keyed by it too, so its light starts over on the row it lands in, and only there.
+        const key = narrow ? (fresh ? `${at}:${trade.signature}:${trade.side}` : String(at)) : `${trade.signature}:${trade.side}`;
         return (
-          <div key={`${trade.signature}:${trade.side}`} role="row" className={m.row} data-side={trade.side} data-fresh={tape.fresh.has(trade.signature) || undefined}>
+          <div key={key} role="row" className={m.row} data-side={trade.side} data-fresh={fresh || undefined}>
             <span role="cell" className={m.dim}>
               <a href={solscan('tx', trade.signature)} target="_blank" rel="noopener noreferrer nofollow" className={m.link}>
                 {ago ? digits(agoText(ago, d), lang) : '—'}

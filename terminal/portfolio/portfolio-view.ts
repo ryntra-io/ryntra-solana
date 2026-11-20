@@ -1,4 +1,5 @@
 import type { MineRow } from '../agents/rows.ts';
+import { foldZeros } from '../ui/figures.ts';
 
 /**
  * The Portfolio screen's older rules, without React, that the new screen still stands on: a coin amount for the eye,
@@ -18,6 +19,18 @@ export function unitsFigure(units: number): string {
   if (units >= 1) return units.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const places = Math.min(12, -Math.floor(Math.log10(units)) + 3);
   return units.toFixed(places).replace(/0+$/, '').replace(/\.$/, '');
+}
+
+/**
+ * A tiny coin price for the eye, the English way (the screen writes it in its language): a coin worth under a hundredth
+ * of a cent has its run of zeros folded, as the chart and the pool's desk write it — $0.000001036 → «$0.0₅1036» (QA
+ * 19.11). Null — a price the terminal's own `priceText` writes as it is.
+ */
+export function tinyPrice(price: number): string | null {
+  if (!Number.isFinite(price) || price <= 0 || price >= 0.0001) return null;
+  // Four significant figures, however small, the zeros at their end dropped.
+  const places = Math.min(40, -Math.floor(Math.log10(price)) + 3);
+  return `$${foldZeros(price.toFixed(places).replace(/0+$/, ''))}`;
 }
 
 /* ── what the agents hold ─────────────────────────────────────────────── */

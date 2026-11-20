@@ -62,6 +62,7 @@ export const DESK = words(
     agoM: (n: string) => `${n}m`,
     agoH: (n: string) => `${n}h`,
     agoD: (n: string) => `${n}d`,
+    lastTrade: (ago: string) => `Trade ${ago} ago`,
     // the desk
     fold: 'Fold',
     unfold: 'Unfold',
@@ -105,6 +106,8 @@ export const DESK = words(
     // the phone
     buyCoin: (coin: string) => `Buy ${coin}`,
     sellCoin: (coin: string) => `Sell ${coin}`,
+    buyNow: 'Buy',
+    sellNow: 'Sell',
     close: 'Close',
   },
   {
@@ -164,6 +167,7 @@ export const DESK = words(
     agoM: (n: string) => `${n} хв`,
     agoH: (n: string) => `${n} год`,
     agoD: (n: string) => `${n} д`,
+    lastTrade: (ago: string) => `Угода ${ago} тому`,
     fold: 'Згорнути',
     unfold: 'Розгорнути',
     resizeTape: 'Ширина колонки угод',
@@ -203,6 +207,8 @@ export const DESK = words(
     flowWhy: 'Купівлі й продажі за проміжок, як їх рахує Jupiter на всіх пулах монети.',
     buyCoin: (coin: string) => `Купити ${coin}`,
     sellCoin: (coin: string) => `Продати ${coin}`,
+    buyNow: 'Купити',
+    sellNow: 'Продати',
     close: 'Закрити',
   },
 );

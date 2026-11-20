@@ -57,9 +57,12 @@ export function useProPools(): Readonly<{ read: Read<readonly ProPoolRow[]>; aga
   return { read, again };
 }
 
+/** Whether a DLMM Pro pool at the address was read already on this page — in the list or by itself. */
+export const proKnownAt = (address: string): boolean => oneKept.has(address) || (listKept?.some((row) => row.address === address) ?? false);
+
 /**
  * One DLMM Pro pool by its address: `none` — the engine says there is no such pool. `on` false — the page knows the
- * address as another of Meteora's pools: nothing is asked.
+ * address as another of Meteora's pools, or does not know yet: nothing is asked.
  */
 export function useProPool(address: string, on: boolean = true): Read<ProPoolRow> {
   const [state, setState] = useState<Readonly<{ address: string; read: Read<ProPoolRow> }>>(() => {

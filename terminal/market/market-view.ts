@@ -1,5 +1,5 @@
 import type { Tower, TowerFigure } from '../../city/lib/market/types.ts';
-import { SOL } from '../../city/lib/trade/tiles.ts';
+import { SOL, USDC, USDT_MINT } from '../../city/lib/trade/tiles.ts';
 
 /**
  * The Market's list, from the market read every screen stands on (`/api/city`): which coins it names, which stand under
@@ -74,9 +74,15 @@ export function matches(tower: Pick<Tower, 'id' | 'symbol' | 'name'>, query: str
   return tower.symbol.toLowerCase().includes(q) || coinName(tower).toLowerCase().includes(q) || tower.id === query.trim();
 }
 
-/** The name under a ticker: the engine's, and for SOL the network's own name, as the city writes it. */
+/**
+ * The names the money goes by, whatever a catalogue writes for them: SOL is the network's own name, the two dollars their
+ * issuers' (QA 19.11: Tether's dollar stood as «USDT» under «USDT»).
+ */
+const KNOWN_NAMES: Readonly<Record<string, string>> = { [SOL.mint]: SOL.name ?? 'Solana', [USDC.mint]: USDC.name ?? 'USD Coin', [USDT_MINT]: 'Tether USD' };
+
+/** The name under a ticker: the engine's, and for SOL and the two dollars the names they go by, as the city writes them. */
 export function coinName(tower: Pick<Tower, 'id' | 'name'>): string {
-  return tower.id === SOL.mint ? (SOL.name ?? tower.name) : tower.name;
+  return KNOWN_NAMES[tower.id] ?? tower.name;
 }
 
 /** The sort after a tap on a column's head: the same column turns round; another starts from its natural end. */

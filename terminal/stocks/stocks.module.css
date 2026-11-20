@@ -96,3 +96,8 @@
   flex-direction: column;
   gap: 16px;
 }
+
+/* The stock's line before a position's signature: the ticket's own «line + i», marked for the eyes, no box of its own. */
+.line {
+  display: contents;
+}

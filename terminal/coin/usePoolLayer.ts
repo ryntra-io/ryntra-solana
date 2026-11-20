@@ -9,6 +9,7 @@ import { useBins } from '../earn/range/useBins.ts';
 import { priceText } from '../ui/figures.ts';
 import { setLayer } from './chart-layer.ts';
 import { depthLines, hasEdges, poolOfCoin, positionLines } from './pool-layer.ts';
+import { COIN } from './words.ts';
 
 /**
  * The pool over a coin's chart, behind one switch: the liquidity of the coin's deepest DLMM pool as strips
@@ -106,9 +107,12 @@ export function usePoolLayer(mint: string, coinUsd: number | null, lang: Lang, p
   const answer = bins.status === 'ready' ? bins.value : null;
   const side = pin?.side ?? found?.side ?? null;
   useEffect(() => {
-    const lines = on && answer && side && priced ? depthLines(answer, side, usdNow.current) : [];
+    // Every strip carries the layer's name; the chart says it once, by the first strip in sight (`levelsOf` in
+    // `CoinChart.tsx`): the violet strips by the scale say what they are.
+    const tag = COIN[lang].liquidityTag;
+    const lines = (on && answer && side && priced ? depthLines(answer, side, usdNow.current) : []).map((line) => ({ ...line, tag }));
     setLayer(mint, 'liquidity', lines.length ? { lines, badge: null } : null);
-  }, [on, answer, side, priced, mint]);
+  }, [on, answer, side, priced, mint, lang]);
   useEffect(() => {
     const tag = (usd: number) => priceText(usd, lang).replace(/^\$/, '');
     const lines = on && views ? positionLines(views, mint, tag) : [];

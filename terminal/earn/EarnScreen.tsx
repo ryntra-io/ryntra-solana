@@ -16,7 +16,7 @@ import { useLang } from '@/city/lib/i18n/lang';
 import { useWallet } from '@/city/lib/trade/wallet';
 import type { EarnLendRate } from '@/lib/earn-pools/model';
 import type { ProPoolRow } from '@/lib/pro-pools/model';
-import { pctOfBps, proListRows, proVerified } from '@/terminal/pool/pool-view';
+import { pctOfBps, proLead, proListRows } from '@/terminal/pool/pool-view';
 import { useProPools } from '@/terminal/pool/usePro';
 import { POOL } from '@/terminal/pool/words';
 import { Action, Cell, Chip, Columns, Figure, Info, Kick, Page, PageHead, Panel, Quiet, Segment, Table, TableHead, TableRow, Tabs, Tile, Title, cx, useColumnSet, usdText } from '@/terminal/ui';
@@ -49,6 +49,8 @@ const ROWS_SHOWN = 30;
 const CATALOG_AGAIN_MS = 60_000;
 /** A DLMM Pro pool counts as «with liquidity» from a dollar of it up: the program holds many pools made and left empty. */
 const DEEP_USD = 1;
+/** The DLMM Pro card above the tabs names a pool a person can use today: verified coins and this much liquidity at least. */
+const PRO_CARD_USD = 100;
 
 /** The tabs of «Earn»: the same page, the same places, each tab with its own ticket. */
 type View = 'pools' | 'pro' | 'staking' | 'lending' | 'mine';
@@ -222,27 +224,23 @@ export function EarnDesk() {
     [figures.markets, figures.lent],
   );
 
-  // DLMM Pro: every pool of the program, deepest first; by default those with liquidity.
+  // DLMM Pro: every pool of the program; by default those with liquidity. The list leads with the pool the card above
+  // the tabs names — the best limit bonus among the pools of verified coins with real liquidity (MET/SOL +0.6 %, QA
+  // 19.11) —, then the other verified pools with liquidity, then the rest with liquidity; the city's own pools that hold
+  // nothing yet close «Active», each a quiet «Be the first». No name a person should not meet stands in it:
+  // no name, a test, a crude word, a look-alike ticker (`proListRows`).
   const proRead = useProPools();
   const proAll = proRead.read.status === 'ready' ? proRead.read.value : null;
   const proAdds = useCallback((row: ProPoolRow) => figures.pools.some((entry) => entry.kind === 'pro' && entry.address === row.address && entry.takes), [figures.pools]);
-  // The deepest pool of verified coins first; the city's own pools that hold nothing yet next — in sight, never first,
-  // their row inviting the first position; then the pools of verified coins, deepest first, and only then
-  // the rest — a launch pool of a coin nobody verified never stands where a person looks first. «Active» leaves out the empty pools nobody can add to from here, and
-  // the names a person should not meet first: no name, a test, a crude word, a look-alike ticker (`proListRows`).
-  const proRows = useMemo(() => (proAll ? proListRows(proAll, { which, adds: proAdds, deepUsd: DEEP_USD }) : []), [proAll, which, proAdds]);
-  const proActiveCount = useMemo(() => (proAll ? proListRows(proAll, { which: 'deep', adds: proAdds, deepUsd: DEEP_USD }).length : 0), [proAll, proAdds]);
+  const proRows = useMemo(() => (proAll ? proListRows(proAll, { which, adds: proAdds, deepUsd: DEEP_USD, leadUsd: PRO_CARD_USD }) : []), [proAll, which, proAdds]);
+  const proActiveCount = useMemo(() => (proAll ? proListRows(proAll, { which: 'deep', adds: proAdds, deepUsd: DEEP_USD, leadUsd: PRO_CARD_USD }).length : 0), [proAll, proAdds]);
   const proTotal = useMemo(() => (proAll ? proRows.reduce((sum, row) => sum + (row.tvlUsd ?? 0), 0) : null), [proAll, proRows]);
-  // Before a pick the tab opens on the deepest pool of a verified coin that holds liquidity — its own ticket, the limit
-  // order with its bonus; the city's own pools stand first in the list with their «Add».
+  // Before a pick the tab opens on the list's first pool with liquidity — the one the card names, its ticket the limit
+  // order with its bonus; a pick stands while the pool is listed.
   const proDeep = (row: ProPoolRow) => (row.tvlUsd ?? 0) >= DEEP_USD;
-  const proSel: ProPoolRow | null =
-    proRows.find((row) => row.address === proAt) ??
-    proRows.find((row) => proDeep(row) && proVerified(row) && !proAdds(row)) ??
-    proRows.find(proDeep) ??
-    proRows[0] ??
-    null;
-  const proTop = EARN_PRO_OPEN && proAll ? (proAll.find((row) => proDeep(row) && proVerified(row)) ?? proAll.find(proDeep) ?? null) : null;
+  const proSel: ProPoolRow | null = proRows.find((row) => row.address === proAt) ?? proRows.find(proDeep) ?? proRows[0] ?? null;
+  // The card above the tabs names the same pool the list leads with (`proLead`): the card and the first row never differ.
+  const proTop = useMemo(() => (EARN_PRO_OPEN && proAll ? proLead(proAll, { leadUsd: PRO_CARD_USD, deepUsd: DEEP_USD }) : null), [proAll]);
 
   // What each tab offers before the person picks: the pools — the form the store holds, else the first pool that takes a
   // deposit, else the first listed; DLMM Pro — the city's add where the pool takes one; staking — the best rate; lending
@@ -499,12 +497,15 @@ export function EarnDesk() {
   const visible = all ? shown : shown.slice(0, ROWS_SHOWN);
   const more = shown.length - ROWS_SHOWN;
   const hasPro = rows.some((row) => row.type === 'pro');
+  // A phone's five tabs stand whole on its width (they were cut on both sides): short names, no counts; the
+  // lists under them say how many.
+  const count = (n: number, known: boolean) => (known && !narrow ? digits(String(n), lang) : undefined);
   const tabs = [
-    { id: 'pools' as const, label: w.tabPools, count: rows.length ? digits(String(shown.length), lang) : undefined },
-    { id: 'pro' as const, label: w.tabPro, count: proAll ? digits(String(proActiveCount), lang) : undefined },
-    { id: 'staking' as const, label: w.tabStaking, count: stakes.length ? digits(String(stakes.length), lang) : undefined },
-    { id: 'lending' as const, label: w.tabLending, count: lendRows.length ? digits(String(lendRows.length), lang) : undefined },
-    { id: 'mine' as const, label: narrow ? w.mine : w.positions, count: figures.positions.length ? digits(String(figures.positions.length), lang) : undefined },
+    { id: 'pools' as const, label: w.tabPools, count: count(shown.length, rows.length > 0) },
+    { id: 'pro' as const, label: narrow ? w.tabProShort : w.tabPro, count: count(proActiveCount, proAll !== null) },
+    { id: 'staking' as const, label: w.tabStaking, count: count(stakes.length, stakes.length > 0) },
+    { id: 'lending' as const, label: w.tabLending, count: count(lendRows.length, lendRows.length > 0) },
+    { id: 'mine' as const, label: narrow ? w.mine : w.positions, count: count(figures.positions.length, figures.positions.length > 0) },
   ];
 
   const bar: ReactNode =
@@ -669,7 +670,7 @@ export function EarnDesk() {
     <>
       <PageHead
         title={w.title}
-        tabs={<Tabs<View> bare label={w.sections} value={view} onChange={go} items={tabs} />}
+        tabs={<Tabs<View> bare label={w.sections} value={view} onChange={go} items={tabs} className={e.headTabs} />}
         mark={
           figures.positions.length ? (
             <div className={e.totals}>

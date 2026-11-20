@@ -22,9 +22,9 @@ const REPO = fileURLToPath(new URL("../..", import.meta.url));
 const read = (path) => readFileSync(join(REPO, path), "utf8");
 
 /* A screen's category decides its page:
-   - a form — one coin, one action, no chart (Swap, Bridge, a launch, recurring buys, a ladder) — the page «action»;
+   - a form — one coin, one action, no chart (Swap, Bridge, a launch) — the page «action»;
    - a cabinet — the person's own and a section's catalogue (Agents, Portfolio, Rewards) — the page «action»;
-   - a terminal with a chart — the price chart is the screen's main part (the Spot, the Grid) — the page «desk»;
+   - a terminal with a chart — the price chart is the screen's main part (the Spot, every bot) — the page «desk»;
    - a list — a table of the market — the page «desk». */
 const KIND_OF = { form: "action", cabinet: "action", chart: "desk", list: "desk" };
 
@@ -35,7 +35,7 @@ const SCREENS = {
   "terminal/launch/LaunchScreen.tsx": "form",
   "terminal/earn/EarnScreen.tsx": "list",
   "terminal/agents/AgentsScreen.tsx": "cabinet",
-  "terminal/bots/BotsScreen.tsx": "form",
+  "terminal/bots/BotsScreen.tsx": "chart",
   "terminal/bots/GridScreen.tsx": "chart",
   "terminal/portfolio/PortfolioScreen.tsx": "cabinet",
   "terminal/money/MoneyScreen.tsx": "form",
@@ -92,8 +92,9 @@ test("every section's screen mounts the page of its kind; an action page with it
 });
 
 /* A section's head stands in one place on every tab. A section is a folder of SCREENS; where its tabs mix a desk
-   and an action page, every action page of it says `head="desk"` — its head on the desk's line, only its content in
-   the middle — and no other action page does. */
+   and an action page, every action page of it says `head="desk"` — its head on the desk's line — and no other action
+   page does. What is under such a
+   head keeps the action page's width and stands on the head's own line, never in the middle of the working area. */
 test("a section whose tabs mix a desk and action pages holds its head on the desk's line on every tab", () => {
   const sections = new Map();
   for (const [path, category] of Object.entries(SCREENS)) {
@@ -114,7 +115,8 @@ test("a section whose tabs mix a desk and action pages holds its head on the des
   assert.deepEqual(wrong, []);
   const kit = read("terminal/ui/ui.module.css").replace(/\/\*[\s\S]*?\*\//g, "");
   assert.match(kit, /\.page\[data-page='action'\]\[data-head='desk'\] \{\s*max-width: none;\s*margin-inline: 0;\s*\}/, "the page runs the working width as a desk");
-  assert.match(kit, /\.page\[data-head='desk'\] > :not\(\.pageHead\) \{\s*width: 100%;\s*max-width: var\(--page\);\s*margin-inline: auto;\s*\}/, "only what is under the head keeps the action's container, in the middle");
+  assert.match(kit, /\.page\[data-head='desk'\] > :not\(\.pageHead\) \{\s*width: 100%;\s*max-width: var\(--page\);\s*margin-inline: 0;\s*\}/, "what is under the head keeps the action's width, on the head's own line");
+  assert.doesNotMatch(kit, /\.page\[data-head='desk'\][^{]*\{[^}]*margin-inline: auto/, "never in the middle under a head at the left: one axis for the head and the form");
   assert.match(read("terminal/ui/Page.tsx"), /data-head=\{kind === 'action' \? head : undefined\}/);
 });
 
@@ -143,13 +145,14 @@ test("a screen that draws the price chart is a terminal with a chart — a desk;
   assert.deepEqual(wrong, []);
 });
 
-test("each bot's page is its category's: the grid a desk, the forms the section's action page", async () => {
+test("each bot's page is its category's: every bot a desk with its chart — the grid's own, the others the section's", async () => {
   const { BOT_PAGE } = await import("../bots/kinds.ts");
   const frame = read("app/(terminal)/bots/grid/page.tsx");
   assert.match(frame, /<GridScreen \/>/, "the grid's address draws the grid's desk");
   for (const [bot, category] of Object.entries(BOT_PAGE)) {
     const page = read(`app/(terminal)/bots/${bot}/page.tsx`);
-    const screen = category === "chart" ? "GridScreen" : "BotsScreen";
+    assert.equal(category, "chart", `${bot}: every bot stands on the terminal's chart`);
+    const screen = bot === "grid" ? "GridScreen" : "BotsScreen";
     assert.match(page, new RegExp(`<${screen}[\\s/>]`), `${bot}: a «${category}» bot is drawn by ${screen}`);
   }
 });

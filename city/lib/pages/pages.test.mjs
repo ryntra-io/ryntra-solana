@@ -45,6 +45,14 @@ test("each address answers with the city's page, not the old site's", () => {
         assert.doesNotMatch(source, OLD, `${file} imports nothing of the old site`);
         continue;
       }
+      if (["app/legal/terms/page.tsx", "app/legal/privacy/page.tsx"].includes(file)) {
+        // The Terms and the Privacy Policy are the terminal's (`app/legal/_view/`), at the same addresses.
+        assert.match(source, new RegExp(`<PublishedView id="${id}" />`), `${file} is the terminal's ${id}`);
+        assert.match(source, /<TerminalFrame>/, `${file} stands in the terminal's frame`);
+        assert.match(source, new RegExp(`buildCityPageMetadata\\("${id}", "${path.replace(/\//g, "\\/")}"\\)`), `${file} names its address`);
+        assert.doesNotMatch(source, OLD, `${file} imports nothing of the old site`);
+        continue;
+      }
       assert.match(source, /from "@\/city\/components\/pages\/CityDocument"/, `${file} renders the city's page`);
       assert.match(source, new RegExp(`<CityDocument id="${id}" />`), `${file} is ${id}`);
       assert.match(source, new RegExp(`buildCityPageMetadata\\("${id}", "${path.replace(/\//g, "\\/")}"\\)`), `${file} names its address`);
@@ -54,9 +62,11 @@ test("each address answers with the city's page, not the old site's", () => {
 });
 
 test("no old chrome wraps the city's pages", () => {
-  // The old legal shell stands only over the pages it still serves (the licences, the review drafts), in its own group.
+  // No layout above the legal documents, and the old legal shell is gone: every page of `/legal` stands in the
+  // terminal's frame — the drafts for review by their own layout, which wraps nothing else.
   assert.ok(!exists("app/legal/layout.tsx"), "no layout above /legal/terms and /legal/privacy");
-  assert.ok(exists("app/legal/(frozen)/layout.tsx"));
+  assert.ok(!exists("app/legal/(frozen)/layout.tsx"), "the old legal shell is gone");
+  assert.match(read("app/legal/review/layout.tsx"), /return <TerminalFrame>\{children\}<\/TerminalFrame>;/);
   for (const dir of ["app/support", "app/feedback", "app/developers", "app/about"]) {
     assert.ok(!exists(`${dir}/layout.tsx`), `${dir} has no layout of its own`);
   }

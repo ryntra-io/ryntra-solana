@@ -371,10 +371,8 @@ test("the shared chrome carries its own tokens, because not every page wraps it"
      than assumed for all of them, which is what the old version's own failure
      message asked a reader to check. */
   for (const [file, wrapped] of [
+    /* The old legal shell left with the licences: every page of `/legal` stands in the terminal's frame. */
     ["app/beta/page.tsx", false],
-    /* The old legal shell, for the pages it still serves (the licences); the Terms and the Privacy Policy are the
-       city's own pages. */
-    ["app/legal/(frozen)/layout.tsx", false],
   ]) {
     const source = read(file);
     assert.match(source, /<(PublicHeader|FrozenHeader)/, `${file} must mount the shared header`);
@@ -829,7 +827,6 @@ test("every public page mounts the one shared chrome, not a second navigation", 
    */
   for (const file of [
     "app/beta/page.tsx",
-    "app/legal/(frozen)/layout.tsx",
   ]) {
     const source = read(file);
     assert.match(
@@ -1093,8 +1090,13 @@ test("every retained public composition mounts one chrome and a focusable skip t
   const cityPage = read("city/components/pages/DocumentPage.tsx");
   assert.equal((cityPage.match(/<main\b/g) ?? []).length, 1, "the city's page has one main landmark");
   assert.doesNotMatch(cityPage, /<(?:PublicHeader|FrozenHeader|FrozenFooter)\b/);
-  for (const file of ["app/developers/page.tsx", "app/legal/terms/page.tsx", "app/legal/privacy/page.tsx"]) {
+  for (const file of ["app/developers/page.tsx"]) {
     assert.match(read(file), /<CityDocument id="[a-z]+" \/>/, `${file} is the city's page`);
+  }
+  /* The legal documents are the terminal's: its frame holds their one main. */
+  for (const file of ["app/legal/terms/page.tsx", "app/legal/privacy/page.tsx", "app/legal/licenses/page.tsx", "app/legal/review/layout.tsx"]) {
+    assert.match(read(file), /<TerminalFrame>/, `${file} stands in the terminal's frame`);
+    assert.doesNotMatch(read(file), /<main\b|<(?:PublicHeader|FrozenHeader|FrozenFooter)\b/, `${file} draws no landmark or chrome of its own`);
   }
   /* `/docs` is the terminal's documentation: the terminal's frame holds its one main. */
   assert.match(read("app/docs/page.tsx"), /<DocsHub \/>/, "app/docs/page.tsx is the terminal's documentation");
@@ -1125,7 +1127,7 @@ test("every retained public composition mounts one chrome and a focusable skip t
   assert.match(chrome, /mainId = "main"/);
   /* A page that mounts a different id must say so. The pages that own their
      content layer keep `main-content`, and each declares it. */
-  for (const file of ["app/beta/page.tsx", "app/legal/(frozen)/layout.tsx"]) {
+  for (const file of ["app/beta/page.tsx"]) {
     const source = read(file);
     assert.match(source, /mainId="main-content"/, `${file} must declare the id it actually mounts`);
     assert.match(source, /id="main-content"/, `${file} must mount the id it declares`);

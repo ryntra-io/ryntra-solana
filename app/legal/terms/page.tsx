@@ -1,15 +1,24 @@
 import type { Metadata, Viewport } from "next";
 
-import { CityDocument } from "@/city/components/pages/CityDocument";
 import { PALETTE } from "@/city/lib/palette";
 import { buildCityPageMetadata } from "@/app/seo";
 
-/* `/legal/terms` — the Terms of Use as a page of the city: the published words exactly (`lib/legal/texts/terms.ts`), in the city's look; the same document the city's menu opens as a window. */
+import { TerminalFrame } from "../../docs/_book/frame";
+import { PublishedView } from "../_view/PublishedView";
+
+/* `/legal/terms` — the Terms of Use in the terminal's frame and language: the published words exactly
+   (`lib/legal/texts/terms.ts`), every part open to read, «Contents» beside them. */
+
+export const dynamic = "force-static";
 
 export const metadata: Metadata = buildCityPageMetadata("terms", "/legal/terms");
 
-export const viewport: Viewport = { themeColor: PALETTE.inkDeep, colorScheme: "dark" };
+export const viewport: Viewport = { themeColor: PALETTE.inkDeep, colorScheme: "dark", viewportFit: "cover" };
 
 export default function Page() {
-  return <CityDocument id="terms" />;
+  return (
+    <TerminalFrame>
+      <PublishedView id="terms" />
+    </TerminalFrame>
+  );
 }

@@ -27,8 +27,12 @@ import p from '@/terminal/pool/pool.module.css';
  */
 
 /* The pair with its type and price step, then four figures and the action — the row fits a 1280 px window beside the
-   ticket without scrolling sideways. */
-const COLUMNS = 'minmax(200px, 1.4fr) repeat(4, minmax(84px, 1fr)) 104px';
+   ticket without scrolling sideways, and the pair's name stands whole on a laptop («ANTHROPIC · USDC», «DacityCoin ·
+   SOL» were cut on 1440): the figures give the pair the room they do not need. */
+const COLUMNS = 'minmax(240px, 2fr) repeat(4, minmax(72px, 1fr)) 92px';
+
+/** A coin's name as a line under its pair: a tokenised stock's own name, without its issuer's tail («… - Backed»). */
+const nameLine = (name: string): string => name.split(/\s+-\s+/u)[0]!.trim() || name;
 
 export const proHref = (row: ProPoolRow): string => `/pool/${row.address}`;
 
@@ -183,7 +187,7 @@ export function ProPoolTicket({ row, held }: { row: ProPoolRow; held: boolean })
         <Pair coins={coinsOf(row)} size="l" />
         <span className={e.cellWords}>
           <span className={cx(e.sym, e.symL)}>{proName(row)}</span>
-          <span className={e.cap}>{row.kind === 'launch' ? q.launch : (pair.coin.name ?? tickerOf(pair.coin))}</span>
+          <span className={cx(e.cap, e.capWrap)}>{row.kind === 'launch' ? q.launch : nameLine(pair.coin.name ?? tickerOf(pair.coin))}</span>
         </span>
         <span className={cx(p.badge, e.push)}>{q.proShort}</span>
       </div>

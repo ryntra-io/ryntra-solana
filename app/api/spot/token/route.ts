@@ -27,14 +27,17 @@ type Part = (typeof PARTS)[number];
 
 const CACHE: Readonly<Record<Part, readonly [number, number]>> = {
   overview: [20, 60],
-  trades: [15, 45],
+  /* The tape stood minutes behind the market; the engine keeps a pool's trades 15 s for every instance. */
+  trades: [5, 15],
   holders: [60, 180],
   risk: [60, 180],
   pools: [120, 300],
 };
 
-function failure(status: number, code: string, message: string, rate: RateLimitDecision, retryAfterMs?: number | null) {
-  return Response.json({ error: { code, message } }, { status, headers: { ...rateLimitHeaders(rate), ...retryAfterHeader(retryAfterMs), "cache-control": "private, no-store" } });
+/* A refused trades read names the pools it would read — their addresses only — so the page can read them from
+   the person's own browser. */
+function failure(status: number, code: string, message: string, rate: RateLimitDecision, retryAfterMs?: number | null, pools?: readonly string[]) {
+  return Response.json({ error: { code, message }, ...(pools?.length ? { pools } : {}) }, { status, headers: { ...rateLimitHeaders(rate), ...retryAfterHeader(retryAfterMs), "cache-control": "private, no-store" } });
 }
 
 export async function GET(request: Request) {
@@ -56,7 +59,7 @@ export async function GET(request: Request) {
     if (read.code === "NOT_LISTED" || read.code === "NO_POOL" || read.code === "NOT_READ") {
       return Response.json({ none: { code: read.code, reason: read.reason }, observedAt: new Date().toISOString() }, { headers: { ...publicCacheHeaders(60, 180), ...rateLimitHeaders(rate) } });
     }
-    return failure(read.code === "RATE_LIMITED" ? 429 : 503, `TOKEN_${read.code}`, read.reason, rate, read.retryAfterMs);
+    return failure(read.code === "RATE_LIMITED" ? 429 : 503, `TOKEN_${read.code}`, read.reason, rate, read.retryAfterMs, part === "trades" ? read.pools?.map((pool) => pool.address) : undefined);
   }
   const { ok: _ok, ...body } = read;
   void _ok;

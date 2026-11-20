@@ -2,6 +2,7 @@ import type { EarnBinsAnswer } from '../../lib/earn-pools/bins.ts';
 import { stepFigure } from '../ui/figures.ts';
 import { byDepth, quietReason, type ProPoolRow } from '../../lib/pro-pools/model.ts';
 import { lookalikeOf } from '../../lib/world/text-safety/lookalike.ts';
+import { rudeName } from '../launch/rude.ts';
 
 /**
  * What a DLMM Pro pool's screens count from the engine's reads, and nothing more: the columns of «Liquidity
@@ -97,36 +98,58 @@ export const proVerified = (row: Pick<ProPoolRow, 'x' | 'y'>): boolean => row.x.
 /** A ticker that passes for a known coin's it is not (`lib/world/text-safety/lookalike.ts`). */
 const passesFor = (symbol: string, mint: string): boolean => lookalikeOf(symbol, mint) !== null;
 
-/** Why a pool stays out of «Active»: no name, a test, a crude name, a look-alike ticker; null — nothing. */
-export const proQuiet = (row: Pick<ProPoolRow, 'x' | 'y'>) => quietReason(row, passesFor);
+/**
+ * Why a pool stays out of DLMM Pro's list, «Active» and «All» alike: no name, a test, a crude name (the lists' own words
+ * and the Launch showcase's, `terminal/launch/rude.ts`), a look-alike ticker; null — nothing. The pool keeps its own
+ * page at its address; it is just not offered («TEST · SOL», «Cx9c…», «BUTTHOLE · SOL» stood under «All»).
+ */
+export const proQuiet = (row: Pick<ProPoolRow, 'x' | 'y'>) =>
+  // A pool of two verified coins keeps its place whatever its name: the crude words are for names nobody vouched for
+  // (FARTCOIN, MOG are real markets — `terminal/launch/rude.ts` leaves the market's own lists as they are).
+  quietReason(row, passesFor) ?? (!proVerified(row) && rudeName(row.x.symbol, row.x.name, row.y.symbol, row.y.name) ? 'crude' : null);
 
-export type ProListInput = Readonly<{
-  which: 'deep' | 'every';
-  /** The pools the city adds to from here: their ticket is the add, with «My shape». */
-  adds: (row: ProPoolRow) => boolean;
+export type ProLeadInput = Readonly<{
+  /** From this deep, dollars, a pool of verified coins can lead: a person can use it today. */
+  leadUsd: number;
   /** From this deep, dollars, a pool counts as one that holds liquidity. */
   deepUsd: number;
 }>;
 
 /**
- * DLMM Pro's list as `/pro` lays it (the QA of 19.11 night: «першим JitoSOL·SOL з $0 і "Додати" — виглядає зламаним»):
- * first the deepest pool of verified coins — MET/SOL —, then the city's own pools that hold nothing yet, in sight and
- * never first, each saying «Be the first» on its row; then the rest of the verified pools with liquidity, deepest
- * first, then the others. «Active» (`deep`) keeps the pools that hold liquidity or that the city adds to, and leaves
- * out the names a person should not meet first (`proQuiet`); «All» keeps every pool, those names last.
+ * The pool DLMM Pro leads with — the card above the tabs of «Earn» and the first row of `/pro` alike: the best
+ * limit bonus among the pools of verified coins with real liquidity (MET/SOL +0.6 %, not the deepest pool's +0.06 %), a
+ * tie to the deeper one; where none stands, the deepest pool of verified coins, else the deepest. Never a name the list
+ * keeps out of sight.
+ */
+export function proLead(rows: readonly ProPoolRow[], input: ProLeadInput): ProPoolRow | null {
+  const shown = rows.filter((row) => proQuiet(row) === null);
+  const usable = shown.filter((row) => proVerified(row) && (row.tvlUsd ?? 0) >= input.leadUsd);
+  const best = [...usable].sort((a, b) => b.bonusBps - a.bonusBps || byDepth(a, b))[0];
+  if (best) return best;
+  const deep = shown.filter((row) => (row.tvlUsd ?? 0) >= input.deepUsd).sort(byDepth);
+  return deep.find(proVerified) ?? deep[0] ?? null;
+}
+
+export type ProListInput = ProLeadInput &
+  Readonly<{
+    which: 'deep' | 'every';
+    /** The pools the city adds to from here: their ticket is the add, with «My shape». */
+    adds: (row: ProPoolRow) => boolean;
+  }>;
+
+/**
+ * DLMM Pro's list as `/pro` lays it (the QA of 19.11 day: two JitoSOL · SOL with $0 and «Be the first» stood
+ * second and third, over MET/SOL): first the pool DLMM Pro leads with (`proLead` — the card's own), then the other pools
+ * of verified coins with liquidity, deepest first, then the rest with liquidity; only at the end of «Active» the city's
+ * own pools that hold nothing yet, each a quiet «Be the first». «All» goes on with the pools that hold nothing. Neither
+ * shows a name a person should not meet (`proQuiet`).
  */
 export function proListRows(rows: readonly ProPoolRow[], input: ProListInput): ProPoolRow[] {
   const deep = (row: ProPoolRow) => (row.tvlUsd ?? 0) >= input.deepUsd;
-  // A pool of the city's that holds liquidity is a pool like any: it stands by its depth.
-  const empty = (row: ProPoolRow) => input.adds(row) && !deep(row);
-  const quiet = (row: ProPoolRow) => proQuiet(row) !== null;
-  const listed = input.which === 'deep' ? rows.filter((row) => (deep(row) || input.adds(row)) && !quiet(row)) : rows;
-  const rank = (row: ProPoolRow) => (deep(row) && proVerified(row) ? 0 : quiet(row) ? 3 : deep(row) ? 1 : 2);
-  const ranked = listed.filter((row) => !empty(row)).sort((a, b) => rank(a) - rank(b) || byDepth(a, b));
-  const own = listed.filter(empty).sort(byDepth);
-  // The first row holds liquidity: the deepest of verified coins, else — where the catalogue verified none — the deepest.
-  const lead = ranked[0] && (rank(ranked[0]) === 0 || (rank(ranked[0]) === 1 && input.which === 'deep')) ? ranked.slice(0, 1) : [];
-  return [...lead, ...own, ...ranked.slice(lead.length)];
+  const listed = rows.filter((row) => proQuiet(row) === null && (input.which === 'every' || deep(row) || input.adds(row)));
+  const lead = proLead(listed, input);
+  const tier = (row: ProPoolRow) => (row === lead && deep(row) ? 0 : deep(row) ? (proVerified(row) ? 1 : 2) : input.adds(row) ? 3 : 4);
+  return [...listed].sort((a, b) => tier(a) - tier(b) || byDepth(a, b));
 }
 
 /** Whether a row is one of the city's own pools that holds nothing yet: its row invites the first position. */

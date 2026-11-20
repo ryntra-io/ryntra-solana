@@ -39,6 +39,8 @@ export type MenuItemId =
   | 'bridge'
   | 'launchNew'
   | 'launchMine'
+  | 'launchFresh'
+  | 'allBots'
   | 'recurring'
   | 'grid'
   | 'ladder'
@@ -106,13 +108,17 @@ export const MENU: readonly MenuGroup[] = [
   },
   {
     id: 'launch',
-    items: [inner('launchNew', 'launch', '/launch', true), inner('launchMine', 'launch', '/launch?tab=mine', true)],
+    // The menu's items are the screen's tabs, by the same names and in their order: «New» —
+    // the market's new coins — too.
+    items: [inner('launchNew', 'launch', '/launch', true), inner('launchMine', 'launch', '/launch?tab=mine', true), inner('launchFresh', 'launch', '/launch?tab=fresh', true)],
   },
   {
     id: 'bots',
     count: 'bots',
     // A bot is a rule, not an AI (decision 109, p. 3): each a screen of its own under /bots, on the Agents shelf.
+    // «All bots» — the catalogue, the section's first tab — first, as the tabs stand.
     items: [
+      inner('allBots', 'agents', '/bots', true),
       inner('recurring', 'agents', '/bots/recurring', true, { gate: 'trader' }),
       inner('grid', 'agents', '/bots/grid', true),
       inner('ladder', 'agents', '/bots/ladder', true, { gate: 'ladder' }),
