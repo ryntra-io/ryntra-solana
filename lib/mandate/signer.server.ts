@@ -13,10 +13,15 @@
  *    table's rate for its pair, into Ryntra's fee account and no other (`./fee.ts`): inside Jupiter's route, or
  *    on devnet as the one transfer before the pool's swap, the two together within the trade cap. A coin of Token-2022
  *    on either side is one whose every feature is on the agent's list (`./token-2022.ts`), and the rule on what
- *    reached the person counts the coin's transfer fee off the minimum. Anything else is refused with its reason, and
+ *    reached the person counts the coin's transfer fee off the minimum. A stock is taken with its issuer's rights only
+ *    when the signer itself found its mint on the shelf of verified companies — the screen's own read, never a word of
+ *    the request — and only under the stock's conditions. Anything else is refused with its reason, and
  *    the key is never asked;
  * 2. the check — the signature verifies against the agent's address before it is given back;
  * 3. the journal — what was signed, under which policy, its hash and signature: public data only. No row, no signature.
+ * Her copy (`terms.copyCoins`): a buy lands only in the vault's own account of one of the coins she signed for,
+ * under that coin's program; a sale runs under the sales' policy of that coin's group, from the vault's own account of
+ * the coin into her own account of the budget's token — each coin judged on its own side by the agent's list.
  * Before the key, too (`./ryntra-coins.server.ts`): the coin bought is no coin of Ryntra's launchpad and none of
  * the person's own, and no other key of Ryntra's — no other agent's vault — stands in the trade. The registry not read
  * is a refusal.
@@ -28,7 +33,7 @@
 import { createHash } from "node:crypto";
 
 import { getAssociatedTokenAddressSync } from "@solana/spl-token";
-import { ComputeBudgetProgram, PublicKey, TransactionMessage, VersionedMessage, type AddressLookupTableAccount } from "@solana/web3.js";
+import { ComputeBudgetProgram, PublicKey, TransactionMessage, VersionedMessage, type AddressLookupTableAccount, type TransactionInstruction } from "@solana/web3.js";
 import { getBase58Decoder } from "@solana/kit";
 
 import { ed25519Valid } from "../solana/limits/trigger-tx.ts";
@@ -38,9 +43,9 @@ import { AGENT_FEE_RATES, agentFeeAccount, agentFeeRaw, pairFeeBps, readFeeTrans
 import { instructionRefusal, type AccountFacts, type InnerInstruction } from "./judge.ts";
 import { LIGHTHOUSE_PROGRAM_ID, heldIn, jupiterFeeOf, readReceivedAtLeast, tradeTerms, type TradeTerms } from "./result.ts";
 import { SSA_PROGRAM_ID, TOKEN_PROGRAM_ID, readPolicyExecute, type ProgramInteractionPolicy } from "./ssa.ts";
-import { feeMintOf } from "./terms.ts";
-import { TOKEN_2022_PROGRAM_ID, afterTransferFee, isTokenProgram, readCoin, type Coin } from "./token-2022.ts";
-import type { Mandate } from "./human.ts";
+import { DLMM_PROGRAM_ID, JUPITER_PROGRAM_ID, LAYOUT, ROUTE_V2, copyChunks, copySalePolicyOf, feeMintOf, heldAccountOf, proceedsAccountOf, salePolicyOf, type HeldCoin } from "./terms.ts";
+import { COIN_REFUSED, TOKEN_2022_PROGRAM_ID, afterTransferFee, isTokenProgram, readCoin, stockAccountRefusal, type Coin } from "./token-2022.ts";
+import { copySaleChunk, type Mandate } from "./human.ts";
 import { coinRefusal, ryntraAccountRefusal, type AgentScreen } from "./ryntra-coins.server.ts";
 
 const ASSOCIATED_TOKEN_PROGRAM = new PublicKey("ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL");
@@ -57,16 +62,20 @@ export type AgentSignRequest = Readonly<{ lookupTables?: readonly AddressLookupT
 
 /**
  * The coin on one side of a trade as the agent trades it, or why not: a token account of Token carries a coin with no
- * features; one of Token-2022 — a coin judged from its mint, which the facts must hold.
+ * features; one of Token-2022 — a coin judged from its mint, which the facts must hold. `stock` — the signer found this
+ * mint on the shelf of verified companies: it is judged as a stock (`./token-2022.ts` `readCoin`).
  */
-export function sideCoin(mint: PublicKey, program: PublicKey, facts: AccountFacts, epoch?: bigint): Readonly<{ coin: Coin }> | Readonly<{ refusal: string }> {
+export function sideCoin(mint: PublicKey, program: PublicKey, facts: AccountFacts, epoch?: bigint, stock = false): Readonly<{ coin: Coin }> | Readonly<{ refusal: string }> {
   const read = facts.get(mint.toBase58());
   if (read && !read.owner.equals(program)) return { refusal: "a token account is not of its coin's program" };
   if (program.equals(TOKEN_PROGRAM_ID)) return { coin: { mint, program, decimals: 0, transferFee: null } };
   if (!program.equals(TOKEN_2022_PROGRAM_ID)) return { refusal: "a side of the trade is not a token account" };
-  const reading = readCoin(mint, read, epoch);
+  const reading = readCoin(mint, read, epoch, stock ? { stock: true } : undefined);
   return reading.ok ? { coin: reading.coin } : { refusal: reading.reason };
 }
+
+/** No side of a trade is a stock: what the bounds are judged by until the signer has asked the shelf itself. */
+const NO_STOCK_SIDES: ReadonlySet<string> = new Set();
 
 export type AgentSignatureRow = Readonly<{
   v: 1;
@@ -143,8 +152,52 @@ export function agentFeeRefusal(mandate: Mandate, instructions: readonly InnerIn
   return null;
 }
 
-/** Why the message is not a trade this mandate's agent signs; null when it is. */
-export function tradeRefusal(message: Uint8Array, mandate: Mandate, policy: ProgramInteractionPolicy, request: AgentSignRequest): string | null {
+/**
+ * Why a sale's instructions do not pay Ryntra's fee as the table names it; null when they do. Through Jupiter
+ * the fee is the route's own, exactly as on a buy, in the budget's token she receives. On devnet it is the transfer before
+ * the pool's swap: of the coin, from the vault's account of it, into Ryntra's account of that coin, the table's share of the
+ * two together — the sale's whole amount is hers, so no cap stands over it.
+ */
+export function agentSaleFeeRefusal(mandate: Mandate, instructions: readonly InnerInstruction[], feeBps: number, sold?: Pick<HeldCoin, "mint" | "program">): string | null {
+  /* A copy's sale names the coin it sells. */
+  const held = sold ?? mandate.terms.heldCoin;
+  if (!held) return "the mandate keeps no coin to sell";
+  if (mandate.terms.venue.kind === "jupiter") return agentFeeRefusal(mandate, instructions, feeBps);
+  if (!AGENT_FEE_RATES.includes(feeBps)) return "the fee is not a rate of Ryntra's table";
+  const trade = instructions.at(-1) ? tradeTerms(instructions.at(-1)!) : null;
+  if (!trade) return "the trade names no minimum for the person";
+  if (instructions.length !== 2) return "not Ryntra's fee and one venue instruction in the execution";
+  const transfer = readFeeTransfer(instructions[0]!);
+  if (!transfer) return "the fee is not a transfer to Ryntra";
+  if (!transfer.destination.equals(agentFeeAccount(held.mint))) return "the fee goes to an account other than Ryntra's";
+  if (!transfer.source.equals(heldAccountOf(mandate.vault, held)) || !transfer.mint.equals(held.mint) || !transfer.authority.equals(mandate.vault)) return "the fee is not paid from the coin sold";
+  if (transfer.amount <= 0n || transfer.amount !== agentFeeRaw(transfer.amount + trade.amountIn, feeBps)) return "the fee is not the table's share of the trade";
+  return null;
+}
+
+/** The vault's account a venue instruction sells from — Jupiter's source, or the pool's input; null — none named. */
+function soldAccountOf(inner: InnerInstruction): PublicKey | null {
+  if (inner.programId.equals(JUPITER_PROGRAM_ID)) return inner.accounts[ROUTE_V2.every((byte, index) => inner.data[index] === byte) ? LAYOUT.routeV2.source : LAYOUT.sharedRouteV2.source] ?? null;
+  if (inner.programId.equals(DLMM_PROGRAM_ID)) return inner.accounts[LAYOUT.dlmmSwap2.source] ?? null;
+  return null;
+}
+
+/** The coin of her copy whose vault account this is — within the group of one sale's policy when named; null — none. */
+function copyCoinAt(mandate: Mandate, account: PublicKey | null, chunk: number | null = null): HeldCoin | null {
+  const coins = mandate.terms.copyCoins;
+  if (!coins || !account) return null;
+  const among = chunk === null ? coins : (copyChunks(coins)[chunk] ?? []);
+  return among.find((coin) => heldAccountOf(mandate.vault, coin).equals(account)) ?? null;
+}
+
+/**
+ * Why the message is not a trade this mandate's agent signs; null when it is. `stocks` — the mints of this trade the
+ * signer itself found on the shelf of verified companies (`stockSides`); with none, every coin is judged by the strict rule.
+ * An execution under the mandate's sale policy is judged as a sale of the coin the agent keeps — by that policy's
+ * rules, which the signer writes itself from the terms, never from the request: the coin from the vault's account of it,
+ * the money to her own account of the budget's token and nowhere else.
+ */
+export function tradeRefusal(message: Uint8Array, mandate: Mandate, policy: ProgramInteractionPolicy, request: AgentSignRequest, stocks: ReadonlySet<string> = NO_STOCK_SIDES): string | null {
   let decoded: VersionedMessage;
   try {
     decoded = VersionedMessage.deserialize(message);
@@ -208,13 +261,20 @@ export function tradeRefusal(message: Uint8Array, mandate: Mandate, policy: Prog
       } catch (error) {
         return `a smart-account instruction other than this mandate's trade (${error instanceof Error ? error.message : "unreadable"})`;
       }
-      if (!view.policy.equals(mandate.policy)) return "an execution under another policy";
+      /* The buy's policy, or the sale's — whose rules the signer writes from the terms itself. */
+      const held = mandate.terms.heldCoin;
+      const selling = Boolean(held && mandate.salePolicy?.equals(view.policy));
+      /* Or one of her copy's sales' policies — its group's rules, written from the terms too. */
+      const copyChunk = copySaleChunk(mandate, view.policy);
+      if (!view.policy.equals(mandate.policy) && !selling && copyChunk === null) return "an execution under another policy";
+      const accounts = { vault: mandate.vault, budgetAccount: mandate.budgetAccount };
+      const rules = selling ? salePolicyOf(mandate.terms, accounts) : copyChunk !== null ? copySalePolicyOf(mandate.terms, accounts, copyChunk) : policy;
       if (view.signers.length !== 1 || !view.signers[0]!.equals(agent)) return "an execution signed by someone other than the agent";
       if (!view.constraintIndices || view.constraintIndices.length !== view.instructions.length) return "an execution that does not name its rules";
       const jupiter = mandate.terms.venue.kind === "jupiter";
       if (view.instructions.length !== (jupiter ? 1 : 2)) return jupiter ? "not one venue instruction in the execution" : "not Ryntra's fee and one venue instruction in the execution";
       for (const [at, inner] of view.instructions.entries()) {
-        const constraint = policy.constraints[view.constraintIndices[at]!];
+        const constraint = rules.constraints[view.constraintIndices[at]!];
         if (!constraint) return "an execution naming a rule the policy does not have";
         const refusal = instructionRefusal(inner, constraint, facts);
         if (refusal) return refusal;
@@ -226,11 +286,40 @@ export function tradeRefusal(message: Uint8Array, mandate: Mandate, policy: Prog
       const bought = receiving?.data;
       if (!receiving || !bought || bought.length < 32) return "the person's receiving account could not be read";
       const boughtMint = new PublicKey(bought.subarray(0, 32));
+      /* A sale's money is the budget's token, in her own account of it — whatever the request says. */
+      if ((selling || copyChunk !== null) && (!trade.receiver.equals(proceedsAccountOf(mandate.terms)) || !boughtMint.equals(mandate.terms.budgetMint))) return "the sale's money does not land in the person's own account of the budget's token";
+      /* A copy's sale sells a coin of this policy's group, from the vault's own account of it. */
+      const copySold = copyChunk !== null ? copyCoinAt(mandate, soldAccountOf(view.instructions.at(-1)!), copyChunk) : null;
+      if (copyChunk !== null && !copySold) return "the copy sells only a coin of this sale's group, from the vault's own account of it";
+      /* One sale never more than the coin's whole day — the chain refuses it, and the signer before it (on devnet the fee counts too). */
+      if (copySold && trade.amountIn + (mandate.terms.venue.kind === "dlmm" ? (readFeeTransfer(view.instructions[0]!)?.amount ?? 0n) : 0n) > copySold.dailyMax) return "the sale is over the coin's day";
+      /* The same for the coin the agent keeps — a grid's level, a signal's leave, her rules' sale: never more than its whole day in one sale. */
+      if (selling && held && trade.amountIn + (mandate.terms.venue.kind === "dlmm" ? (readFeeTransfer(view.instructions[0]!)?.amount ?? 0n) : 0n) > held.dailyMax) return "the sale is over the coin's day";
+      /* A copy's buy is of a coin she signed for, into the vault's own account of it under its program. */
+      if (mandate.terms.copyCoins && copyChunk === null) {
+        const coin = mandate.terms.copyCoins.find((entry) => entry.mint.equals(boughtMint));
+        if (!coin) return "the copy buys only a coin she signed for";
+        if (!trade.receiver.equals(heldAccountOf(mandate.vault, coin)) || !receiving.owner.equals(coin.program)) return "the copy's buy does not land in the vault's own account of the coin";
+      }
       /* A coin of Token-2022 on either side only when every feature of its mint is on the agent's list. */
-      const output = sideCoin(boughtMint, receiving.owner, facts, request.epoch);
+      const boughtStock = stocks.has(boughtMint.toBase58());
+      const output = sideCoin(boughtMint, receiving.owner, facts, request.epoch, boughtStock);
       if ("refusal" in output) return output.refusal;
+      /* A stock lands only on an account its issuer has not frozen and that takes plain amounts. */
+      const stockAccount = boughtStock ? stockAccountRefusal(bought) : null;
+      if (stockAccount) return stockAccount;
       if (mandate.terms.budgetCoin) {
-        const input = sideCoin(mandate.terms.budgetMint, mandate.terms.budgetCoin.program, facts, request.epoch);
+        const input = sideCoin(mandate.terms.budgetMint, mandate.terms.budgetCoin.program, facts, request.epoch, stocks.has(mandate.terms.budgetMint.toBase58()));
+        if ("refusal" in input) return input.refusal;
+      }
+      /* The coin sold is the one the agent kept, judged as on its buy. */
+      if (selling && held) {
+        const input = sideCoin(held.mint, held.program, facts, request.epoch, stocks.has(held.mint.toBase58()));
+        if ("refusal" in input) return input.refusal;
+      }
+      /* The copy's coin sold, judged as on its buy — a coin of Token-2022 only with every feature on the list. */
+      if (copySold) {
+        const input = sideCoin(copySold.mint, copySold.program, facts, request.epoch);
         if ("refusal" in input) return input.refusal;
       }
       if (output.coin.transferFee && request.epoch === undefined) return "the epoch the coin's transfer fee is read at is not known";
@@ -238,9 +327,11 @@ export function tradeRefusal(message: Uint8Array, mandate: Mandate, policy: Prog
       withholds = reaches !== trade.minOut;
       const floor = mandate.terms.fixedBuy?.minOut;
       if (output.coin.transferFee && floor !== undefined && reaches < floor) return "after the coin's transfer fee, less than the person's floor reaches her";
-      const feeBps = pairFeeBps(mandate.terms.budgetMint.toBase58(), boughtMint.toBase58(), request.feeSides);
+      /* A sale is priced by the table as the coin into the budget's token: its sides are named in that order. */
+      const soldMint = selling && held ? held.mint : copySold ? copySold.mint : mandate.terms.budgetMint;
+      const feeBps = pairFeeBps(soldMint.toBase58(), boughtMint.toBase58(), request.feeSides);
       if (feeBps === null) return "Ryntra's table names no router fee for this pair";
-      const feeRefusal = agentFeeRefusal(mandate, view.instructions, feeBps);
+      const feeRefusal = selling ? agentSaleFeeRefusal(mandate, view.instructions, feeBps) : copySold ? agentSaleFeeRefusal(mandate, view.instructions, feeBps, copySold) : agentFeeRefusal(mandate, view.instructions, feeBps);
       if (feeRefusal) return feeRefusal;
       continue;
     }
@@ -251,32 +342,87 @@ export function tradeRefusal(message: Uint8Array, mandate: Mandate, policy: Prog
 }
 
 /**
- * What a trade the bounds let through buys, and every account its instructions name; null when the message is not such a
- * trade. Read only after `tradeRefusal` passed it.
+ * Whether the instructions before the trade open her own account of the budget's token — the one account a sale's
+ * money lands in (`proceedsAccountOf`) — as the agent opens it on her first sale, when she holds none yet: an idempotent
+ * opening the agent pays for, for her, of the budget's mint under Token. Exactly what the bounds read it as.
  */
-export function tradeSides(message: Uint8Array, request: AgentSignRequest): Readonly<{ bought: PublicKey; accounts: readonly PublicKey[] }> | null {
+function opensProceeds(instructions: readonly TransactionInstruction[], mandate: Mandate): boolean {
+  const proceeds = proceedsAccountOf(mandate.terms);
+  return instructions.some((instruction) => {
+    if (!instruction.programId.equals(ASSOCIATED_TOKEN_PROGRAM) || instruction.data.length !== 1 || instruction.data[0] !== 1) return false;
+    const [payer, account, owner, mint, , tokenProgram] = instruction.keys.map((key) => key.pubkey);
+    return Boolean(payer?.equals(mandate.terms.agent) && account?.equals(proceeds) && owner?.equals(mandate.terms.human) && mint?.equals(mandate.terms.budgetMint) && tokenProgram?.equals(TOKEN_PROGRAM_ID));
+  });
+}
+
+/**
+ * The coin of her copy whose vault account the instructions before the trade open — as the agent opens it before
+ * its first buy of that coin: an idempotent opening the agent pays for, for the vault, of that coin under its program, at
+ * the vault's own address of it. Null — no such opening of `receiver`.
+ */
+function opensCopyCoin(instructions: readonly TransactionInstruction[], mandate: Mandate, receiver: PublicKey): PublicKey | null {
+  const coin = mandate.terms.copyCoins?.find((entry) => heldAccountOf(mandate.vault, entry).equals(receiver));
+  if (!coin) return null;
+  const opened = instructions.some((instruction) => {
+    if (!instruction.programId.equals(ASSOCIATED_TOKEN_PROGRAM) || instruction.data.length !== 1 || instruction.data[0] !== 1) return false;
+    const [payer, account, owner, mint, , tokenProgram] = instruction.keys.map((key) => key.pubkey);
+    return Boolean(payer?.equals(mandate.terms.agent) && account?.equals(receiver) && owner?.equals(mandate.vault) && mint?.equals(coin.mint) && tokenProgram?.equals(coin.program));
+  });
+  return opened ? coin.mint : null;
+}
+
+/**
+ * What a trade the bounds let through buys, and every account its instructions name; null when the message is not such a
+ * trade. Read only after `tradeRefusal` passed it. What it buys is read off the receiving account the caller read — and,
+ * for a sale whose money lands in her own account of the budget's token that the chain does not hold yet, off that
+ * account's address, when the message itself opens it before the trade (her first sale; the copy's first
+ * buy of a coin, into the vault's own account of it).
+ */
+export function tradeSides(message: Uint8Array, mandate: Mandate, request: AgentSignRequest): Readonly<{ bought: PublicKey; accounts: readonly PublicKey[] }> | null {
   try {
     const decoded = VersionedMessage.deserialize(message);
     const instructions = TransactionMessage.decompile(decoded, { addressLookupTableAccounts: [...(request.lookupTables ?? [])] }).instructions;
-    const execution = instructions.find((instruction) => instruction.programId.equals(SSA_PROGRAM_ID));
-    if (!execution) return null;
+    const at = instructions.findIndex((instruction) => instruction.programId.equals(SSA_PROGRAM_ID));
+    if (at < 0) return null;
+    const execution = instructions[at]!;
     const view = readPolicyExecute({ programId: execution.programId, keys: execution.keys.map((key) => key.pubkey), data: execution.data });
     const trade = tradeTerms(view.instructions.at(-1)!);
-    const bought = trade ? request.facts.get(trade.receiver.toBase58())?.data : undefined;
-    if (!bought || bought.length < 32) return null;
+    if (!trade) return null;
+    const read = request.facts.get(trade.receiver.toBase58());
+    const selling = Boolean(mandate.terms.heldCoin && mandate.salePolicy?.equals(view.policy)) || copySaleChunk(mandate, view.policy) !== null;
+    let bought: PublicKey | null = null;
+    if (read) bought = read.data.length >= 32 ? new PublicKey(read.data.subarray(0, 32)) : null;
+    else if (selling && trade.receiver.equals(proceedsAccountOf(mandate.terms)) && opensProceeds(instructions.slice(0, at), mandate)) bought = mandate.terms.budgetMint;
+    else if (!selling && mandate.terms.copyCoins) bought = opensCopyCoin(instructions.slice(0, at), mandate, trade.receiver); // A copy's first buy of a coin
+    if (!bought) return null;
     const accounts = [...instructions.flatMap((instruction) => instruction.keys.map((key) => key.pubkey)), ...view.instructions.flatMap((inner) => inner.accounts)];
-    return { bought: new PublicKey(bought.subarray(0, 32)), accounts };
+    return { bought, accounts };
   } catch {
     return null;
   }
 }
 
+/**
+ * The mints of this trade's two sides that are stocks — found, each by its address, on the shelf of verified
+ * companies, which the signer's own screen reads. The request names no stock and is not asked. A shelf not read, or a
+ * screen with none, finds nothing: the strict rule's refusal then stands.
+ */
+export async function stockSides(message: Uint8Array, mandate: Mandate, request: AgentSignRequest, screen: AgentScreen): Promise<ReadonlySet<string>> {
+  const shelf = screen.stock;
+  if (!shelf) return NO_STOCK_SIDES;
+  const bought = tradeSides(message, mandate, request)?.bought;
+  const mints = new Set([...(bought ? [bought.toBase58()] : []), ...(mandate.terms.budgetCoin ? [mandate.terms.budgetMint.toBase58()] : []), ...(mandate.terms.heldCoin ? [mandate.terms.heldCoin.mint.toBase58()] : [])]);
+  const found = new Set<string>();
+  for (const mint of mints) if (await shelf(mint).catch(() => false)) found.add(mint);
+  return found;
+}
+
 /** Why the trade buys a coin, or meets a key, Ryntra's agent never deals with; null when it does not. Throws when the screen is not read. */
 export async function screenRefusal(message: Uint8Array, mandate: Mandate, request: AgentSignRequest, screen: AgentScreen): Promise<string | null> {
-  const sides = tradeSides(message, request);
+  const sides = tradeSides(message, mandate, request);
   if (!sides) return "the coin bought could not be read";
   const [origin, ryntra] = await Promise.all([screen.origin(sides.bought.toBase58()), screen.ryntra()]);
-  return coinRefusal(sides.bought, origin, mandate, ryntra, request.facts) ?? ryntraAccountRefusal(sides.accounts, mandate, ryntra, request.facts);
+  return coinRefusal(sides.bought, origin, mandate, ryntra, request.facts) ?? ryntraAccountRefusal(sides.accounts, mandate, ryntra, request.facts, sides.bought);
 }
 
 const sha256 = (bytes: Uint8Array) => createHash("sha256").update(bytes).digest("hex");
@@ -315,6 +461,11 @@ export function mandateSigner(
     async signMessage(message, request) {
       const messageSha256 = sha256(message);
       let refusal = tradeRefusal(message, mandate, options.policy, request);
+      /* A coin the strict rule refused may be a stock: the signer asks the shelf itself, then judges the whole trade again. */
+      if (refusal?.startsWith(COIN_REFUSED)) {
+        const stocks = await stockSides(message, mandate, request, options.screen);
+        if (stocks.size) refusal = tradeRefusal(message, mandate, options.policy, request, stocks);
+      }
       if (!refusal) {
         try {
           refusal = await screenRefusal(message, mandate, request, options.screen);

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { isoDateTime } from "../zod/iso-datetime.ts";
 
 export const CCTP_PRECANARY_STATES = [
   "READY",
@@ -20,7 +21,7 @@ export type CctpLifecycleRefusalCode =
   | "MISSING_EXISTING_EVIDENCE"
   | "INVALID_EVENT";
 
-const INSTANT = z.string().datetime({ offset: true });
+const INSTANT = isoDateTime({ offset: true });
 const SIGNATURE = z.string().min(32).max(128);
 const RAW_AMOUNT = z.string().regex(/^(0|[1-9][0-9]*)$/);
 

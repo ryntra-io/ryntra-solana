@@ -30,6 +30,7 @@
 import { createHash } from "node:crypto";
 
 import { z } from "zod";
+import { isoDateTime } from "../zod/iso-datetime.ts";
 
 import { withBoundedCasRetry, type GuardStore } from "../guard/store.ts";
 import { SWAP_NETWORKS, type CrossSwapProvider, type CrossSwapRouteMechanism, type CrossSwapTupleId, type SwapNetwork } from "../swap/catalog.ts";
@@ -66,7 +67,7 @@ const CHAIN_TX = z.union([z.string().regex(SOLANA_SIGNATURE), z.string().regex(E
 const RAW = /^[0-9]+$/;
 
 const TrailEntrySchema = z
-  .object({ state: z.enum(CROSS_SWAP_ORDER_STATES), at: z.string().datetime({ offset: true }), attempt: z.number().int().min(1) })
+  .object({ state: z.enum(CROSS_SWAP_ORDER_STATES), at: isoDateTime({ offset: true }), attempt: z.number().int().min(1) })
   .strict();
 
 const RefundSchema = z
@@ -152,9 +153,9 @@ export const CrossSwapOrderRecordSchema = z
     sourceAccountNonce: z.string().regex(/^(0|[1-9][0-9]*)$/).max(20).nullable().default(null),
     receiptHash: z.string().regex(HEX_DIGEST).nullable().default(null),
     receipt: z.unknown().nullable().default(null),
-    reservedAt: z.string().datetime({ offset: true }),
-    updatedAt: z.string().datetime({ offset: true }),
-    lastCheckedAt: z.string().datetime({ offset: true }).nullable(),
+    reservedAt: isoDateTime({ offset: true }),
+    updatedAt: isoDateTime({ offset: true }),
+    lastCheckedAt: isoDateTime({ offset: true }).nullable(),
     trail: z.array(TrailEntrySchema).min(1).max(24),
   })
   .strict();

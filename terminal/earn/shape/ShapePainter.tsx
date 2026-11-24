@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent, type P
 import { digits, useWords } from '@/city/lib/i18n/dict';
 import { useLang } from '@/city/lib/i18n/lang';
 import { Icon, Info, Kick, Quiet } from '@/terminal/ui';
-import { COLUMNS, LEVELS, MAX_NAME, PRESETS, SIDE, cellAt, nextName, paintColumn, paintStroke, presetColumns, pressCells, redo, undo, type Columns } from './model';
+import { COLUMNS, LEVELS, MAX_NAME, SIDE, cellAt, nextName, paintColumn, paintStroke, presetColumns, presetsShown, pressCells, redo, undo, type Columns } from './model';
 import { useShape } from './store';
 import { SHAPE } from './words';
 import s from './shape.module.css';
@@ -227,7 +227,7 @@ export function ShapePainter({ onShape, locked = false, low, now, high }: { onSh
       </div>
       <div className={s.starts} role="group" aria-label={w.startFrom}>
         <span className={s.startWord}>{w.startFrom}</span>
-        {PRESETS.map((preset) => (
+        {presetsShown().map((preset) => (
           <button key={preset} type="button" className={s.start} aria-label={w[preset]} title={w[preset]} onClick={() => keep(presetColumns(preset))} data-earn-shape={`start-${preset}`}>
             <Glyph columns={presetColumns(preset)} />
           </button>

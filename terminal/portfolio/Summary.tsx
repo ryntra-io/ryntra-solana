@@ -1,11 +1,11 @@
 'use client';
 
-import { useId, useState, type ReactNode } from 'react';
+import { useId, useState } from 'react';
 import { digits, useWords } from '@/city/lib/i18n/dict';
 import { useLang } from '@/city/lib/i18n/lang';
 import { ExplainBox, ExplainButton } from '@/terminal/coin/parts';
 import { resultTone, sumText } from '@/terminal/earn/rows';
-import { Action, Chip, Figure, Kick, Panel, Quiet } from '@/terminal/ui';
+import { Action, Figure, Kick, Panel, Quiet } from '@/terminal/ui';
 import { collectable, type ActionId, type PartId } from './all-view';
 import { ALL } from './all-words';
 import { solFigure } from './clean-view';
@@ -101,16 +101,18 @@ export type Offer = Readonly<{
 
 /**
  * The three actions — «Collect fees», «Exit everything», «Clean wallet» — each with what it gives this wallet now. One
- * of them is the screen's amber action (`primary`); the rest are quiet. A door the engine keeps shut says «Soon» and
- * offers nothing to press; on a wallet that is only looked at there is nothing to press at all — `tail` is its one way
- * in. An action with nothing to do is not in the bar.
+ * of them is the screen's amber action (`primary`); the rest are quiet. An action whose door the engine keeps shut on
+ * this deployment is not in the bar — never a «soon» (decision 108, p. 5), as on the phone's bar. A wallet that is only
+ * looked at has no bar at all (its offers are none): its one way in, «Connect wallet», stands at the page's head. An
+ * action with nothing to do is not in the bar.
  */
-export function ActionBar({ offers, primary, own, busy, tail }: { offers: readonly Offer[]; primary: ActionId | null; own: boolean; busy: boolean; tail?: ReactNode }) {
+export function ActionBar({ offers, primary, own, busy }: { offers: readonly Offer[]; primary: ActionId | null; own: boolean; busy: boolean }) {
   const w = useWords(ALL);
-  if (!offers.length && !tail) return null;
+  const live = offers.filter((offer) => offer.open);
+  if (!live.length) return null;
   return (
     <Panel pad="none" edge label={w.actions} className={a.actions}>
-      {offers.map((offer) => (
+      {live.map((offer) => (
         <div key={offer.id} className={a.action}>
           <span className={a.actionBadge}>
             <Glyph name={offer.glyph} />
@@ -119,11 +121,7 @@ export function ActionBar({ offers, primary, own, busy, tail }: { offers: readon
             <b>{offer.title}</b>
             <span>{offer.fact}</span>
           </span>
-          {!offer.open ? (
-            <span className={a.actionEnd}>
-              <Chip tone="warn">{w.soon}</Chip>
-            </span>
-          ) : own ? (
+          {own ? (
             <span className={a.actionEnd} data-thumb="">
               {offer.id === primary ? (
                 <Action size="m" full={false} disabled={busy} aria-label={offer.title} onClick={offer.onPress}>
@@ -138,21 +136,21 @@ export function ActionBar({ offers, primary, own, busy, tail }: { offers: readon
           ) : null}
         </div>
       ))}
-      {tail ? <div className={`${a.action} ${a.deskOnly}`}>{tail}</div> : null}
     </Panel>
   );
 }
 
 /**
  * The phone's bar of the same actions, in the thumb's reach: the amber one first. On a wallet that is only looked at
- * (`connect`) it carries the one way in instead.
+ * (`connect`) it carries the one way in instead — in its place under the address, never a band that sticks over the
+ * tabs on every scroll: there it took a quarter of the screen with the frame's head and tabs (eyes 20.11, 84).
  */
 export function ThumbBar({ offers, primary, busy, connect }: { offers: readonly Offer[]; primary: ActionId | null; busy: boolean; connect?: () => void }) {
   const w = useWords(ALL);
   if (connect) {
     return (
-      <div className={a.thumb} role="group" aria-label={w.actions}>
-        <Action size="m" full={false} onClick={connect}>
+      <div className={a.thumbIn} role="group" aria-label={w.actions}>
+        <Action size="m" onClick={connect}>
           {w.connect}
         </Action>
       </div>

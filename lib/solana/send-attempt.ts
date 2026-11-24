@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { isoDateTime } from "../zod/iso-datetime.ts";
 
 import { withBoundedCasRetry, type GuardStore } from "../guard/store.ts";
 
@@ -56,8 +57,8 @@ const SendAttemptRecordSchema = z
     messageDigest: z.string().regex(HEX_DIGEST),
     reviewDigest: z.string().regex(HEX_DIGEST),
     state: z.enum(SEND_ATTEMPT_STATES),
-    reservedAt: z.string().datetime({ offset: true }),
-    updatedAt: z.string().datetime({ offset: true }),
+    reservedAt: isoDateTime({ offset: true }),
+    updatedAt: isoDateTime({ offset: true }),
     receiptHash: z.string().regex(HEX_DIGEST).nullable(),
   })
   .strict();

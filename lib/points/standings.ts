@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { isoDateTime } from "../zod/iso-datetime.ts";
 
 import { withBoundedCasRetry, type GuardStore } from "../guard/store.ts";
 import { groupByWallet, listAllPointsEntries, listPointsEntries, pointsSummary, rankOrder, type PointsRanking } from "./ledger.ts";
@@ -41,8 +42,8 @@ export const PointsStandingsSchema = z
     schema: z.literal(1),
     version: z.number().int().nonnegative(),
     policyVersion: z.string().min(1).max(20),
-    builtAt: z.string().datetime({ offset: true }),
-    updatedAt: z.string().datetime({ offset: true }),
+    builtAt: isoDateTime({ offset: true }),
+    updatedAt: isoDateTime({ offset: true }),
     /** wallet → [points, first row's moment ("" for a wallet without rows)]. */
     rows: z.record(z.string().min(32).max(64), StandingSchema),
   })

@@ -1,5 +1,5 @@
 import type { Role } from '@/city/lib/crew/read';
-import { MenuIcon } from '@/terminal/shell/menu-icons';
+import { MenuIcon, type MenuIconName } from '@/terminal/shell/menu-icons';
 import a from './agents.module.css';
 
 /**
@@ -19,11 +19,11 @@ export function PlusIcon() {
   );
 }
 
-/** The mark in its square, lit for the bot the card is about. */
-export function RoleBadge({ role, on = false }: { role: Role; on?: boolean }) {
+/** The mark in its square, lit for the bot the card is about — or, given one, the menu's own mark (the AI trader's). */
+export function RoleBadge({ role, on = false, icon }: { role: Role; on?: boolean; icon?: MenuIconName }) {
   return (
     <span className={a.badge} data-on={on ? '' : undefined}>
-      <RoleIcon role={role} />
+      {icon ? <MenuIcon name={icon} /> : <RoleIcon role={role} />}
     </span>
   );
 }

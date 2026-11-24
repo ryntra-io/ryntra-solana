@@ -49,7 +49,7 @@ import {
   JUPITER_SWAP_V2_BASE_URL,
   JupiterResponseReadError,
   MAX_ROUTE_HOPS,
-  NO_ROUTE_CODES,
+  jupiterSaysNoRoute,
   asAmount,
   asInteger,
   asObject,
@@ -269,7 +269,7 @@ export async function fetchJupiterBuild(
       });
     }
     const errorCode = typeof rawBody.errorCode === "string" && /^[A-Z0-9_:-]{1,96}$/.test(rawBody.errorCode) ? rawBody.errorCode : null;
-    if ((errorCode && NO_ROUTE_CODES.has(errorCode)) || (stated !== null && /no routes? found/i.test(stated))) {
+    if (jupiterSaysNoRoute(body)) {
       return failure("NO_ROUTE", "Jupiter's router found no route for this pair at this amount.", { status: response.status, access: selection.access, errorCode });
     }
     return failure(response.status >= 500 ? "HTTP_ERROR" : "REFUSED", stated ? `Jupiter refused the build with HTTP ${response.status}: ${stated}` : `Jupiter refused the build with HTTP ${response.status}.`, {

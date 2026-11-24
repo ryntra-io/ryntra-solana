@@ -22,6 +22,7 @@
  */
 
 import { z } from "zod";
+import { isoDateTime } from "../zod/iso-datetime.ts";
 
 import {
   PLAN_EXECUTIONS_LIMIT,
@@ -73,8 +74,8 @@ export const TradingPlanRecordSchema = z
     executions: z.array(StoredPlanExecutionSchema).max(PLAN_EXECUTIONS_LIMIT),
     /** The Strategy blocks judged for this plan, oldest first, the last `PLAN_REVIEWS_KEPT`. */
     reviews: z.array(PlanReviewSchema).max(PLAN_REVIEWS_KEPT).default([]),
-    createdAt: z.string().datetime({ offset: true }),
-    updatedAt: z.string().datetime({ offset: true }),
+    createdAt: isoDateTime({ offset: true }),
+    updatedAt: isoDateTime({ offset: true }),
   })
   .strict();
 

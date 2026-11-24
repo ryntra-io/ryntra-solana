@@ -294,7 +294,8 @@ export function CoinAmount({
 export function MinePanel({ working, empty, children, note }: { working: number; empty: string | null; children?: ReactNode; note?: ReactNode }) {
   const w = useWords(BOTS);
   return (
-    <Panel pad="none" label={w.mine}>
+    // None at work: the name and its one line stand in one row — no wide strip of empty panel (QA 20.11, вада 110).
+    <Panel pad="none" label={w.mine} className={empty && !note ? b.mineQuiet : undefined}>
       <div className={b.mineHead}>
         <Title as="h2" className={b.mineTitle}>
           {w.mine}

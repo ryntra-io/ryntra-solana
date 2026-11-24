@@ -136,6 +136,18 @@ async function readOnce(key: string, target: Target, window: DepthWindow, mints:
   }
 }
 
+/**
+ * «Try again»: the lists that did not answer are read now — the one on screen and, for «All», the two
+ * it is made of. A list that never answered shows its bones while it is read, so the press is seen.
+ */
+export function readDepthAgain(targets: readonly Target[], window: DepthWindow, mints: readonly string[] = []): void {
+  for (const target of targets) {
+    const key = readKey(target, window, mints);
+    if (useDepth.getState().reads[key]?.status === 'failed') useDepth.setState((st) => ({ reads: { ...st.reads, [key]: { status: 'reading', coins: [], at: 0 } } }));
+    void read(target, window, mints);
+  }
+}
+
 /** Keeps the list on screen read: now, then every `REFRESH_MS` while the page is visible. */
 export function useDepthRead(list: Target, window: DepthWindow, mints: readonly string[]): Read {
   const key = readKey(list, window, mints);

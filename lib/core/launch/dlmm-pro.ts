@@ -22,9 +22,19 @@
  * from twice the first price to ten times it — more of it the farther. It is the creator's own coin, not locked: the
  * order is the creator's to collect, and once trading is open, to cancel. Before the opening nobody may take it out.
  *
+ * **The reward for the pool's liquidity** (off unless the creator asks): a part of the supply — a tenth at
+ * most — is kept out of the locked liquidity and paid, as the pool's liquidity-mining reward, to the liquidity at the
+ * price, second by second, from the opening for the days the creator picks. The program pays it to every position whose
+ * range holds the price, in proportion to its liquidity — the launch's own locked positions among them: until somebody
+ * else puts liquidity at the price, the creator's and Ryntra's locked positions earn it 40 : 60. A pool's creator has
+ * one reward slot of the program's two (the other is Meteora's operator's), so a launch pays one coin: its own. The
+ * whole reward is paid into the pool's vault at the supply's step and cannot be taken back; only what the program
+ * emitted while no liquidity stood at the price returns to the creator, once the days are over — and the launch's own
+ * locked liquidity stands at every price from the first one to about a hundred times it.
+ *
  * **Steps.** A launch is three steps the creator's wallet signs one after another, each built from the chain as the
- * step before it left it: the coin, the pool, the supply (with the ladder, where there is one). A launch left
- * half-way is taken up from the step the chain shows, by its creator alone.
+ * step before it left it: the coin, the pool, the supply (with the ladder and the reward, where there are). A launch
+ * left half-way is taken up from the step the chain shows, by its creator alone.
  */
 
 /** Meteora's DLMM Pro program — the one address a launch's pool and positions are made by; the same on mainnet and devnet. */
@@ -71,6 +81,25 @@ export const DLMM_PRO_LAUNCH_TERMS = Object.freeze({
    * for the launch to be the one shown: twice it, less the spacing a tick is aligned to.
    */
   ladder: Object.freeze({ shareBps: 500, nearBps: 10_000, farBps: 90_000, rungs: 5, spread: "further", lowestMultiple: 1.95 } as const),
+  /**
+   * The reward for the pool's liquidity: the program's reward slot a pool's creator sets up — its only one
+   * (SDK 0.1.3 `CREATOR_REWARD_INDEX`; slot 1 is set up by Meteora's operator alone, `MissingOperatorAccount`) —, the
+   * least and the most of the supply it may be, basis points, and its days: the program's one day to one year
+   * (`MIN_REWARD_DURATION`, `MAX_REWARD_DURATION`). `shares` and `days` are the choices the form offers; a sentence
+   * may name any share and any whole number of days inside the bounds.
+   */
+  reward: Object.freeze({
+    slot: 0,
+    minShareBps: 10,
+    maxShareBps: 1_000,
+    minDays: 1,
+    maxDays: 365,
+    shares: Object.freeze([100, 200, 500, 1_000] as const),
+    days: Object.freeze([7, 30, 90] as const),
+    /** The default the form starts at when the creator switches it on. */
+    defaultShareBps: 200,
+    defaultDays: 30,
+  }),
   opening: Object.freeze({
     /** Seconds from the build to the opening when the creator names no time. */
     defaultAfter: 900,
@@ -96,16 +125,95 @@ export function dlmmProLadderRaw(ladder: boolean): bigint {
   return ladder ? (DLMM_PRO_SUPPLY_RAW * BigInt(DLMM_PRO_LAUNCH_TERMS.ladder.shareBps)) / 10_000n : 0n;
 }
 
+/** What the creator asks the reward for the pool's liquidity to be: a share of the supply, basis points, over whole days. */
+export type DlmmProRewardAsk = Readonly<{ shareBps: number; days: number }>;
+
+/** Why a reward cannot be the one asked for, in plain words; null — it can. */
+export function dlmmProRewardProblem(ask: DlmmProRewardAsk): string | null {
+  const terms = DLMM_PRO_LAUNCH_TERMS.reward;
+  if (!Number.isSafeInteger(ask.shareBps) || ask.shareBps < terms.minShareBps || ask.shareBps > terms.maxShareBps) return `A reward is ${terms.minShareBps / 100} % to ${terms.maxShareBps / 100} % of the supply.`;
+  if (!Number.isSafeInteger(ask.days) || ask.days < terms.minDays || ask.days > terms.maxDays) return `A reward runs ${terms.minDays} to ${terms.maxDays} days.`;
+  return null;
+}
+
+/** The reward's part of the supply, base units; zero — a launch without one. */
+export function dlmmProRewardRaw(shareBps: number | null | undefined): bigint {
+  return shareBps ? (DLMM_PRO_SUPPLY_RAW * BigInt(shareBps)) / 10_000n : 0n;
+}
+
+/** The seconds of a reward's days. */
+export const dlmmProRewardSeconds = (days: number): number => days * 86_400;
+
 /**
- * The parts of the supply: the creator's ladder (none unless asked), the creator's position, and Ryntra's — which is
- * the rest, so nothing of the supply is left out by rounding.
+ * The program's emission of an amount over a window: atoms a second, Q64.64, rounded down — and what the vault is
+ * funded with for it, rounded up as the program rounds: never more than the amount, short of it by under an atom a
+ * second. The same arithmetic as the venue's own `emissionOf` (`lib/core/venues/meteora-dlmm-pro/rewards.server.ts`).
  */
-export function dlmmProSupplyParts(split: boolean, ladder = false): Readonly<{ creatorRaw: bigint; ryntraRaw: bigint; ladderRaw: bigint }> {
+export function dlmmProEmission(amountRaw: bigint, seconds: number): Readonly<{ perSecondX64: bigint; fundedRaw: bigint }> {
+  const window = BigInt(seconds);
+  if (window <= 0n) return { perSecondX64: 0n, fundedRaw: 0n };
+  const perSecondX64 = (amountRaw << 64n) / window;
+  const q64 = 1n << 64n;
+  return { perSecondX64, fundedRaw: (perSecondX64 * window + q64 - 1n) / q64 };
+}
+
+/**
+ * Who earns the reward while the launch's own locked liquidity is the only liquidity at the price: the
+ * creator's position and Ryntra's, by their liquidity — 40 : 60 with the split of D-M2, the whole to the creator's one
+ * position without it. The program pays every position that holds the price by its liquidity and has no way to leave
+ * one out: no flag on a position, no second reward slot for the creator (slot 1 is Meteora's operator's), no delegate
+ * that could send a position's reward to anyone but its owner. So nothing keeps Ryntra's locked position from earning
+ * it; the creator is told how much before the signature instead.
+ */
+export function dlmmProRewardLockedShare(split: boolean): Readonly<{ creatorBps: number; ryntraBps: number }> {
+  return split ? { creatorBps: DLMM_PRO_LAUNCH_TERMS.split.creatorBps, ryntraBps: DLMM_PRO_LAUNCH_TERMS.split.ryntraBps } : { creatorBps: 10_000, ryntraBps: 0 };
+}
+
+/** A day of the reward, base units: the whole over its days, rounded down. */
+export function dlmmProRewardPerDayRaw(amountRaw: bigint, days: number): bigint {
+  return Number.isSafeInteger(days) && days > 0 ? amountRaw / BigInt(days) : 0n;
+}
+
+/**
+ * A day of the reward, divided as the program divides it, when others hold `othersBps` of the liquidity at the price:
+ * theirs, and the rest by the launch's locked positions' liquidity. With nobody else there (`othersBps` 0) Ryntra's
+ * locked position earns 60 % of each day; with others holding 62.4 % (the rehearsal of 20.11), 22.6 %.
+ */
+export function dlmmProRewardDay(perDayRaw: bigint, split: boolean, othersBps = 0): Readonly<{ othersRaw: bigint; creatorRaw: bigint; ryntraRaw: bigint }> {
+  const others = BigInt(Math.max(0, Math.min(10_000, Math.round(othersBps))));
+  const othersRaw = (perDayRaw * others) / 10_000n;
+  const locked = perDayRaw - othersRaw;
+  const ryntraRaw = (locked * BigInt(dlmmProRewardLockedShare(split).ryntraBps)) / 10_000n;
+  return { othersRaw, creatorRaw: locked - ryntraRaw, ryntraRaw };
+}
+
+/**
+ * What the creator has spent of the reward so far, from the pool's own slot: `flowedRaw` — what flowed to
+ * the liquidity at the price; `idleRaw` — what found no liquidity there, the creator's to take back once the days are
+ * over; `leftRaw` — what is still to flow. `idleSeconds` are the program's own count, as of `updatedAt`; seconds since
+ * then count as idle only while nothing stands at the price (`liquidityNow` false).
+ */
+export function dlmmProRewardSpent(args: Readonly<{ perSecondX64: bigint; fundedRaw: bigint; opensAt: number; endsAt: number; idleSeconds: number; updatedAt: number; liquidityNow: boolean; now: number }>): Readonly<{ flowedRaw: bigint; idleRaw: bigint; leftRaw: bigint }> {
+  const until = Math.min(args.now, args.endsAt);
+  const elapsed = Math.max(0, until - args.opensAt);
+  const lateIdle = args.liquidityNow ? 0 : Math.max(0, until - Math.max(args.updatedAt, args.opensAt));
+  const idleSeconds = Math.min(elapsed, Math.max(0, args.idleSeconds) + lateIdle);
+  const of = (seconds: number) => (args.perSecondX64 * BigInt(seconds)) >> 64n;
+  const emitted = elapsed >= args.endsAt - args.opensAt ? args.fundedRaw : of(elapsed) < args.fundedRaw ? of(elapsed) : args.fundedRaw;
+  const idleRaw = of(idleSeconds) < emitted ? of(idleSeconds) : emitted;
+  return { flowedRaw: emitted - idleRaw, idleRaw, leftRaw: args.fundedRaw - emitted };
+}
+
+/**
+ * The parts of the supply: the creator's ladder (none unless asked), the reward for the pool's liquidity (none unless
+ * asked), the creator's position, and Ryntra's — which is the rest, so nothing of the supply is left out by rounding.
+ */
+export function dlmmProSupplyParts(split: boolean, ladder = false, rewardRaw = 0n): Readonly<{ creatorRaw: bigint; ryntraRaw: bigint; ladderRaw: bigint; rewardRaw: bigint }> {
   const ladderRaw = dlmmProLadderRaw(ladder);
-  const locked = DLMM_PRO_SUPPLY_RAW - ladderRaw;
-  if (!split) return { creatorRaw: locked, ryntraRaw: 0n, ladderRaw };
+  const locked = DLMM_PRO_SUPPLY_RAW - ladderRaw - rewardRaw;
+  if (!split) return { creatorRaw: locked, ryntraRaw: 0n, ladderRaw, rewardRaw };
   const creatorRaw = (locked * BigInt(DLMM_PRO_LAUNCH_TERMS.split.creatorBps)) / 10_000n;
-  return { creatorRaw, ryntraRaw: locked - creatorRaw, ladderRaw };
+  return { creatorRaw, ryntraRaw: locked - creatorRaw, ladderRaw, rewardRaw };
 }
 
 /**
@@ -135,6 +243,11 @@ export type DlmmProLaunchChain = Readonly<{
    * and the step that placed it landed: an open order is its owner's to close).
    */
   ladder: boolean | null;
+  /**
+   * The reward for the pool's liquidity: null or absent — the launch has none; true — the pool's creator slot pays the
+   * launch's coin and its emission is funded.
+   */
+  reward?: boolean | null;
 }>;
 
 /** The step a launch waits for; null — every step is on chain. A step is never offered before the one it stands on. */
@@ -144,6 +257,7 @@ export function dlmmProNextStage(chain: DlmmProLaunchChain): DlmmProLaunchStage 
   if (!chain.creatorPosition) return "SUPPLY";
   if (chain.ryntraPosition && (!chain.ryntraPosition.made || !chain.ryntraPosition.handed)) return "SUPPLY";
   if (chain.ladder === false) return "SUPPLY";
+  if (chain.reward === false) return "SUPPLY";
   return null;
 }
 
@@ -161,7 +275,7 @@ export type DlmmProLaunchFacts = Readonly<{
    * said the schedule settles at; null — the launch's own step never built a pool, and whatever pool stands there is
    * not the one its creator was shown.
    */
-  terms: Readonly<{ pair: DlmmProLaunchPair; quoteMint: string; opensAt: number; initialTickId: number; endFeeBps: number | null; settlesAtPriceMultiple: number | null; dynamicCeilingBps: number | null; ryntra: string | null; poolSource: "launch" | "config"; config: string | null; /** Whether the launch was built with the creator's ladder; absent — it was not. */ ladder?: boolean }>;
+  terms: Readonly<{ pair: DlmmProLaunchPair; quoteMint: string; opensAt: number; initialTickId: number; endFeeBps: number | null; settlesAtPriceMultiple: number | null; dynamicCeilingBps: number | null; ryntra: string | null; poolSource: "launch" | "config"; config: string | null; /** Whether the launch was built with the creator's ladder; absent — it was not. */ ladder?: boolean; /** The reward for the pool's liquidity it was built with — its coins and its seconds; null or absent — none. */ reward?: Readonly<{ amountRaw: string; seconds: number }> | null }>;
   mint: Readonly<{ token2022: boolean; mintAuthority: string | null; freezeAuthority: string | null; supplyRaw: string; decimals: number; extensions: readonly string[]; metadataAuthority: string | null }>;
   pool: Readonly<{
     kind: "static" | "dynamic" | "launch";
@@ -202,6 +316,11 @@ export type DlmmProLaunchFacts = Readonly<{
   ladder?: Readonly<{ amountRaw: string; nearestTickId: number | null; resting: boolean; /** Who holds the order's NFT of the creator's wallet; null — not the creator. */ holder: string | null }> | null;
   /** Whether trading is open now, by the pool's own clock; absent — it is not. */
   open?: boolean;
+  /**
+   * The pool's creator reward slot as the chain holds it: its coin, its authority and its emission; null — the slot was
+   * never set up. Absent — the launch has no reward.
+   */
+  reward?: Readonly<{ mint: string; authority: string; emissionPerSecondX64: string; opensAt: number; endsAt: number }> | null;
 }>;
 
 /** The Token-2022 extensions an honest coin carries: its metadata, in the mint itself. */
@@ -242,7 +361,9 @@ export function dlmmProPoolProblems(facts: DlmmProPoolFacts): string[] {
   ) {
     problems.push("the pool's fee is not the launch's schedule");
   }
-  if (pool.liquidityMining) problems.push("the pool pays rewards the launch was not built with");
+  const rewarded = Boolean(facts.terms.reward);
+  if (pool.liquidityMining && !rewarded) problems.push("the pool pays rewards the launch was not built with");
+  if (!pool.liquidityMining && rewarded) problems.push("the pool cannot pay the launch's reward");
   if (!near(pool.dynamicCeilingBps, facts.terms.dynamicCeilingBps, 0.005)) problems.push("the pool's volatility fee is not the launch's");
   if (pool.collectedIn !== "tokenY") problems.push("the pool takes its fee in the coin itself");
   if (!fromConfig && pool.partner !== null) problems.push("the pool names a partner");
@@ -277,10 +398,17 @@ export function dlmmProHonestProblems(facts: DlmmProLaunchFacts): string[] {
   } catch {
     problems.push("what went into the pool could not be read");
   }
-  /* What the locked positions hold is the supply less the creator's ladder; the ladder is checked on its own below. */
+  /* What the locked positions hold is the supply less the creator's ladder and the reward; each is checked on its own below. */
   const ladderRaw = dlmmProLadderRaw(facts.terms.ladder === true);
-  if (supplied < DLMM_PRO_SUPPLY_RAW - ladderRaw - DLMM_PRO_SUPPLY_DUST_RAW) problems.push("the supply did not all go into the pool");
+  let rewardRaw = 0n;
+  try {
+    rewardRaw = facts.terms.reward ? BigInt(facts.terms.reward.amountRaw) : 0n;
+  } catch {
+    problems.push("the launch's reward could not be read");
+  }
+  if (supplied < DLMM_PRO_SUPPLY_RAW - ladderRaw - rewardRaw - DLMM_PRO_SUPPLY_DUST_RAW) problems.push("the supply did not all go into the pool");
   if (facts.terms.ladder === true) problems.push(...dlmmProLadderProblems(facts, ladderRaw));
+  if (facts.terms.reward) problems.push(...dlmmProRewardProblems(facts, rewardRaw, facts.terms.reward.seconds));
 
   const creator = facts.positions.find((position) => position.role === "creator");
   const ryntra = facts.positions.find((position) => position.role === "ryntra");
@@ -333,6 +461,23 @@ function dlmmProLadderProblems(facts: DlmmProLaunchFacts, ladderRaw: bigint): st
   /* A tick is a basis point of price: the ladder's nearest price over the first one. */
   const nearest = ladder.nearestTickId === null ? null : Math.pow(1.0001, ladder.nearestTickId - facts.terms.initialTickId);
   if (nearest !== null && !(nearest >= terms.ladder.lowestMultiple)) problems.push("the creator's ladder sells below twice the first price");
+  return problems;
+}
+
+/**
+ * Why a launch's reward is not the one its creator was shown: the pool's creator slot pays the launch's own coin, its
+ * authority is the creator, and its emission is the reward's coins over its days — starting no sooner than the
+ * opening. A start later than the opening (the supply's step signed late) pays the same coins over the same days.
+ */
+function dlmmProRewardProblems(facts: DlmmProLaunchFacts, rewardRaw: bigint, seconds: number): string[] {
+  const reward = facts.reward ?? null;
+  if (reward === null) return ["the launch's reward is not set up"];
+  const problems: string[] = [];
+  if (reward.mint !== facts.pool.tokenX) problems.push("the reward pays another coin");
+  if (reward.authority !== facts.creator) problems.push("the reward is in another wallet's hands");
+  if (!(reward.opensAt >= facts.terms.opensAt) || reward.endsAt - reward.opensAt !== seconds) problems.push("the reward runs for another time");
+  const told = dlmmProEmission(rewardRaw, seconds).perSecondX64;
+  if (told === 0n || reward.emissionPerSecondX64 !== told.toString()) problems.push("the reward pays another amount");
   return problems;
 }
 

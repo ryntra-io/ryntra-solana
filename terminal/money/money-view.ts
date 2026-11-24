@@ -13,7 +13,7 @@ import { MONEY_PATH } from '../shell/shelves.ts';
 /** The section's own address (the Portfolio shelf's, `../shell/shelves.ts`); its tabs are `?tab=` of it, the first one with no part at all. */
 export { MONEY_PATH };
 
-export const MONEY_TABS = ['send', 'receive', 'invoices'] as const;
+export const MONEY_TABS = ['send', 'receive', 'invoices', 'payouts', 'contacts', 'autopay'] as const;
 export type MoneyTab = (typeof MONEY_TABS)[number];
 
 export function isMoneyTab(value: unknown): value is MoneyTab {
@@ -22,10 +22,17 @@ export function isMoneyTab(value: unknown): value is MoneyTab {
 
 /**
  * The tabs that stand: «Send» only where this deployment lets money move (the money switch, `flowLive('send')`);
- * «Receive» and «Invoices» move nothing and always stand. «Private», «Contacts» and «Autopay» have no screen yet: no tab.
+ * «Receive» and «Invoices» move nothing and always stand; «Payouts» only with the private balance open
+ * (`payoutsOpen()`, `NEXT_PUBLIC_RYNTRA_PRIVATE=devnet`). «Contacts» and «Autopay» only where the release
+ * opened them (`contactsOpen()`, `autopayOpen()` — their engines' switches).
  */
-export function tabsShown(sends: boolean): MoneyTab[] {
-  return MONEY_TABS.filter((tab) => tab !== 'send' || sends);
+export function tabsShown(sends: boolean, payouts = false, more: Readonly<{ contacts?: boolean; autopay?: boolean }> = {}): MoneyTab[] {
+  return MONEY_TABS.filter((tab) => (tab !== 'send' || sends) && (tab !== 'payouts' || payouts) && (tab !== 'contacts' || more.contacts === true) && (tab !== 'autopay' || more.autopay === true));
+}
+
+/** «Contacts» and «Autopay» alone, in their order: what the screen adds after the tabs that were. */
+export function moreTabs(more: Readonly<{ contacts?: boolean; autopay?: boolean }>): MoneyTab[] {
+  return tabsShown(false, false, more).filter((tab) => tab === 'contacts' || tab === 'autopay');
 }
 
 /** The tab the section opens on: «Send» where it stands, «Receive» otherwise. */

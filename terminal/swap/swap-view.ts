@@ -254,6 +254,15 @@ export function reasonOf(input: Readonly<{ code: string | null | undefined; solT
   return code === 'ORDER_BUILD_FAILED' ? 'notBuilt' : null;
 }
 
+/**
+ * A price that did not come because Jupiter has no route for the pair: the engine's `QUOTE_NO_ROUTE`, or an
+ * exact order's `ORDER_NO_ROUTE`. Said calmly in the screen's own line — the pair is not a danger, it is just not
+ * carried now — never the venue's sentence and never a refusal's red.
+ */
+export function noRouteOf(code: string | null | undefined): boolean {
+  return /^(QUOTE_|ORDER_)?NO_ROUTE$/.test(code ?? '');
+}
+
 /* ── a pair from the address ──────────────────────────────────────────── */
 
 /** «Main»'s coins by their tickers in an address (SOL, USDC, USDT, JUP, BONK …); any other coin by its mint. */
@@ -283,6 +292,19 @@ export function pairOfLink(from: string | null, to: string | null): Readonly<{ s
   if (b && (!base(b) || (base(a) && b === SOL.mint) || !a)) return { subject: b, side: 'buy', counter: a };
   if (a) return { subject: a, side: 'sell', counter: b };
   return null;
+}
+
+/**
+ * The amount a link names (`&amount=1.5` — the swap Ryntra's MCP prepares for another AI): always of the coin
+ * that goes, `from`. The card takes it where its own model puts that amount — a sale's amount of the coin itself, a
+ * buy's amount of SOL or USDC that pays. A buy paid in another coin starts again in that coin once it is picked, so the
+ * person types it there. The person's digits, more than zero; null for anything else.
+ */
+export function amountOfLink(value: string | null, pair: Readonly<{ side: Side; counter: string | null }>): string | null {
+  const text = value?.trim().replace(',', '.') ?? '';
+  if (!/^\d{1,12}(\.\d{1,9})?$/.test(text) || Number(text) <= 0) return null;
+  if (pair.side === 'buy' && pair.counter !== SOL.mint && pair.counter !== USDC.mint) return null;
+  return text.replace(/^0+(?=\d)/, '');
 }
 
 export { BRIDGE_PATH, leaveOf, type Leave } from './leave.ts';

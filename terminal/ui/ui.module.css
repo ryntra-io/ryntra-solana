@@ -267,6 +267,29 @@
   }
 }
 
+/* On a phone the «i» is drawn larger, its place for a thumb still 44 px (flaw 8: a 28 px «i» beside the
+   header's 44 px bell). */
+@media (max-width: 767px) {
+  .info {
+    width: 36px;
+    height: 36px;
+  }
+
+  .info > svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .infoWord {
+    width: auto;
+    height: 36px;
+  }
+
+  .info::after {
+    inset: -4px;
+  }
+}
+
 .infoPop {
   position: absolute;
   right: 0;
@@ -298,6 +321,20 @@
 
 .tabs::-webkit-scrollbar {
   display: none;
+}
+
+/* A row wider than its place fades softly at the edge that hides more of it: no word stands broken there.
+   The mask is drawn with an opaque token — only its alpha counts. */
+.tabs[data-fade='end'] {
+  mask-image: linear-gradient(to right, var(--ink) calc(100% - 32px), transparent);
+}
+
+.tabs[data-fade='start'] {
+  mask-image: linear-gradient(to left, var(--ink) calc(100% - 32px), transparent);
+}
+
+.tabs[data-fade='both'] {
+  mask-image: linear-gradient(to right, transparent, var(--ink) 32px, var(--ink) calc(100% - 32px), transparent);
 }
 
 .tab {
@@ -580,12 +617,15 @@
   transition: left 0.15s, background-color 0.15s;
 }
 
-/* On is the brand's violet with a white knob: amber stays the action's. */
-.switch[aria-checked='true'] {
+/* On is the brand's violet with a white knob: amber stays the action's. A track inside a larger control (the private
+   toggle, `PrivacyToggle`) says it with `data-on`, its control carrying the state. */
+.switch[aria-checked='true'],
+.switch[data-on] {
   background: rgba(153, 69, 255, 0.6);
 }
 
-.switch[aria-checked='true']::after {
+.switch[aria-checked='true']::after,
+.switch[data-on]::after {
   left: 21px;
   background: var(--ice);
 }
@@ -740,6 +780,14 @@
   background: var(--panel-up);
 }
 
+/* A logo in dark ink (`logo-tone.ts`) stands on a light disc, a thin ring of it round the mark. */
+.logoInk {
+  box-sizing: border-box;
+  padding: 2px;
+  object-fit: contain;
+  background: var(--ice);
+}
+
 .logoS {
   width: 22px;
   height: 22px;
@@ -799,6 +847,22 @@
 .tbl {
   display: flex;
   flex-direction: column;
+}
+
+/* A table that no longer fits its panel lets its quieter columns go, a step at a time (`Table fold`): the
+   step on the table hides every column marked with it or a lower one. */
+.tbl[data-fold='1'] [data-fold='1'],
+.tbl[data-fold='2'] :is([data-fold='1'], [data-fold='2']),
+.tbl[data-fold='3'] :is([data-fold='1'], [data-fold='2'], [data-fold='3']) {
+  display: none;
+}
+
+/* What a gone column carried that the row must keep stands elsewhere in the row, marked `data-unfold={step}`:
+   hidden until the table reaches that step. */
+.tbl[data-fold='0'] [data-unfold],
+.tbl[data-fold='1'] :is([data-unfold='2'], [data-unfold='3']),
+.tbl[data-fold='2'] [data-unfold='3'] {
+  display: none;
 }
 
 .th,
@@ -952,7 +1016,7 @@
 }
 
 /* ── the page: one template for every section ──────────────────────────────────────────────────────────────
-   Two kinds. An action page is one container `--page` wide in the middle of the working area, its content from the
+   Two kinds. An action page is one container `--page` wide on the working area's left line, its content from the
    top; every tab of its section stands in the same container. A desk takes the whole working width. The head is one
    line in both: the name, the tabs straight after it, a quiet mark on the right. */
 
@@ -965,9 +1029,11 @@
   padding-top: 24px;
 }
 
+/* One axis from the menu and the whole screen on every width. An action page stands on the working area's left line and runs its whole width, as the laptop's
+   1440 shows it: the two columns keep the laptop's measure (720 : 376) and grow with the screen. */
 .page[data-page='action'] {
-  max-width: var(--page);
-  margin-inline: auto;
+  max-width: none;
+  margin-inline: 0;
 }
 
 .pageHead {
@@ -1007,6 +1073,14 @@
   margin-left: auto;
 }
 
+/* The page's mode (the private toggle): last on the right; on a phone it stays beside the name. */
+.pageMode {
+  display: flex;
+  flex: none;
+  align-items: center;
+  margin-left: auto;
+}
+
 /* An action page of a section whose other tabs are desks (`head="desk"` — the Bots' forms beside the Grid):
    the page runs the working width as the desk does, so the head and its tabs stand on the desk's line on every tab; what
    is under the head keeps the action page's width and stands on the same line, under the head's first letter — one axis
@@ -1018,7 +1092,7 @@
 
 .page[data-head='desk'] > :not(.pageHead) {
   width: 100%;
-  max-width: var(--page);
+  max-width: none;
   margin-inline: 0;
 }
 
@@ -1026,8 +1100,10 @@
    page's whole width. */
 .actionBody {
   display: grid;
-  grid-template-columns: minmax(0, var(--page-main)) var(--page-side);
-  justify-content: space-between;
+  /* The laptop's measure, grown with the screen: at 1440 the main column is `--page-main` and the side `--page-side`; on
+     a wider screen both grow in the same ratio, the side never under its own width. */
+  grid-template-columns: minmax(0, 720fr) minmax(var(--page-side), 376fr);
+  justify-content: stretch;
   align-items: start;
   gap: 24px;
 }
@@ -1071,15 +1147,15 @@
   /* The light stays behind the container, on the head's line, not the whole working width. */
   .page[data-page='action'][data-head='desk'] {
     background-position: left top;
-    background-size: min(100%, var(--page)) 640px;
+    background-size: 100% 640px;
   }
 }
 
 /* A narrow desk: the whole page as wide as a form — its head, its lists and its two columns, the side one under the
-   main one. */
+   main one — on the same left line. */
 @media (max-width: 1099px) {
   .page[data-page='action'] {
-    max-width: var(--page-main);
+    max-width: max(var(--page-main), (var(--page-main) + 128px - 100%) * 10000);
   }
 
   .page[data-head='desk'] > :not(.pageHead) {
@@ -1115,6 +1191,10 @@
 
   .pageMark {
     display: none;
+  }
+
+  .pageMode {
+    order: 2;
   }
 
   .actionBody {

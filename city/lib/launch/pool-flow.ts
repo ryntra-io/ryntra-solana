@@ -23,7 +23,7 @@ import { BUILD_AGED, BUILD_UNEXPECTED, CITY_CLOSED, WALLET_REFUSED } from './ref
 /** A step did not land: the launch is on chain in part, and waits for its creator. */
 export const POOL_HALF_WAY = 'POOL_HALF_WAY';
 
-export type PoolChecker = (args: Readonly<{ wires: readonly string[]; stage: PoolStage; creator: string; mint: string; pool: string }>) => PoolCheck;
+export type PoolChecker = (args: Readonly<{ wires: readonly string[]; stage: PoolStage; creator: string; mint: string; pool: string; handOvers?: number; reward?: boolean | null }>) => PoolCheck;
 
 /** How long the flow waits for a step that was sent and not answered for, and how often it asks. */
 const SETTLE_MS = 45_000;
@@ -82,10 +82,13 @@ export async function runPoolLaunch(args: Readonly<{
   let opens = opensAt ?? 0;
   /* Whether the launch has the split, as its first build in this flow said: the one NFT a later step may hand over is held to it. */
   let split: boolean | null = null;
+  /* Whether the launch pays a reward, as its first build in this flow said: one more transaction its supply's step may hold. */
+  let rewarded: boolean | null = null;
   /* At most one pass per step, and one more for a step taken up after a send that was not answered for. */
   for (let pass = 0; pass < POOL_STAGES.length + 2; pass += 1) {
     let again = false;
-    const request: LaunchPoolBuildRequest = mint === null ? { creator: signer.address, metadataUri: metadataUri!, pair: args.choice.pair, opensAt, ...(args.choice.ladder ? { ladder: true } : {}) } : { creator: signer.address, mint };
+    const reward = args.choice.reward ?? null;
+    const request: LaunchPoolBuildRequest = mint === null ? { creator: signer.address, metadataUri: metadataUri!, pair: args.choice.pair, opensAt, ...(args.choice.ladder ? { ladder: true } : {}), ...(reward ? { reward: { shareBps: reward.shareBps, days: reward.days } } : {}) } : { creator: signer.address, mint };
     const fresh = await signFreshBytes<LaunchPoolBuildResponse, readonly string[], Extract<Answer<LaunchPoolBuildResponse>, { ok: false }>>({
       build: async () => {
         onPhase({ step: 'build' });
@@ -99,9 +102,14 @@ export async function runPoolLaunch(args: Readonly<{
         if (mint === null && built.data.stage === 'COIN' && (built.data.ladder !== null) !== args.choice.ladder) return { ok: false, code: BUILD_UNEXPECTED, message: 'The engine built another ladder than the review showed.' };
         const told = built.data.ladder;
         if (told && (told.shareBps !== POOL_LADDER.shareBps || told.nearMultiple !== POOL_LADDER.near || told.farMultiple !== POOL_LADDER.far)) return { ok: false, code: BUILD_UNEXPECTED, message: 'The engine built another ladder than the review showed.' };
+        /* The reward is the creator's to ask for: a new launch is built with exactly the share and the days the review showed. */
+        const toldReward = built.data.reward ?? null;
+        if (mint === null && built.data.stage === 'COIN' && (toldReward === null ? reward !== null : reward === null || toldReward.shareBps !== reward.shareBps || toldReward.days !== reward.days)) return { ok: false, code: BUILD_UNEXPECTED, message: 'The engine built another reward than the review showed.' };
+        rewarded ??= toldReward !== null;
+        if ((toldReward !== null) !== rewarded) return { ok: false, code: BUILD_UNEXPECTED, message: 'The engine built another reward than the launch has.' };
         split ??= built.data.split !== null;
         if ((built.data.split !== null) !== split) return { ok: false, code: BUILD_UNEXPECTED, message: 'The engine built another split than the launch has.' };
-        const read = check({ wires: built.data.unsignedWireBase64, stage: built.data.stage, creator: signer.address, mint: built.data.mint, pool: built.data.pool, handOvers: split ? 1 : 0 });
+        const read = check({ wires: built.data.unsignedWireBase64, stage: built.data.stage, creator: signer.address, mint: built.data.mint, pool: built.data.pool, handOvers: split ? 1 : 0, reward: rewarded });
         if (!read.ok) return { ok: false, code: BUILD_UNEXPECTED, message: read.reason };
         return built;
       },

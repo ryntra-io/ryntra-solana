@@ -4,8 +4,8 @@ import { CityApp } from "@/city/components/CityApp";
 import { LaunchedOpener } from "@/city/components/launch/LaunchedOpener";
 import { LANG_BOOT_SCRIPT, LANG_KEY, type Lang } from "@/city/lib/i18n/langs";
 import { BUNDLED_CITY } from "@/city/lib/market/bundled";
-import { CITY_CARD_SIZE } from "@/city/lib/share/card";
-import { LAUNCHES_CARD_WORDS } from "@/city/lib/share/words";
+import { SHARE_CARD_SIZE } from "@/terminal/share/cards";
+import { SHARE_WORDS } from "@/terminal/share/words";
 import { CITY_FONTS } from "@/city/styles/fonts";
 import s from "@/city/styles/city.module.css";
 
@@ -13,7 +13,7 @@ import { SITE, SITE_NAME, TWITTER } from "../seo";
 
 /* `/launches` and `/uk/launches` — every coin launched on Ryntra's launchpad: the city, opened on its window
    «Launched on Ryntra» (`city/components/launch/LaunchedLayer.tsx`). One address to hand anyone who asks where the
-   launches are. Its card is the city's own frame of the live city with the page's line (`opengraph-image.tsx`). */
+   launches are. Its card is Launch's card of the terminal (`opengraph-image.tsx`, decision 105). */
 
 export const LAUNCHES_PATH = { en: "/launches", uk: "/uk/launches" } as const;
 const OG_LOCALES = { en: "en_US", uk: "uk_UA" } as const;
@@ -34,7 +34,7 @@ const WORDS: Readonly<Record<Lang, Readonly<{ title: string; description: string
 export function launchesMetadata(lang: Lang): Metadata {
   const words = WORDS[lang];
   const url = `${SITE}${LAUNCHES_PATH[lang]}`;
-  const image = { url: `${url}/opengraph-image`, ...CITY_CARD_SIZE, alt: LAUNCHES_CARD_WORDS[lang].alt };
+  const image = { url: `${url}/opengraph-image`, ...SHARE_CARD_SIZE, alt: SHARE_WORDS.launch[lang].alt };
   return {
     title: { absolute: words.title },
     description: words.description,

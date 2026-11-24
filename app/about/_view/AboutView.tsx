@@ -6,7 +6,7 @@ import { CONTACTS, contactMailto } from "@/lib/site/contacts";
 import { ActionBody, Page, PageHead, Panel } from "@/terminal/ui";
 
 import b from "../../docs/_book/book.module.css";
-import { DocsBar, OpenLink, useDocsLang } from "../../docs/_book/parts";
+import { DocsBar, LinkList, useDocsLang } from "../../docs/_book/parts";
 
 /** The page's words, English and Ukrainian. */
 export const ABOUT_WORDS = {
@@ -14,7 +14,6 @@ export const ABOUT_WORDS = {
     title: "About Ryntra",
     motto: "Say it. Your agent does the rest.",
     line: "An AI terminal on Solana: the market, trading, launches, bots, agents and earning in one place.",
-    open: "Open Ryntra",
     keysTitle: "Keys stay yours",
     keysLine: "Your wallet signs every move. Ryntra never sees your keys.",
     clearTitle: "Clear before you sign",
@@ -25,6 +24,7 @@ export const ABOUT_WORDS = {
     email: "Email",
     x: "Ryntra on X",
     security: "Security reports",
+    securityWrite: "Write to us in Help",
     more: "More",
     docs: "Docs",
     roadmap: "Roadmap",
@@ -37,10 +37,9 @@ export const ABOUT_WORDS = {
     title: "Про Ryntra",
     motto: "Скажи. Твій агент зробить решту.",
     line: "AI-термінал на Solana: ринок, торгівля, запуски, боти, агенти й заробіток — в одному місці.",
-    open: "Відкрити Ryntra",
     keysTitle: "Ключі в тебе",
     keysLine: "Кожну дію підписує твій гаманець. Ryntra не бачить твоїх ключів.",
-    clearTitle: "Ясно до підпису",
+    clearTitle: "Усе видно до підпису",
     clearLine: "Що отримаєш, комісію й ризик видно до підпису.",
     solanaTitle: "На Solana",
     solanaLine: "Живі дані ринку, Jupiter для обміну, Meteora для запусків і пулів.",
@@ -48,8 +47,9 @@ export const ABOUT_WORDS = {
     email: "Пошта",
     x: "Ryntra в X",
     security: "Звіти про вразливості",
+    securityWrite: "Напиши нам у «Допомозі»",
     more: "Ще",
-    docs: "Документи",
+    docs: "Документація",
     roadmap: "Дорожня карта",
     help: "Допомога",
     legal: "Правове",
@@ -60,45 +60,34 @@ export const ABOUT_WORDS = {
 
 /**
  * `/about` in the terminal's frame and language: Ryntra in one line, three facts, how to reach it; at its
- * foot the Terms and the Privacy Policy. The one amber action opens the terminal.
+ * foot the Terms and the Privacy Policy; on the side the doors to the docs, the roadmap and Help. No amber
+ * action and no second copy of the line: the reader is already in the terminal (the eyes' pass of 20.11).
  */
 export function AboutView() {
   const lang = useDocsLang();
   const w = ABOUT_WORDS[lang];
 
   const side = (
-    <div className={b.sideStack}>
-      <Panel tone="hi" pad="l" className={b.openPanel}>
-        <p className={b.sideLine}>{w.line}</p>
-        <OpenLink href="/">{w.open}</OpenLink>
-      </Panel>
-      <Panel pad="m" label={w.more}>
-        <nav className={b.toc} aria-label={w.more}>
-          <Link href="/docs" className={b.tocLink}>
-            {w.docs}
-          </Link>
-          <Link href="/roadmap" className={b.tocLink}>
-            {w.roadmap}
-          </Link>
-          <Link href="/support" className={b.tocLink}>
-            {w.help}
-          </Link>
-        </nav>
-      </Panel>
-    </div>
+    <Panel pad="m">
+      <LinkList
+        title={w.more}
+        links={[
+          { href: "/docs", label: w.docs },
+          { href: "/roadmap", label: w.roadmap },
+          { href: "/support", label: w.help },
+        ]}
+      />
+    </Panel>
   );
 
   return (
     <Page className={b.page} data-docs="about">
-      <DocsBar lang={lang} here={w.title} />
+      <DocsBar lang={lang} />
       <PageHead title={w.title} />
-      <ActionBody side={side} sideLabel={w.open}>
+      <ActionBody side={side} sideLabel={w.more}>
         <div className={b.mainStack}>
           <p className={b.motto}>{w.motto}</p>
           <p className={b.lead}>{w.line}</p>
-          <OpenLink href="/" className={b.phoneOnly}>
-            {w.open}
-          </OpenLink>
           <ul className={b.does}>
             {[
               [w.keysTitle, w.keysLine],
@@ -130,9 +119,9 @@ export function AboutView() {
               </li>
               <li className={b.doRow}>
                 <span className={b.doTitle}>{w.security}</span>
-                <a className={b.inlineLink} href="/.well-known/security.txt">
-                  security.txt
-                </a>
+                <Link className={b.inlineLink} href="/support?topic=security">
+                  {w.securityWrite}
+                </Link>
               </li>
             </ul>
           </section>

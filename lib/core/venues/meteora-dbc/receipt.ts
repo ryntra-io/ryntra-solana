@@ -14,6 +14,7 @@
  */
 
 import { z } from "zod";
+import { isoDateTime } from "../../../zod/iso-datetime.ts";
 
 import type { CreatorLockObservation } from "./creator-lock.server.ts";
 import type { CreationObservation, LaunchObservation } from "./launch.server.ts";
@@ -77,10 +78,10 @@ export const LaunchReceiptFactsSchema = z
     token: Address,
     pool: Address,
     creator: Address,
-    created: z.object({ signature: Signature, slot: z.number().int().nonnegative(), at: z.string().datetime({ offset: true }).nullable() }).strict(),
+    created: z.object({ signature: Signature, slot: z.number().int().nonnegative(), at: isoDateTime({ offset: true }).nullable() }).strict(),
     creatorFirstBuy: z.object({ quoteInRaw: Raw, tokensOutRaw: Raw, capRaw: Raw }).strict().nullable(),
     /** The creator's lock of that purchase, when the chain shows one that holds it; absent or null, none. */
-    creatorLock: z.object({ escrow: Address, lockedRaw: Raw, cliffAt: z.string().datetime({ offset: true }), endsAt: z.string().datetime({ offset: true }) }).strict().nullable().optional(),
+    creatorLock: z.object({ escrow: Address, lockedRaw: Raw, cliffAt: isoDateTime({ offset: true }), endsAt: isoDateTime({ offset: true }) }).strict().nullable().optional(),
     /**
      * «Спільнота» sharing the creator's fees: the vault holding the curve's creator role and the shares written in it
      * for ever (basis points of the creator's fees); absent or null when the creator's wallet holds the role.
@@ -155,7 +156,7 @@ export const LaunchReceiptFactsSchema = z
       .strict()
       .nullable(),
     marks: z.array(MarkSchema).min(1),
-    observedAt: z.string().datetime({ offset: true }),
+    observedAt: isoDateTime({ offset: true }),
   })
   .strict();
 

@@ -3,7 +3,7 @@
 
 
 /** The contract this build of the package was generated from. */
-export const CONTRACT_VERSION = "1.103.0";
+export const CONTRACT_VERSION = "1.108.0";
 export const CONTRACT_MAJOR = 1;
 
 /** The header a client names its contract major in; a major the server does not serve is refused UNSUPPORTED_API. */
@@ -532,6 +532,14 @@ export const OPERATIONS = {
     parameters: [
       { name: "mint", in: "path", required: true },
     ],
+  },
+  getLaunchStockPair: {
+    operationId: "getLaunchStockPair",
+    path: "/api/v1/launch/stock-pair",
+    tag: "Launch",
+    response: "LaunchStockPairResponse",
+    paged: false,
+    parameters: [],
   },
   getLaunchSurvival: {
     operationId: "getLaunchSurvival",

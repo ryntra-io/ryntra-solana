@@ -7,7 +7,7 @@ import type { DocsFrame } from '@/city/lib/docs/book';
 import { pageKey } from '@/city/lib/docs/nav';
 import { useWords } from '@/city/lib/i18n/dict';
 import { hydrateLang, LANG_LABEL, LANGS, setLang, useLang } from '@/city/lib/i18n/lang';
-import { PAGE_ART, PAGE_IDS, pagePath, SITE_DOC_PATHS, SITE_DOCS, type PageId, type SiteDocId } from '@/city/lib/pages/pages';
+import { LIVE_SITE_DOCS, PAGE_ART, PAGE_IDS, pagePath, SITE_DOC_PATHS, type PageId, type SiteDocId } from '@/city/lib/pages/pages';
 import { CONTACTS } from '@/lib/site/contacts';
 import { DocsFrameView } from '../docs/Frame';
 import { Mark } from '../hud/Mark';
@@ -39,7 +39,7 @@ export function DocumentPage({ id, frame }: { id: PageId; frame: DocsFrame }) {
 }
 
 /**
- * The page around a city page's contents: the bar with the mark, the language and the way back into the city, and the
+ * The page around a city page's contents: the bar with the mark, the language and the way to Ryntra's home, and the
  * other pages at the foot — «What we're building», «Partners» and the roadmap first, then the city's pages.
  * «How it works» (`/how-it-works`) stands in the same shell, with no page current; «What we're building» and
  * the partner page stand in it with their own.
@@ -54,7 +54,7 @@ export function DocumentShell({ doc, current, wide = false, children }: { doc: s
   return (
     <div className={s.scroller} data-city-doc={doc} onScroll={(event) => setSolid(event.currentTarget.scrollTop > 120)}>
       <div className={s.bar} data-solid={solid ? '' : undefined} data-doc-bar="">
-        <Link className={s.brand} href="/" prefetch={false} aria-label={w.backToCity}>
+        <Link className={s.brand} href="/" prefetch={false} aria-label={w.toRyntra}>
           <Mark size={32} />
           <span className={`${s.display} ${s.brandName}`} aria-hidden="true">
             {BRAND.name}
@@ -70,14 +70,14 @@ export function DocumentShell({ doc, current, wide = false, children }: { doc: s
         <Link className={`${s.glass} ${s.back}`} href="/" prefetch={false}>
           <BackGlyph />
           <span className={s.backWords} data-words="">
-            {w.backToCity}
+            {w.toRyntra}
           </span>
         </Link>
       </div>
       <main className={s.docMain}>{children}</main>
       <footer className={s.foot} data-doc-foot="" data-wide={wide === 'docs' ? 'docs' : wide ? '' : undefined}>
         <nav className={s.footNav} aria-label={w.pagesNav} data-words="">
-          {SITE_DOCS.map((page) => (
+          {LIVE_SITE_DOCS.map((page) => (
             <Link key={page} className={`${s.footLink} ${s.footLinkMain}`} href={SITE_DOC_PATHS[page]} prefetch={false} aria-current={page === current ? 'page' : undefined}>
               {w[page]}
             </Link>

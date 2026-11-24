@@ -1,14 +1,14 @@
-import { CITY_CARD_SIZE } from "@/city/lib/share/card";
-import { cityCard } from "@/city/lib/share/card.server";
-import { CARD_WORDS } from "@/city/lib/share/words";
+import { SHARE_CARD_SIZE, shareCardAlt } from "@/terminal/share/cards";
+import { sectionCard } from "@/terminal/share/card.server";
 
-/* The site's share card: the city's own — a frame of the live 3D city, the mark and the line
-   (`city/lib/share/card.server.tsx`). Every page without a card of its own shows it, at `/opengraph-image?v=…`. */
+/* The site's share card: home's — a real frame of the terminal's Market, the mark and the first rule's line
+   (`terminal/share/card.server.tsx`, decision 105: no card shows the city). Every page without a card of its own shows
+   it, at `/opengraph-image?v=…` (`shareCardPath` in `terminal/share/cards.ts`). */
 export const runtime = "nodejs";
 export const revalidate = 86400;
-export const alt = CARD_WORDS.en.alt;
-export const size = CITY_CARD_SIZE;
+export const alt = shareCardAlt("home", "en");
+export const size = SHARE_CARD_SIZE;
 export const contentType = "image/png";
 export default function OpenGraphImage() {
-  return cityCard({ lang: "en" });
+  return sectionCard({ id: "home", lang: "en" });
 }

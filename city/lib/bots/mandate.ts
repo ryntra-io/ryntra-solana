@@ -25,6 +25,12 @@ export function mandateNetwork(value: string | undefined): MandateNetwork | null
 }
 
 export const MANDATE_NET: MandateNetwork | null = mandateNetwork(process.env.NEXT_PUBLIC_RYNTRA_CITY_MANDATE);
+
+/**
+ * The agent sells on its own — the ticket shows its rules and the budget is signed with the sale's policy — only
+ * where the deployment says `NEXT_PUBLIC_RYNTRA_AGENT_EXIT=on` (the server's own switch is `RYNTRA_AGENT_EXIT`).
+ */
+export const MANDATE_EXIT = MANDATE_NET !== null && process.env.NEXT_PUBLIC_RYNTRA_AGENT_EXIT === 'on';
 /** The Wallet Standard chain the wallet signs for. */
 export const MANDATE_CHAIN: 'solana:devnet' | 'solana:mainnet' = MANDATE_NET === 'mainnet' ? 'solana:mainnet' : 'solana:devnet';
 
@@ -40,10 +46,16 @@ export type MandateRecord = Readonly<{
   perTrade: string;
   perDay: string;
   expiresAt: string;
+  /** The sale's policy, the coin the agent keeps and the most of it sold in a day, when it sells on its own. */
+  salePolicy?: string;
+  held?: string;
+  heldProgram?: string;
+  heldDaily?: string;
 }>;
 
 export type MandateStatus = Readonly<{ active: boolean; budgetLamports: string | null }>;
-export type MandateNote = Readonly<{ kind: 'on' | 'stopped' | 'walletNo' | 'refused' | 'unreachable'; at: number }> | null;
+/** `reason` — the engine's own words when it stopped before the wallet: a screen says it in the person's language. */
+export type MandateNote = Readonly<{ kind: 'on' | 'stopped' | 'walletNo' | 'refused' | 'unreachable'; at: number; reason?: string }> | null;
 
 /** Devnet keeps the key it always had; mainnet's mandates are never read as devnet's, nor devnet's as mainnet's. */
 export const keyFor = (network: MandateNetwork | null): string => (network === 'mainnet' ? 'ryntra.city.mandate.mainnet.v1' : 'ryntra.city.mandate.v1');

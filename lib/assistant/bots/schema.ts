@@ -15,6 +15,7 @@
  */
 
 import { z } from "zod";
+import { isoDateTime } from "../../zod/iso-datetime.ts";
 
 import { ASSISTANT_BOT_KINDS, ASSISTANT_GOALS, HORIZON_KEYS } from "./kinds.ts";
 
@@ -75,7 +76,7 @@ export const AssistantBotDraftSchema = z
     grid: z.object({ lower: Pct, upper: Pct, levels: z.number().int().min(3).max(69) }).strict().nullable(),
     ladder: z.object({ steps: z.number().int().min(2).max(12), firstPct: Pct, lastPct: Pct }).strict().nullable(),
     recurring: z.object({ everyHours: z.number().int().min(1).max(720), buys: z.number().int().min(2).max(60) }).strict().nullable(),
-    createdAt: z.string().datetime({ offset: true }),
+    createdAt: isoDateTime({ offset: true }),
   })
   .strict();
 export type AssistantBotDraft = z.output<typeof AssistantBotDraftSchema>;

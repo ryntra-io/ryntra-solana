@@ -1,0 +1,329 @@
+/* The kit's private parts: the toggle «Public ⇄ Private», the band «others see» and the ring's counter. The
+   language of the private mode is violet and lilac — a hidden cell is lilac, a seen one soft; amber stays the screen's
+   one action. Square, as every panel and table of the terminal; the switch's round track is the kit's own `.switch`. */
+
+/* ── the toggle: two words and the switch between them, one control ───── */
+
+.toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  padding: 0 4px;
+  font-family: var(--ui);
+  font-size: var(--type-small);
+  font-weight: 600;
+  color: var(--dim);
+  white-space: nowrap;
+  background: transparent;
+  border: 0;
+  border-radius: var(--r-ctl);
+  cursor: pointer;
+}
+
+.toggleWord {
+  transition: color 0.15s;
+}
+
+.toggle:hover .toggleWord:not(.toggleNow) {
+  color: var(--soft);
+}
+
+.toggleNow {
+  color: var(--ice);
+}
+
+/* ── the band: who, to whom, what, how much — seen or hidden ───────────── */
+
+.band {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+  container-type: inline-size;
+}
+
+.bandHead {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 32px;
+  font-size: var(--type-small);
+  font-weight: 500;
+  color: var(--dim);
+}
+
+.bandGrow {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.strip {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  background: var(--well);
+  border: 1px solid var(--line);
+  border-radius: 0;
+}
+
+.cell {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  padding: 12px 14px;
+  border-left: 1px solid var(--line);
+}
+
+.cell:first-child {
+  border-left: 0;
+}
+
+.cellName {
+  font-size: var(--type-caption);
+  font-weight: 500;
+  color: var(--dim);
+}
+
+.said {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--type-small);
+  font-weight: 600;
+  color: var(--soft);
+  white-space: nowrap;
+}
+
+.said[data-shown='hidden'] {
+  color: var(--lilac);
+}
+
+/* The disclosure «who sees what»: a quiet control, the «i»'s height on a desk, a finger's under one. */
+.more {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 10px 0 8px;
+  font-family: var(--ui);
+  font-size: var(--type-small);
+  font-weight: 600;
+  color: var(--soft);
+  white-space: nowrap;
+  background: transparent;
+  border: 1px solid var(--glass-edge);
+  border-radius: var(--r-ctl);
+  cursor: pointer;
+  transition: color 0.15s, background-color 0.15s;
+}
+
+.more:hover,
+.more[aria-expanded='true'] {
+  color: var(--ice);
+  background: var(--chosen);
+}
+
+.moreMark {
+  transition: transform 0.15s;
+}
+
+.more[aria-expanded='true'] .moreMark {
+  transform: rotate(180deg);
+}
+
+@media (pointer: coarse) {
+  .more {
+    height: 44px;
+  }
+}
+
+/* Behind it: one row per viewer, the same four columns. */
+.viewers {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  background: var(--well);
+  border: 1px solid var(--line);
+  border-radius: 0;
+}
+
+.viewers th,
+.viewers td {
+  padding: 10px 12px;
+  text-align: center;
+  vertical-align: middle;
+  border-top: 1px solid var(--line);
+}
+
+.viewers thead th {
+  border-top: 0;
+  font-size: var(--type-caption);
+  font-weight: 500;
+  color: var(--dim);
+}
+
+.viewers thead th:first-child,
+.viewers tbody th {
+  width: 40%;
+  text-align: left;
+}
+
+.viewers tbody th {
+  font-size: var(--type-small);
+  font-weight: 600;
+  color: var(--ice);
+}
+
+.viewers td {
+  color: var(--soft);
+}
+
+.viewers td[data-shown='hidden'] {
+  color: var(--lilac);
+}
+
+.unseen {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* ── the counter, inside the «i» ───────────────────────────────────────── */
+
+.count {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.countHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: var(--type-caption);
+  font-weight: 500;
+  color: var(--dim);
+}
+
+.countFig {
+  display: block;
+  font-family: var(--display);
+  font-size: var(--type-title);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+  color: var(--ice);
+}
+
+.countSub {
+  display: block;
+  min-height: 1.45em;
+  font-size: var(--type-small);
+  font-weight: 500;
+  color: var(--soft);
+}
+
+.countLine {
+  display: block;
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+  color: var(--ice);
+}
+
+.countLine + .countLine {
+  padding-top: 0;
+  border-top: 0;
+}
+
+/* Reading: the figure's own place, a quiet bar of its height — nothing moves when it comes. */
+.countBone {
+  display: block;
+  width: 60%;
+  height: 24px;
+  background: var(--chosen);
+}
+
+/* ── the kit's stand (`/terminal/kit/private`) ─────────────────────────── */
+
+.standRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 24px;
+}
+
+.standItem {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.standName {
+  display: block;
+  font-size: var(--type-caption);
+  font-weight: 500;
+  color: var(--dim);
+}
+
+.standCounts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+/* The counter as the «i» shows it: the same raised surface and edge. */
+.standCount {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px 16px;
+  font-size: var(--type-small);
+  font-weight: 500;
+  line-height: 1.45;
+  color: var(--ice);
+  background: var(--panel-up);
+  border: 1px solid var(--glass-edge);
+  border-radius: 0;
+}
+
+/* ── a narrow band — a phone, the side column of an action page: two by two ── */
+
+@container (max-width: 520px) {
+  .strip {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .cell:nth-child(odd) {
+    border-left: 0;
+  }
+
+  .cell:nth-child(n + 3) {
+    border-top: 1px solid var(--line);
+  }
+
+  .viewers th,
+  .viewers td {
+    padding: 10px 2px;
+  }
+
+  .viewers thead th {
+    font-size: var(--type-micro);
+  }
+
+  .viewers thead th:first-child,
+  .viewers tbody th {
+    width: 34%;
+    padding-left: 10px;
+  }
+}
+
+@media (max-width: 767px) {
+  .standCounts {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

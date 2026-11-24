@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from "next";
 
 import { PALETTE } from "@/city/lib/palette";
 
-import { SITE, SITE_NAME, TWITTER } from "@/app/seo";
+import { SITE, SITE_NAME, TWITTER, cardImageFor } from "@/app/seo";
 
 import { TerminalFrame } from "../docs/_book/frame";
 import { HelpView } from "./_view/HelpView";
@@ -15,12 +15,15 @@ export const dynamic = "force-static";
 const TITLE = "Ryntra Help — write to us";
 const DESCRIPTION = "A question, a problem, an idea or a security report about Ryntra, the AI terminal on Solana — one form, read by the team.";
 
+/* The page's share card by its address (`terminal/share/cards.ts`). */
+const CARD = cardImageFor("/support");
+
 export const metadata: Metadata = {
   title: { absolute: TITLE },
   description: DESCRIPTION,
   alternates: { canonical: `${SITE}/support` },
-  openGraph: { type: "website", siteName: SITE_NAME, title: TITLE, description: DESCRIPTION, url: `${SITE}/support` },
-  twitter: { card: "summary_large_image", site: TWITTER, creator: TWITTER, title: TITLE, description: DESCRIPTION },
+  openGraph: { type: "website", siteName: SITE_NAME, title: TITLE, description: DESCRIPTION, url: `${SITE}/support`, images: [CARD] },
+  twitter: { card: "summary_large_image", site: TWITTER, creator: TWITTER, title: TITLE, description: DESCRIPTION, images: [CARD.url] },
 };
 
 export const viewport: Viewport = { themeColor: PALETTE.inkDeep, colorScheme: "dark", viewportFit: "cover" };

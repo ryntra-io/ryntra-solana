@@ -22,6 +22,7 @@ export type FactWords = Readonly<{
   spot: string;
   curve: string;
   bidAsk: string;
+  wave: string;
   goesIn: string;
   swap: string;
   swapNone: string;
@@ -41,7 +42,7 @@ export type FactWords = Readonly<{
   gapCheap: (pct: string) => string;
 }>;
 
-export const SHAPE_WORD: Readonly<Record<ShapeId, 'spot' | 'curve' | 'bidAsk'>> = { spot: 'spot', curve: 'curve', bid_ask: 'bidAsk' };
+export const SHAPE_WORD: Readonly<Record<ShapeId, 'spot' | 'curve' | 'bidAsk' | 'wave'>> = { spot: 'spot', curve: 'curve', bid_ask: 'bidAsk', wave: 'wave' };
 
 export type FactsInput = Readonly<{
   range: RangeView;

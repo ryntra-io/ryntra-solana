@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { isoDateTime } from "../zod/iso-datetime.ts";
 
 import { PROTECT_RULES, HOUR_MS, SIGNAL_CODES, SIGNAL_STRENGTH, type SignalCode, trustScore } from "./protect.ts";
 import { PARTNER_NETWORKS, type PartnerNetwork, walletKey } from "./partner.ts";
@@ -34,7 +35,7 @@ export type ReviewEventKind = (typeof REVIEW_EVENT_KINDS)[number];
 export const REVIEW_DECISIONS = ["CLEAR", "ADJUST", "CANCEL"] as const;
 export type ReviewDecision = (typeof REVIEW_DECISIONS)[number];
 
-const AT = z.string().datetime({ offset: true });
+const AT = isoDateTime({ offset: true });
 const SUBJECT = /^(?:pool:(?:solana|arc):[0-9A-Za-z]{32,66}|wallet:[0-9A-Za-z]{32,44})$/;
 const MICROS = /^(?:0|[1-9][0-9]*)$/;
 

@@ -1,0 +1,342 @@
+{
+  "_source": "Shape of POST /v1/parsed-events/scan with returnShape \"transactions\", as published in helius-sdk 3.5.0 (dist/esm/parsedEvents/types.d.ts: ScanTransactionsResponse, ParsedTransactionResult, ParsedTransaction, ParsedTokenTransfer, ParsedNativeTransfer, ScanSummary), read 2026-11-19. Addresses and amounts are examples, not a recording of mainnet.",
+  "addresses": {
+    "MINT": "JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN",
+    "WSOL": "So11111111111111111111111111111111111111112",
+    "USDC": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+    "BUYER": "MriyaNN8TMp6qRWjfr723PK7xgQK7yCt7Kg2v2PQu7X",
+    "PUMPER": "9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM",
+    "POOL": "8sLbNZoA1cfnvMJLPfp98ZLAnFSYCFApfJKMbiXNLwxj",
+    "BUYER_WSOL": "4Nd1mBQtrMJVYVfKf2PJy9NZUZdTAsp7D4xWLs4gDB4T",
+    "BUYER_COIN": "7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU",
+    "POOL_WSOL": "DfXygSm4jCyNCybVYYK6DwvWqjKee8pbDmJGcLWNDXjh",
+    "POOL_COIN": "GThUX1Atko4tqhN2NaiTazWSeFWMuiUvfFnyJyUghFMJ",
+    "TIP": "96gYZGLnJYVFmbjzopPSU6QiEV5fGqZNyN9nmNhvrZU5",
+    "CURVE": "CebN5WGQ4jvEPvsVU4EoHEpgzq1VV7AbicfhtW4xC9iM",
+    "FEE": "62qc2CNXwrYqQScmEdiZFFAnJR262PxWEuNQtxfafNgV",
+    "PUMPER_COIN": "5Q544fKrFoe6tsEbD7S8EmxGTJYAKtTVhAW5Q5pge4j1",
+    "BUYER_USDC": "3emsAVdmGKERbHjmGfQ6oZ1e35dkf5iYcS6U4CPKFVaa",
+    "POOL_USDC": "BQcdHdAQW1hczDbBi9hiegXAR7A98Q9jx3X3iBBBDiq4"
+  },
+  "pages": {
+    "first": {
+      "data": [
+        {
+          "signature": "555555555555555555555555555555555555555555555555555555555555555555555555555555555555551",
+          "parserStatus": "OK",
+          "parsed": {
+            "slot": 380000001,
+            "blockTime": 1794999990,
+            "fee": 105000,
+            "feePayer": "MriyaNN8TMp6qRWjfr723PK7xgQK7yCt7Kg2v2PQu7X",
+            "transactionStatus": "OK",
+            "nativeTransfers": [
+              {
+                "fromUserAccount": "MriyaNN8TMp6qRWjfr723PK7xgQK7yCt7Kg2v2PQu7X",
+                "toUserAccount": "4Nd1mBQtrMJVYVfKf2PJy9NZUZdTAsp7D4xWLs4gDB4T",
+                "amount": 2000000000
+              },
+              {
+                "fromUserAccount": "MriyaNN8TMp6qRWjfr723PK7xgQK7yCt7Kg2v2PQu7X",
+                "toUserAccount": "96gYZGLnJYVFmbjzopPSU6QiEV5fGqZNyN9nmNhvrZU5",
+                "amount": 100000
+              }
+            ],
+            "tokenTransfers": [
+              {
+                "fromUserAccount": "MriyaNN8TMp6qRWjfr723PK7xgQK7yCt7Kg2v2PQu7X",
+                "toUserAccount": "8sLbNZoA1cfnvMJLPfp98ZLAnFSYCFApfJKMbiXNLwxj",
+                "fromTokenAccount": "4Nd1mBQtrMJVYVfKf2PJy9NZUZdTAsp7D4xWLs4gDB4T",
+                "toTokenAccount": "DfXygSm4jCyNCybVYYK6DwvWqjKee8pbDmJGcLWNDXjh",
+                "rawTokenAmount": 2000000000,
+                "decimals": 9,
+                "tokenStandard": "Fungible",
+                "mint": "So11111111111111111111111111111111111111112"
+              },
+              {
+                "fromUserAccount": "8sLbNZoA1cfnvMJLPfp98ZLAnFSYCFApfJKMbiXNLwxj",
+                "toUserAccount": "MriyaNN8TMp6qRWjfr723PK7xgQK7yCt7Kg2v2PQu7X",
+                "fromTokenAccount": "GThUX1Atko4tqhN2NaiTazWSeFWMuiUvfFnyJyUghFMJ",
+                "toTokenAccount": "7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU",
+                "rawTokenAmount": 1000000000000,
+                "decimals": 6,
+                "tokenStandard": "Fungible",
+                "mint": "JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN"
+              }
+            ],
+            "summary": {
+              "type": "swap",
+              "description": "swap",
+              "parsedData": null
+            },
+            "instructions": []
+          }
+        },
+        {
+          "signature": "555555555555555555555555555555555555555555555555555555555555555555555555555555555555552",
+          "parserStatus": "OK",
+          "parsed": {
+            "slot": 380000002,
+            "blockTime": 1794999980,
+            "fee": 5000,
+            "feePayer": "9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM",
+            "transactionStatus": "OK",
+            "nativeTransfers": [
+              {
+                "fromUserAccount": "9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM",
+                "toUserAccount": "CebN5WGQ4jvEPvsVU4EoHEpgzq1VV7AbicfhtW4xC9iM",
+                "amount": 500000000
+              },
+              {
+                "fromUserAccount": "9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM",
+                "toUserAccount": "62qc2CNXwrYqQScmEdiZFFAnJR262PxWEuNQtxfafNgV",
+                "amount": 5000000
+              },
+              {
+                "fromUserAccount": "9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM",
+                "toUserAccount": "5Q544fKrFoe6tsEbD7S8EmxGTJYAKtTVhAW5Q5pge4j1",
+                "amount": 2039280
+              }
+            ],
+            "tokenTransfers": [
+              {
+                "fromUserAccount": "CebN5WGQ4jvEPvsVU4EoHEpgzq1VV7AbicfhtW4xC9iM",
+                "toUserAccount": "9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM",
+                "fromTokenAccount": "GThUX1Atko4tqhN2NaiTazWSeFWMuiUvfFnyJyUghFMJ",
+                "toTokenAccount": "5Q544fKrFoe6tsEbD7S8EmxGTJYAKtTVhAW5Q5pge4j1",
+                "rawTokenAmount": 250000000000,
+                "decimals": 6,
+                "tokenStandard": "Fungible",
+                "mint": "JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN"
+              }
+            ],
+            "summary": null,
+            "instructions": []
+          }
+        },
+        {
+          "signature": "555555555555555555555555555555555555555555555555555555555555555555555555555555555555553",
+          "parserStatus": "OK",
+          "parsed": {
+            "slot": 380000003,
+            "blockTime": 1794999970,
+            "fee": 105000,
+            "feePayer": "MriyaNN8TMp6qRWjfr723PK7xgQK7yCt7Kg2v2PQu7X",
+            "transactionStatus": "OK",
+            "nativeTransfers": [],
+            "tokenTransfers": [
+              {
+                "fromUserAccount": "MriyaNN8TMp6qRWjfr723PK7xgQK7yCt7Kg2v2PQu7X",
+                "toUserAccount": "8sLbNZoA1cfnvMJLPfp98ZLAnFSYCFApfJKMbiXNLwxj",
+                "fromTokenAccount": "7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU",
+                "toTokenAccount": "GThUX1Atko4tqhN2NaiTazWSeFWMuiUvfFnyJyUghFMJ",
+                "rawTokenAmount": 400000000000,
+                "decimals": 6,
+                "tokenStandard": "Fungible",
+                "mint": "JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN"
+              },
+              {
+                "fromUserAccount": "8sLbNZoA1cfnvMJLPfp98ZLAnFSYCFApfJKMbiXNLwxj",
+                "toUserAccount": "MriyaNN8TMp6qRWjfr723PK7xgQK7yCt7Kg2v2PQu7X",
+                "fromTokenAccount": "BQcdHdAQW1hczDbBi9hiegXAR7A98Q9jx3X3iBBBDiq4",
+                "toTokenAccount": "3emsAVdmGKERbHjmGfQ6oZ1e35dkf5iYcS6U4CPKFVaa",
+                "rawTokenAmount": 120000000,
+                "decimals": 6,
+                "tokenStandard": "Fungible",
+                "mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+              }
+            ],
+            "summary": {
+              "type": "swap",
+              "description": "swap",
+              "parsedData": null
+            },
+            "instructions": []
+          }
+        },
+        {
+          "signature": "555555555555555555555555555555555555555555555555555555555555555555555555555555555555554",
+          "parserStatus": "OK",
+          "parsed": {
+            "slot": 380000004,
+            "blockTime": 1794999960,
+            "fee": 105000,
+            "feePayer": "MriyaNN8TMp6qRWjfr723PK7xgQK7yCt7Kg2v2PQu7X",
+            "transactionStatus": "OK",
+            "nativeTransfers": [],
+            "tokenTransfers": [
+              {
+                "fromUserAccount": "MriyaNN8TMp6qRWjfr723PK7xgQK7yCt7Kg2v2PQu7X",
+                "toUserAccount": "9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM",
+                "fromTokenAccount": "7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU",
+                "toTokenAccount": "5Q544fKrFoe6tsEbD7S8EmxGTJYAKtTVhAW5Q5pge4j1",
+                "rawTokenAmount": 10000000000,
+                "decimals": 6,
+                "tokenStandard": "Fungible",
+                "mint": "JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN"
+              }
+            ],
+            "summary": {
+              "type": "transfer",
+              "description": "transfer",
+              "parsedData": null
+            },
+            "instructions": []
+          }
+        },
+        {
+          "signature": "555555555555555555555555555555555555555555555555555555555555555555555555555555555555555",
+          "parserStatus": "OK",
+          "parsed": {
+            "slot": 380000005,
+            "blockTime": 1794999950,
+            "fee": 105000,
+            "feePayer": "9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM",
+            "transactionStatus": "OK",
+            "nativeTransfers": [],
+            "tokenTransfers": [
+              {
+                "fromUserAccount": "9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM",
+                "toUserAccount": "CebN5WGQ4jvEPvsVU4EoHEpgzq1VV7AbicfhtW4xC9iM",
+                "fromTokenAccount": "5Q544fKrFoe6tsEbD7S8EmxGTJYAKtTVhAW5Q5pge4j1",
+                "toTokenAccount": "GThUX1Atko4tqhN2NaiTazWSeFWMuiUvfFnyJyUghFMJ",
+                "rawTokenAmount": 50000000000,
+                "decimals": 6,
+                "tokenStandard": "Fungible",
+                "mint": "JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN"
+              }
+            ],
+            "summary": null,
+            "instructions": [
+              {
+                "instructionIndex": 0,
+                "innerInstructionIndex": null,
+                "stackHeight": 1,
+                "programId": "CebN5WGQ4jvEPvsVU4EoHEpgzq1VV7AbicfhtW4xC9iM",
+                "rawAccounts": [],
+                "rawData": "",
+                "summary": {
+                  "type": "swap",
+                  "description": "swap",
+                  "parsedData": null
+                },
+                "programName": null,
+                "instructionName": "sell",
+                "decoded": null
+              }
+            ]
+          }
+        },
+        {
+          "signature": "555555555555555555555555555555555555555555555555555555555555555555555555555555555555556",
+          "parserStatus": "ERROR",
+          "parserError": {
+            "code": "transaction_not_found",
+            "message": "not found"
+          }
+        },
+        {
+          "signature": "555555555555555555555555555555555555555555555555555555555555555555555555555555555555557",
+          "parserStatus": "OK",
+          "parsed": {
+            "slot": 380000007,
+            "blockTime": 1794999930,
+            "fee": 105000,
+            "feePayer": "MriyaNN8TMp6qRWjfr723PK7xgQK7yCt7Kg2v2PQu7X",
+            "transactionStatus": "ERROR",
+            "nativeTransfers": [],
+            "tokenTransfers": [
+              {
+                "fromUserAccount": "8sLbNZoA1cfnvMJLPfp98ZLAnFSYCFApfJKMbiXNLwxj",
+                "toUserAccount": "MriyaNN8TMp6qRWjfr723PK7xgQK7yCt7Kg2v2PQu7X",
+                "fromTokenAccount": "GThUX1Atko4tqhN2NaiTazWSeFWMuiUvfFnyJyUghFMJ",
+                "toTokenAccount": "7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU",
+                "rawTokenAmount": 1000000,
+                "decimals": 6,
+                "tokenStandard": "Fungible",
+                "mint": "JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN"
+              }
+            ],
+            "summary": null,
+            "instructions": []
+          }
+        }
+      ],
+      "paginationToken": "380000007:3",
+      "scan": {
+        "stoppedOn": "limit",
+        "scannedTransactions": 140,
+        "matchedTransactions": 7,
+        "scannedThrough": {
+          "slot": 380000007,
+          "blockTime": 1794999930
+        },
+        "creditsCharged": 11
+      }
+    },
+    "last": {
+      "data": [
+        {
+          "signature": "555555555555555555555555555555555555555555555555555555555555555555555555555555555555558",
+          "parserStatus": "OK",
+          "parsed": {
+            "slot": 380000008,
+            "blockTime": 1794999920,
+            "fee": 105000,
+            "feePayer": "9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM",
+            "transactionStatus": "OK",
+            "nativeTransfers": [],
+            "tokenTransfers": [
+              {
+                "fromUserAccount": "9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM",
+                "toUserAccount": "8sLbNZoA1cfnvMJLPfp98ZLAnFSYCFApfJKMbiXNLwxj",
+                "fromTokenAccount": "5Q544fKrFoe6tsEbD7S8EmxGTJYAKtTVhAW5Q5pge4j1",
+                "toTokenAccount": "GThUX1Atko4tqhN2NaiTazWSeFWMuiUvfFnyJyUghFMJ",
+                "rawTokenAmount": 100000000000,
+                "decimals": 6,
+                "tokenStandard": "Fungible",
+                "mint": "JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN"
+              },
+              {
+                "fromUserAccount": "8sLbNZoA1cfnvMJLPfp98ZLAnFSYCFApfJKMbiXNLwxj",
+                "toUserAccount": "9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM",
+                "fromTokenAccount": "DfXygSm4jCyNCybVYYK6DwvWqjKee8pbDmJGcLWNDXjh",
+                "toTokenAccount": "5Q544fKrFoe6tsEbD7S8EmxGTJYAKtTVhAW5Q5pge4j1",
+                "rawTokenAmount": 300000000,
+                "decimals": 9,
+                "tokenStandard": "Fungible",
+                "mint": "So11111111111111111111111111111111111111112"
+              }
+            ],
+            "summary": {
+              "type": "swap",
+              "description": "swap",
+              "parsedData": null
+            },
+            "instructions": []
+          }
+        }
+      ],
+      "scan": {
+        "stoppedOn": "windowEnd",
+        "scannedTransactions": 12,
+        "matchedTransactions": 1,
+        "scannedThrough": {
+          "slot": 380000008,
+          "blockTime": 1794999920
+        },
+        "creditsCharged": 11
+      }
+    },
+    "budgetStop": {
+      "data": [],
+      "paginationToken": "379990000:0",
+      "scan": {
+        "stoppedOn": "budget",
+        "scannedTransactions": 3000,
+        "matchedTransactions": 0,
+        "creditsCharged": 13
+      }
+    }
+  }
+}

@@ -5,6 +5,7 @@ import { useWords } from '@/city/lib/i18n/dict';
 import { cityAccount, useCityAccount, useReadiness } from '@/city/lib/quarter/account-live';
 import { shortAddress } from '@/city/lib/trade/format';
 import { useWallet } from '@/city/lib/trade/wallet';
+import { SEEKER_CONNECT_WALLET } from '@/lib/solana/seeker-connect';
 import { seekerRegistered } from '@/lib/solana/wallet.client';
 import { Action, Chip, Icon, Kick, Quiet } from '@/terminal/ui';
 import { closePanel, togglePanel, useFrame } from './frame';
@@ -23,6 +24,8 @@ import s from './shell.module.css';
 export function WalletButton() {
   const w = useWords(WALLET);
   const connection = useWallet((st) => st.connection);
+  // Seeker Connect is listed only where a Seeker is likely (`lib/solana/wallet.client.ts`).
+  const seeker = useWallet((st) => st.wallets.some((one) => one.name === SEEKER_CONNECT_WALLET));
   const ready = useReadiness();
   const step = useCityAccount((st) => (st.from === 'top' ? st.step : null));
   const to = useCityAccount((st) => st.connectingTo);
@@ -60,11 +63,17 @@ export function WalletButton() {
           aria-busy={busy || undefined}
           aria-expanded={step === 'pick'}
           aria-haspopup="dialog"
+          // The word a phone shows beside the icon stands in the button's name: «Connect wallet» holds «Connect»,
+          // and on a Seeker the name says its Seed Vault too.
+          aria-label={seeker ? `${label} · ${w.seedVault}` : label}
           onClick={() => (step === 'pick' ? cityAccount.getState().cancel() : connectWallet())}
         >
-          {/* On a phone the button is this icon alone, beside the bell: the wallet one tap from the first screen. */}
+          {/* On a phone the button is this icon and one word, beside the bell: the wallet one tap from the first screen. */}
           <Icon name="portfolio" className={s.walletIcon} />
           <span className={s.walletText}>{label}</span>
+          <span className={s.walletShort} aria-hidden="true">
+            {seeker ? w.seedVault : w.connectShort}
+          </span>
         </button>
         {showing ? (
           <>
@@ -141,7 +150,7 @@ export function WalletPanel({ inSheet = false }: { inSheet?: boolean }) {
   if (!connection) {
     return (
       <>
-        {step === 'pick' ? <WalletList /> : inSheet ? (
+        {step === 'pick' ? <WalletList inSheet={inSheet} /> : inSheet ? (
           <Quiet full disabled={busy} aria-busy={busy || undefined} onClick={connectWallet}>
             <Icon name="wallet" size="s" />
             {step === 'connecting' ? w.opening(to ?? w.aWallet) : step === 'signing' ? w.checkYourWallet : w.connect}
@@ -202,10 +211,15 @@ function WalletLogo({ src, name }: { src: string | null; name: string }) {
  * «Installed» — the Seeker's first and recommended — and a tap signs in with one; one amber «Sign in with …» for the
  * first, and one calm line: closing the window changes nothing. Under them the popular Solana wallets it does not have,
  * each with its logo and its one step: on a computer its install page, on a phone a link that opens Ryntra inside the
- * wallet's app (`wallet-catalog.ts`). With none in the browser, the first of them is the amber step; its row stays a
- * plain row of the list, so the window holds one lit choice.
+ * wallet's app (`wallet-catalog.ts`).
+ *
+ * With none in the browser, the first of them is the amber step, straight under the head, and
+ * the list holds only the others — never the same wallet twice, a row and a button. A row says its step by its arrow
+ * alone (↗ an install page beside Ryntra, → the wallet's app); its full words are its name for a screen reader, so five
+ * rows never repeat one word. The window closes with its «×» as the phone's menu does — except inside that menu,
+ * whose own «×» closes both.
  */
-function WalletList() {
+function WalletList({ inSheet = false }: { inSheet?: boolean }) {
   const w = useWords(WALLET);
   const wallets = useWallet((st) => st.wallets);
   // Where the page is open, read as the list first draws: it only ever draws in the browser, after a tap (`step` is
@@ -217,16 +231,25 @@ function WalletList() {
   const desk = place === 'desk';
   const first = installed[0] ?? null;
   const firstGet = first ? null : (more.find((row): row is GetRow => row.kind === 'get') ?? null);
+  // The amber step's wallet is not listed again under it.
+  const rest = firstGet ? more.filter((row) => row !== firstGet) : more;
   // An install page opens beside Ryntra; on a phone an «Open» link hands this page to the wallet's app.
   const follow = (row: GetRow) => (row.step === 'install' ? window.open(row.href, '_blank', 'noopener,noreferrer') : window.location.assign(row.href));
-  const stepWord = (row: GetRow) => (row.step === 'install' ? w.install : w.open);
 
   return (
     <div className={s.login}>
       <div className={s.loginHead}>
-        <h2 className={s.loginTitle}>{first ? w.signInTitle : w.connectTitle}</h2>
+        <div className={s.loginTop}>
+          <h2 className={s.loginTitle}>{first ? w.signInTitle : w.connectTitle}</h2>
+          {inSheet ? null : (
+            <button type="button" className={s.closeBtn} aria-label={w.close} onClick={dismissWallet}>
+              <Icon name="close" size="l" />
+            </button>
+          )}
+        </div>
         <p className={s.loginLine}>{first ? w.oneSign : desk ? w.noneHere : w.openInApp}</p>
       </div>
+      {firstGet ? <Action onClick={() => follow(firstGet)}>{firstGet.step === 'install' ? w.installName(firstGet.name) : w.openIn(firstGet.name)}</Action> : null}
       {installed.length ? (
         <div className={s.choices} role="group" aria-label={w.installed}>
           {more.length ? <Kick className={s.choicesKick}>{w.installed}</Kick> : null}
@@ -235,23 +258,24 @@ function WalletList() {
               <WalletLogo src={row.logo} name={row.name} />
               <span className={s.choiceWords}>
                 <span>{row.name}</span>
-                {row.seeker ? <span className={s.choiceSub}>{w.inYourPhone}</span> : null}
+                {/* The Seeker's wallet by one name everywhere — the header, the window, the tickets: its Seed Vault. */}
+                {row.seeker ? <span className={s.choiceSub}>{w.seedVault}</span> : null}
               </span>
               {row.seeker ? <Chip tone="warn">{w.recommended}</Chip> : <Icon name="arrow" size="s" />}
             </button>
           ))}
         </div>
       ) : null}
-      {more.length ? (
-        <div className={s.choices} role="group" aria-label={first ? w.moreWallets : w.connectTitle}>
-          {first ? <Kick className={s.choicesKick}>{w.moreWallets}</Kick> : null}
-          {more.map((row) =>
+      {rest.length ? (
+        <div className={s.choices} role="group" aria-label={w.moreWallets}>
+          {first || firstGet ? <Kick className={s.choicesKick}>{w.moreWallets}</Kick> : null}
+          {rest.map((row) =>
             row.kind === 'seeker' ? (
               <button key={row.key} type="button" className={s.choice} data-wallet={row.key} onClick={() => pick(row.wallet)}>
                 <WalletLogo src={row.logo} name={row.name} />
                 <span className={s.choiceWords}>
                   <span>{row.name}</span>
-                  <span className={s.choiceSub}>{w.onSeeker}</span>
+                  <span className={s.choiceSub}>{w.seedVault}</span>
                 </span>
                 <Icon name="arrow" size="s" />
               </button>
@@ -269,8 +293,7 @@ function WalletList() {
                 <span className={s.choiceWords}>
                   <span>{row.name}</span>
                 </span>
-                <span className={s.choiceStep}>
-                  {stepWord(row)}
+                <span className={s.choiceStep} aria-hidden="true">
                   {/* An install page, beside Ryntra; the wallet's own app on a phone. */}
                   {row.step === 'install' ? <MenuIcon name="out" small /> : <Icon name="arrow" size="s" />}
                 </span>
@@ -279,11 +302,7 @@ function WalletList() {
           )}
         </div>
       ) : null}
-      {first ? (
-        <Action onClick={() => pick(first.wallet)}>{w.signInWith(first.name)}</Action>
-      ) : firstGet ? (
-        <Action onClick={() => follow(firstGet)}>{firstGet.step === 'install' ? w.installName(firstGet.name) : w.openIn(firstGet.name)}</Action>
-      ) : null}
+      {first ? <Action onClick={() => pick(first.wallet)}>{w.signInWith(first.name)}</Action> : null}
       {first ? (
         <p className={s.loginCalm}>
           <Icon name="shield" size="s" />

@@ -18562,6 +18562,118 @@
   ],
   "store": {}
  },
+ "quote refused: Jupiter says no route in its own words, with no code": {
+  "steps": [
+   {
+    "route": "quote",
+    "request": {
+     "headers": {},
+     "body": {
+      "inputMint": "So11111111111111111111111111111111111111112",
+      "outputMint": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB",
+      "amountRaw": "10000000"
+     }
+    },
+    "status": 409,
+    "headers": {
+     "cache-control": "private, no-store, max-age=0",
+     "cdn-cache-control": "no-store",
+     "content-type": "application/json",
+     "ratelimit-limit": "120",
+     "ratelimit-remaining": "119",
+     "ratelimit-reset": "60",
+     "vercel-cdn-cache-control": "no-store"
+    },
+    "body": {
+     "error": {
+      "code": "QUOTE_NO_ROUTE",
+      "message": "Jupiter found no route for this pair at this amount.",
+      "provider": {
+       "errorCode": null
+      }
+     }
+    },
+    "bodyBytesSha256": "4a042ca85edf37cb0335c77745c9c750675ba4ebfbe7dfe2324151b05f9ec9ac",
+    "calls": [
+     {
+      "kind": "rpc",
+      "host": "rpc-primary.golden.test",
+      "method": "getAccountInfo",
+      "params": [
+       "5jB1d1kaDWieDnwgqaGBq3tN2rvk844rrQNopZidep95",
+       {
+        "encoding": "base64",
+        "dataSlice": {
+         "offset": 40,
+         "length": 32
+        },
+        "commitment": "confirmed"
+       }
+      ]
+     },
+     {
+      "kind": "rpc",
+      "host": "rpc-primary.golden.test",
+      "method": "getAccountInfo",
+      "params": [
+       "So11111111111111111111111111111111111111112",
+       {
+        "encoding": "base64",
+        "commitment": "confirmed"
+       }
+      ]
+     },
+     {
+      "kind": "rpc",
+      "host": "rpc-primary.golden.test",
+      "method": "getAccountInfo",
+      "params": [
+       "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB",
+       {
+        "encoding": "base64",
+        "commitment": "confirmed"
+       }
+      ]
+     },
+     {
+      "kind": "http",
+      "method": "GET",
+      "host": "api.jup.ag",
+      "path": "/swap/v2/order",
+      "query": [
+       [
+        "amount",
+        "10000000"
+       ],
+       [
+        "excludeRouters",
+        "jupiterz"
+       ],
+       [
+        "inputMint",
+        "So11111111111111111111111111111111111111112"
+       ],
+       [
+        "outputMint",
+        "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB"
+       ],
+       [
+        "referralAccount",
+        "5jB1d1kaDWieDnwgqaGBq3tN2rvk844rrQNopZidep95"
+       ],
+       [
+        "referralFee",
+        "50"
+       ]
+      ],
+      "providerKey": "SENT",
+      "body": null
+     }
+    ]
+   }
+  ],
+  "store": {}
+ },
  "quote refused: a retired mint": {
   "steps": [
    {

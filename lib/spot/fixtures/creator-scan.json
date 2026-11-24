@@ -1,0 +1,434 @@
+{
+ "_source": "Shape of POST /v1/parsed-events/scan with returnShape \"transactions\", as published in helius-sdk 3.5.0 (dist/esm/parsedEvents/types.d.ts) — the same shape as token-events-scan.json. A mint's own tokens come from an empty account (fromUserAccount and fromTokenAccount \"\"), as Helius writes a mint. Addresses and amounts are examples made for the test (wallets on the curve, curves and pools off it), not a recording of mainnet.",
+ "addresses": {
+  "CREATOR": "7v54NWdBtkjuAFJrLGsS2SXnuk8nKam81mZJeeYxVFi9",
+  "W1": "mBKqcnGotbsSb5vNrdyhzZ5EhqZdids9QYiTRckvi7v",
+  "W2": "AoVsGaj8MSJ6xwKxfFxo9iZWH3enC8RRTXKH2fx2F8os",
+  "H1": "FMUEmtxhU46GzhKF4FW9MLJdQWiLgjiXP9TYRWSrqTpV",
+  "H2": "6TcyBfPdBt1kjsvDZLzmBFnuMaLWiTaAt4RjUr9VA5YD",
+  "H3": "4MfyR4G3NWfVRDWo6iNAHDBZqWMgwZX6FNtMqEW3a9JT",
+  "H4": "6c5fX1cKYGRNNbozjDdUr2s5vfUuS1XTistmZeG2kZY6",
+  "H5": "4Mz4Y6iXdBdAbPMv874YWPgH2oy6QKARovMt2pNurh6e",
+  "H6": "7nLFtY5yiR4CZnkB6bYMth3bbAns9DnFhtgjHGqcCiRn",
+  "SOURCE_S": "5WcE8o73vmsSZXeeWTLm3ty3fAJKCnBWRF6VuKUme5nu",
+  "SOURCE_F": "6JhaGdekBjU2RfiYWSjYdQAibx4LfSfTNFEeMUHnUVz7",
+  "RELAYER": "AB3FQHskSYuWVw4M9EpGdxNzrAjBNiYGpbH4CVzLFene",
+  "TIP": "Bow1CGKGDB9mNxeWdw85E2aCthQ1oZX4oFEe7fYT17ew",
+  "CURVE": "8UxfyLC1jaMSPZcQMqzZGuznpQGEJ7oQcfWhUCcru8C4",
+  "CURVE_A": "4T42ik6yUFomEMRtgpbvAm1HrrGz1Fu64WST1CeADwr6",
+  "POOL_B": "CXvZxP65MaqXZEEsxFjiA8AGjC6qDVNBS88WYaoJVKBa",
+  "CURVE_X": "E5fkRtWuxnhggh7RtGSAZzsXg7X3s3JffrV62NSvxzEJ",
+  "MINT": "2HWPiGWWTmRj2zThV1sLSoTVqPQL96ito2X6NCPkRUKN",
+  "COIN_A": "BdGNAyQ8LAem21VHGqM6W1wDLFYWJTgEUbPxhg5wVMVa",
+  "COIN_B": "7f2oJTHyLHDsRXT5U3pENTBw5UkeUXiyE9Go6gTYEnpz",
+  "COIN_X": "F2MXBB5B58WhTFdJKwaQniNDgrC764Yy3X7wVnP3DVsW",
+  "NFT": "D2dbDtXSomQYH3KH8LmRfjY3YGreJSrEMkcvsFigJt1H",
+  "CURVE_ATA": "DsZ4b9vFbyW5pSiSzf2DuM9JVz9ZyzPaHx53tzVveUZf",
+  "CREATOR_ATA": "CrWTCxj6iuqqgZKHMTrGpjLbjeyuHLram48wCxA9oP3D",
+  "W1_ATA": "DRZx52qHfphFZBUiu5fLq1nkDouUbkN71kVpEBZaX9GN",
+  "W2_ATA": "5dJo4Pyw5pQyYkBSnbeZj4faPoBBEaGsYzUn7re1n77c",
+  "CREATOR_WSOL": "y8zwsTuhbqei4WpV7sZ2K1Hesm5HRzxwpewgNiQUX96"
+ },
+ "launches": {
+  "first": {
+   "data": [
+    {
+     "signature": "4444444444444444444444444444444444444444444444444444444444444444444444444444444111111",
+     "parserStatus": "OK",
+     "parsed": {
+      "slot": 380100001,
+      "blockTime": 1795259200,
+      "fee": 5000,
+      "feePayer": "7v54NWdBtkjuAFJrLGsS2SXnuk8nKam81mZJeeYxVFi9",
+      "transactionStatus": "OK",
+      "nativeTransfers": [
+       {
+        "fromUserAccount": "7v54NWdBtkjuAFJrLGsS2SXnuk8nKam81mZJeeYxVFi9",
+        "toUserAccount": "4T42ik6yUFomEMRtgpbvAm1HrrGz1Fu64WST1CeADwr6",
+        "amount": 1000000000
+       }
+      ],
+      "tokenTransfers": [
+       {
+        "fromUserAccount": "",
+        "toUserAccount": "4T42ik6yUFomEMRtgpbvAm1HrrGz1Fu64WST1CeADwr6",
+        "fromTokenAccount": "",
+        "toTokenAccount": "DsZ4b9vFbyW5pSiSzf2DuM9JVz9ZyzPaHx53tzVveUZf",
+        "rawTokenAmount": 1000000000000000,
+        "decimals": 6,
+        "tokenStandard": "Fungible",
+        "mint": "BdGNAyQ8LAem21VHGqM6W1wDLFYWJTgEUbPxhg5wVMVa"
+       },
+       {
+        "fromUserAccount": "4T42ik6yUFomEMRtgpbvAm1HrrGz1Fu64WST1CeADwr6",
+        "toUserAccount": "7v54NWdBtkjuAFJrLGsS2SXnuk8nKam81mZJeeYxVFi9",
+        "fromTokenAccount": "DsZ4b9vFbyW5pSiSzf2DuM9JVz9ZyzPaHx53tzVveUZf",
+        "toTokenAccount": "CrWTCxj6iuqqgZKHMTrGpjLbjeyuHLram48wCxA9oP3D",
+        "rawTokenAmount": 20000000000000,
+        "decimals": 6,
+        "tokenStandard": "Fungible",
+        "mint": "BdGNAyQ8LAem21VHGqM6W1wDLFYWJTgEUbPxhg5wVMVa"
+       }
+      ],
+      "summary": null,
+      "instructions": []
+     }
+    },
+    {
+     "signature": "4444444444444444444444444444444444444444444444444444444444444444444444444444444111112",
+     "parserStatus": "OK",
+     "parsed": {
+      "slot": 380100002,
+      "blockTime": 1795172800,
+      "fee": 5000,
+      "feePayer": "7v54NWdBtkjuAFJrLGsS2SXnuk8nKam81mZJeeYxVFi9",
+      "transactionStatus": "OK",
+      "nativeTransfers": [
+       {
+        "fromUserAccount": "7v54NWdBtkjuAFJrLGsS2SXnuk8nKam81mZJeeYxVFi9",
+        "toUserAccount": "E5fkRtWuxnhggh7RtGSAZzsXg7X3s3JffrV62NSvxzEJ",
+        "amount": 200000000
+       }
+      ],
+      "tokenTransfers": [
+       {
+        "fromUserAccount": "E5fkRtWuxnhggh7RtGSAZzsXg7X3s3JffrV62NSvxzEJ",
+        "toUserAccount": "7v54NWdBtkjuAFJrLGsS2SXnuk8nKam81mZJeeYxVFi9",
+        "fromTokenAccount": "DsZ4b9vFbyW5pSiSzf2DuM9JVz9ZyzPaHx53tzVveUZf",
+        "toTokenAccount": "CrWTCxj6iuqqgZKHMTrGpjLbjeyuHLram48wCxA9oP3D",
+        "rawTokenAmount": 5000000000,
+        "decimals": 6,
+        "tokenStandard": "Fungible",
+        "mint": "F2MXBB5B58WhTFdJKwaQniNDgrC764Yy3X7wVnP3DVsW"
+       }
+      ],
+      "summary": {
+       "type": "swap",
+       "description": "swap",
+       "parsedData": null
+      },
+      "instructions": []
+     }
+    },
+    {
+     "signature": "4444444444444444444444444444444444444444444444444444444444444444444444444444444111113",
+     "parserStatus": "OK",
+     "parsed": {
+      "slot": 380100003,
+      "blockTime": 1795086400,
+      "fee": 5000,
+      "feePayer": "7v54NWdBtkjuAFJrLGsS2SXnuk8nKam81mZJeeYxVFi9",
+      "transactionStatus": "OK",
+      "nativeTransfers": [],
+      "tokenTransfers": [
+       {
+        "fromUserAccount": "",
+        "toUserAccount": "CXvZxP65MaqXZEEsxFjiA8AGjC6qDVNBS88WYaoJVKBa",
+        "fromTokenAccount": "",
+        "toTokenAccount": "DsZ4b9vFbyW5pSiSzf2DuM9JVz9ZyzPaHx53tzVveUZf",
+        "rawTokenAmount": 1000000000000000000,
+        "decimals": 9,
+        "tokenStandard": "Fungible",
+        "mint": "7f2oJTHyLHDsRXT5U3pENTBw5UkeUXiyE9Go6gTYEnpz"
+       }
+      ],
+      "summary": null,
+      "instructions": []
+     }
+    },
+    {
+     "signature": "4444444444444444444444444444444444444444444444444444444444444444444444444444444111114",
+     "parserStatus": "OK",
+     "parsed": {
+      "slot": 380100004,
+      "blockTime": 1795003600,
+      "fee": 5000,
+      "feePayer": "7v54NWdBtkjuAFJrLGsS2SXnuk8nKam81mZJeeYxVFi9",
+      "transactionStatus": "OK",
+      "nativeTransfers": [],
+      "tokenTransfers": [
+       {
+        "fromUserAccount": "",
+        "toUserAccount": "7v54NWdBtkjuAFJrLGsS2SXnuk8nKam81mZJeeYxVFi9",
+        "fromTokenAccount": "",
+        "toTokenAccount": "CrWTCxj6iuqqgZKHMTrGpjLbjeyuHLram48wCxA9oP3D",
+        "rawTokenAmount": 1,
+        "decimals": 0,
+        "tokenStandard": "Fungible",
+        "mint": "D2dbDtXSomQYH3KH8LmRfjY3YGreJSrEMkcvsFigJt1H"
+       }
+      ],
+      "summary": null,
+      "instructions": []
+     }
+    }
+   ],
+   "paginationToken": "cursor-launches-2",
+   "scan": {
+    "stoppedOn": "limit",
+    "scannedTransactions": 9800,
+    "matchedTransactions": 4,
+    "creditsCharged": 20
+   }
+  },
+  "second": {
+   "data": [
+    {
+     "signature": "4444444444444444444444444444444444444444444444444444444444444444444444444444444111115",
+     "parserStatus": "OK",
+     "parsed": {
+      "slot": 380100005,
+      "blockTime": 1795000000,
+      "fee": 5000,
+      "feePayer": "7v54NWdBtkjuAFJrLGsS2SXnuk8nKam81mZJeeYxVFi9",
+      "transactionStatus": "OK",
+      "nativeTransfers": [
+       {
+        "fromUserAccount": "7v54NWdBtkjuAFJrLGsS2SXnuk8nKam81mZJeeYxVFi9",
+        "toUserAccount": "8UxfyLC1jaMSPZcQMqzZGuznpQGEJ7oQcfWhUCcru8C4",
+        "amount": 1500000000
+       }
+      ],
+      "tokenTransfers": [
+       {
+        "fromUserAccount": "",
+        "toUserAccount": "8UxfyLC1jaMSPZcQMqzZGuznpQGEJ7oQcfWhUCcru8C4",
+        "fromTokenAccount": "",
+        "toTokenAccount": "DsZ4b9vFbyW5pSiSzf2DuM9JVz9ZyzPaHx53tzVveUZf",
+        "rawTokenAmount": 1000000000000000,
+        "decimals": 6,
+        "tokenStandard": "Fungible",
+        "mint": "2HWPiGWWTmRj2zThV1sLSoTVqPQL96ito2X6NCPkRUKN"
+       },
+       {
+        "fromUserAccount": "8UxfyLC1jaMSPZcQMqzZGuznpQGEJ7oQcfWhUCcru8C4",
+        "toUserAccount": "7v54NWdBtkjuAFJrLGsS2SXnuk8nKam81mZJeeYxVFi9",
+        "fromTokenAccount": "DsZ4b9vFbyW5pSiSzf2DuM9JVz9ZyzPaHx53tzVveUZf",
+        "toTokenAccount": "CrWTCxj6iuqqgZKHMTrGpjLbjeyuHLram48wCxA9oP3D",
+        "rawTokenAmount": 50000000000000,
+        "decimals": 6,
+        "tokenStandard": "Fungible",
+        "mint": "2HWPiGWWTmRj2zThV1sLSoTVqPQL96ito2X6NCPkRUKN"
+       }
+      ],
+      "summary": null,
+      "instructions": []
+     }
+    },
+    {
+     "signature": "4444444444444444444444444444444444444444444444444444444444444444444444444444444111116",
+     "parserStatus": "OK",
+     "parsed": {
+      "slot": 380100006,
+      "blockTime": 1794999400,
+      "fee": 5000,
+      "feePayer": "mBKqcnGotbsSb5vNrdyhzZ5EhqZdids9QYiTRckvi7v",
+      "transactionStatus": "OK",
+      "nativeTransfers": [],
+      "tokenTransfers": [
+       {
+        "fromUserAccount": "",
+        "toUserAccount": "E5fkRtWuxnhggh7RtGSAZzsXg7X3s3JffrV62NSvxzEJ",
+        "fromTokenAccount": "",
+        "toTokenAccount": "DsZ4b9vFbyW5pSiSzf2DuM9JVz9ZyzPaHx53tzVveUZf",
+        "rawTokenAmount": 1000000000000000,
+        "decimals": 6,
+        "tokenStandard": "Fungible",
+        "mint": "F2MXBB5B58WhTFdJKwaQniNDgrC764Yy3X7wVnP3DVsW"
+       }
+      ],
+      "summary": null,
+      "instructions": []
+     }
+    }
+   ],
+   "scan": {
+    "stoppedOn": "windowEnd",
+    "scannedTransactions": 4100,
+    "matchedTransactions": 2,
+    "creditsCharged": 15
+   }
+  }
+ },
+ "moves": {
+  "first": {
+   "data": [
+    {
+     "signature": "4444444444444444444444444444444444444444444444444444444444444444444444444444444111114",
+     "parserStatus": "OK",
+     "parsed": {
+      "slot": 380100014,
+      "blockTime": 1795007200,
+      "fee": 5000,
+      "feePayer": "7v54NWdBtkjuAFJrLGsS2SXnuk8nKam81mZJeeYxVFi9",
+      "transactionStatus": "OK",
+      "nativeTransfers": [],
+      "tokenTransfers": [
+       {
+        "fromUserAccount": "7v54NWdBtkjuAFJrLGsS2SXnuk8nKam81mZJeeYxVFi9",
+        "toUserAccount": "AoVsGaj8MSJ6xwKxfFxo9iZWH3enC8RRTXKH2fx2F8os",
+        "fromTokenAccount": "CrWTCxj6iuqqgZKHMTrGpjLbjeyuHLram48wCxA9oP3D",
+        "toTokenAccount": "5dJo4Pyw5pQyYkBSnbeZj4faPoBBEaGsYzUn7re1n77c",
+        "rawTokenAmount": 5000000000000,
+        "decimals": 6,
+        "tokenStandard": "Fungible",
+        "mint": "2HWPiGWWTmRj2zThV1sLSoTVqPQL96ito2X6NCPkRUKN"
+       }
+      ],
+      "summary": null,
+      "instructions": []
+     }
+    },
+    {
+     "signature": "4444444444444444444444444444444444444444444444444444444444444444444444444444444111113",
+     "parserStatus": "OK",
+     "parsed": {
+      "slot": 380100013,
+      "blockTime": 1795003600,
+      "fee": 5000,
+      "feePayer": "7v54NWdBtkjuAFJrLGsS2SXnuk8nKam81mZJeeYxVFi9",
+      "transactionStatus": "OK",
+      "nativeTransfers": [
+       {
+        "fromUserAccount": "8UxfyLC1jaMSPZcQMqzZGuznpQGEJ7oQcfWhUCcru8C4",
+        "toUserAccount": "7v54NWdBtkjuAFJrLGsS2SXnuk8nKam81mZJeeYxVFi9",
+        "amount": 900000000
+       },
+       {
+        "fromUserAccount": "7v54NWdBtkjuAFJrLGsS2SXnuk8nKam81mZJeeYxVFi9",
+        "toUserAccount": "Bow1CGKGDB9mNxeWdw85E2aCthQ1oZX4oFEe7fYT17ew",
+        "amount": 100000
+       }
+      ],
+      "tokenTransfers": [
+       {
+        "fromUserAccount": "7v54NWdBtkjuAFJrLGsS2SXnuk8nKam81mZJeeYxVFi9",
+        "toUserAccount": "8UxfyLC1jaMSPZcQMqzZGuznpQGEJ7oQcfWhUCcru8C4",
+        "fromTokenAccount": "CrWTCxj6iuqqgZKHMTrGpjLbjeyuHLram48wCxA9oP3D",
+        "toTokenAccount": "DsZ4b9vFbyW5pSiSzf2DuM9JVz9ZyzPaHx53tzVveUZf",
+        "rawTokenAmount": 20000000000000,
+        "decimals": 6,
+        "tokenStandard": "Fungible",
+        "mint": "2HWPiGWWTmRj2zThV1sLSoTVqPQL96ito2X6NCPkRUKN"
+       }
+      ],
+      "summary": null,
+      "instructions": []
+     }
+    },
+    {
+     "signature": "4444444444444444444444444444444444444444444444444444444444444444444444444444444111112",
+     "parserStatus": "OK",
+     "parsed": {
+      "slot": 380100012,
+      "blockTime": 1795000600,
+      "fee": 5000,
+      "feePayer": "7v54NWdBtkjuAFJrLGsS2SXnuk8nKam81mZJeeYxVFi9",
+      "transactionStatus": "OK",
+      "nativeTransfers": [],
+      "tokenTransfers": [
+       {
+        "fromUserAccount": "7v54NWdBtkjuAFJrLGsS2SXnuk8nKam81mZJeeYxVFi9",
+        "toUserAccount": "mBKqcnGotbsSb5vNrdyhzZ5EhqZdids9QYiTRckvi7v",
+        "fromTokenAccount": "CrWTCxj6iuqqgZKHMTrGpjLbjeyuHLram48wCxA9oP3D",
+        "toTokenAccount": "DRZx52qHfphFZBUiu5fLq1nkDouUbkN71kVpEBZaX9GN",
+        "rawTokenAmount": 10000000000000,
+        "decimals": 6,
+        "tokenStandard": "Fungible",
+        "mint": "2HWPiGWWTmRj2zThV1sLSoTVqPQL96ito2X6NCPkRUKN"
+       }
+      ],
+      "summary": null,
+      "instructions": []
+     }
+    }
+   ],
+   "paginationToken": "cursor-moves-2",
+   "scan": {
+    "stoppedOn": "limit",
+    "scannedTransactions": 2400,
+    "matchedTransactions": 3,
+    "creditsCharged": 13
+   }
+  },
+  "second": {
+   "data": [
+    {
+     "signature": "4444444444444444444444444444444444444444444444444444444444444444444444444444444111115",
+     "parserStatus": "OK",
+     "parsed": {
+      "slot": 380100005,
+      "blockTime": 1795000000,
+      "fee": 5000,
+      "feePayer": "7v54NWdBtkjuAFJrLGsS2SXnuk8nKam81mZJeeYxVFi9",
+      "transactionStatus": "OK",
+      "nativeTransfers": [
+       {
+        "fromUserAccount": "7v54NWdBtkjuAFJrLGsS2SXnuk8nKam81mZJeeYxVFi9",
+        "toUserAccount": "8UxfyLC1jaMSPZcQMqzZGuznpQGEJ7oQcfWhUCcru8C4",
+        "amount": 1500000000
+       }
+      ],
+      "tokenTransfers": [
+       {
+        "fromUserAccount": "",
+        "toUserAccount": "8UxfyLC1jaMSPZcQMqzZGuznpQGEJ7oQcfWhUCcru8C4",
+        "fromTokenAccount": "",
+        "toTokenAccount": "DsZ4b9vFbyW5pSiSzf2DuM9JVz9ZyzPaHx53tzVveUZf",
+        "rawTokenAmount": 1000000000000000,
+        "decimals": 6,
+        "tokenStandard": "Fungible",
+        "mint": "2HWPiGWWTmRj2zThV1sLSoTVqPQL96ito2X6NCPkRUKN"
+       },
+       {
+        "fromUserAccount": "8UxfyLC1jaMSPZcQMqzZGuznpQGEJ7oQcfWhUCcru8C4",
+        "toUserAccount": "7v54NWdBtkjuAFJrLGsS2SXnuk8nKam81mZJeeYxVFi9",
+        "fromTokenAccount": "DsZ4b9vFbyW5pSiSzf2DuM9JVz9ZyzPaHx53tzVveUZf",
+        "toTokenAccount": "CrWTCxj6iuqqgZKHMTrGpjLbjeyuHLram48wCxA9oP3D",
+        "rawTokenAmount": 50000000000000,
+        "decimals": 6,
+        "tokenStandard": "Fungible",
+        "mint": "2HWPiGWWTmRj2zThV1sLSoTVqPQL96ito2X6NCPkRUKN"
+       }
+      ],
+      "summary": null,
+      "instructions": []
+     }
+    }
+   ],
+   "scan": {
+    "stoppedOn": "windowEnd",
+    "scannedTransactions": 600,
+    "matchedTransactions": 1,
+    "creditsCharged": 11
+   }
+  }
+ },
+ "balance": [
+  {
+   "pubkey": "CrWTCxj6iuqqgZKHMTrGpjLbjeyuHLram48wCxA9oP3D",
+   "account": {
+    "data": {
+     "parsed": {
+      "info": {
+       "mint": "2HWPiGWWTmRj2zThV1sLSoTVqPQL96ito2X6NCPkRUKN",
+       "owner": "7v54NWdBtkjuAFJrLGsS2SXnuk8nKam81mZJeeYxVFi9",
+       "tokenAmount": {
+        "amount": "15000000000000",
+        "decimals": 6,
+        "uiAmount": 15000000,
+        "uiAmountString": "15000000"
+       }
+      },
+      "type": "account"
+     },
+     "program": "spl-token",
+     "space": 165
+    },
+    "executable": false,
+    "lamports": 2039280,
+    "owner": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+   }
+  }
+ ]
+}

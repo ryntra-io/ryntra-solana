@@ -6,7 +6,7 @@ import { follow, outcomeOf, reviewFresh, signAndSend, type ActionOutcome, type S
 import type { Holdings } from '../trade/wallet.ts';
 import { useEarn } from './open.ts';
 import { DEFAULT_STYLE, type PierGoal, type PierStyle } from './pier.ts';
-import { EARN_PRO_OPEN, proChoice, proDefaultGoal, type ProAction, type ProBoat, type ProPier, type ProReview, type ProStop } from './pro.ts';
+import { EARN_PRO_OPEN, proChoice, proDefaultGoal, type ProAction, type ProBoat, type ProGoal, type ProPier, type ProReview, type ProStop } from './pro.ts';
 import { createProEngine, type ProEngine } from './pro-engine.ts';
 import { earnWords } from './words.ts';
 
@@ -87,7 +87,7 @@ type Store = {
   boat: ProBoat | null;
   style: PierStyle;
   /** What the person picked; null — the pier's own default. */
-  goal: PierGoal | null;
+  goal: ProGoal | null;
   /** The person's own grid in place of the goal (the terminal's ticket): 32 columns of 0 to 8 cells; null — the goal stands. */
   shape: readonly number[] | null;
   typed: string;
@@ -106,7 +106,7 @@ type Store = {
   openBoat: (boat: ProBoat) => void;
   back: () => void;
   setStyle: (style: PierStyle) => void;
-  setGoal: (goal: PierGoal) => void;
+  setGoal: (goal: ProGoal) => void;
   setShape: (shape: readonly number[] | null) => void;
   setTyped: (text: string) => void;
   setStop: (stop: ProStop) => void;
@@ -120,8 +120,11 @@ type Store = {
 let ticket = 0;
 const START_TEXT = '1';
 
-/** The goal in force on a pier: the person's, else the pier's own default. */
-export const proGoal = (pier: ProPier, picked: PierGoal | null): PierGoal => picked ?? proDefaultGoal(pier);
+/** The goal in force on a pier: the person's, else the pier's own default — Wave included (the terminal's ticket). */
+export const proGoalOf = (pier: ProPier, picked: ProGoal | null): ProGoal => picked ?? proDefaultGoal(pier);
+
+/** The goal in force as the city's frozen window names it: one of the three; it never offers Wave. */
+export const proGoal = (pier: ProPier, picked: ProGoal | null): PierGoal => (picked === null || picked === 'wave' ? proDefaultGoal(pier) : picked);
 
 export const useProPier = create<Store>((set, get) => {
   const hold = (phase: ProPhase) => {
@@ -133,7 +136,7 @@ export const useProPier = create<Store>((set, get) => {
     const st = get();
     if (target.kind === 'open') {
       if (!st.pier) return null;
-      const goal = proGoal(st.pier, st.goal);
+      const goal = proGoalOf(st.pier, st.goal);
       const choice = proChoice(st.pier, st.style, goal, st.typed, holdings, owner, st.shape);
       if (!choice.key || !choice.lamports) return null;
       const opening = { action: 'open', owner, pool: st.pier.address, style: st.style, lamports: choice.lamports.toString() } as const;

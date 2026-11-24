@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { isoDateTime } from "../../../../../lib/zod/iso-datetime.ts";
 
 import { walletReceiptsList, walletReceiptsPut } from "@/lib/account/rpc";
 import { privateNoStoreHeaders } from "@/lib/http-control";
@@ -27,7 +28,7 @@ const PutSchema = z.object({
     kind: z.enum(["send", "swap", "bridge", "receive", "other"]),
     contentHash: z.string().regex(/^[0-9a-f]{64}$/),
     payload: z.record(z.string(), z.unknown()),
-    occurredAt: z.string().datetime({ offset: true }).nullable().optional(),
+    occurredAt: isoDateTime({ offset: true }).nullable().optional(),
   })).min(1).max(200),
 });
 

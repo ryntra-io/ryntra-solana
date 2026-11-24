@@ -1,6 +1,7 @@
 import { digits } from '../../city/lib/i18n/dict.ts';
 import type { Lang } from '../../city/lib/i18n/langs.ts';
 import type { DepthCoin, DepthKind, DepthList, DepthStats, DepthVenue, DepthWindow } from '../../lib/market-depth/model.ts';
+import { rudeName } from '../launch/rude.ts';
 
 /**
  * The Market's table on screen: which coins a filter keeps, how a
@@ -30,7 +31,7 @@ export const LISTS: readonly ShownList[] = ['trending', 'gainers', 'losers', 'tr
  */
 export const MAIN_COLUMNS: Readonly<Record<DepthKind, readonly string[]>> = {
   all: ['n', 'coin', 'price', 'move', 'day', 'volume', 'mcap', 'liquidity', 'holders', 'bs', 'risk', 'quick', 'star'],
-  meme: ['n', 'coin', 'move', 'mcap', 'liquidity', 'holders', 'top', 'bs', 'risk', 'quick', 'star'],
+  meme: ['n', 'coin', 'move', 'mcap', 'liquidity', 'holders', 'age', 'top', 'bs', 'risk', 'quick', 'star'],
   crypto: ['n', 'coin', 'price', 'move', 'day', 'volume', 'mcap', 'liquidity', 'holders', 'risk', 'quick', 'star'],
   stock: ['n', 'coin', 'price', 'day', 'volume', 'mcap', 'quick', 'star'],
   preipo: ['n', 'coin', 'price', 'day', 'volume', 'liquidity', 'quick', 'star'],
@@ -175,6 +176,15 @@ export function riskFacts(coin: Pick<DepthCoin, 'mint' | 'freeze' | 'topHolders'
 export function isRisky(coin: Pick<DepthCoin, 'verified' | 'mint' | 'freeze' | 'topHolders' | 'liquidity' | 'holders' | 'copyOf'>): boolean {
   if (coin.copyOf) return true;
   return !coin.verified && riskFacts(coin).length > 0;
+}
+
+/**
+ * Whether a coin may be bought in one tap: never a coin marked as a copy — a borrowed name, a stock it passes for, a twin
+ * dressed in a known coin's letters — and never a crude name (the Launch showcase's own list). Its page stays open: the
+ * person can still trade it there, eyes open.
+ */
+export function oneTapOk(coin: Readonly<{ symbol: string; name: string; copyOf: string | null }>): boolean {
+  return !coin.copyOf && !rudeName(coin.symbol, coin.name);
 }
 
 /* Cyrillic and Greek letters that read as Latin ones: «TTWО» with a Cyrillic «О» is TTWO to the eye. */
@@ -457,6 +467,22 @@ export function fitColumns<T extends Readonly<{ min: number; rank: number }>>(co
     used += TABLE_GAP + column.min;
   }
   return columns.filter((column) => kept.has(column));
+}
+
+/**
+ * The table's columns as one grid template. A row is a subgrid with the table's padding, and a subgrid's padding is
+ * taken from its edge columns: the first and the last column carry it on top of their own width, or the padding eats
+ * them (EYES 19.11: «10» and «11» stood against the logo — the «#» column was 24 px less the row's 16). The total is
+ * what `fitColumns` counts.
+ */
+export function tableTemplate(columns: readonly Readonly<{ min: number; grow?: number }>[]): string {
+  const edge = TABLE_PAD / 2;
+  return columns
+    .map((column, index) => {
+      const min = column.min + (index === 0 ? edge : 0) + (index === columns.length - 1 ? edge : 0);
+      return column.grow ? `minmax(${min}px, ${column.grow}fr)` : `${min}px`;
+    })
+    .join(' ');
 }
 
 /**

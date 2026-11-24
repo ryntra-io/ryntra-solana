@@ -1,7 +1,9 @@
 import { test } from "node:test";
+import { readFileSync } from "node:fs";
 import assert from "node:assert/strict";
 import { pressOf } from "./bridge-form.ts";
-import { feeShort, flipText, mintOfParam, pairOfLink, pickStart, reasonOf, solThin } from "./swap-view.ts";
+import { feeShort, flipText, mintOfParam, noRouteOf, pairOfLink, pickStart, reasonOf, solThin } from "./swap-view.ts";
+import { SWAP } from "./words.ts";
 import { MAIN_MINTS } from "../coin/staples.ts";
 import { SOL, USDC, USDT_MINT } from "../../city/lib/trade/tiles.ts";
 import { askDecimals, knownDecimals, learnDecimals } from "../../city/lib/trade/decimals.ts";
@@ -46,6 +48,20 @@ test("a refused press is said in the person's terms (M14)", () => {
   assert.equal(reasonOf({ code: "SIMULATION_UNAVAILABLE", solThin: true, frozen: false }), null);
   assert.equal(reasonOf({ code: "ORDER_NO_ROUTE", solThin: true, frozen: false }), null);
   assert.equal(reasonOf({ code: undefined, solThin: true, frozen: true }), null);
+});
+
+test("a pair Jupiter has no route for is said calmly in the screen's own line, the same in English and Ukrainian", () => {
+  assert.equal(noRouteOf("QUOTE_NO_ROUTE"), true);
+  assert.equal(noRouteOf("ORDER_NO_ROUTE"), true);
+  assert.equal(noRouteOf("NO_ROUTE"), true);
+  // A refusal of the venue, a full window, a code that only contains the words: not «no route».
+  for (const code of ["QUOTE_REFUSED", "QUOTE_HTTP_ERROR", "QUOTE_RATE_LIMITED", "ORDER_BUILD_FAILED", "QUOTE_NO_ROUTE_SOON", "", null, undefined]) assert.equal(noRouteOf(code), false, String(code));
+  assert.equal(SWAP.en.noRoute, "Jupiter isn’t taking this pair right now");
+  assert.equal(SWAP.uk.noRoute, "Jupiter не бере цю пару зараз");
+  // One line, no technical word, no exclamation: the venue is named as the person knows it.
+  for (const line of [SWAP.en.noRoute, SWAP.uk.noRoute]) assert.doesNotMatch(line, /HTTP|400|502|route found|API|!|\n/);
+  const ticket = readFileSync(new URL("./SwapTicket.tsx", import.meta.url), "utf8");
+  assert.match(ticket, /noRouteOf\(failed\.code\) \? \{ tone: 'calm', text: w\.noRoute \}/, "the ticket says it in its own words, never the refusal's red");
 });
 
 test("a link names its pair: the coin beyond SOL and USDC is the one the ticket stands on (m2)", () => {

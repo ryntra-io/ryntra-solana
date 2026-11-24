@@ -35,7 +35,7 @@ test("the groups and their items", () => {
     ["agents", ["aiTrader", "scout", "analyst", "ownAi"]],
     ["earn", ["pools", "dlmmPro", "staking", "lending", "earnMine"]],
     ["portfolio", ["overview", "positions", "history", "saved"]],
-    ["money", ["send", "receive", "invoices", "private", "contacts", "autopay"]],
+    ["money", ["send", "receive", "invoices", "payouts", "private", "contacts", "autopay"]],
     ["rewards", ["points", "invite", "partners"]],
   ]);
   assert.equal(MARKET_ITEM.href, "/", "the Market is the home page, above the groups");
@@ -45,15 +45,15 @@ test("an item stands only once its screen is ready: today's menu, and no group w
   assert.deepEqual(ids(menuShown("live", DOORS_OPEN, "stand")), [
     ["trade", ["swap", "spot", "futures", "predict", "bridge"]],
     ["launch", ["launchNew", "launchMine", "launchFresh"]],
-    ["bots", ["allBots", "recurring", "grid", "ladder", "signals", "autopilot"]],
-    ["agents", ["analyst"]],
+    ["bots", ["allBots", "recurring", "grid", "ladder", "copy", "signals", "autopilot"]],
+    ["agents", ["aiTrader", "scout", "analyst"]],
     ["earn", ["pools", "dlmmPro", "staking", "lending", "earnMine"]],
     ["portfolio", ["overview", "positions", "history", "saved"]],
     ["money", ["send", "receive", "invoices"]],
     ["rewards", PARTNERS_OPEN ? ["points", "invite", "partners"] : ["points", "invite"]],
   ]);
   const shown = new Set(menuShown("live", DOORS_OPEN, "stand").flatMap((group) => group.items.map((item) => item.id)));
-  for (const id of ["copy", "keeper", "aiTrader", "scout", "ownAi", "private", "contacts", "autopay", ...(PARTNERS_OPEN ? [] : ["partners"])]) {
+  for (const id of ["keeper", "ownAi", "payouts", "private", "contacts", "autopay", ...(PARTNERS_OPEN ? [] : ["partners"])]) {
     assert.equal(shown.has(id), false, `${id} has no screen yet`);
   }
   assert.deepEqual(menuShown("live", DOORS_OPEN, "closed"), [], "with the switch closed nothing of the menu stands");
@@ -68,10 +68,10 @@ test("an engine door that is shut takes its item away, and an empty group with i
   // The bots: each by its engine's door — the mandate's, the ladder's network, the money autopilot's switch;
   // the paper ones stand everywhere, so «Bots» never goes empty.
   const bots = (door) => menuShown("live", door, "stand").find((group) => group.id === "bots")?.items.map((item) => item.id);
-  assert.deepEqual(bots((gate) => gate !== "trader"), ["allBots", "grid", "ladder", "signals", "autopilot"], "no mandate's engine here: no «Recurring buys»");
-  assert.deepEqual(bots((gate) => gate !== "ladder"), ["allBots", "recurring", "grid", "signals", "autopilot"], "no ladder's network here: no «Order ladder»");
-  assert.deepEqual(bots((gate) => gate !== "pilot"), ["allBots", "recurring", "grid", "ladder", "signals"], "the money autopilot only where its engine is open");
-  assert.deepEqual(bots(() => false), ["allBots", "grid", "signals"], "on paper everywhere; the catalogue always");
+  assert.deepEqual(bots((gate) => gate !== "trader"), ["allBots", "grid", "ladder", "copy", "signals", "autopilot"], "no mandate's engine here: no «Recurring buys»");
+  assert.deepEqual(bots((gate) => gate !== "ladder"), ["allBots", "recurring", "grid", "copy", "signals", "autopilot"], "no ladder's network here: no «Order ladder»");
+  assert.deepEqual(bots((gate) => gate !== "pilot"), ["allBots", "recurring", "grid", "ladder", "copy", "signals"], "the money autopilot only where its engine is open");
+  assert.deepEqual(bots(() => false), ["allBots", "grid", "copy", "signals"], "on paper everywhere; the catalogue always");
 });
 
 test("Futures and Predictions lead to RXN, in a new tab, with no mark RXN does not read", () => {
@@ -128,8 +128,8 @@ test("the item a person is at: the closest address, a coin's page is the Spot, a
   assert.equal(at("/agent"), "analyst");
   assert.equal(at("/agent", "#new"), "analyst");
   assert.equal(at("/bots"), "allBots", "the catalogue lights «All bots», not nothing");
-  for (const bot of ["recurring", "grid", "ladder", "signals", "autopilot"]) assert.equal(at(`/bots/${bot}`), bot, `the bot's own page lights its item`);
-  assert.equal(at("/bots/copy"), null, "a bot without a screen lights nothing");
+  for (const bot of ["recurring", "grid", "ladder", "copy", "signals", "autopilot"]) assert.equal(at(`/bots/${bot}`), bot, `the bot's own page lights its item`);
+  assert.equal(at("/bots/keeper"), null, "a bot without a screen lights nothing");
   assert.equal(at("/earn"), "pools");
   assert.equal(at("/earn", "?tab=staking"), "staking");
   assert.equal(at("/earn", "?tab=lending"), "lending");
@@ -147,11 +147,17 @@ test("the item a person is at: the closest address, a coin's page is the Spot, a
   assert.equal(at("/money", "?tab=receive"), "receive");
   assert.equal(at("/money", "?tab=invoices"), "invoices");
   assert.equal(at("/money", "?tab=contacts"), "send", "a tab without an item lights the section's first");
+  const payouts = MENU.map((group) => ({ ...group, items: group.items.map((item) => (item.id === "payouts" ? { ...item, ready: true } : item)) }));
+  const withPayouts = menuShown("live", DOORS_OPEN, "stand", payouts);
+  assert.equal(itemAt("/money", "?tab=payouts", withPayouts, true), "payouts", "«Payouts» lights its own item, never «Send»");
   const noSend = menuShown("live", (gate) => gate !== "send", "stand");
   assert.equal(itemAt("/money", "", noSend, true), "receive", "without «Send» the section opens on «Receive»");
   assert.equal(at(REWARDS_PATH), "points", "«Rewards» opens on its points");
   assert.equal(at(REWARDS_PATH, "?tab=invite"), "invite");
   assert.equal(at(REWARDS_PATH, "?tab=partners"), PARTNERS_OPEN ? "partners" : "points", "a tab without an item lights its screen");
+  assert.equal(at("/watch"), "overview", "the wallets a person watches stand in the Portfolio");
+  assert.equal(at("/wallet/9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM"), "overview", "a wallet's own page too");
+  assert.equal(at("/watcher"), null);
   assert.equal(at("/city"), null);
   assert.equal(at(`${KIT_PATH}/earn`), "pools", "the kit page lights its shelf's first item");
   assert.equal(at(KIT_PATH), null);

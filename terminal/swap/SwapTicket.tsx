@@ -23,9 +23,11 @@ import { WalletPick } from '@/terminal/coin/WalletPick';
 import { TICKET } from '@/terminal/coin/words';
 import { logoChain } from '@/terminal/market/depth-view';
 import { useMarket } from '@/terminal/shell/useMarket';
-import { Action, CoinLogo, Icon, Kick, Quiet, Shares, amountText, cx, priceText } from '@/terminal/ui';
+import { Action, CoinLogo, Icon, Kick, Quiet, Shares, amountText, cx, priceText, usePrivateMode } from '@/terminal/ui';
+import { FEE } from '@/terminal/ui/words';
+import { PrivateSwapPart, startPrivateSwap, usePrivateButton, type Unit } from './PrivateSwap';
 import { FILL_LIFE_MS, pickSubject, putFill, useSwapScreen } from './state';
-import { feeShort, flipText, pickList, pickPlan, pickStart, rateOf, reasonOf, searchable, solThin, subjectCarry, unitsOf, usdWorth, withFound, type Field } from './swap-view';
+import { feeShort, flipText, noRouteOf, pickList, pickPlan, pickStart, rateOf, reasonOf, searchable, solThin, subjectCarry, unitsOf, usdWorth, withFound, type Field } from './swap-view';
 import { useDepthCoins } from './useDepthCoins';
 import { SWAP } from './words';
 import t from '@/terminal/coin/ticket.module.css';
@@ -381,9 +383,7 @@ function GetField({ asset, balance, choice, onAsset }: { asset: PayAsset; balanc
   const failed = quote.status === 'error' && quote.key === choice.key;
   // A shortfall of the balance is its own line: the price for the amount still stands (B1).
   const priceable = !choice.problem || choice.problem.kind === 'balance';
-  // The coin's decimals still being read: the amount is a real one a moment later, so the field shimmers, never «0».
-  const reading = choice.spendDecimals === null && !choice.problem && !decimalsUnread(choice.inputMint) && /^\d*\.?\d+$/.test(typed) && Number(typed) > 0;
-  const waiting = !figures && !failed && (Boolean(choice.askRaw) || reading) && priceable;
+  const waiting = priceOnItsWay(choice, typed, figures, failed);
   // The dollars: what the engine's own amount out is worth at the market's price.
   const shown = review && review.key === choice.key ? review.order : quote.status === 'ready' && quote.key === choice.key ? quote.body : null;
   const out = shown && figures && priceable ? unitsOf(shown.order.outAmountRaw, decimalsOf(shown, choice.outputMint)) : null;
@@ -407,6 +407,18 @@ function GetField({ asset, balance, choice, onAsset }: { asset: PayAsset; balanc
       </span>
     </BigField>
   );
+}
+
+/**
+ * The price for the amount on screen is on its way: asked and not yet answered, or the coin's decimals still being read
+ * (the amount is a real one a moment later). «You get» shimmers then, never «0», and the terms line under the shares
+ * shimmers in its reserved place — never an empty band over the button (eyes pass 20.11, №18).
+ */
+function priceOnItsWay(choice: Choice, typed: string, figures: Figures | null, failed: boolean): boolean {
+  // A shortfall of the balance is its own line: the price for the amount still stands (B1).
+  const priceable = !choice.problem || choice.problem.kind === 'balance';
+  const reading = choice.spendDecimals === null && !choice.problem && !decimalsUnread(choice.inputMint) && /^\d*\.?\d+$/.test(typed) && Number(typed) > 0;
+  return !figures && !failed && (Boolean(choice.askRaw) || reading) && priceable;
 }
 
 /** The figures on screen: the exact order's when it stands for this choice, else the price's. */
@@ -641,18 +653,23 @@ function MarketPart({ tower, choice, press, onTopUp }: { tower: TowerRef; choice
   const tr = useWords(TRADE);
   const tw = useWords(TICKET);
   const w = useWords(SWAP);
+  const fw = useWords(FEE);
   const side = useTrade((st) => st.side);
   const quote = useTrade((st) => st.quote);
   const review = useTrade((st) => st.review);
   const notice = useTrade((st) => st.notice);
   const phase = useTrade((st) => st.phase);
   const autoBuild = useTrade((st) => st.auto);
+  const typed = useTrade((st) => st.typed);
   const connection = useWallet((st) => st.connection);
   const connecting = useWallet((st) => Boolean(st.connecting));
   const holdings = useWallet((st) => st.holdings);
   const [picking, setPicking] = useState(false);
   const [details, setDetails] = useState(false);
   const detailsId = useId();
+  // «Private» on: the same form and the same button; the press swaps out of the private balance and back (`PrivateSwap`).
+  const priv = usePrivateMode('swap')[0] === 'private';
+  const privButton = usePrivateButton();
   const goBox = useRef<HTMLDivElement>(null);
   // «i» opened on a phone pushes the button down: it is brought back into view, above the bottom bar (m6).
   useEffect(() => {
@@ -701,6 +718,7 @@ function MarketPart({ tower, choice, press, onTopUp }: { tower: TowerRef; choice
     if (noSol) return;
     if (action.does === 'topUp') return onTopUp?.();
     if (action.does !== 'press') return;
+    if (priv && connection) return void (shown && startPrivateSwap(shown.order.order, connection.wallet, connection.address));
     if ((await press()) === 'connect') connectOrPick(() => setPicking(true));
   };
 
@@ -717,7 +735,8 @@ function MarketPart({ tower, choice, press, onTopUp }: { tower: TowerRef; choice
   const note: Readonly<{ tone: string; text: string }> | null =
     (problem ? { tone: 'error', text: problem } : null) ??
     said ??
-    (warnings[0] ? { tone: 'warn', text: warnings[0] } : caution ? { tone: 'warn', text: caution } : failed ? { tone: 'error', text: failed.message } : impact);
+    // A pair Jupiter has no route for is said calmly, in the screen's own words, never a refusal's red.
+    (warnings[0] ? { tone: 'warn', text: warnings[0] } : caution ? { tone: 'warn', text: caution } : failed ? (noRouteOf(failed.code) ? { tone: 'calm', text: w.noRoute } : { tone: 'error', text: failed.message }) : impact);
 
   const labels: Readonly<Record<ActionLabel, string>> = {
     verb: w.go,
@@ -732,7 +751,14 @@ function MarketPart({ tower, choice, press, onTopUp }: { tower: TowerRef; choice
     topUp: w.topUp,
   };
   const terms = Boolean(figures) && priceable && !retry;
-  const label = noSol ? w.needSol : labels[action.label];
+  const pricing = !retry && priceOnItsWay(choice, typed, figures, Boolean(failed));
+  const label = (priv ? privButton.label : null) ?? (noSol ? w.needSol : labels[action.label]);
+  // The private press waits for the exact order the card builds by itself, and for a private swap under way.
+  const privHeld = priv && (privButton.busy || (action.does === 'press' && Boolean(connection) && !shown));
+  const units = new Map<string, Unit>([
+    [choice.inputMint, { symbol: side === 'buy' ? counterUnit : subjectUnit, decimals: body ? decimalsOf(body, choice.inputMint) : null }],
+    [choice.outputMint, { symbol: getUnit, decimals: body ? decimalsOf(body, choice.outputMint) : null }],
+  ]);
   return (
     <>
       {/* The rate on the left, Ryntra's fee and its «i» on the right: one line, the same height whether a price is here
@@ -745,11 +771,14 @@ function MarketPart({ tower, choice, press, onTopUp }: { tower: TowerRef; choice
             </Quiet>
           ) : terms && rate ? (
             digits(w.rate(rate.one, rate.price, rate.other))
+          ) : pricing ? (
+            <span className={cx(t.shimmer, s.rateShimmer)} aria-hidden="true" />
           ) : null}
         </span>
+        {pricing ? <span className={cx(t.shimmer, s.feeShimmer)} aria-hidden="true" /> : null}
         {terms && figures ? (
           <span className={s.feeLine}>
-            {figures.fee ? w.fee(figures.fee) : w.noFeeLine}
+            {figures.fee ? fw.ryntra(figures.fee) : fw.none}
             {off ? <span className={t.off}>{off}</span> : null}
             <ExplainButton label={w.details} open={details} controls={detailsId} onToggle={() => setDetails((was) => !was)} />
           </span>
@@ -765,12 +794,13 @@ function MarketPart({ tower, choice, press, onTopUp }: { tower: TowerRef; choice
           {note.text}
         </p>
       ) : null}
+      {priv ? <PrivateSwapPart units={units} pair={{ inMint: choice.inputMint, outMint: choice.outputMint }} /> : null}
       {picking && !connection ? (
         <WalletPick onBack={() => setPicking(false)} />
       ) : (
         // One size for every word the button says: it never jumps between them (m3).
         <div ref={goBox} className={s.goBox}>
-          <Action className={cx(t.go, s.go)} onClick={() => void tap()} disabled={noSol || action.does === 'none'} busy={action.busy}>
+          <Action className={cx(t.go, s.go)} onClick={() => void tap()} disabled={noSol || action.does === 'none' || privHeld} busy={action.busy || (priv && privButton.busy)}>
             {label}
           </Action>
         </div>

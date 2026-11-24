@@ -23,6 +23,9 @@ import { POST as tokenRoute } from "../api/connect/token/route.ts";
  * in-process. Only the engine is a stand-in — the tools' routes answer from a fixture, so the test proves the
  * connector, not the market. The browser half (the consent page with a wallet extension) is proved separately on a
  * running stand with MCP Inspector (`docs/connector/CONNECT.md`).
+ *
+ * The `/mcp` route itself serves `lib/mcp/endpoint.ts` — open without signing in, the same OAuth when a
+ * token is sent (`./open-e2e.test.mjs`); this file keeps proving the connector library behind it and behind `/mcp/read`.
  */
 
 const ORIGIN = "https://ryntra.io";

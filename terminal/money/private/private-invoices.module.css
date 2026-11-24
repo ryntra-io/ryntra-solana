@@ -1,0 +1,316 @@
+/* «Money → Invoices», private: the mode switch in the page's head, the recipient's panel and list, and the
+   payer's page. Tokens only (docs/terminal/DESIGN.md); corners and cuts are the kit's own. Lilac is the private mode's
+   language, amber stays on the one action. */
+
+/* «Open ⇄ Private» in the page's head: the kit's switch between its two words; the word in force is lit. */
+.mode {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: var(--type-body);
+  font-weight: 600;
+  color: var(--dim);
+}
+
+/* The phone's own row for it: under the head, above the panel, to the right. */
+.modePhone {
+  display: none;
+}
+
+@media (max-width: 767px) {
+  .modePhone {
+    display: flex;
+    justify-content: flex-end;
+  }
+}
+
+.modeWord {
+  min-height: 44px;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  background: none;
+  border: 0;
+}
+
+.modeWord:focus-visible {
+  outline: 1px solid var(--edge);
+  outline-offset: 4px;
+}
+
+.modeOn {
+  color: var(--ice);
+}
+
+.modePrivate {
+  color: var(--lilac);
+}
+
+/* The panel's head: the lock in a lit well, the kick and the main figure beside it. */
+.head {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.badge {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  color: var(--lilac);
+  background:
+    radial-gradient(circle at 50% 40%, color-mix(in srgb, var(--violet) 26%, transparent), transparent 72%),
+    var(--well);
+  border: 1px solid var(--edge-soft);
+}
+
+.words {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.line {
+  margin: 0;
+  font-size: var(--type-body);
+  line-height: 1.45;
+  color: var(--soft);
+}
+
+.fail {
+  margin: 0;
+  font-size: var(--type-body);
+  line-height: 1.45;
+  color: var(--flare);
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+}
+
+.grow {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+}
+
+/* Two quiet presses side by side under the form, the amber one under them. */
+.pair {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 10px;
+}
+
+/* «What it is for» under the figure, as the payer reads it. */
+.forWhat {
+  margin: 0;
+  font-size: var(--type-lead);
+  line-height: 1.4;
+  color: var(--ice);
+  overflow-wrap: anywhere;
+}
+
+/* How long is left: a quiet mark beside the figure. */
+.left {
+  align-self: flex-start;
+}
+
+/* The bones while the private balance is read. */
+.bones {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.bones > span {
+  display: block;
+  height: 18px;
+  background: var(--well);
+  border: 1px solid var(--line);
+}
+
+.bones > span:first-child {
+  width: 40%;
+  height: 40px;
+}
+
+/* The payment's transaction, once it is on chain. */
+.tx {
+  margin: 0;
+  font-size: var(--type-body);
+  color: var(--mint);
+}
+
+.tx a {
+  color: var(--lilac);
+}
+
+/* ── My invoices ─────────────────────────────────────────────────────────────────────────────────────────────── */
+
+.list {
+  flex: none;
+  min-width: 0;
+}
+
+.listHead {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 18px 12px;
+}
+
+.listKick.listKick {
+  flex: 1 1 0;
+  color: var(--ice);
+}
+
+.listLine {
+  margin: 0;
+  padding: 14px 18px 18px;
+  font-size: var(--type-body);
+  line-height: 1.45;
+  color: var(--soft);
+  border-top: 1px solid var(--line);
+}
+
+.rows {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  column-gap: 16px;
+  min-height: 60px;
+  padding: 8px 18px;
+  border-top: 1px solid var(--line);
+}
+
+.itemNames {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.itemNames > b {
+  font-family: var(--display);
+  font-size: var(--type-base);
+  font-weight: 650;
+  color: var(--ice);
+  font-variant-numeric: tabular-nums;
+}
+
+.itemNames > span {
+  overflow: hidden;
+  font-size: var(--type-caption);
+  color: var(--dim);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.itemActs {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.txLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 32px;
+  font-size: var(--type-caption);
+  font-weight: 600;
+  color: var(--mint);
+}
+
+.txLink:hover {
+  color: var(--ice);
+}
+
+/* ── The payer's page: details in the side column ──────────────────────────────────────────────────────────────── */
+
+.facts {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+}
+
+.fact {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 0;
+  border-top: 1px solid var(--line);
+}
+
+.fact:first-child {
+  padding-top: 0;
+  border-top: 0;
+}
+
+.fact dt {
+  font-size: var(--type-caption);
+  color: var(--dim);
+}
+
+.fact dd {
+  margin: 0;
+  font-size: var(--type-body);
+  color: var(--ice);
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 767px) {
+  .item {
+    grid-template-columns: minmax(0, 1fr) auto;
+    row-gap: 8px;
+    padding: 10px 16px;
+  }
+
+  .item > :nth-child(2) {
+    grid-row: 2;
+  }
+
+  .itemActs {
+    grid-row: 1 / span 2;
+    grid-column: 2;
+  }
+}
+
+/* What «i» explains, one fact a line. */
+.how {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0 0 0 18px;
+}
+
+/* How long is left, under the state of an invoice that names what it is for. */
+.under {
+  font-size: var(--type-caption);
+  color: var(--dim);
+  white-space: nowrap;
+}
+
+/* «Report» and «Accountant access» under the list. */
+.report {
+  padding: 0 18px 18px;
+}

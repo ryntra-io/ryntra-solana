@@ -172,12 +172,13 @@ test("no chrome draws a logo of its own", () => {
   }
 });
 
-test("the share card is the city's: the live city's frame and the city's mark, not the R", () => {
+test("the share card is the terminal's (decision 105): a real frame of the section and the header's mark, not the R", () => {
   const og = read("app/opengraph-image.tsx");
-  assert.match(og, /from "@\/city\/lib\/share\/card\.server"/);
-  assert.match(og, /return cityCard\(/);
+  assert.match(og, /from "@\/terminal\/share\/card\.server"/);
+  assert.match(og, /return sectionCard\(/);
   assert.doesNotMatch(og, /app\/brand\/|R_MARK_PATHS|WORDMARK_DARK_UI_DATA_URI/, "the old card is drawn nowhere");
-  assert.match(read("city/lib/share/card.server.tsx"), /M32 2 L37\.2 30 L36\.2 60 L27\.8 60 L26\.8 30 Z/, "the city's spire");
+  assert.doesNotMatch(og, /cityCard|city\/lib\/share/, "the city's card is drawn nowhere");
+  assert.match(read("terminal/share/card.server.tsx"), /M32 2 L37\.2 30 L36\.2 60 L27\.8 60 L26\.8 30 Z/, "the mark's spire, as the terminal's header draws it");
 });
 
 test("Ryn stays a mascot: on public pages the raven never renders as the logo", () => {

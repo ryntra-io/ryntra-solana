@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 
 import { z } from "zod";
+import { isoDateTime } from "../zod/iso-datetime.ts";
 
 import { withBoundedCasRetry, type GuardAtomicVersionedWrite, type GuardStore } from "../guard/store.ts";
 import type { ClaimReconciliation, ClaimSignatureStatus } from "../rewards/claim-settlement.ts";
@@ -85,7 +86,7 @@ export type PayoutKind = (typeof PAYOUT_KINDS)[number];
 const SOLANA_ADDRESS = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
 const POSITIVE = /^[1-9][0-9]*$/;
 const SIGNED_NONZERO = /^-?[1-9][0-9]*$/;
-const AT = z.string().datetime({ offset: true });
+const AT = isoDateTime({ offset: true });
 /** How long a prepared payout may wait for its broadcast, as a cashback claim's. */
 const PREPARATION_MS = 120_000;
 

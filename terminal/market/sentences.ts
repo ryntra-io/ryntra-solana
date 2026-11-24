@@ -58,9 +58,10 @@ export function dipPrice(price: number): string | null {
 
 /**
  * The first screen's sentences: the agent finding new coins, the agent trading every day
- * on the person's own budget, a token launched. The side panel beside the list keeps the coin's own sentences, never these again.
+ * on the person's own budget, a token launched — and (the panel of 23.11: a farmer found nothing of earning
+ * among them) earning on SOL. The side panel beside the list keeps the coin's own sentences, never these again.
  */
-export const HERO: readonly SentenceId[] = ['scout', 'tradeDaily', 'launch'];
+export const HERO: readonly SentenceId[] = ['scout', 'tradeDaily', 'launch', 'earn'];
 
 /**
  * The coin «Trade … every day» names: JUP, else MET, when the agent

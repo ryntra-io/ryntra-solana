@@ -23,6 +23,7 @@
 import { randomBytes } from "node:crypto";
 
 import { z } from "zod";
+import { isoDateTime } from "../zod/iso-datetime.ts";
 
 import {
   BUDGET_MAXIMUM_USD,
@@ -54,7 +55,7 @@ import { PAYMENT_QUEUE_LISTED } from "./limits.ts";
 const COLLECTION = "autoinvestRules" as const;
 const BUDGETS = "autoinvestBudgets" as const;
 const BASE58 = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
-const Iso = z.string().datetime({ offset: true });
+const Iso = isoDateTime({ offset: true });
 /** Every rule of every wallet starts so; a wallet's own rows add the wallet and a colon. */
 const ALL_RULES = "solana:mainnet:";
 

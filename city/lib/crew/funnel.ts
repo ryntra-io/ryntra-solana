@@ -36,8 +36,11 @@ export const FUNNEL_STEPS = [
   'agent_signed',
 ] as const;
 
-/** The visit's way to money beside the card: any wallet connected, the wallet's sign-in, a trade signed, a trade landed. */
-export const FUNNEL_WIDE = ['agent_connect', 'agent_signin', 'agent_trade', 'agent_traded'] as const;
+/**
+ * The visit's way to money beside the card: «Practice first» (the agent on paper, no wallet asked), any wallet
+ * connected, the wallet's sign-in, a trade signed, a trade landed.
+ */
+export const FUNNEL_WIDE = ['agent_practice', 'agent_connect', 'agent_signin', 'agent_trade', 'agent_traded'] as const;
 
 /** Off the path: a signature that did not happen (the budget's, a trade's), and the phone sent to a wallet app. */
 export const FUNNEL_SIDE = ['agent_sign_no', 'agent_wallet_app', 'agent_trade_no'] as const;

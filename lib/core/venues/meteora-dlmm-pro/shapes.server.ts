@@ -2,10 +2,12 @@
  * Liquidity shapes of DLMM Pro: how an amount is spread over a pool's ticks — for a position's ranges and
  * for a limit order's ladder alike.
  *
- * The SDK publishes four: **Spot** (even), **Curve** (most near the price, thinning away from it), **Bid-Ask** (least
- * near the price, thickening away from it) and **Custom** (the caller's own weight per tick). Wave is not one of them
- * in 0.1.2, and this venue does not draw a shape Meteora has not published. Every shape here is the SDK's own
- * `buildLiquidityShape`; this file only names the request and reads the answer back as plain numbers.
+ * The SDK publishes five: **Spot** (even), **Curve** (most near the price, thinning away from it), **Bid-Ask** (least
+ * near the price, thickening away from it), **Wave** (since 0.1.3, Spot and Bid-Ask in one — even over the
+ * half of each side nearest the price, then rising in four steps to twice that weight at the edges, in at most nine
+ * ranges either way it is laid) and **Custom** (the caller's own weight per tick). This venue draws no shape Meteora has
+ * not published: every shape here is the SDK's own `buildLiquidityShape`; this file only names the request and reads
+ * the answer back as plain numbers.
  *
  * A shape is a column per tick of the pool's spacing between `minTickId` and `maxTickId`, each with a weight from 1 to
  * 255, and the ranges those columns merge into — at most 45 for a position. A shape with more is fitted by coarsening
@@ -17,7 +19,7 @@ import { LiquidityLayout, MAX_LIQUIDITY_WEIGHT, StrategyType, buildLiquidityShap
 import { DlmmProRefusal } from "./sdk.server.ts";
 import { MAX_POSITION_RANGES, MAX_TICK_ID, isUsableTick } from "./ticks.ts";
 
-export const SHAPE_STRATEGIES = ["spot", "curve", "bidAsk", "custom"] as const;
+export const SHAPE_STRATEGIES = ["spot", "curve", "bidAsk", "wave", "custom"] as const;
 /**
  * The most ticks a shape is worked out over. A shape is worked out a column a tick, in the caller's own request: ten
  * thousand take a fifth of a second and come back as half a megabyte, and a full range of a spacing of 1 would be
@@ -43,7 +45,7 @@ export type ShapeRequest = Readonly<{
   layout?: "vertical" | "horizontal";
 }>;
 
-const STRATEGY: Readonly<Record<ShapeStrategy, StrategyType>> = { spot: StrategyType.Spot, curve: StrategyType.Curve, bidAsk: StrategyType.BidAsk, custom: StrategyType.Custom };
+const STRATEGY: Readonly<Record<ShapeStrategy, StrategyType>> = { spot: StrategyType.Spot, curve: StrategyType.Curve, bidAsk: StrategyType.BidAsk, wave: StrategyType.Wave, custom: StrategyType.Custom };
 
 /**
  * The SDK's shape for a request on a pool at `currentTickId`. `maxRanges` — the most ranges it may merge into.
@@ -51,7 +53,7 @@ const STRATEGY: Readonly<Record<ShapeStrategy, StrategyType>> = { spot: Strategy
  */
 export function shapeOf(request: ShapeRequest, pool: Readonly<{ tickSpacing: number; tickCurrentId: number }>, maxRanges: number | null = MAX_POSITION_RANGES, needs: "columns" | "ranges" = "columns"): LiquidityShape {
   const strategy = STRATEGY[request.strategy];
-  if (strategy === undefined) throw new DlmmProRefusal("BAD_INPUT", "The shape is Spot, Curve, Bid-Ask or the caller's own weights.");
+  if (strategy === undefined) throw new DlmmProRefusal("BAD_INPUT", "The shape is Spot, Curve, Bid-Ask, Wave or the caller's own weights.");
   if (!isUsableTick(request.minTickId, pool.tickSpacing) || !isUsableTick(request.maxTickId, pool.tickSpacing) || request.minTickId > request.maxTickId) {
     throw new DlmmProRefusal("BAD_INPUT", `The shape's ticks are multiples of the pool's spacing (${pool.tickSpacing}), the first not above the last.`);
   }

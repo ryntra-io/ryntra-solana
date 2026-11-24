@@ -109,6 +109,10 @@ export async function agentTrade(
     coin?: Coin | undefined;
     epoch?: bigint | undefined;
     skipPreflight?: boolean;
+    /** A sale of the coin the agent keeps, under the mandate's sale policy; absent — a buy. */
+    side?: "buy" | "sell";
+    /** A copy's sale, under the sales' policy of its coin's group; absent — the mandate's own. */
+    salePolicy?: PublicKey | undefined;
     /** Called once it is signed, before it is handed to the network: what must survive the process dying from here on. If it throws, nothing is sent. */
     beforeSend?: (sent: Readonly<{ signature: string; validUntilHeight: number }>) => Promise<void>;
   }>,
@@ -116,14 +120,15 @@ export async function agentTrade(
   const { connection, mandate, venueInstruction } = input;
   /* A mandate that ended or was revoked: the chain would refuse, and the agent does not pay the fee to hear it. */
   if (BigInt(Math.floor(Date.now() / 1000)) >= mandate.terms.expiresAt) return { status: "refused-by-agent", reason: "the mandate has ended" };
-  if (!(await connection.getAccountInfo(mandate.policy, "confirmed"))) return { status: "refused-by-agent", reason: "the mandate was revoked" };
+  const policy = input.side === "sell" ? (input.salePolicy ?? mandate.salePolicy) : mandate.policy;
+  if (!policy || !(await connection.getAccountInfo(policy, "confirmed"))) return { status: "refused-by-agent", reason: "the mandate was revoked" };
   const accounts = venueInstruction.keys.map((key) => key.pubkey);
   /* One read: the rule on what reaches the person starts from the same balance the signer sees. */
   const facts = await readFacts(connection, accounts);
   const terms = tradeTerms({ programId: venueInstruction.programId, accounts, data: venueInstruction.data });
   const holding = terms ? heldIn(facts.get(terms.receiver.toBase58())?.data) : 0n;
   const withheld = input.coin?.transferFee && input.epoch !== undefined ? { coin: input.coin, epoch: input.epoch } : undefined;
-  const instructions = agentTradeInstructions({ mandate, venueInstruction, holding, fee: input.fee, setup: input.setup ?? [], transferFee: withheld });
+  const instructions = agentTradeInstructions({ mandate, venueInstruction, holding, fee: input.fee, setup: input.setup ?? [], transferFee: withheld, ...(input.side ? { side: input.side } : {}), ...(input.salePolicy ? { salePolicy: input.salePolicy } : {}) });
   const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash("confirmed");
   /* A route too large for a packet: web3.js refuses to serialize it, and the agent says so instead of failing unnamed. */
   let tx: ReturnType<typeof unsignedTransaction>;

@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 
 import { notAStock } from "../../lib/stocks/pool-facts.ts";
-import { stockLineOf, stockLineText } from "./position-line.ts";
+import { stockLineOf, stockWhyOf } from "./position-line.ts";
 import { STOCK_POSITION } from "./words.ts";
 
 /* The one line before the signature of a position in a stock's pool, and what stands behind its «i». */
@@ -13,15 +13,19 @@ const code = (path) => read(path).replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*
 const ANT = "ANTBTZQ1EUuTxUs3tfeampxdqTWPHmwyJmcWj4xoAyNe";
 const facts = (over = {}) => ({ mint: ANT, isStock: true, issuer: { id: "backpack", label: "Backpack Securities" }, session: "open", nextChangeAt: null, dividendGuard: null, termsUrl: "https://learn.backpack.exchange/articles/what-is-backpack-securities", ...over });
 
-test("the line: the issuer's rights always; the open's jump only while the exchange is not in its regular session", () => {
+test("the line: one short sentence of the issuer's rights; taking it back and the open's jump wait behind «i»", () => {
+  /* Four lines over the button were one too many: the line is the issuer's pause, the rest behind «i». */
+  assert.equal(STOCK_POSITION.en.line, "The issuer can pause this token");
+  assert.equal(STOCK_POSITION.uk.line, "Емітент може призупинити цей токен");
   const open = stockLineOf(facts(), "en");
   assert.equal(open.offHours, null);
-  assert.equal(stockLineText(STOCK_POSITION.en.line, open), "The issuer can pause this token and take it back, even from the pool.");
+  assert.equal(stockWhyOf(STOCK_POSITION.en, open, "Backpack Securities").length, 4);
   for (const session of ["closed", "pre", "post", "unknown"]) {
-    const view = stockLineOf(facts({ session }), "en");
-    assert.equal(stockLineText(STOCK_POSITION.en.line, view), "The issuer can pause this token and take it back, even from the pool. Outside exchange hours the price stands still; at the open it may jump.", session);
+    const why = stockWhyOf(STOCK_POSITION.en, stockLineOf(facts({ session }), "en"), "Backpack Securities");
+    assert.match(why[0], /move or burn the token in any wallet, the pool included/, session);
+    assert.equal(why[1], "Outside exchange hours the price stands still; at the open it may jump.", session);
   }
-  assert.equal(stockLineText(STOCK_POSITION.uk.line, stockLineOf(facts({ session: "closed" }), "uk")), "Емітент може зупинити цей токен і забрати його — навіть із пулу. Поза годинами біржі ціна стоїть, на відкритті може стрибнути.");
+  assert.equal(stockWhyOf(STOCK_POSITION.uk, stockLineOf(facts({ session: "closed" }), "uk"), "Backpack Securities")[1], "Поза годинами біржі ціна стоїть, на відкритті може стрибнути.");
   /* Facts not read yet, or no stock: the issuer's part alone, nothing behind it guessed. */
   for (const none of [null, undefined, notAStock(ANT)]) assert.deepEqual(stockLineOf(none, "en"), { offHours: null, excluded: null, limited: null, termsUrl: null });
 });

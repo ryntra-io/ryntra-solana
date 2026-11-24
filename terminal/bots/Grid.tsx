@@ -25,6 +25,7 @@ import { connectWallet } from '@/terminal/shell/Wallet';
 import { WALLET } from '@/terminal/shell/words';
 import { useOffHoursRisk } from '@/terminal/stocks/useStockPoolFacts';
 import { Action, AmountField, Chip, CoinLogo, Figure, Icon, Info, Kick, Panel, Quiet, Shares, Slider, Title, amountOf, changeText, changeTone, priceText, usdText } from '@/terminal/ui';
+import { FEE } from '@/terminal/ui/words';
 import { useMarket } from '@/terminal/shell/useMarket';
 import { BotBadge, CoinAmount, HowInfo, Note, coinOf, useTowers, type PickedCoin } from './parts';
 import { pricesLive, startPrice, startStep, type Started } from './grid-start';
@@ -176,6 +177,7 @@ function useClassicPool(mint: string | null): Readonly<{ pool: LadderPoolInfo | 
 export function GridBot({ lay }: { lay: (parts: GridParts) => ReactNode }) {
   const w = useWords(GRID);
   const wallet = useWords(WALLET);
+  const fw = useWords(FEE);
   const lang = useLang();
   const towers = useTowers();
   useState(startOnHours);
@@ -345,7 +347,7 @@ export function GridBot({ lay }: { lay: (parts: GridParts) => ReactNode }) {
   const crossing = Boolean(venue && marketUsd && plan && basis && !plan.issue && (plan.split.buys.some((level) => level * basis.perQuote > marketUsd) || plan.split.sells.some((level) => level * basis.perQuote < marketUsd)));
   const apartPct = Math.abs(apart) * 100;
   const apartText = apartPct >= 1 ? String(Math.round(apartPct)) : apartPct >= 0.1 ? apartPct.toFixed(1).replace('.', lang === 'uk' ? ',' : '.') : lang === 'uk' ? '<0,1' : '<0.1';
-  const poolRisk = Math.abs(apart) >= POOL_APART || crossing ? w.poolOff(digits(lang === 'uk' ? `${apartText} %` : `${apartText}%`, lang), apart > 0) : null;
+  const poolRisk = Math.abs(apart) >= POOL_APART || crossing ? w.poolOff(digits(`${apartText}%`, lang), apart > 0) : null;
   const risk = stockRisk ?? poolRisk;
   // «Choose another coin», the chart's head: the coin list opens from outside its field.
   const [openAsk, setOpenAsk] = useState(0);
@@ -397,7 +399,7 @@ export function GridBot({ lay }: { lay: (parts: GridParts) => ReactNode }) {
   const actionWord = placing ? (placing.phase === 'sending' ? w.sending : w.signing) : !network ? w.soon : w.place;
   /* The venue in the head once it is known: never «DLMM Pro» over a coin whose pool is not read yet. */
   const kick = venue === 'dlmm' ? (network === 'devnet' ? w.testKickDlmm : w.kickDlmm) : venue === 'pro' ? (network === 'devnet' ? w.testKick : w.kick) : w.kickNone;
-  const costText = venue === 'dlmm' ? w.costLineDlmm(lamportsSol(fee, lang), lamportsSol(rent, lang)) : w.costLine(lamportsSol(fee, lang), lamportsSol(rent, lang));
+  const costText = venue === 'dlmm' ? `${fw.none} · ${w.costLineDlmm(lamportsSol(fee, lang), lamportsSol(rent, lang))}` : w.costLine(lamportsSol(fee, lang), lamportsSol(rent, lang));
 
   /* The chart's head: the coin the grid stands on, its price and its day — a tap opens the coin list. */
   const headUsd = marketUsd ?? coinUsd;
@@ -409,7 +411,8 @@ export function GridBot({ lay }: { lay: (parts: GridParts) => ReactNode }) {
         <CoinLogo src={shown.icon} symbol={shown.symbol} size="s" />
         <span className={g.headSymbol}>{shown.symbol}</span>
         <span className={g.headPrice}>{headUsd ? priceText(headUsd, lang) : '—'}</span>
-        {moved !== null ? <span className={changeTone(moved) === 'up' ? g.headUp : changeTone(moved) === 'down' ? g.headDown : g.headFlat}>{changeText(moved, lang)}</span> : null}
+        {/* The day's move only beside a price: no «MET — +5.89%» while the price is not read (QA 20.11, вада 33). */}
+        {headUsd && moved !== null ? <span className={changeTone(moved) === 'up' ? g.headUp : changeTone(moved) === 'down' ? g.headDown : g.headFlat}>{changeText(moved, lang)}</span> : null}
         <VenueMark mint={shown.mint} w={w} />
         <Icon name="chevron" size="s" />
       </button>
@@ -418,7 +421,7 @@ export function GridBot({ lay }: { lay: (parts: GridParts) => ReactNode }) {
   );
 
   const form = (
-    <Panel tone="hi" pad="l" label={w.title} className={`${g.sheet} ${g.sheetStack}`}>
+    <Panel tone="hi" pad="l" label={w.title} className={g.sheetStack}>
       <div className={b.head}>
         <BotBadge id="grid" on />
         <div className={b.headWords}>
@@ -437,7 +440,9 @@ export function GridBot({ lay }: { lay: (parts: GridParts) => ReactNode }) {
           <AmountField size="s" label={w.high} unit="$" value={high} onChange={ownHigh} placeholder={waiting ? '—' : undefined} />
         </div>
         {/* The band's width: three quick ones here, any other typed above or dragged on the chart. */}
-        <Shares label={w.band} value={quick} onPick={(id) => ownBand(Number(id))} options={BANDS.map((id) => ({ id, label: w.bandValue(digits(id, lang)) }))} />
+        <div className={b.fill}>
+          <Shares label={w.band} value={quick} onPick={(id) => ownBand(Number(id))} options={BANDS.map((id) => ({ id, label: w.bandValue(digits(id, lang)) }))} />
+        </div>
       </div>
       <div className={g.group}>
         <div className={g.levelsHead}>
@@ -458,8 +463,15 @@ export function GridBot({ lay }: { lay: (parts: GridParts) => ReactNode }) {
           </div>
           {/* Before the signature, one line: real or test money and Ryntra's share; the network and the deposit behind its «i». */}
           <div className={g.costRow}>
+            {/* Each part whole on its line — the line breaks only between them (QA 20.11, вада 37: «bonus» alone on a phone's line). */}
             <span className={b.line} data-grid-cost="">
-              {[!venue ? null : network === 'mainnet' ? w.realMoney : network === 'devnet' ? w.testMoney : null, plan && venue && fee > 0 ? (venue === 'dlmm' ? w.costShortDlmm : w.costShort) : far ? null : w.levelsOf(digits(String(buyCount), lang), digits(String(sellCount), lang))].filter(Boolean).join(' · ')}
+              {[!venue ? null : network === 'mainnet' ? w.realMoney : network === 'devnet' ? w.testMoney : null, plan && venue && fee > 0 ? (venue === 'dlmm' ? fw.none : w.costShort) : far ? null : w.levelsOf(digits(String(buyCount), lang), digits(String(sellCount), lang))]
+                .filter((part): part is string => Boolean(part))
+                .map((part, index) => (
+                  <span key={part} className={b.part}>
+                    {index ? ` · ${part}` : part}
+                  </span>
+                ))}
             </span>
             {plan && venue && fee > 0 && !far ? <Info label={w.costHow}>{costText}</Info> : null}
           </div>
@@ -477,6 +489,23 @@ export function GridBot({ lay }: { lay: (parts: GridParts) => ReactNode }) {
             <button type="button" className={g.why} aria-expanded={why} onClick={() => setWhy((was) => !was)}>
               {w.why}
               <Icon name="chevron" size="s" />
+            </button>
+          </span>
+        ) : unreachable && issue === w.unreachable ? (
+          /* The venues' read failed: said in one line with a quiet «Try again» that only reads them again (QA 20.11, вада
+             33: «try again» with nothing to press). */
+          <span className={g.noPool} data-grid-unreachable="">
+            {w.unreachableShort}
+            <button
+              type="button"
+              className={g.why}
+              onClick={() => {
+                if (VENUES_OPEN.pro) void useGrid.getState().loadMarket(shown.mint);
+                if (VENUES_OPEN.classic) void useGrid.getState().loadClassic(shown.mint);
+              }}
+              data-grid-retry=""
+            >
+              {w.retry}
             </button>
           </span>
         ) : (
@@ -833,7 +862,8 @@ function MyGrids({ owner }: { owner: string | null }) {
   });
   const working = views.filter(({ view }) => view.state === 'working' || view.state === 'filled').length;
   return (
-    <Panel pad="none" label={w.mine}>
+    // None at work: the name and its one line stand in one row — no wide strip of empty panel (QA 20.11, вада 110).
+    <Panel pad="none" label={w.mine} className={!owner || !views.length ? b.mineQuiet : undefined}>
       <div className={b.mineHead}>
         <Title as="h2" className={b.mineTitle}>
           {w.mine}

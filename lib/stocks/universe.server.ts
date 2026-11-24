@@ -47,6 +47,7 @@ import { jupiterBackgroundAllowed } from "../solana/jupiter-budget.ts";
 import { listSpotMarkets, readSpotMarketsByMint } from "../spot/markets.server.ts";
 import type { SpotMarket } from "../spot/markets.ts";
 import { eventStateAt, lifecycleOf, markPremiumPct, type IssuerMark, type Lifecycle, type LifecycleEvent, type TransferFee } from "./instrument.ts";
+import { indexBackpackAssets, readBackpackCatalogueShared } from "./issuer-backpack.server.ts";
 import { indexPreStocksAssets, PRESTOCKS_SOURCE, readPreStocksCatalogueShared, type PreStocksAsset } from "./issuer-prestocks.server.ts";
 import { peekXStocksQuote, QUOTE_TIMEOUT_MS, readXStocksAssets, readXStocksQuote, XSTOCKS_SOURCE } from "./issuer-xstocks.server.ts";
 import { companyPathFor, type CompanyPath } from "./company-path.ts";
@@ -414,7 +415,9 @@ export async function buildStockUniverse(deps: Readonly<{ now?: () => Date; quot
      absent (or served stale under grace) and the universe says so, never the
      whole market. Private companies come through PreStocks only: no other
      pre-IPO issuer is read. */
-  const [listed, catalogue, feeds, prestocks, epoch] = await Promise.all([listSpotMarkets("stock", LIST_LIMIT), readXStocksAssets(), readPythEquityCatalogue(), readPreStocksCatalogueShared(), readCurrentEpoch()]);
+  /* Backpack's list of assets beside them: it only confirms — a Backpack row it does not name, or every one
+     while it does not answer, stays confirmed by the venue's tag, as before it was read. */
+  const [listed, catalogue, feeds, prestocks, epoch, backpack] = await Promise.all([listSpotMarkets("stock", LIST_LIMIT), readXStocksAssets(), readPythEquityCatalogue(), readPreStocksCatalogueShared(), readCurrentEpoch(), readBackpackCatalogueShared()]);
   if (!listed.ok) return { ok: false, code: `MARKETS_${listed.code}`, reason: listed.reason };
   /* The ranked lists alone are not the universe. When the venue's verified
      list did not answer, the stock view is a few dozen traded rows with the
@@ -440,6 +443,7 @@ export async function buildStockUniverse(deps: Readonly<{ now?: () => Date; quot
   const catalogues: IssuerCatalogues = {
     xstocks: issuerByMint,
     prestocks: prestocks.ok ? indexPreStocksAssets(prestocks.assets) : null,
+    backpack: backpack.ok ? indexBackpackAssets(backpack.assets) : null,
   };
   /* The representation reads the window's tokens as the issuer's own; the issuer's mark and «listed by the issuer» stay the catalogue's alone. */
   const books: IssuerCatalogues = { ...catalogues, prestocks: withWindowTokens(catalogues.prestocks, windows) };
@@ -499,6 +503,7 @@ export async function buildStockUniverse(deps: Readonly<{ now?: () => Date; quot
     if (pre && prestocks.ok) facts = { ...facts, issuerMark: preStocksMark(pre, prestocks.fetchedAt, prestocks.stale), listedByIssuer: true, catalogueFetchedAt: prestocks.fetchedAt };
     else if (representation.issuer.id === "prestocks") facts = { ...facts, listedByIssuer: false };
     else if (asset) facts = { ...facts, listedByIssuer: true, catalogueFetchedAt: catalogue.fetchedAt };
+    else if (backpack.ok && catalogues.backpack?.has(market.mint)) facts = { ...facts, listedByIssuer: true, catalogueFetchedAt: backpack.fetchedAt };
     return buildStockRow(market, representation, asset ? { trading: asset.trading } : null, now.getTime(), pyth, facts);
   });
   rows.sort((a, b) => (b.market.volume24hUsd ?? -1) - (a.market.volume24hUsd ?? -1));
@@ -641,6 +646,14 @@ export function readStockUniverse(): Promise<UniverseRead> {
     universeInflight = null;
   });
   return universeInflight;
+}
+
+/**
+ * The universe this instance already holds in memory, or null — never a read. For a hot path that may use the whole
+ * list when it is there and must not wait for it when it is not (the stock book of Pulse and the search).
+ */
+export function peekStockUniverse(nowMs: number = Date.now()): StockUniverse | null {
+  return universeCache && nowMs - universeCache.at < UNIVERSE_GRACE_MS ? universeCache.value : null;
 }
 
 /** One row by token symbol or mint, from the cached universe. */

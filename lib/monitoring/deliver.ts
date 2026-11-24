@@ -16,6 +16,7 @@ import { limitOrderSpotHref } from "../solana/limits/notes.server.ts";
 import { isStopNote, stopTelegramText } from "../stops/notes.ts";
 import { earnTelegramText, isEarnNote } from "../../city/lib/earn/notes.ts";
 import { isAgentReportNote, reportKeyboard } from "../../city/lib/autopilot/report.ts";
+import { driveKeyboard, isDriveNote } from "../agent-drive/note.ts";
 import { telegramText, words } from "./copy.ts";
 import { readChat } from "../assistant/telegram/link.ts";
 import { briefTelegramText } from "../assistant/brief/telegram.ts";
@@ -64,7 +65,8 @@ async function reminderMessage(store: GuardStore, inbox: InboxRecord): Promise<R
     return { href, text: stopTelegramText(words), button: inbox.cta };
   }
   /* An Earn note of the city, or the agent's daily report: its line and its reason, and the button to its window in the city. */
-  if (isEarnNote(inbox) || isAgentReportNote(inbox)) {
+  /* The agent's drive: its every move, said the same way, the button to the agent's own page. */
+  if (isEarnNote(inbox) || isAgentReportNote(inbox) || isDriveNote(inbox)) {
     const href = `${APP}${inbox.href}`;
     const words = inbox.text?.[inbox.locale] ?? { title: inbox.title, reason: inbox.reason };
     return { href, text: earnTelegramText(words), button: inbox.cta };
@@ -175,7 +177,8 @@ export async function deliverOutbox(store: GuardStore, nowMs: number, deps: Read
           const button = reminder?.button ?? (inbox?.cta || words(said).reviewPlan);
           const link = { text: button, url: href };
           /* The agent's daily report carries its own «Turn off daily report» under the link. */
-          const keyboard = inbox && isAgentReportNote(inbox) ? reportKeyboard(inbox, link) : inbox && telegram.buttons ? telegram.buttons(inbox, link) : [[link]];
+          /* The agent's drive carries «Stop agent» under its moves, and «Share on X» under a closed trade worth it. */
+          const keyboard = inbox && isAgentReportNote(inbox) ? reportKeyboard(inbox, link) : inbox && isDriveNote(inbox) ? driveKeyboard(inbox, link, APP) : inbox && telegram.buttons ? telegram.buttons(inbox, link) : [[link]];
           const sent = await telegram.send(chatId, text, keyboard);
           if (!sent) throw new Error("not delivered");
           return sent;
@@ -217,7 +220,7 @@ export async function deliverOutbox(store: GuardStore, nowMs: number, deps: Read
     }
     const inbox = (await listInbox(store, row.owner)).find((item) => item.id === row.inboxId);
     /* A reached stop and an Earn note open their own city address and say their one line. */
-    const stop = inbox !== undefined && (isStopNote(inbox) || isEarnNote(inbox) || isAgentReportNote(inbox));
+    const stop = inbox !== undefined && (isStopNote(inbox) || isEarnNote(inbox) || isAgentReportNote(inbox) || isDriveNote(inbox));
     const href = inbox ? `${APP}${stop ? inbox.href : inbox.subject?.kind === "assistant-brief" ? briefHref(inbox.subject.id) : inbox.subject?.kind === "token-watch" ? tokenWatchHref(inbox.subject.id) : inbox.subject?.kind === "assistant-task" ? assistantTaskHref(inbox.subject.id) : inbox.subject?.kind === "wallet-watch" ? walletWatchHref(inbox.subject.id) : inbox.href}` : `${APP}/app/alerts`;
     const title = "Ryntra";
     const body = inbox ? (stop || inbox.subject?.kind === "assistant-brief" || inbox.subject?.kind === "token-watch" || inbox.subject?.kind === "assistant-task" || inbox.subject?.kind === "wallet-watch" ? inbox.title : `${inbox.context} — ${inbox.title}`) : "Your plan needs attention.";

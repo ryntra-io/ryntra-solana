@@ -1,0 +1,38 @@
+{
+ "source": "answers in the thesis schema (lib/scout/thesis.ts THESIS_SCHEMA), as a structured output returns them",
+ "answers": {
+  "CcAnNdEvoCVUU3jqK4eSjj9BNB9AWQR6z3PbRci41g4a": {
+   "verdict": "take",
+   "shape": "crowd",
+   "for": [
+    "many_traders",
+    "organic_buyers",
+    "holders_spread"
+   ],
+   "against": [
+    "price_spiked"
+   ],
+   "invalidation": "volume_fades",
+   "basis": [
+    "traders",
+    "organic",
+    "top_holders",
+    "volume"
+   ]
+  },
+  "2T9aEdTDK2rpdSGR6R1LyRFGWv9gxJK5kwjcXNXBh13r": {
+   "verdict": "watch",
+   "shape": "too_early",
+   "for": [
+    "volume_rising"
+   ],
+   "against": [
+    "facts_unread"
+   ],
+   "invalidation": "none",
+   "basis": [
+    "volume"
+   ]
+  }
+ }
+}

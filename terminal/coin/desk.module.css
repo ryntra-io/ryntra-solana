@@ -4,8 +4,9 @@
 
 .desk {
   /* A trading desk is the window's height under the terminal's header: the frame's gutters (8 px over, 28 px under),
-     the page's own top (24 px), the coin's head (72 px) and the page's gap after it (24 px). */
-  --desk-h: max(600px, calc(100dvh - var(--top) - 156px));
+     the page's own top (24 px), the coin's head of two rows (72 + 56 px and its rules) and the page's gap after it
+     (24 px). */
+  --desk-h: max(600px, calc(100dvh - var(--top) - 214px));
 
   display: grid;
   grid-template-columns: minmax(0, 1fr) 8px var(--ticket, 340px);

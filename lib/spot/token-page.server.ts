@@ -20,6 +20,7 @@ import { getAddressDecoder } from "@solana/kit";
 import { PublicKey } from "@solana/web3.js";
 
 import { createSolanaRpcHandle } from "../solana/rpc.ts";
+import { WRAPPED_SOL_MINT } from "../solana/send-kinds.ts";
 import { GECKO_SOLANA_BASE, POOL_TRADES_TTL_MS, getJson, readMarketTrades, readTokenPoolsBody, scaledUnitMultiplier } from "./candles.server.ts";
 import type { SpotMarket } from "./markets.ts";
 import { readSpotTokenFacts } from "./markets.server.ts";
@@ -32,6 +33,7 @@ import {
   poolsOf,
   riskFactsOf,
   tradesOf,
+  tradesPoolOf,
   tradesSpan,
   type HolderAccount,
   type HolderRead,
@@ -41,6 +43,12 @@ import {
   type TokenPool,
   type TokenTrade,
 } from "./token-page.ts";
+import { fillUnpriced, mergeTrades as mergeEventTrades } from "./token-events.ts";
+import { EVENTS_TRADES_TARGET, readMintTradeEvents, tokenEventsEndpoint } from "./token-events.server.ts";
+import { readHolderAccountsWhole } from "./token-holders-das.server.ts";
+import { ALL_ACCOUNTS_CEILING, holdersReachOf, LARGEST_ACCOUNTS_CEILING, withHolderValues, type HoldersReach, type TradesSource } from "./token-traders.ts";
+import { freshCandidates, labelBasisOf, labelTrades, ownersOf, topHoldersOf, type LabelBasis, type WalletBook } from "./wallet-labels.ts";
+import { AGE_PER_READ, knownAges, readWalletAges, ryntraAgents, walletLabelSettings } from "./wallet-labels.server.ts";
 
 export type TokenPageFailure = Readonly<{
   ok: false;
@@ -112,9 +120,9 @@ export async function readTokenPools(mint: string): Promise<TokenPoolsRead | Tok
 export type TokenTradesRead = Readonly<{
   ok: true;
   trades: readonly TokenTrade[];
-  /** The pool the trades are of — where the token trades most now (the busiest of `pools`). */
-  pool: TokenPool;
-  /** Every pool the trades were read from, the busiest first. */
+  /** The pool the trades are of — where the token trades most now (the busiest of `pools`); null only when the trades are the chain's events and no pool was read. */
+  pool: TokenPool | null;
+  /** Every pool the trades were read from, the busiest first; empty only beside the chain's events when no pool was read. */
   pools: readonly TokenPool[];
   span: Readonly<{ from: string; to: string }> | null;
   /** Whether the capitalisation at each trade was counted (not for a tokenized stock). */
@@ -123,11 +131,48 @@ export type TokenTradesRead = Readonly<{
   topHolders: readonly string[];
   observedAt: string;
   stale: boolean;
+  /** Where the trades come from — GeckoTerminal's busiest pool, or the chain's events over every pool. */
+  source?: TradesSource;
+  /** The list reaches the coin's first trade (the chain's events only), and none of its trades is left out. */
+  whole?: boolean;
+  /**
+   * The chain's events only: of the swaps the events could not price themselves — since the coin was last read afresh —
+   * how many took their price from the pools' trades (`filled`) and how many are not shown for want of one (`hidden`).
+   * Every trade listed is whole.
+   */
+  events?: Readonly<{ filled: number; hidden: number }>;
+  /** The creator the marks were made against, as Jupiter names it; null — not named. */
+  creator?: string | null;
+  /** What the trades' marks stand on. */
+  labelBasis?: LabelBasis;
 }>;
 
 /* The tape is as fresh as the source's read of the pools' trades (`POOL_TRADES_TTL_MS`, shared by every instance). */
 const TRADES_TTL_MS = POOL_TRADES_TTL_MS;
 const trades = new Map<string, Cached<TokenTradesRead>>();
+
+/**
+ * The most of a coin's trades the chain's events may leave out for want of a price and still be its tape: past this
+ * share the tape would stand with holes — a curve's sales missing reads as nobody selling — so the page shows the
+ * pools' trades instead, as when the events are closed.
+ */
+export const EVENTS_HIDDEN_MOST = 0.1;
+/** How long a coin whose events stood with holes reads the pools' trades before its events are asked again: no credits meanwhile. */
+const EVENTS_REST_MS = 10 * 60_000;
+const eventsResting = new Map<string, Cached<true>>();
+/** The swaps of a coin's events that had no price of their own, each once, since the coin was last read afresh: those a pool's trade priced, and those not shown. */
+type EventsTally = Readonly<{ filled: Set<string>; hidden: Set<string> }>;
+const eventsTally = new Map<string, Cached<EventsTally>>();
+const tradeKey = (trade: Readonly<{ signature: string; side: string }>): string => `${trade.signature}:${trade.side}`;
+
+/** A wallet's own key is on the curve; a pool's, a vault's or a program's account is not. */
+function isWalletAddress(address: string): boolean {
+  try {
+    return PublicKey.isOnCurve(new PublicKey(address).toBytes());
+  } catch {
+    return false;
+  }
+}
 
 /**
  * The token's latest trades where it trades now: the busiest two of its pools by the last five minutes'
@@ -139,30 +184,117 @@ export function readTokenTrades(mint: string): Promise<TokenTradesRead | TokenPa
   const hit = fresh(trades, mint, TRADES_TTL_MS);
   if (hit) return Promise.resolve(withTopHolders(hit.value, mint));
   return once(`trades:${mint}`, async () => {
-    const [facts, market] = await Promise.all([readFacts(mint), readMarketTrades(mint, "page")]);
+    const eventsOpen = !isNativeToken(mint) && tokenEventsEndpoint() !== null && !fresh(eventsResting, mint, EVENTS_REST_MS);
+    /* With the chain's events open the busiest pools' trades are read only when the events fail or leave swaps without a price. */
+    const [facts, first] = await Promise.all([readFacts(mint), eventsOpen ? Promise.resolve(null) : readMarketTrades(mint, "page")]);
+    let early = first;
     const kept = fresh(trades, mint, STALE_GRACE_MS);
+    const info = facts.ok ? facts.market : null;
+    const stock = info?.category === "stock";
+    const capSupply = stock ? null : capSupplyOf(info, facts.ok ? facts.facts : null);
+    const multiplier = stock ? await scaledUnitMultiplier(mint, Date.now()) : null;
+    const creator = facts.ok ? (facts.facts?.dev ?? null) : null;
+    /* The chain's events over every pool, where the deployment opens them; else — or when they fail — the busiest pools' trades. */
+    if (eventsOpen) {
+      const known = kept?.value.source === "helius" ? { trades: kept.value.trades, whole: kept.value.whole === true } : null;
+      const events = await readMintTradeEvents(mint, { capSupply, multiplier, solPriceUsd: await solPriceUsd(), isWallet: isWalletAddress }, known);
+      if (events) {
+        let list = events.trades;
+        /* A refresh adds to what the list already left out — each swap once: the share is of the whole tape, not of one read. */
+        const tally: EventsTally = (events.refreshed ? eventsTally.get(mint)?.value : undefined) ?? { filled: new Set<string>(), hidden: new Set<string>() };
+        /* A swap the events could not price takes its price from the pools' trades by the same signature, or is not shown — never a row with dashes. */
+        if (events.unpriced.length > 0) {
+          early = await readMarketTrades(mint, "page");
+          const spare = early.ok ? mergeTrades(early.bodies.map((body) => (body ? tradesOf(body, mint, capSupply, multiplier) : []))) : [];
+          const fill = fillUnpriced(events.unpriced, spare, capSupply);
+          for (const trade of fill.filled) tally.filled.add(tradeKey(trade));
+          for (const entry of fill.left) tally.hidden.add(tradeKey(entry));
+          if (fill.filled.length > 0) list = mergeEventTrades(fill.filled, list, EVENTS_TRADES_TARGET);
+        }
+        /* A swap that has its price now — a later read stood it with the market, or a pool's trade came — is hidden no more. */
+        for (const trade of list) tally.hidden.delete(tradeKey(trade));
+        remember(eventsTally, mint, tally);
+        const filled = tally.filled.size;
+        const hidden = tally.hidden.size;
+        if (hidden <= (list.length + hidden) * EVENTS_HIDDEN_MOST) {
+          const read = await readTokenPools(mint);
+          const pool = read.ok ? tradesPoolOf(read.pools) : null;
+          const pools = pool ? [pool] : [];
+          const value: TokenTradesRead = { ok: true, trades: list, pool, pools, span: tradesSpan(list), capCounted: capSupply !== null, topHolders: [], observedAt: new Date().toISOString(), stale: false, source: "helius", whole: events.whole && hidden === 0, events: { filled, hidden }, creator };
+          return settleTrades(mint, value);
+        }
+        /* Too many of this coin's trades have no price in the events: the pools' trades are its tape for a while, and its events are not asked meanwhile. */
+        remember(eventsResting, mint, true);
+      }
+    }
+    const market = early ?? (await readMarketTrades(mint, "page"));
     if (!market.ok) {
       if (kept) return withTopHolders({ ...kept.value, stale: true }, mint);
       if (market.code === "QUIET" || market.code === "NO_POOL") return { ok: false, code: "NO_POOL", reason: "No pool of this token traded in the last day." } as const;
       return { ...geckoFailure(market.code, market.reason, market.retryAfterMs), pools: market.pools ?? [] };
     }
-    const info = facts.ok ? facts.market : null;
-    const stock = info?.category === "stock";
-    const capSupply = stock ? null : capSupplyOf(info, facts.ok ? facts.facts : null);
-    const multiplier = stock ? await scaledUnitMultiplier(mint, Date.now()) : null;
     const list = mergeTrades(market.bodies.map((body) => (body ? tradesOf(body, mint, capSupply, multiplier) : [])));
     const pool = market.pools[0]!;
-    const value: TokenTradesRead = { ok: true, trades: list, pool, pools: market.pools, span: tradesSpan(list), capCounted: capSupply !== null, topHolders: [], observedAt: market.observedAt, stale: market.stale };
-    remember(trades, mint, value);
-    return withTopHolders(value, mint);
+    const value: TokenTradesRead = { ok: true, trades: list, pool, pools: market.pools, span: tradesSpan(list), capCounted: capSupply !== null, topHolders: [], observedAt: market.observedAt, stale: market.stale, source: "geckoterminal", creator };
+    return settleTrades(mint, value);
   });
 }
 
-/** The largest people the holders tab last read, ranked as it ranked them; nothing is read for it. */
+/** How long a first trades read waits for its marks' reads. */
+const MARKS_WAIT_MS = 1_200;
+
+/**
+ * A fresh trades read is kept, then what its marks stand on is read — the largest holders when none are
+ * known, and the age of the largest buyers' wallets — at once and within a short wait. What does not answer in time
+ * lands in its cache and marks the next answer: the marks are made at every answer from what is known
+ * (`withTopHolders`), and `labelBasis` says what that was.
+ */
+async function settleTrades(mint: string, value: TokenTradesRead): Promise<TokenTradesRead> {
+  remember(trades, mint, value);
+  const settings = walletLabelSettings();
+  const reads: Promise<unknown>[] = [readWalletAges(freshCandidates(value.trades, bookOf(mint, value), AGE_PER_READ), settings)];
+  if (!fresh(holders, mint, STALE_GRACE_MS) && !isNativeToken(mint)) reads.push(readTokenHolders(mint));
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  await Promise.race([Promise.all(reads), new Promise((resolve) => (timer = setTimeout(resolve, MARKS_WAIT_MS)))]);
+  clearTimeout(timer);
+  return withTopHolders(value, mint);
+}
+
+/** SOL's price now, from the Spot market's own cached read; null when it is not quoted. */
+async function solPriceUsd(): Promise<number | null> {
+  const read = await readFacts(WRAPPED_SOL_MINT);
+  return read.ok ? read.market.price : null;
+}
+
+/** What the engine knows of the wallets around a coin, from the reads already made. */
+function bookOf(mint: string, read: TokenTradesRead): WalletBook {
+  const known = fresh(holders, mint, STALE_GRACE_MS)?.value ?? null;
+  const owners = known ? ownersOf(known.holders) : { pools: new Set<string>(), programs: new Set<string>() };
+  if (read.pool) owners.pools.add(read.pool.address);
+  const settings = walletLabelSettings();
+  return {
+    dev: read.creator ?? null,
+    agents: ryntraAgents(),
+    topHolders: known ? topHoldersOf(known.holders, settings.topHolderRanks) : null,
+    poolOwners: owners.pools,
+    programOwners: owners.programs,
+    ages: knownAges(read.trades.map((trade) => trade.wallet)),
+  };
+}
+
+/** The largest people the holders tab last read, ranked as it ranked them; nothing is read for it. And the trades' marks. */
 function withTopHolders(read: TokenTradesRead, mint: string): TokenTradesRead {
   const known = fresh(holders, mint, STALE_GRACE_MS);
-  if (!known) return read;
-  return { ...read, topHolders: known.value.holders.filter((row) => !row.labels.includes("program") && !row.labels.includes("pool")).slice(0, 10).map((row) => row.owner) };
+  const book = bookOf(mint, read);
+  const settings = walletLabelSettings();
+  const labelled = { ...read, trades: labelTrades(read.trades, book, settings), labelBasis: labelBasisOf(book, read.trades.map((trade) => trade.wallet), settings) };
+  if (!known) return labelled;
+  return { ...labelled, topHolders: known.value.holders.filter((row) => !row.labels.includes("program") && !row.labels.includes("pool")).slice(0, 10).map((row) => row.owner) };
+}
+
+/** The trades and the holders read last for a mint, without asking for them — the traders' table counts on them. */
+export function knownTokenReads(mint: string): Readonly<{ trades: TokenTradesRead | null; holders: TokenHoldersRead | null }> {
+  return { trades: fresh(trades, mint, STALE_GRACE_MS)?.value ?? null, holders: fresh(holders, mint, STALE_GRACE_MS)?.value ?? null };
 }
 
 /** The trades a page read last for a mint, without asking for them — the chart's marks use what the tab read. */
@@ -185,6 +317,8 @@ function capSupplyOf(market: SpotMarket | null, facts: TokenFacts | null): numbe
 
 export type TokenHoldersRead = Readonly<HolderRead & {
   ok: true;
+  /** How far the list reaches — the node's twenty largest accounts, or every account of a small coin. */
+  reach?: HoldersReach;
   /** The span of trades each holder's change is counted over; null when no trade was read. */
   span: Readonly<{ from: string; to: string }> | null;
   observedAt: string;
@@ -223,18 +357,22 @@ export function readTokenHolders(mint: string): Promise<TokenHoldersRead | Token
   return once(`holders:${mint}`, async () => {
     const handle = createSolanaRpcHandle({ network: "mainnet", timeoutMs: 8_000 });
     const kept = fresh(holders, mint, STALE_GRACE_MS);
+    const facts = await readFacts(mint);
+    const market = facts.ok ? facts.market : null;
+    /* Every account of a small coin where the deployment opens Helius DAS — up to a hundred holders; else the node's twenty largest. */
+    const whole = await readHolderAccountsWhole(mint, market?.holders ?? null);
     let accounts: HolderAccount[];
     let supplyRaw: string;
     let decimals: number;
     try {
       const [largest, supply] = await Promise.all([
-        handle.rpc.getTokenLargestAccounts(mint as never, { commitment: "confirmed" }).send({ abortSignal: AbortSignal.timeout(8_000) }),
+        whole ? null : handle.rpc.getTokenLargestAccounts(mint as never, { commitment: "confirmed" }).send({ abortSignal: AbortSignal.timeout(8_000) }),
         handle.rpc.getTokenSupply(mint as never, { commitment: "confirmed" }).send({ abortSignal: AbortSignal.timeout(8_000) }),
       ]);
       supplyRaw = String(supply.value.amount);
       decimals = Number(supply.value.decimals);
-      const addresses = largest.value.map((entry) => String(entry.address));
-      const amounts = largest.value.map((entry) => String(entry.amount));
+      const addresses = (largest?.value ?? []).map((entry) => String(entry.address));
+      const amounts = (largest?.value ?? []).map((entry) => String(entry.amount));
       /* Five accounts a request: a public node blocks twenty in one and answers five. */
       const chunks: string[][] = [];
       for (let start = 0; start < addresses.length; start += OWNER_CHUNK) chunks.push(addresses.slice(start, start + OWNER_CHUNK));
@@ -242,7 +380,7 @@ export function readTokenHolders(mint: string): Promise<TokenHoldersRead | Token
         chunks.map((chunk) => handle.rpc.getMultipleAccounts(chunk as never, { encoding: "base64", dataSlice: OWNER_SLICE, commitment: "confirmed" }).send({ abortSignal: AbortSignal.timeout(8_000) })),
       );
       const infos = answers.flatMap((answer) => answer.value as readonly SlicedAccount[]);
-      accounts = [];
+      accounts = whole ? [...whole] : [];
       infos.forEach((info, index) => {
         const owner = ownerOf(info);
         if (!owner) return;
@@ -261,9 +399,7 @@ export function readTokenHolders(mint: string): Promise<TokenHoldersRead | Token
         /* An owner that is no address is not labelled. */
       }
     }
-    const facts = await readFacts(mint);
     const tradeRead = knownTrades(mint);
-    const market = facts.ok ? facts.market : null;
     const multiplier = market?.category === "stock" ? await scaledUnitMultiplier(mint, Date.now()) : null;
     const read = holdersOf({
       accounts,
@@ -273,8 +409,17 @@ export function readTokenHolders(mint: string): Promise<TokenHoldersRead | Token
       dev: facts.ok ? (facts.facts?.dev ?? null) : null,
       trades: tradeRead ? tradeRead.trades : [],
       multiplier,
+      limit: whole ? ALL_ACCOUNTS_CEILING : LARGEST_ACCOUNTS_CEILING,
     });
-    const value: TokenHoldersRead = { ok: true, ...read, span: tradeRead ? tradeRead.span : null, observedAt: new Date().toISOString(), stale: false };
+    const value: TokenHoldersRead = {
+      ok: true,
+      ...read,
+      holders: withHolderValues(read.holders, market?.price ?? null, multiplier),
+      reach: holdersReachOf(read.holders.length, whole !== null, market?.holders ?? null),
+      span: tradeRead ? tradeRead.span : null,
+      observedAt: new Date().toISOString(),
+      stale: false,
+    };
     remember(holders, mint, value);
     return value;
   });
@@ -333,5 +478,7 @@ export function resetTokenPageCaches(): void {
   trades.clear();
   holders.clear();
   honeypots.clear();
+  eventsResting.clear();
+  eventsTally.clear();
   flying.clear();
 }

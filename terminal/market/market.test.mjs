@@ -167,12 +167,12 @@ test("a dip's price is a little under the market, written as a person would type
   assert.equal(dipPrice(Number.NaN), null);
 });
 
-test("the first screen's promise: the agent's three sentences, each read as what it says, none with a sum", () => {
+test("the first screen's promise: the agent's four sentences, each read as what it says, none with a sum", () => {
   const snapshot = JSON.parse(readFileSync(new URL("../../city/lib/market/snapshot.json", import.meta.url), "utf8"));
   const book = bookOf(snapshot.towers);
   const every = () => true;
   const gates = { trade: true, spot: true, money: true, earn: true, launch: true, instruct: false, agentTrade: true, agentLaunch: true };
-  assert.deepEqual(HERO, ["scout", "tradeDaily", "launch"]);
+  assert.deepEqual(HERO, ["scout", "tradeDaily", "launch", "earn"]);
   for (const lang of ["en", "uk"]) {
     const w = MARKET[lang];
     const kind = (text) => askRows(text, book, { subject: null }, every, gates)[0]?.command.kind ?? null;
@@ -180,6 +180,7 @@ test("the first screen's promise: the agent's three sentences, each read as what
       { id: "scout", text: w.sayScout },
       { id: "tradeDaily", text: w.sayTradeDaily("JUP") },
       { id: "launch", text: w.sayLaunch },
+      { id: "earn", text: w.sayEarn("SOL") },
     ];
     assert.deepEqual(readySentences(hero, kind, HERO.length).map((s) => s.id), HERO, lang);
     // An example names no sum.
@@ -215,6 +216,53 @@ test("the home page draws the agent's promise first, then the market's depth, an
 test("the panel names no budget of ours, in a sentence or in its line", () => {
   const hero = readFileSync(new URL("./HomeHero.tsx", import.meta.url), "utf8");
   assert.ok(!/FIRST_BUDGET|budgetText|perDay|heroTerms\(/.test(hero), "no sum in the panel");
-  assert.ok(hero.includes("m.heroSafe"), "the one line on the money: the budget is the person's");
-  for (const lang of ["en", "uk"]) assert.ok(MARKET[lang].heroSafe.length <= 64 && !/\d/.test(MARKET[lang].heroSafe), lang);
+  assert.ok(hero.includes("m.heroLimit"), "the one line on the money: the budget is the person's");
+  for (const lang of ["en", "uk"]) assert.ok(!/\d/.test(MARKET[lang].heroLimit), lang);
+});
+
+test("the risk's edge in words on the first screen — at most the person's budget a day, no withdrawal, a stop", () => {
+  const parts = { en: [/at most your budget a day/, /can’t withdraw/, /stop anytime/], uk: [/не більше твого бюджету на день/, /вивести не може/, /стоп будь-коли/] };
+  for (const lang of ["en", "uk"]) {
+    const line = MARKET[lang].heroLimit;
+    assert.equal(line.split(" · ").length, 3, `${lang}: three parts`);
+    for (const part of parts[lang]) assert.match(line, part, lang);
+  }
+  // Big: the panel's body type in the words' own ice, never the caption's grey.
+  const css = readFileSync(new URL("./home.module.css", import.meta.url), "utf8");
+  const safe = css.slice(css.indexOf(".safe {"), css.indexOf("}", css.indexOf(".safe {")));
+  assert.match(safe, /var\(--type-base\)/);
+  assert.match(safe, /color: var\(--ice\)/);
+  assert.ok(!/--type-caption|--dim/.test(safe), "never small and grey");
+});
+
+test("on a phone the agent's field and its «Say» stand in the thumb's reach: a dock over the tab bar, the page keeping room for it", () => {
+  const hero = readFileSync(new URL("./HomeHero.tsx", import.meta.url), "utf8");
+  assert.match(hero, /data-terminal="ask-dock">[\s\S]{0,120}\{ask\(true\)\}\s*<\/div>/u, "the dock draws the same field and «Say»");
+  assert.match(hero, /body\.style\.setProperty\('--sheet-h'/u, "the page keeps room under its last block");
+  const css = readFileSync(new URL("./home.module.css", import.meta.url), "utf8");
+  const phone = css.slice(css.lastIndexOf("@media (max-width: 767px)"));
+  assert.match(phone, /\.ask:not\(\.askDock\) \{\n    display: none;/u, "one field and one amber «Say» on a phone");
+  assert.match(phone, /position: fixed;[\s\S]*bottom: calc\(var\(--tabbar\) \+ env\(safe-area-inset-bottom\)\);/u, "right over the tab bar");
+  assert.match(css.slice(0, css.lastIndexOf("@media (max-width: 767px)")), /\.dock \{\n  display: none;/u, "a desk draws no dock");
+  // Every sentence whole and in sight on a phone: two by two, of one width, a long one on two lines — never off the edge.
+  const phoneHero = css.slice(css.indexOf("@media (max-width: 767px)"), css.lastIndexOf("@media (max-width: 767px)"));
+  assert.match(phoneHero, /\.says \{\n    display: grid;\n    grid-template-columns: repeat\(2, minmax\(0, 1fr\)\);/u);
+  assert.match(phoneHero, /\.say \{[^}]*white-space: normal;/u);
+  assert.doesNotMatch(phoneHero, /overflow-x: auto/u);
+  // The agent's answer stands by the field it answers: over the dock on a phone, in plain size — never the edge's type.
+  assert.match(hero, /data-terminal="ask-dock">\s*\{note \? <AskNote note=\{note\} className=\{h\.dockNote\} \/> : null\}/u);
+  assert.match(phoneHero, /\.under \.note \{\n    display: none;/u);
+  const note = css.slice(css.indexOf(".note,\n.dockNote {"), css.indexOf("}", css.indexOf(".note,\n.dockNote {")));
+  assert.match(note, /var\(--type-small\)/u);
+  // The edge breaks only before a «·», never after one.
+  assert.match(hero, /\{at \? <span className=\{h\.dot\}>·\{'\\u00a0'\}<\/span> : null\}/u);
+});
+
+test("«Find new coins» opens the agent that finds them — the Scout — once its screen stands; the market's new coins before", async () => {
+  const { SCOUT_AGENT, scoutRow, NEW_COINS } = await import("../shell/ask-route.ts");
+  assert.deepEqual(SCOUT_AGENT, { shelf: "agents", mint: null, path: "/agent?ai=scout" });
+  assert.deepEqual(scoutRow("Find new coins").target, SCOUT_AGENT);
+  assert.equal(NEW_COINS.path, "/launch?tab=fresh");
+  const hero = readFileSync(new URL("./HomeHero.tsx", import.meta.url), "utf8");
+  assert.match(hero, /scoutReady\(\) \? scoutRow\(sentence\.text\) : newCoinsRow\(sentence\.text\)/u);
 });

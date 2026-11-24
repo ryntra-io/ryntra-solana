@@ -30,6 +30,7 @@
  */
 
 import { z } from "zod";
+import { isoDateTime } from "../zod/iso-datetime.ts";
 
 import {
   SOLANA_CAIP2,
@@ -56,7 +57,7 @@ type ReceiptEffect = Readonly<{ description: string; sourceRef: string; observed
 
 const RAW = z.string().regex(/^(0|[1-9][0-9]*)$/);
 const HEX32 = z.string().regex(/^0x[0-9a-f]{64}$/);
-const INSTANT = z.string().datetime({ offset: true });
+const INSTANT = isoDateTime({ offset: true });
 
 export const BRIDGE_RECEIPT_FACTS_SOURCE = "ryntra.solana.bridge-receipt.facts@2";
 const EFFECT_CHUNK_SIZE = 480;

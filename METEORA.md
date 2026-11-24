@@ -52,7 +52,7 @@ The pictures are frames of the live site with no wallet connected.
 
 ## Meteora in the code
 
-Meteora SDKs, pinned exactly in `package.json`: `@meteora-ag/dlmm-pro-sdk` 0.1.2, `@meteora-ag/dynamic-bonding-curve-sdk`
+Meteora SDKs, pinned exactly in `package.json`: `@meteora-ag/dlmm-pro-sdk` 0.1.3, `@meteora-ag/dynamic-bonding-curve-sdk`
 1.5.13 and 2.0.0 side by side, `cp-amm-sdk` 1.5.1, `dlmm` 1.9.14, `alpha-vault` 1.1.16, `dynamic-fee-sharing-sdk` 1.1.0,
 `met-lock-sdk` 1.0.1, `zap-sdk` 1.3.2 and 2.0.0 side by side. One DLMM Pro client per connection:
 `lib/core/venues/meteora-dlmm-pro/sdk.server.ts`; one DBC and one DAMM v2 client per connection:
@@ -126,9 +126,10 @@ exit at the person's stop — and the program pays only into the owner's account
 signature and can let the agent collect what fills, only into their own accounts.
 - *Files:* `care-rules.server.ts`, `lib/earn-pro/`, `app/api/cron/agent-care/`, `app/api/cron/agent-ladders/`.
 
-Wave, the fourth liquidity preset Meteora announced for DLMM Pro, is not in the SDK yet (0.1.2 has Spot, Curve, BidAsk
-and Custom). The painter's «Wave» start draws two humps, one each side of the price, after Meteora's Wave — built as
-the person's own Custom weights, since the preset itself is not in the SDK yet.
+**Wave.** Meteora's fourth preset is a goal in Earn beside Even, Near price and Catch moves — even over the half of each
+side nearest the price, then rising in four steps to twice that weight at the edges. It is the SDK's own
+`StrategyType.Wave` (0.1.3), drawn in at most nine ranges, and a starting shape in the painter.
+- *Files:* `goals.ts`, `earn.server.ts`, `terminal/earn/shape/`.
 
 ### What holds it open
 
@@ -142,7 +143,7 @@ the person's own Custom weights, since the preset itself is not in the SDK yet.
 
 ### In the engine
 
-All paths under `lib/core/venues/meteora-dlmm-pro/`. The SDK is pinned to 0.1.2 exactly.
+All paths under `lib/core/venues/meteora-dlmm-pro/`. The SDK is pinned to 0.1.3 exactly.
 
 - **Pools** — Found by the pool account's discriminator and read only through `fetchPoolWithExtensions`: a pool has a dynamic tail (activation rules, rewards) that a read of its head drops. The model carries both coins, the price, tick spacing, the pool type, the partner, the extensions, the fee right now (the schedule's step plus the volatility part) and whether a given wallet may swap or deposit yet.<br>*Files:* `pools.server.ts`, `fee.ts`, `activation.ts`
 - **Launch pool** — `initializeLaunchPool` with a fee that falls as the market cap grows or with time, collected in one coin, opening times and early wallets. The build says the fee the schedule really settles at: its steps are whole basis points, so with hundreds of steps it settles above the fee asked for. A coin the program takes only with Meteora's token badge is refused before a signature, or built with the badge where it has one.<br>*Files:* `pools.server.ts`
@@ -226,6 +227,9 @@ Ryntra fee; a deposit from one coin through Zap pays Ryntra's swap fee on its Ju
 - "In the pool or just holding" and impermanent-loss tracking, shown as pictures, never as a projected return<br>*Files:* `lib/liquidity/catalog/simulate.ts`, `lib/liquidity/catalog/track.ts`
 - One coin in, one approval: Meteora Zap, up to three v0 transactions signed together; a Review allows only the Zap, DLMM and Jupiter programs and outputs to the person's own accounts; a partial batch has an honest state and a way out as SOL<br>*Files:* `lib/liquidity/studio/zap.ts`, `lib/liquidity/studio/zap-check.ts`, `app/api/city/earn/piers/zap/`
 - The routes the Earn shelf reads and acts through<br>*Files:* `app/api/city/harbor/route.ts`, `app/api/liquidity/`
+- On a coin's own page, under its chart: **Pools** — the coin's DLMM and DAMM v2 pools with liquidity, volume and fees of
+  the day — and **My pools**, the person's positions in them. Add, Review and Withdraw open the same Earn ticket in a
+  drawer, so a person buys a coin, earns on it and leaves it on one screen; no new money path<br>*Files:* `terminal/coin/earn-here/`
 
 ## An agent looks after a position
 
@@ -259,7 +263,7 @@ around our signer, with a stranger's key, or after the stop was refused by the c
 
 The Studio engine for DLMM and DAMM v2 accepts Spot, Curve and Bid-Ask (`LIQUIDITY_SHAPES` in
 `lib/liquidity/studio/contract.ts`); DLMM Pro adds custom weights (`shapes.server.ts`). In Earn a person picks a goal,
-not a shape — Even, Near price or Catch moves — and a width; the Zap and the agent's care build it, and the agent
+not a shape — Even, Near price, Catch moves or, on DLMM Pro, Wave — and a width; the Zap and the agent's care build it, and the agent
 rebuilds a range in the same shape.
 
 ## Agents
@@ -273,6 +277,8 @@ rebuilds a range in the same shape.
 - No agent tool builds or signs a launch; every launch and launch trade is signed by the person in their own wallet.
 - The agents that act on Meteora act inside rules the chain holds: the care agent above, inside the person's own smart
   account and its policies; and on DLMM Pro, the agent as a position's delegate with three rights ([DLMM Pro](#dlmm-pro)).
+- The trading agent buys and sells coins through Jupiter — Meteora pools among the routes — inside the person's own
+  Squads policies: its exits (the stop, half at 2x, the fade, the clock) sell only into the person's wallet.
 
 ## How to check it
 

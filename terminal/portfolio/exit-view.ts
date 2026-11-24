@@ -38,6 +38,20 @@ export function doorOf(body: unknown): ExitDoor {
   return { canExit: open, canCollect: open };
 }
 
+/**
+ * The coins the engine's overview found Jupiter carries no route for now: its `held` rows of the wallet's
+ * own coins with `NO_ROUTE`. They are not offered as coins that sell; the panel names them in one line. A position a
+ * protocol has no exit for (`NO_ROUTE` on a pool or a market) is not one of them — its row says so itself.
+ */
+export function unroutedOf(body: unknown): string[] {
+  if (!isObject(body)) return [];
+  return list(body.held)
+    .filter((row): row is Json => isObject(row) && row.protocol === 'wallet' && row.reason === 'NO_ROUTE')
+    .map((row) => text(row.id))
+    .filter((id): id is string => id !== null)
+    .slice(0, 300);
+}
+
 /** A position the package leaves out or only starts, and why — in the engine's own code. */
 export type ExitLeft = Readonly<{ id: string; reason: string; untilEpoch: number | null }>;
 

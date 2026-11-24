@@ -1,0 +1,40 @@
+/* «Contacts»: the form and the list stand on «Money»'s own classes (money.module.css) and the Swap's fields;
+   here only what is the contacts' own. Every colour, face and size is the terminal's token (docs/terminal/DESIGN.md). */
+
+/* The line under the form holds its place, said or not: a warning appearing never pushes the press down. */
+.said {
+  min-height: 22px;
+  margin: 0;
+}
+
+.said[data-said='none'] {
+  visibility: hidden;
+}
+
+/* A row's three quiet presses sit together at its end. */
+.row {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+/* In «Send»: the contacts under «To», one quiet press each. */
+.picks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.known {
+  color: var(--mint);
+}
+
+@media (max-width: 767px) {
+  .row {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: 8px;
+  }
+
+  .row > span:last-child {
+    grid-row: auto;
+    grid-column: auto;
+  }
+}

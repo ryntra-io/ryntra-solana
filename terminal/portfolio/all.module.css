@@ -39,8 +39,12 @@
 
 /* ── a wallet by its address ──────────────────────────────────────────── */
 
+/* No wallet yet: one panel of its own height, its promise and its way in held in the middle — never a thin card at
+   the top over an empty field (eyes 20.11, 88). A phone keeps the panel as tall as it holds. */
 .hero {
+  justify-content: center;
   min-width: 0;
+  min-height: 400px;
 }
 
 .heroRow {
@@ -48,11 +52,6 @@
   flex-wrap: wrap;
   align-items: center;
   gap: 16px 16px;
-}
-
-.heroLine {
-  flex: 1 1 280px;
-  min-width: 0;
 }
 
 .lookup {
@@ -104,6 +103,19 @@
 /* The address field in the head, once a wallet is on screen: the same field, as wide as its place. */
 .lookupSmall {
   flex: 0 1 340px;
+}
+
+/* «Top up · Send · Receive» at the head: one row beside the field, never two (the field gives way first). */
+.moneyHead {
+  flex: none;
+  flex-wrap: nowrap;
+  white-space: nowrap;
+}
+
+/* «Connect wallet» beside it, for a wallet only looked at: one line, never squeezed by the field. */
+.headAct {
+  flex: none;
+  white-space: nowrap;
 }
 
 /* ── the total ────────────────────────────────────────────────────────── */
@@ -312,6 +324,11 @@
   display: none;
 }
 
+/* The one way in on a wallet only looked at: a phone's, in its place under the address (the desk has it in the head). */
+.thumbIn {
+  display: flex;
+}
+
 /* ── the side column: the private balance that is coming, the recent activity ── */
 
 .side {
@@ -442,6 +459,46 @@
   padding: 0 18px 14px;
 }
 
+/* «Show my agents» where the agents would stand: one row of the group's own head, quiet. */
+.askRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  min-height: 52px;
+  padding: 6px 8px 6px 18px;
+}
+
+/* «Sign once to see your agents» is longer than a group's name — it wraps beside its «i» instead of pushing it
+   off the line. */
+.askHead {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1 1 260px;
+  min-width: 0;
+}
+
+.askRow .askTitle {
+  min-width: 0;
+  white-space: normal;
+  text-wrap: pretty;
+}
+
+.askActs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.askLine {
+  margin: 0;
+  padding: 0 18px 14px;
+  font-size: var(--type-body);
+  color: var(--soft);
+}
+
 /* ── a row's cells on a desk ──────────────────────────────────────────── */
 
 .nameCell {
@@ -497,6 +554,11 @@
 }
 
 .sub[data-tone='warn'] {
+  color: var(--amber);
+}
+
+/* A row's state that stands under its name once its own column is gone. */
+.subState[data-tone='warn'] {
   color: var(--amber);
 }
 
@@ -589,10 +651,10 @@
   outline-offset: -2px;
 }
 
-.row[data-marked] {
+/* A marked coin's whole item — the row and its «Don't touch» under it — lit as one (eyes 20.11, 87). */
+.rows > li[data-marked] {
   margin: 0 -16px;
-  padding: 10px 16px 10px 14px;
-  width: calc(100% + 32px);
+  padding: 0 16px 0 14px;
   background: color-mix(in srgb, var(--amber) 5%, transparent);
   border-left: 2px solid color-mix(in srgb, var(--amber) 70%, transparent);
 }
@@ -701,6 +763,19 @@
   align-items: center;
   gap: 12px;
   padding: 18px;
+}
+
+/* The wallet not read: the total's name, the line in its place, «Try again» under it. */
+.failed {
+  align-items: flex-start;
+}
+
+.failLine {
+  margin: 0;
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: var(--type-base);
+  color: var(--flare);
 }
 
 .blankLine {
@@ -828,12 +903,12 @@
 /* ── a phone ──────────────────────────────────────────────────────────── */
 
 @media (max-width: 767px) {
-  .deskOnly {
-    display: none;
-  }
-
   .phoneOnly {
     display: block;
+  }
+
+  .hero {
+    min-height: 0;
   }
 
   .lookupSmall {
@@ -854,11 +929,7 @@
     display: none;
   }
 
-  /* In a column a basis is a height: the line and the field take only what they hold. */
-  .heroLine {
-    flex: 0 0 auto;
-  }
-
+  /* In a column a basis is a height: the field takes only what it holds. */
   .heroRow > .lookup {
     flex: 0 0 auto;
   }
@@ -970,6 +1041,22 @@
   color: var(--amber);
   background: var(--well);
   border: 1px solid var(--line);
+}
+
+/* The promise and, under it, what the screen gathers — plain words, no marks of a chart (QA 19.11, eyes 29). */
+.heroWords {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.heroParts {
+  margin: 0;
+  font-size: var(--type-body);
+  line-height: 1.45;
+  color: var(--soft);
 }
 
 /* The places the menu leads to stand clear of the frame's head. */
@@ -1141,16 +1228,34 @@
   }
 
   .heroTop {
+    align-items: flex-start;
     gap: 12px;
-  }
-
-  /* The promise beside its mark takes the line's rest and wraps — the stacked row's rule is not its own. */
-  .heroTop > .heroLine {
-    flex: 1 1 auto;
-    min-width: 0;
   }
 
   .heroRow > .heroAct {
     min-height: 52px;
+  }
+}
+
+/* A phone's lead under the page's head: the address field and, on a wallet only looked at, the one way in (eyes 20.11, 84). */
+@media (max-width: 767px) {
+  .phoneLead {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .thumbIn > button {
+    min-height: 48px;
+  }
+}
+
+@media (max-width: 767px) {
+  .askRow {
+    padding: 6px 4px 6px 16px;
+  }
+
+  .askRow .groupName {
+    font-size: var(--type-base);
   }
 }

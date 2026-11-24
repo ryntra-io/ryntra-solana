@@ -85,6 +85,22 @@ export function terminalDestination(destination: string, mode: TerminalMode = TE
 /** The short addresses that name the city itself. */
 const CITY_SOURCES: ReadonlySet<string> = new Set([CITY_PATH, '/map']);
 
+/** SOL's mint: the coin the menu's «Spot» opens. */
+export const SPOT_MINT = 'So11111111111111111111111111111111111111112';
+
+/**
+ * The menu's «Spot» (decision 109): the trading desk of SOL, the Market's coin screen. The addresses that name the spot —
+ * the short `/spot` a person types, and the old interface's spot page with no coin in its address — open the same desk
+ * the menu does, not Swap: the city led them to its one trade window, which in the terminal is two screens.
+ */
+export const SPOT_HREF = `${COIN_PATH}/${SPOT_MINT}`;
+const SPOT_SOURCE = /^(?:\/spot|(?:\/uk)?\/app\/spot(?:\/:path\*)?|\/solana\/workspace\/spot(?:\/:path\*)?)$/;
+
+/** Whether a row of the city's table names the spot itself — not a coin read from its query, which opens that coin. */
+function namesSpot(row: Row): boolean {
+  return SPOT_SOURCE.test(row.source) && !row.has?.some((c) => c.type === 'query');
+}
+
 type Condition = Readonly<{ type: string; key?: string; value?: string }>;
 type Row = Readonly<{ source: string; destination: string; permanent: boolean; has?: readonly Condition[]; missing?: readonly Condition[] }>;
 
@@ -102,6 +118,7 @@ export function asTerminalHome<T extends Row>(rows: readonly T[], mode: Terminal
       // The city's own short addresses (`/city` on the application's host, `/map`) lead to the city where it stands now.
       const origin = row.destination.match(/^https?:\/\/[^/]+/)?.[0] ?? '';
       if (CITY_SOURCES.has(row.source)) return { ...row, destination: `${origin}${CITY_PATH}`, permanent: false };
+      if (namesSpot(row) && shelfOn('market', mode, shelves)) return { ...row, destination: `${origin}${SPOT_HREF}`, permanent: false };
       const destination = terminalDestination(row.destination, mode, shelves);
       // A row that led into the city for good now leads to a section that may still move: never a 308 it cannot take back.
       return destination === row.destination ? row : { ...row, destination, permanent: false };

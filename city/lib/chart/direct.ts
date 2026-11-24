@@ -28,7 +28,11 @@ import type { CandlesFetch, CandlesRead, Timeframe } from './candles.ts';
  *  - nothing of the person is sent: no wallet, no address of theirs, no cookie (the source is another origin).
  *
  * A read is kept for its interval's own time, so going through the intervals asks the source four times at most; a
- * refusal from the source pauses this browser's reads for the time it asks. Pure but for the fetch passed in.
+ * refusal from the source pauses this browser's reads for the time it asks. A refusal the browser cannot read (a 429
+ * without the source's CORS headers fails as `TypeError: Failed to fetch`, and the browser logs every one) pauses the
+ * same way, longer each time in a row; until the source answers again, one read at a time goes out — the
+ * others wait for it and ask only if it was answered — so one refusal is one line in the console, not one per read.
+ * Pure but for the fetch passed in.
  */
 
 export const DIRECT_BASE = 'https://api.geckoterminal.com/api/v2/networks/solana';
@@ -58,10 +62,10 @@ export const directFetch: CandlesFetch = (url, init) => {
   });
 };
 
-/** A refusal that names no wait pauses this long. */
-const DIRECT_PAUSE_MS = 30_000;
-/** A read that failed on the way pauses this long. */
-const NETWORK_PAUSE_MS = 10_000;
+/** A refusal that names no wait — or one the browser cannot read — pauses this long; each next one in a row, twice as long. */
+export const DIRECT_PAUSE_MS = 30_000;
+/** The longest pause a run of refusals reaches. */
+export const DIRECT_PAUSE_MAX_MS = 5 * 60_000;
 const POOL_KEEP_MS = 10 * 60_000;
 /** Bars this browser read stand in, stated stale, for at most this long; older, they are no bars. */
 const BARS_HELD_MS = 30 * 60_000;
@@ -71,6 +75,12 @@ type Kept = Readonly<{ candles: readonly NormalizedCandle[]; pool: DirectPool; a
 const state = {
   calls: [] as number[],
   pausedUntil: 0,
+  /** Refusals in a row since the source last answered. */
+  refusals: 0,
+  /** Whether the source is not known to answer: nothing answered yet, or the last read was refused. */
+  doubt: true,
+  /** The one read out while in doubt; the others wait for it. */
+  probe: null as Promise<void> | null,
   bars: new Map<string, Kept>(),
   pools: new Map<string, Readonly<{ pool: DirectPool | null; at: number }>>(),
 };
@@ -79,6 +89,9 @@ const state = {
 export function resetDirect(): void {
   state.calls.length = 0;
   state.pausedUntil = 0;
+  state.refusals = 0;
+  state.doubt = true;
+  state.probe = null;
   state.bars.clear();
   state.pools.clear();
   tradesKept.clear();
@@ -94,26 +107,57 @@ function take(now: number): boolean {
   return true;
 }
 
+/** The source refused (`waitMs` — the wait it named, if any): this browser pauses, longer each time in a row. */
+function refused(now: number, waitMs: number | null): void {
+  state.refusals += 1;
+  state.doubt = true;
+  const own = Math.min(DIRECT_PAUSE_MS * 2 ** (state.refusals - 1), DIRECT_PAUSE_MAX_MS);
+  state.pausedUntil = now + (waitMs !== null ? Math.min(waitMs, 120_000) : own);
+}
+
+/** The source answered: the pause and the doubt are over. */
+function answered(): void {
+  state.refusals = 0;
+  state.doubt = false;
+}
+
 async function getJson(path: string, deps: Readonly<{ fetch: CandlesFetch; now: () => number; signal?: AbortSignal }>): Promise<unknown | null> {
+  // While the source is in doubt, one read at a time: the others wait for it, then ask only if it was answered.
+  while (state.doubt && state.probe) {
+    await state.probe;
+    if (deps.signal?.aborted) return null;
+  }
   if (!take(deps.now())) return null;
-  let answer: Awaited<ReturnType<CandlesFetch>>;
+  let done = (): void => undefined;
+  const mine = state.doubt ? new Promise<void>((resolve) => (done = resolve)) : null;
+  if (mine) state.probe = mine;
   try {
-    answer = await deps.fetch(`${DIRECT_BASE}${path}`, { signal: deps.signal });
-  } catch {
-    // A refusal the browser cannot read (a 429 without the source's CORS headers fails as a network error) pauses too.
-    if (!deps.signal?.aborted) state.pausedUntil = deps.now() + NETWORK_PAUSE_MS;
-    return null;
-  }
-  if (answer.status === 429) {
-    const wait = Number(answer.headers?.get('retry-after') ?? '');
-    state.pausedUntil = deps.now() + (Number.isFinite(wait) && wait > 0 ? Math.min(wait * 1000, 120_000) : DIRECT_PAUSE_MS);
-    return null;
-  }
-  if (answer.status < 200 || answer.status >= 300) return null;
-  try {
-    return await answer.json();
-  } catch {
-    return null;
+    let answer: Awaited<ReturnType<CandlesFetch>>;
+    try {
+      answer = await deps.fetch(`${DIRECT_BASE}${path}`, { signal: deps.signal });
+    } catch {
+      // A refusal the browser cannot read (a 429 without the source's CORS headers fails as a network error) pauses
+      // as a 429 does; a read the caller stopped is no refusal.
+      if (!deps.signal?.aborted) refused(deps.now(), null);
+      return null;
+    }
+    if (answer.status === 429) {
+      const wait = Number(answer.headers?.get('retry-after') ?? '');
+      refused(deps.now(), Number.isFinite(wait) && wait > 0 ? wait * 1000 : null);
+      return null;
+    }
+    answered();
+    if (answer.status < 200 || answer.status >= 300) return null;
+    try {
+      return await answer.json();
+    } catch {
+      return null;
+    }
+  } finally {
+    if (mine) {
+      if (state.probe === mine) state.probe = null;
+      done();
+    }
   }
 }
 

@@ -56,13 +56,19 @@ export function parseIndex(body: unknown): IndexCoin[] {
   return rows;
 }
 
+/**
+ * The catalogue's coins as the pickers read them. A coin the engine marks as passing for a tokenized stock it is not
+ * (`passesFor`: «ANT» on a pump.fun mint) reads as suspicious here — no picker offers it and none vouches for
+ * it; its address, pasted whole, still opens it.
+ */
 export function parseCatalog(body: unknown): CatalogRow[] {
   const tokens = record(body)?.tokens;
   if (!Array.isArray(tokens)) return [];
   return tokens.flatMap((raw) => {
     const row = record(raw);
     if (!row || !isMint(row.mint)) return [];
-    return [{ mint: row.mint, symbol: words(row.symbol, 'symbol', 32), name: words(row.name, 'name', 128), icon: text(row.icon, 512), isVerified: typeof row.isVerified === 'boolean' ? row.isVerified : null, isSuspicious: row.isSuspicious === true }];
+    const copy = record(row.passesFor) !== null;
+    return [{ mint: row.mint, symbol: words(row.symbol, 'symbol', 32), name: words(row.name, 'name', 128), icon: text(row.icon, 512), isVerified: typeof row.isVerified === 'boolean' ? row.isVerified : null, isSuspicious: row.isSuspicious === true || copy }];
   });
 }
 

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { isoDateTime } from "../zod/iso-datetime.ts";
 
 import { withBoundedCasRetry, type GuardStore } from "../guard/store.ts";
 
@@ -64,9 +65,9 @@ export const RewardHoldSchema = z
      * counted, for the reason in the module note above.
      */
     state: z.enum(["HELD", "SETTLING"]),
-    at: z.string().datetime({ offset: true }),
+    at: isoDateTime({ offset: true }),
     /** When a `SETTLING` hold stops counting. Null while `HELD`. */
-    settledAt: z.string().datetime({ offset: true }).nullable(),
+    settledAt: isoDateTime({ offset: true }).nullable(),
   })
   .strict();
 
@@ -75,7 +76,7 @@ export type RewardHold = z.output<typeof RewardHoldSchema>;
 export const RewardReserveLedgerSchema = z
   .object({
     holds: z.array(RewardHoldSchema).max(MAX_OPEN_HOLDS),
-    updatedAt: z.string().datetime({ offset: true }),
+    updatedAt: isoDateTime({ offset: true }),
     version: z.number().int().min(0),
   })
   .strict();

@@ -95,6 +95,7 @@
  */
 
 import { z } from "zod";
+import { isoDateTime } from "../zod/iso-datetime.ts";
 
 import { NETWORK_IDS, PRODUCT_IDS, type NetworkId, type Product } from "../core/contracts.ts";
 
@@ -327,7 +328,7 @@ const EntrySchema = z
     parent: z.string().nullable(),
     mint: z.string().regex(BASE58).nullable(),
     address: z.string().nullable(),
-    end: z.object({ block: z.number().int().positive(), time: z.string().datetime({ offset: true }) }).strict().nullable(),
+    end: z.object({ block: z.number().int().positive(), time: isoDateTime({ offset: true }) }).strict().nullable(),
     countedAs: z.enum(["FEES", "SUPPLY_SIDE", "NONE"]),
     technicalValidation: z.literal(true).optional(),
   })

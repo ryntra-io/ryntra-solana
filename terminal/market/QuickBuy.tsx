@@ -16,11 +16,11 @@ import { Details, Done, Failed, TICKET_OPEN, Unknown } from '@/terminal/coin/Tic
 import { actionOf, ticketFree, type ActionLabel } from '@/terminal/coin/ticket-rules';
 import { useTicket } from '@/terminal/coin/useTicket';
 import { WalletPick } from '@/terminal/coin/WalletPick';
-import { TICKET } from '@/terminal/coin/words';
 import { coinHref } from '@/terminal/shell/shelves';
 import { useDismiss } from '@/terminal/shell/useDismiss';
 import { useNarrow } from '@/terminal/shell/useNarrow';
 import { CoinLogo, Icon, Quiet } from '@/terminal/ui';
+import { FEE } from '@/terminal/ui/words';
 import { setQuick, useDepth } from './depth';
 import { QUICK_SOL, logoChain } from './depth-view';
 import { DEPTH } from './depth-words';
@@ -236,8 +236,8 @@ function PopBody({ coin, anchor }: { coin: QuickCoin; anchor: HTMLElement }) {
 /** What you pay and get, the fee in one line with its breakdown behind «i», and the one «Buy». */
 function PopTrade({ coin, quick, press }: { coin: QuickCoin; quick: string; press: () => Promise<'connect' | 'ok'> }) {
   const t = useWords(TRADE);
-  const k = useWords(TICKET);
   const w = useWords(DEPTH);
+  const fw = useWords(FEE);
   const lang = useLang();
   const tower = useTrade((st) => st.tower);
   const side = useTrade((st) => st.side);
@@ -323,7 +323,7 @@ function PopTrade({ coin, quick, press }: { coin: QuickCoin; quick: string; pres
       {figures && !choice?.problem ? (
         <div className={d.popFee}>
           <span>
-            {figures.fee ? k.fee(figures.fee) : t.noRyntraFee}
+            {figures.fee ? fw.ryntra(figures.fee) : fw.none}
             {off ? ` · ${off}` : ''}
           </span>
           <ExplainButton label={t.tradeDetails} open={details} controls={detailsId} onToggle={() => setDetails((was) => !was)} />

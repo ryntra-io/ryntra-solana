@@ -20,11 +20,11 @@ import { logoChain } from '@/terminal/market/depth-view';
 import { coinHref, shelfOn } from '@/terminal/shell/shelves';
 import { useAskHere } from '@/terminal/shell/useAskHere';
 import { useMarket } from '@/terminal/shell/useMarket';
-import { ActionBody, CoinLogo, Icon, Page, PageHead, Panel, changeText, changeTone, priceText } from '@/terminal/ui';
+import { ActionBody, CoinLogo, Icon, Page, PageHead, Panel, PrivacyToggle, changeText, changeTone, priceText, privateModeOpen, usdText } from '@/terminal/ui';
 import { swapDoors, type Place } from './doors';
 import { lookalikeOf } from '@/lib/world/text-safety/lookalike';
 import { BRIDGE_PATH, FILL_LIFE_MS, SOL_REF, addFill, sayTrade, showMoney, useSwapScreen } from './state';
-import { leaveOf, pairOfLink } from './swap-view';
+import { amountOfLink, leaveOf, pairOfLink } from './swap-view';
 import { Recent } from './Recent';
 import { SwapTicket } from './SwapTicket';
 import { useDepthCoins } from './useDepthCoins';
@@ -81,7 +81,8 @@ export function SwapScreen() {
   // says no name of its own —, and beside it the pair's two coins and the recent swaps.
   return (
     <Page>
-      <PageHead title={w.title} />
+      {/* «Open ⇄ Private» only where the private balance is open; elsewhere the Swap is as it was. */}
+      <PageHead title={w.title} mode={privateModeOpen() ? <PrivacyToggle scope="swap" /> : undefined} />
       <ActionBody
         sideLabel={w.side}
         side={
@@ -147,6 +148,9 @@ function useLinkPair(): void {
       const [coin, counter] = await Promise.all([coinOfMint(pair.subject), pair.counter ? coinOfMint(pair.counter) : Promise.resolve(null)]);
       if (!live || !coin) return;
       sayTrade(coin, pair.side, Date.now());
+      // The amount a prepared link names, of the coin that goes — written with the rest of the fill.
+      const amount = amountOfLink(url.searchParams.get('amount'), pair);
+      if (amount) addFill({ amount });
       if (!counter) return;
       if (counter.id === SOL.mint || counter.id === USDC.mint) return addFill({ pay: counter.id === SOL.mint ? 'SOL' : 'USDC' });
       const asset: PayAsset = { mint: counter.id, symbol: bare(counter.symbol), decimals: MONEY.find((money) => money.mint === counter.id)?.decimals ?? null, name: counter.name, icon: counter.icon };
@@ -190,13 +194,21 @@ function usePair(): readonly string[] {
   }, [tower, subject, side, pay, other, holdings]);
 }
 
-/** One tile of the pair: the coin, its price and the day's move — all as the engine read them. */
-type PairTile = Readonly<{ mint: string; symbol: string; name: string; logo: string | null; price: number; change: number | null }>;
+/**
+ * One tile of the pair: the coin, its price and the day's move, and under them what a swap of it rests on — its market
+ * cap, its liquidity and the day's volume — all as the engine read them; a figure it did not read is «—».
+ */
+type PairTile = Readonly<{ mint: string; symbol: string; name: string; logo: string | null; price: number; change: number | null; mcap: number | null; liquidity: number | null; volume: number | null }>;
+
+/** A figure the engine read, or none: a zero or a missing one is never drawn as a fact. */
+const factOf = (value: number | null | undefined): number | null => (typeof value === 'number' && Number.isFinite(value) && value > 0 ? value : null);
 
 /**
- * Beside the form: the pair's two coins, whatever the pair — the logo, the price and the day's move, a tap away from
- * the coin's own page (the spot), where its chart and its limit are. The figures are the engine's market read by mint
- * (`/api/v1/market/depth`), the city's towers until it answers. A coin nobody priced has no tile.
+ * Beside the form: the pair's two coins, whatever the pair — the logo, the price and the day's move, and the three facts
+ * a swap of it rests on (market cap, liquidity, the day's volume; eyes pass 20.11, №18: two small tiles over an empty
+ * column), a tap away from the coin's own page (the spot), where its chart and its limit are. The figures are the
+ * engine's market read by mint (`/api/v1/market/depth`), the city's towers until it answers. A coin nobody priced has no
+ * tile.
  */
 function Pair() {
   const w = useWords(SWAP);
@@ -209,11 +221,36 @@ function Pair() {
     const coin = depth.get(mint);
     if (coin && coin.price !== null) {
       const symbol = bare(coin.symbol);
-      return [{ mint, symbol, name: mint === SOL.mint ? 'Solana' : coin.name, logo: logoOf(mint, spotIcon(mint, coin.icon)), price: coin.price, change: coin.stats['24h']?.change ?? null }];
+      return [
+        {
+          mint,
+          symbol,
+          name: mint === SOL.mint ? 'Solana' : coin.name,
+          logo: logoOf(mint, spotIcon(mint, coin.icon)),
+          price: coin.price,
+          change: coin.stats['24h']?.change ?? null,
+          mcap: factOf(coin.mcap),
+          liquidity: factOf(coin.liquidity),
+          volume: factOf(coin.stats['24h']?.volume),
+        },
+      ];
     }
     const tower = byMint.get(mint);
     if (!tower || tower.unread?.includes('price')) return [];
-    return [{ mint, symbol: bare(tower.symbol), name: mint === SOL.mint ? 'Solana' : tower.name, logo: logoOf(mint, spotIcon(mint, tower.icon)), price: tower.price, change: tower.unread?.includes('change24h') ? null : tower.change24h }];
+    const figure = (key: 'mcap' | 'liquidity' | 'volume24h') => (tower.unread?.includes(key) ? null : factOf(tower[key]));
+    return [
+      {
+        mint,
+        symbol: bare(tower.symbol),
+        name: mint === SOL.mint ? 'Solana' : tower.name,
+        logo: logoOf(mint, spotIcon(mint, tower.icon)),
+        price: tower.price,
+        change: tower.unread?.includes('change24h') ? null : tower.change24h,
+        mcap: figure('mcap'),
+        liquidity: figure('liquidity'),
+        volume: figure('volume24h'),
+      },
+    ];
   });
   if (!tiles.length) return null;
   return (
@@ -235,6 +272,20 @@ function Pair() {
                 {changeText(tile.change, lang)} <i>{w.day}</i>
               </span>
             )}
+          </span>
+          <span className={s.tileFacts}>
+            {(
+              [
+                [w.mcap, tile.mcap],
+                [w.liquidity, tile.liquidity],
+                [w.volume, tile.volume],
+              ] as const
+            ).map(([label, value]) => (
+              <span key={label} className={s.tileFact}>
+                <i>{label}</i>
+                <b>{value === null ? '—' : usdText(value, lang)}</b>
+              </span>
+            ))}
           </span>
         </Link>
       ))}

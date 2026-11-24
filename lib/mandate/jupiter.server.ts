@@ -23,9 +23,10 @@ import { JUPITER_SWAP_V2_BASE_URL, asAmount, asInteger, asObject, asText, readBo
 import { apiInstruction, type ApiInstruction } from "./agent.ts";
 import { agentFeeAccount, feeAccountRefusal, pairFeeBps, type FeeSides } from "./fee.ts";
 import { jupiterFeeOf } from "./result.ts";
-import { JUPITER_PROGRAM_ID, ROUTE_V2, SHARED_ACCOUNTS_ROUTE_V2, SLIPPAGE_MAX_BPS, LAYOUT, feeMintOf } from "./terms.ts";
+import { JUPITER_PROGRAM_ID, ROUTE_V2, SHARED_ACCOUNTS_ROUTE_V2, SLIPPAGE_MAX_BPS, LAYOUT, feeMintOf, proceedsAccountOf } from "./terms.ts";
 import type { Mandate } from "./human.ts";
 import { NATIVE_MINT, TOKEN_PROGRAM_ID } from "./ssa.ts";
+import { readShelfCoin, stocksOf, type StockShelf } from "./stocks.server.ts";
 import { TOKEN_2022_PROGRAM_ID, readCoin } from "./token-2022.ts";
 import { receivedIn, type Venue } from "./tick.server.ts";
 
@@ -178,7 +179,8 @@ export async function fetchAgentRoute(
   }
 }
 
-type JupiterDependencies = Readonly<{ fetchImpl?: typeof fetch; timeoutMs?: number; sides?: (mint: string) => Promise<SideFacts | null> }>;
+/** `stocks` — the shelf a stock's mint is found on (`./stocks.server.ts`); the engine's own when not handed in. */
+type JupiterDependencies = Readonly<{ fetchImpl?: typeof fetch; timeoutMs?: number; sides?: (mint: string) => Promise<SideFacts | null>; stocks?: StockShelf }>;
 
 /** One side's facts as a person's swap reads them (`../core/solana-swap/fee-route.server.ts`), loaded on first use. */
 const swapSide = async (mint: string): Promise<SideFacts | null> => (await import("../core/solana-swap/fee-route.server.ts")).readSideFacts(mint);
@@ -207,11 +209,11 @@ async function routeUnderMandate(
   connection: Connection,
   selection: JupiterSwapEndpointSelection,
   dependencies: JupiterDependencies,
-  input: Readonly<{ mandate: Mandate; outputMint: PublicKey; outputProgram: PublicKey; amount: bigint; receiver: PublicKey; fee: Readonly<{ bps: number; account: PublicKey }> }>,
+  input: Readonly<{ mandate: Mandate; outputMint: PublicKey; outputProgram: PublicKey; amount: bigint; receiver: PublicKey; fee: Readonly<{ bps: number; account: PublicKey }>; inputMint?: PublicKey; receiverOwner?: PublicKey }>,
 ): Promise<Readonly<{ route: AgentRoute; setup: readonly TransactionInstruction[]; lookupTables: readonly AddressLookupTableAccount[] }>> {
   const { mandate } = input;
   const answer = await fetchAgentRoute(
-    { inputMint: mandate.terms.budgetMint, outputMint: input.outputMint, amount: input.amount, vault: mandate.vault, agent: mandate.terms.agent, receiver: input.receiver, slippageBps: mandate.terms.slippageBps, fee: input.fee },
+    { inputMint: input.inputMint ?? mandate.terms.budgetMint, outputMint: input.outputMint, amount: input.amount, vault: mandate.vault, agent: mandate.terms.agent, receiver: input.receiver, slippageBps: mandate.terms.slippageBps, fee: input.fee },
     selection,
     dependencies,
   );
@@ -220,7 +222,7 @@ async function routeUnderMandate(
   const lookupTables = tables.map((table) => table.value).filter((table): table is AddressLookupTableAccount => table !== null);
   if (lookupTables.length !== tables.length) throw new Error("a lookup table of the route is not on chain");
   const hers = answer.route.setup.some((instruction) => instruction.keys[1]?.pubkey.equals(input.receiver)) || (await connection.getAccountInfo(input.receiver, "confirmed")) !== null;
-  const setup = hers ? answer.route.setup : [createAssociatedTokenAccountIdempotentInstruction(mandate.terms.agent, input.receiver, mandate.terms.human, input.outputMint, input.outputProgram), ...answer.route.setup];
+  const setup = hers ? answer.route.setup : [createAssociatedTokenAccountIdempotentInstruction(mandate.terms.agent, input.receiver, input.receiverOwner ?? mandate.terms.human, input.outputMint, input.outputProgram), ...answer.route.setup];
   return { route: answer.route, setup, lookupTables };
 }
 
@@ -232,7 +234,8 @@ export function jupiterVenue(connection: Connection, selection: JupiterSwapEndpo
       const [coinMint, budgetMint] = await connection.getMultipleAccountsInfo([coin, mandate.terms.budgetMint], "confirmed");
       /* A transfer fee's rate is the epoch's: read once, for the judgement here and the signer's count. */
       const epoch = [coinMint, budgetMint].some((info) => info?.owner.equals(TOKEN_2022_PROGRAM_ID)) ? BigInt((await connection.getEpochInfo("confirmed")).epoch) : undefined;
-      const bought = readCoin(coin, coinMint, epoch);
+      /* A stock of the shelf is read as one — while its issuer's rights are not in use against a buyer now. */
+      const bought = await readShelfCoin(coin, coinMint, epoch, dependencies.stocks ?? stocksOf("mainnet"));
       if (!bought.ok) throw new Error(bought.reason);
       const sold = readCoin(mandate.terms.budgetMint, budgetMint, epoch);
       if (!sold.ok) throw new Error(sold.reason);
@@ -246,8 +249,36 @@ export function jupiterVenue(connection: Connection, selection: JupiterSwapEndpo
       const fee = { bps: feeBps, account: agentFeeAccount(feeMint) };
       const feeAccount = feeAccountRefusal(await connection.getAccountInfo(fee.account, "confirmed"), feeMint);
       if (feeAccount) throw new Error(feeAccount);
-      const { route, setup, lookupTables } = await routeUnderMandate(connection, selection, dependencies, { mandate, outputMint: coin, outputProgram: bought.coin.program, amount, receiver, fee });
+      /* A coin the agent keeps lands in the vault's own account of it — as every coin of her copy. */
+      const receiverOwner = mandate.terms.heldCoin || mandate.terms.copyCoins ? mandate.vault : mandate.terms.human;
+      const { route, setup, lookupTables } = await routeUnderMandate(connection, selection, dependencies, { mandate, outputMint: coin, outputProgram: bought.coin.program, amount, receiver, fee, receiverOwner });
       return { instruction: route.swap, setup, promisedOut: route.outAmount, feeSides, lookupTables, coin: bought.coin, ...(epoch === undefined ? {} : { epoch }) };
+    },
+    /*
+     * The agent's own sale of the coin it keeps: from the vault's account of it into her own account of the
+     * budget's token, Ryntra's fee in that money at the table's rate for the coin into the budget's token — the lane of the
+     * person's sale (`jupiterSaleVenue`), under the mandate's sale policy.
+     */
+    async sell(mandate, amount, coin) {
+      const held = mandate.terms.heldCoin;
+      /* Or a coin of her copy, under its group's sale policy (the caller names it, `agentTrade`'s `salePolicy`). */
+      const copied = Boolean(mandate.terms.copyCoins?.some((entry) => entry.mint.equals(coin)) && mandate.salePolicies?.length);
+      if (!copied && (!held || !held.mint.equals(coin) || !mandate.salePolicy)) throw new Error("the mandate keeps no such coin to sell");
+      const coinMint = await connection.getAccountInfo(coin, "confirmed");
+      const epoch = coinMint?.owner.equals(TOKEN_2022_PROGRAM_ID) ? BigInt((await connection.getEpochInfo("confirmed")).epoch) : undefined;
+      const sold = await readShelfCoin(coin, coinMint, epoch, dependencies.stocks ?? stocksOf("mainnet"));
+      if (!sold.ok) throw new Error(sold.reason);
+      const read = dependencies.sides ?? swapSide;
+      const [input, output] = await Promise.all([read(coin.toBase58()), read(mandate.terms.budgetMint.toBase58())]);
+      const feeSides: FeeSides = { input, output, nowMs: Date.now() };
+      const feeBps = pairFeeBps(coin.toBase58(), mandate.terms.budgetMint.toBase58(), feeSides);
+      if (feeBps === null) throw new Error("the agent does not trade this pair: Ryntra's table names no router fee for it");
+      const fee = { bps: feeBps, account: agentFeeAccount(mandate.terms.budgetMint) };
+      const feeAccount = feeAccountRefusal(await connection.getAccountInfo(fee.account, "confirmed"), mandate.terms.budgetMint);
+      if (feeAccount) throw new Error(feeAccount);
+      const receiver = proceedsAccountOf(mandate.terms);
+      const { route, setup, lookupTables } = await routeUnderMandate(connection, selection, dependencies, { mandate, inputMint: coin, outputMint: mandate.terms.budgetMint, outputProgram: TOKEN_PROGRAM_ID, amount, receiver, fee });
+      return { instruction: route.swap, setup, promisedOut: route.outAmount, feeSides, lookupTables, coin: sold.coin, ...(epoch === undefined ? {} : { epoch }) };
     },
     received: (signature, receiver) => receivedIn(connection, signature, receiver),
     worth: (mandate, amount, coin) => jupiterWorth({ coin, budgetMint: mandate.terms.budgetMint, amount }, selection, dependencies),
@@ -296,7 +327,7 @@ export function jupiterSaleVenue(connection: Connection, selection: JupiterSwapE
       if (!mandate.terms.budgetCoin || !fixed || !fixed.outputMint.equals(NATIVE_MINT) || mandate.terms.venue.kind !== "jupiter") throw new Error("not a sale through Jupiter");
       const coinMint = await connection.getAccountInfo(mandate.terms.budgetMint, "confirmed");
       const epoch = coinMint?.owner.equals(TOKEN_2022_PROGRAM_ID) ? BigInt((await connection.getEpochInfo("confirmed")).epoch) : undefined;
-      const coin = readCoin(mandate.terms.budgetMint, coinMint, epoch);
+      const coin = await readShelfCoin(mandate.terms.budgetMint, coinMint, epoch, dependencies.stocks ?? stocksOf("mainnet"));
       if (!coin.ok) throw new Error(coin.reason);
       const fee = { bps: feeBps, account: agentFeeAccount(NATIVE_MINT) };
       const feeAccount = feeAccountRefusal(await connection.getAccountInfo(fee.account, "confirmed"), NATIVE_MINT);

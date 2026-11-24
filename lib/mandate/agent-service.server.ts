@@ -26,15 +26,19 @@ import { envKey } from "../launch/signer/env.server.ts";
 import { KMS_KEY_VERSION, kmsEndpoint, kmsKeySigner, kmsPublicAddress, kmsTokenSource, type Fetch, type KmsAccess } from "../launch/signer/gcp-kms.server.ts";
 import type { KeySigner } from "../launch/signer/signer.server.ts";
 import { resolveJupiterSwapEndpoint } from "../solana/quotes.ts";
-import { fundOf, networkOf as networkRawOf, planOfEntry, readEntry, registerMandate, TRADES_KEPT, type BookEntry, type BookStatus, type OpenGate, type RegisterResult } from "./book.server.ts";
+import { fundOf, heldDailyKnown, heldOfRecord, networkOf as networkRawOf, planOfEntry, readEntry, registerMandate, TRADES_KEPT, type BookEntry, type BookStatus, type OpenGate, type RegisterResult } from "./book.server.ts";
+import { botMoneyOn, type EngineSwitches, type MoneyBot } from "../bots/money/gates.ts";
+import { AGENT_EXIT_ENV, agentExitOn, agentSalesView } from "./exit.server.ts";
 import { isFrozen } from "./freeze.server.ts";
 import { missionOf, reconcile, tradeState, type Books, type Mission, type TradeState } from "./mission.ts";
-import { earlyRefusal, launchFactsFrom, planText, STEADY, type LaunchFacts, type StrategyPlan } from "./plans.ts";
+import { earlyRefusal, launchFactsFrom, planText, STEADY, type ExchangeSession, type LaunchFacts, type StrategyPlan } from "./plans.ts";
 import { dlmmBuy, dlmmWorth } from "./dlmm.server.ts";
 import { agentFeeAccount, agentFeeRaw, feeAccountRefusal, feeTransferInstruction, pairFeeBps, uncataloguedFacts, type FeeSides } from "./fee.ts";
 import { jupiterVenue, jupiterWorth } from "./jupiter.server.ts";
 import { mandateConnection, mandateGate, onNetwork, poolOtherToken, type MandateRecord } from "./service.server.ts";
-import { NATIVE_MINT } from "./ssa.ts";
+import { NATIVE_MINT, TOKEN_PROGRAM_ID } from "./ssa.ts";
+import { heldAccountOf, proceedsAccountOf } from "./terms.ts";
+import { NO_MARKET, type ExitMarket, type ExitRules } from "./exit.ts";
 import { earnedWithSales } from "./sale.ts";
 import { boughtOf, readSales, runSalePass, saleVenueOf, salesView, walletHolding, type SalesView } from "./sale.server.ts";
 import { dayOf, DAY_MS, type AgentDay } from "./report.ts";
@@ -52,8 +56,8 @@ type Env = Readonly<Record<string, string | undefined>>;
 
 type KeyOptions = Readonly<{ fetch?: Fetch; oidcToken?: () => Promise<string | null> }>;
 
-/** The KMS key version the switch names and how it is reached; null when the switch is not `kms` or names no key. */
-function agentKmsAccess(env: Env, options: KeyOptions): KmsAccess | null {
+/** The KMS key version the switch names and how it is reached; null when the switch is not `kms` or names no key. The copy's cron asks it too. */
+export function agentKmsAccess(env: Env, options: KeyOptions): KmsAccess | null {
   if (env[AGENT_SIGNER_SWITCH]?.trim().toLowerCase() !== "kms") return null;
   const keyVersion = env[AGENT_KMS_KEY_ENV]?.trim();
   const endpoint = kmsEndpoint(env.RYNTRA_LAUNCH_KMS_ENDPOINT);
@@ -83,7 +87,8 @@ export function agentKeyFor(env: Env, gate: OpenGate, options: KeyOptions = {}):
 export function dlmmVenue(connection: Connection, gate: Extract<OpenGate, { network: "devnet" }>, dependencies: Parameters<typeof dlmmBuy>[2] = {}): Venue {
   return {
     async buy(mandate, amount, receiver, coin) {
-      /* A coin of Token-2022 only with every feature of its mint on the agent's list. */
+      /* A coin of Token-2022 only with every feature of its mint on the agent's list. Devnet has no shelf of
+         companies, so no coin is a stock here: the strict rule alone. */
       const mint = await connection.getAccountInfo(coin, "confirmed");
       const epoch = mint?.owner.equals(TOKEN_2022_PROGRAM_ID) ? BigInt((await connection.getEpochInfo("confirmed")).epoch) : undefined;
       const bought = readCoin(coin, mint, epoch);
@@ -102,14 +107,46 @@ export function dlmmVenue(connection: Connection, gate: Extract<OpenGate, { netw
        * already; all a first buy may need is the person's account, at the agent's cost.
        */
       const hers = (await connection.getAccountInfo(receiver, "confirmed")) !== null;
+      /* A coin the agent keeps lands in the vault's own account of it. */
+      const owner = mandate.terms.heldCoin ? mandate.vault : mandate.terms.human;
       return {
         instruction: buy.instruction,
         fee: feeTransferInstruction({ budgetMint: NATIVE_MINT, budgetAccount: mandate.budgetAccount, vault: mandate.vault, fee, decimals: 9 }),
         feeSides,
-        setup: hers ? [] : [createAssociatedTokenAccountIdempotentInstruction(mandate.terms.agent, receiver, mandate.terms.human, coin, bought.coin.program)],
+        setup: hers ? [] : [createAssociatedTokenAccountIdempotentInstruction(mandate.terms.agent, receiver, owner, coin, bought.coin.program)],
         promisedOut: buy.quoteOut,
         coin: bought.coin,
         ...(epoch === undefined ? {} : { epoch }),
+      };
+    },
+    /*
+     * The agent's own sale on devnet: the pool sells the coin from the vault's account of it into her wSOL;
+     * Ryntra's fee is the transfer of the table's share of the coin just before, into Ryntra's account of that coin.
+     */
+    async sell(mandate, amount, coin) {
+      const held = mandate.terms.heldCoin;
+      if (!held || !held.mint.equals(coin) || !mandate.salePolicy) throw new Error("the mandate keeps no such coin to sell");
+      const mint = await connection.getAccountInfo(coin, "confirmed");
+      const sold = readCoin(coin, mint, undefined);
+      if (!sold.ok || !sold.coin.program.equals(TOKEN_PROGRAM_ID) || !mint) throw new Error(sold.ok ? "on devnet's pool the agent sells only a coin of Token" : sold.reason);
+      const decimals = mint.data[44]!;
+      const feeSides: FeeSides = { input: uncataloguedFacts(coin.toBase58()), output: uncataloguedFacts(NATIVE_MINT.toBase58()), nowMs: Date.now() };
+      const feeBps = pairFeeBps(coin.toBase58(), NATIVE_MINT.toBase58(), feeSides);
+      if (feeBps === null) throw new Error("the agent does not trade this pair: Ryntra's table names no router fee for it");
+      const feeAccount = feeAccountRefusal(await connection.getAccountInfo(agentFeeAccount(coin), "confirmed"), coin);
+      if (feeAccount) throw new Error(feeAccount);
+      const fee = agentFeeRaw(amount, feeBps);
+      const coinAccount = heldAccountOf(mandate.vault, held);
+      const receiver = proceedsAccountOf(mandate.terms);
+      const swap = await dlmmBuy(connection, { pool: gate.pool, budgetMint: coin, vault: mandate.vault, budgetAccount: coinAccount, receiver, amount: amount - fee, slippageBps: mandate.terms.slippageBps }, dependencies);
+      const hers = (await connection.getAccountInfo(receiver, "confirmed")) !== null;
+      return {
+        instruction: swap.instruction,
+        fee: feeTransferInstruction({ budgetMint: coin, budgetAccount: coinAccount, vault: mandate.vault, fee, decimals }),
+        feeSides,
+        setup: hers ? [] : [createAssociatedTokenAccountIdempotentInstruction(mandate.terms.agent, receiver, mandate.terms.human, NATIVE_MINT, TOKEN_PROGRAM_ID)],
+        promisedOut: swap.quoteOut,
+        coin: sold.coin,
       };
     },
     received: (signature, receiver) => receivedIn(connection, signature, receiver),
@@ -120,6 +157,15 @@ export function dlmmVenue(connection: Connection, gate: Extract<OpenGate, { netw
 export type MinuteAnswer =
   | Readonly<{ ran: false; why: "closed" | "no-key" | "key-unread" | "wrong-key" | "store" | "not-devnet" | "not-mainnet" }>
   | Readonly<{ ran: true; lines: readonly PassLine[]; sales: readonly Readonly<{ policy: string; did: string }>[] }>;
+
+/**
+ * The switches the agent's pass runs by, read from the deployment's environment: the agent's own exit
+ * (`RYNTRA_AGENT_EXIT`) and each bot's money (`RYNTRA_BOTS_*_MONEY`); only «on» opens, anything else closes.
+ */
+export const engineSwitchesOf = (env: Env): EngineSwitches => ({
+  agentExit: agentExitOn(env[AGENT_EXIT_ENV]),
+  bots: { grid: botMoneyOn("grid", env), signals: botMoneyOn("signals", env) },
+});
 
 /** The gate's venue: the devnet pool, or Jupiter's route on mainnet. */
 export const venueOf = (connection: Connection, gate: OpenGate): Venue => (gate.network === "mainnet" ? jupiterVenue(connection, resolveJupiterSwapEndpoint()) : dlmmVenue(connection, gate));
@@ -151,11 +197,39 @@ export async function agentMinute(env: Env, deps: Readonly<{ store?: GuardStore;
     return { ran: false, why: gate.network === "mainnet" ? "not-mainnet" : "not-devnet" };
   }
   const journal = agentJournal(() => store);
-  const lines = await runAgentPass({ gate, store, connection, key, journal, venue: venueOf(connection, gate), ...(deps.now ? { now: deps.now } : {}) });
+  /* The fade reads the coin's trading — Jupiter's own six- and twenty-four-hour windows; devnet's coin has none. */
+  const market = gate.network === "mainnet" ? { market: exitMarketOf } : {};
+  /* The engine's switches, from the environment the cron's route handed in — the pass reads none itself. */
+  const switches = engineSwitchesOf(env);
+  const lines = await runAgentPass({ gate, store, connection, key, journal, venue: venueOf(connection, gate), session: stockSessionOf, switches, ...market, ...(deps.now ? { now: deps.now } : {}) });
   /* The sales a person signed that a request did not finish — the agent sells them, or reads what they brought:
      through the devnet pool, or Jupiter on mainnet. */
   const sales = await runSalePass({ gate, store, connection, key, journal, venue: saleVenueOf(connection, gate), ...(deps.now ? { now: deps.now } : {}) }).catch(() => []);
   return { ran: true, lines, sales };
+}
+
+/**
+ * The coin's trading now, for the exit's fade (`./exit.ts` `faded`): the six- and twenty-four-hour volumes in
+ * USD of Jupiter's own token windows, the very read the coin's page shows (`../spot/markets.server.ts`), loaded on use.
+ * A window not read is null, and a fade on a figure not read is never applied.
+ */
+export async function exitMarketOf(mint: string): Promise<ExitMarket> {
+  const { readSpotTokenFacts } = await import("../spot/markets.server.ts");
+  const read = await readSpotTokenFacts(mint).catch(() => null);
+  if (!read || !read.ok || !read.facts || read.stale) return NO_MARKET;
+  const volume = (value: number | null | undefined) => (typeof value === "number" && Number.isFinite(value) && value >= 0 ? value : null);
+  return { volumeH6Usd: volume(read.facts.windows.h6.volumeUsd), volumeH24Usd: volume(read.facts.windows.h24.volumeUsd) };
+}
+
+/**
+ * A stock's exchange now, as the stocks engine reads it (`lib/stocks/pool-facts.server.ts`: the issuer's own
+ * trading period, or the feed catalogue's market hours); null when the coin is no stock or the facts were not read — a
+ * plan bought only in the exchange's hours then waits.
+ */
+export async function stockSessionOf(mint: string, now: number): Promise<ExchangeSession | null> {
+  const { readPoolFacts } = await import("../stocks/pool-facts.server.ts");
+  const facts = await readPoolFacts(mint, now);
+  return facts?.isStock ? facts.session : null;
 }
 
 /**
@@ -176,12 +250,35 @@ export async function launchFactsOf(mint: string): Promise<LaunchFacts | null> {
  * now — the city's pick is never taken on its word; on devnet, whose coin no Pulse reads, the launch is the mandate's start.
  */
 export async function joinBook(
-  input: Readonly<{ record: MandateRecord; strategy: StrategyId; said: string | null; coin?: string | null; plan?: StrategyPlan | null }>,
+  input: Readonly<{ record: MandateRecord; strategy: StrategyId; said: string | null; coin?: string | null; plan?: StrategyPlan | null; exit?: ExitRules | null }>,
   gate: OpenGate,
-  deps: Readonly<{ store?: GuardStore; connection?: Connection; receiveMint?: (connection: Connection, pool: PublicKey) => Promise<PublicKey>; launchFacts?: (mint: string) => Promise<LaunchFacts | null>; now?: () => number }> = {},
+  deps: Readonly<{
+    store?: GuardStore;
+    connection?: Connection;
+    receiveMint?: (connection: Connection, pool: PublicKey) => Promise<PublicKey>;
+    launchFacts?: (mint: string) => Promise<LaunchFacts | null>;
+    now?: () => number;
+    exitOn?: boolean;
+    /** Whether the deployment opens a bot's money (`../bots/money/gates.ts` `botMoneyOn`); absent — closed. */
+    botMoneyOn?: (bot: MoneyBot) => boolean;
+    /**
+     * Whether the coin's day limit the record names is the one the server read when it built her transactions
+     * (`./book.server.ts` `heldDailyKnown`); absent — the book's own ticket is asked.
+     */
+    heldTicket?: (record: MandateRecord) => Promise<boolean>;
+  }> = {},
 ): Promise<RegisterResult> {
   const store = deps.store ?? getGuardRuntime().store;
   if (!storeSurvivesColdStart(store)) return { ok: false, code: "UNAVAILABLE", reason: "The agent's book is not kept here." };
+  /*
+   * A budget with the agent's own
+   * sale joins only with the coin's day limit Ryntra read for this very policy — the agent counts its sales by it.
+   */
+  if (input.record.heldDaily !== undefined) {
+    const known = await (deps.heldTicket ?? ((record: MandateRecord) => heldDailyKnown(store, gate.network, record)))(input.record).catch(() => null);
+    if (known === null) return { ok: false, code: "UNAVAILABLE", reason: "The agent's book is not readable." };
+    if (!known) return { ok: false, code: "REFUSED", reason: "The coin's day limit is not the one Ryntra read for this budget." };
+  }
   const connection = deps.connection ?? mandateConnection(gate.network);
   if (!(await onNetwork(connection, gate.network))) return { ok: false, code: gate.network === "mainnet" ? "NOT_MAINNET" : "NOT_DEVNET", reason: `The endpoint is not ${gate.network}.` };
   const receiveMint = async (): Promise<PublicKey> => {
@@ -203,7 +300,7 @@ export async function joinBook(
       bornAt = Date.parse(facts.firstPoolAt!);
     }
   }
-  return registerMandate({ ...input, plan, bornAt }, gate, { store, connection, receiveMint, now: () => now });
+  return registerMandate({ ...input, plan, bornAt }, gate, { store, connection, receiveMint, now: () => now, exitOn: deps.exitOn === true, ...(deps.botMoneyOn ? { botMoneyOn: deps.botMoneyOn } : {}) });
 }
 
 /**
@@ -307,8 +404,11 @@ export async function agentResult(
   const connection = deps.connection ?? mandateConnection(gate.network);
   /* What it holds for her is never more than her wallet holds: a sale that did not go keeps its coin in her vault. */
   const coin = new PublicKey(entry.receiveMint);
-  const wallet = await walletHolding(connection, new PublicKey(input.owner), coin);
-  const sales = salesView(boughtOf(entry.trades), await readSales(store, input.policy, gate.network), wallet);
+  /* An agent that keeps its coin holds it in her vault, and its own sales are its book's. */
+  const held = heldOfRecord(entry.record);
+  const sales = held
+    ? agentSalesView(entry, await connection.getTokenAccountBalance(heldAccountOf(new PublicKey(entry.record.vault), held), "confirmed").then((balance) => BigInt(balance.value.amount), () => null))
+    : salesView(boughtOf(entry.trades), await readSales(store, input.policy, gate.network), await walletHolding(connection, new PublicKey(input.owner), coin));
   /* What it still holds for her is worth the venue's price; what her sales brought is SOL already in her wallet. */
   const read = gate.network === "mainnet" ? (amount: bigint) => jupiterWorth({ coin, budgetMint: NATIVE_MINT, amount }, resolveJupiterSwapEndpoint()) : (amount: bigint) => dlmmWorth(connection, { pool: gate.pool, budgetMint: NATIVE_MINT, amount });
   /* The vault's budget left and the policy, read from the chain; her switch from the book — none of them guessed. */

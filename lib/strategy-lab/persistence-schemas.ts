@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { isoDateTimeParams } from "../zod/iso-datetime.ts";
 import { canonicalJson, StrategyApprovalArtifactSchema } from "./approval.ts";
 import { EvidenceBundleSchema, StrategyChangeProposalSchema } from "./ai-schemas.ts";
 import { evidenceReportHash } from "./evidence-proof.ts";
@@ -7,7 +8,7 @@ import { StrategySpecSchema } from "./validation.ts";
 
 export const StrategyLabCanonicalUuidSchema = z.string()
   .regex(/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
-export const StrategyLabCursorTimestampSchema = z.string().max(40).datetime({ offset: true });
+export const StrategyLabCursorTimestampSchema = z.string().max(40).datetime(isoDateTimeParams({ offset: true }));
 
 const Sha256Schema = z.string().regex(/^[a-f0-9]{64}$/);
 const SafePositiveIntegerSchema = z.number().int().min(1).refine(Number.isSafeInteger);

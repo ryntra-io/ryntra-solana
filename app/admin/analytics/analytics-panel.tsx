@@ -49,6 +49,7 @@ const SITE_EVENT_LABEL: Record<string, string> = {
   agent_wallet: "Агент 5 · гаманець підключено",
   agent_sign: "Агент 6 · «Підписати» натиснуто",
   agent_signed: "Агент 7 · бюджет підписано",
+  agent_practice: "Агент 4а · спершу потренувався",
   agent_connect: "Місто · гаманець підключено",
   agent_signin: "Місто · вхід гаманцем",
   agent_trade: "Місто · угода на підписі",

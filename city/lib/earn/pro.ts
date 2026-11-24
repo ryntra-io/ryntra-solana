@@ -41,7 +41,19 @@ export const PRO_RESERVE_LAMPORTS = 60_000_000n;
 export const PRO_STOPS = [0, 10, 25] as const;
 export type ProStop = (typeof PRO_STOPS)[number];
 
-export { PIER_GOALS as PRO_GOALS, PIER_STYLES as PRO_STYLES };
+export { PIER_STYLES as PRO_STYLES };
+
+/**
+ * DLMM Pro's goals: the three every pier has, and Meteora's own Wave (SDK 0.1.3, contract 1.104.0) — even by the price,
+ * rising to twice that at the edges, in at most nine ranges. A classic DLMM pool has no Wave, so `PIER_GOALS` stays three.
+ */
+export const PRO_GOALS = [...PIER_GOALS, 'wave'] as const;
+export type ProGoal = (typeof PRO_GOALS)[number];
+
+/** The goals a ticket offers: Wave only where its own switch is open (`NEXT_PUBLIC_RYNTRA_EARN_PRO_WAVE=open`). */
+export function proGoalsShown(waveOpen: boolean): readonly ProGoal[] {
+  return waveOpen ? PRO_GOALS : PRO_GOALS.filter((goal) => goal !== 'wave');
+}
 
 /**
  * The terminal's switch for a position in any pool of SOL (MET/SOL and the like), not only against the coins
@@ -148,7 +160,7 @@ export const proShapeBuilds = (shape: readonly number[], style: PierStyle): bool
  * SOL kept aside. `shape` — the person's own grid in place of the goal: it names the Review's key, and a grid
  * the engine does not build asks for no Review (the ticket says why).
  */
-export function proChoice(pier: ProPier, style: PierStyle, goal: PierGoal, typed: string, holdings: Holdings | null, owner: string | null, shape: readonly number[] | null = null): ProChoice {
+export function proChoice(pier: ProPier, style: PierStyle, goal: ProGoal, typed: string, holdings: Holdings | null, owner: string | null, shape: readonly number[] | null = null): ProChoice {
   const lamports = lamportsFromText(typed);
   const held = zapMax(holdings, PRO_RESERVE_LAMPORTS);
   const max = held;

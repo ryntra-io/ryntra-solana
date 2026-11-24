@@ -16,7 +16,8 @@ import { Action, Cell, Chip, CoinCell, Kick, ListRow, Panel, Quiet, Table, Table
 import { usdShort, useWhen } from './Form';
 import { Glyph, type GlyphName } from './glyphs';
 import { logoOf } from '@/terminal/market/depth-view';
-import { LADDER, ageOf, ageText, clockLeft, freshLaunches, measured, mineOf, showcase, type Mine } from './launch-view';
+import { ageOf, ageText, clockLeft, freshLaunches, measured, mineOf, showcase, type Mine } from './launch-view';
+import { lockedShareBps } from './pro-rewards/view';
 import type { LaunchModel } from './useLaunchModel';
 import { useSeconds } from './useSeconds';
 import l from './launch.module.css';
@@ -48,6 +49,8 @@ export function Preview({ m }: { m: LaunchModel }) {
   const pool = m.format === 'pool' || pooled !== null;
   // With the take-profit ladder, part of the supply stays the creator's: the card says how much is locked, and no «fair».
   const ladder = !pooled && m.format === 'pool' && m.choice?.ladder === true;
+  // The ladder and the reward for the pool's liquidity each keep a part out of the locked supply: the card says what is locked.
+  const locked = !pooled && m.format === 'pool' ? lockedShareBps(m.choice) : 10_000;
   // Before the coin is in its pool its opening is the wait the creator chose; once there, a clock counts down to it.
   const wait = !pooled && m.format === 'pool' && m.choice && m.choice.at === null ? ([w.in15, w.in1h, w.in6h][POOL_AFTER.indexOf(m.choice.after)] ?? null) : null;
   return (
@@ -102,7 +105,7 @@ export function Preview({ m }: { m: LaunchModel }) {
         <div className={l.chips}>
           <Chip>
             <Glyph name="lock" small />
-            {ladder ? w.lineLockedPart(pct(10_000 - LADDER.shareBps)) : w.locked}
+            {locked < 10_000 ? w.lineLockedPart(pct(locked)) : w.locked}
           </Chip>
           <Chip>{pool ? `Meteora ${w.fmtPoolTag}` : 'Meteora'}</Chip>
           {pool || m.shield?.on ? (
@@ -359,7 +362,7 @@ function Blank({ m, line, children }: { m: LaunchModel; line: string; children: 
 }
 
 /** One of the creator's coins by its picture; where the picture does not come, the brand's coin in its place. */
-function MineMark({ src }: { src: string }) {
+export function MineMark({ src }: { src: string }) {
   const [failed, setFailed] = useState(false);
   if (failed) return <CoinMark picture={null} />;
   // eslint-disable-next-line @next/next/no-img-element

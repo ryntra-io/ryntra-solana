@@ -19,6 +19,7 @@
  */
 
 import { z } from "zod";
+import { isoDateTime } from "../../zod/iso-datetime.ts";
 
 import { BASE58_PUBKEY } from "../../solana/address.ts";
 import { SOLANA_NETWORKS } from "../../solana/rpc.ts";
@@ -160,7 +161,7 @@ export const SplTransferObservationSchema = z
     signature: z.string().regex(BASE58_SIGNATURE),
     slot: z.string().regex(RAW_AMOUNT),
     /** ISO-8601 when the RPC reported a block time; null when it did not. */
-    blockTime: z.string().datetime({ offset: true }).nullable(),
+    blockTime: isoDateTime({ offset: true }).nullable(),
     /** Network fee in lamports, raw string for the same reason as amounts. */
     feeLamports: z.string().regex(RAW_AMOUNT),
     /**
@@ -199,7 +200,7 @@ export const SplTransferObservationSchema = z
       .array(z.object({ ref: z.string().min(1).max(256), label: z.string().min(1).max(128) }).strict())
       .min(1)
       .max(8),
-    observedAt: z.string().datetime({ offset: true }),
+    observedAt: isoDateTime({ offset: true }),
   })
   .strict();
 

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { isoDateTime } from "../zod/iso-datetime.ts";
 
 import { POINTS_REASONS, type PointsReason } from "./policy.ts";
 
@@ -73,7 +74,7 @@ export const PointsSourceSchema = z
     valuation: PointsValuationSchema,
     /** The wallet's eligible volume that day before this operation, as the tiers read it. */
     dayVolumeBeforeUsdMicros: z.string().regex(RAW_INTEGER).nullable(),
-    settledAt: z.string().datetime({ offset: true }),
+    settledAt: isoDateTime({ offset: true }),
   })
   .strict();
 
@@ -98,7 +99,7 @@ export const PointsEntrySchema = z
     /** The UTC day the operation settled on. */
     day: z.string().regex(DAY),
     source: PointsSourceSchema.nullable(),
-    createdAt: z.string().datetime({ offset: true }),
+    createdAt: isoDateTime({ offset: true }),
   })
   .strict();
 

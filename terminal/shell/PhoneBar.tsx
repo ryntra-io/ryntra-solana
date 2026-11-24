@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useWords } from '@/city/lib/i18n/dict';
 import { Icon } from '@/terminal/ui';
 import { useWhere } from './frame';
+import { walletPage } from './menu';
 import { BOTS_ALSO, PHONE_CENTER, PHONE_TABS, shelfHref, shelfOn } from './shelves';
 import { SHELF_WORDS, SHELL } from './words';
 import s from './shell.module.css';
@@ -16,6 +17,8 @@ import s from './shell.module.css';
 export function PhoneBar() {
   const { view, shelf, pathname } = useWhere();
   const onBots = BOTS_ALSO.some((path) => pathname === path || pathname.startsWith(`${path}/`));
+  // A wallet's own pages (`/watch`, `/wallet/…`) stand in the Portfolio, as the rail lights them.
+  const lit = shelf ?? (walletPage(pathname) ? 'portfolio' : null);
   const names = useWords(SHELF_WORDS);
   const w = useWords(SHELL);
   const tabs = PHONE_TABS.filter((id) => view === 'preview' || shelfOn(id));
@@ -23,7 +26,7 @@ export function PhoneBar() {
   return (
     <nav className={s.tabbar} data-terminal="tabs" aria-label={w.sections}>
       {tabs.map((id) => (
-        <Link key={id} className={s.tab} href={shelfHref(id, view)} aria-current={id === shelf && !(id === PHONE_CENTER && onBots) ? 'page' : undefined}>
+        <Link key={id} className={s.tab} href={shelfHref(id, view)} aria-current={id === lit && !(id === PHONE_CENTER && onBots) ? 'page' : undefined}>
           {id === PHONE_CENTER ? (
             <span className={s.gem}>
               <Icon name={id} size="l" />

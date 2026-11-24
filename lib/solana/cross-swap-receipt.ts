@@ -36,6 +36,7 @@
  */
 
 import { z } from "zod";
+import { isoDateTime } from "../zod/iso-datetime.ts";
 
 import { SOLANA_CAIP2, SOLANA_TOKEN_2022_ADAPTER_REF } from "../agent-control/adapters/solana-token-2022.ts";
 import { BASE_EVM_ADAPTER_REF } from "../agent-control/adapters/base-evm.ts";
@@ -49,7 +50,7 @@ type ReceiptEffect = Readonly<{ description: string; sourceRef: string; observed
 
 const RAW = z.string().regex(/^(0|[1-9][0-9]*)$/);
 const HEX32 = z.string().regex(/^0x[0-9a-f]{64}$/);
-const INSTANT = z.string().datetime({ offset: true });
+const INSTANT = isoDateTime({ offset: true });
 /** A source or destination transaction: an EVM hash or a Solana signature. */
 const CHAIN_TX = z.union([z.string().regex(/^0x[0-9a-fA-F]{64}$/), z.string().regex(/^[1-9A-HJ-NP-Za-km-z]{64,90}$/)]);
 

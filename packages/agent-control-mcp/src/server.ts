@@ -1,5 +1,6 @@
 import { McpServer, type ToolAnnotations } from "@modelcontextprotocol/server";
 import { z } from "zod";
+import { isoDateTime } from "../../../lib/zod/iso-datetime.ts";
 
 import { isAgentverseAddress } from "../../agent-control-sdk/src/index.ts";
 import type { A2aProposal } from "../../../lib/agent-control/a2a/inbound.ts";
@@ -256,7 +257,7 @@ const ActionPassportCandidateSchema = z
     schemaVersion: z.literal("1.0.0"),
     kind: z.literal("ACTION_PASSPORT_PREVIEW"),
     id: z.string().min(3).max(128),
-    createdAt: z.string().datetime({ offset: true }),
+    createdAt: isoDateTime({ offset: true }),
     maturity: z.literal("SOURCE_PREVIEW"),
     intent: McpAgentActionIntentSchema,
     intentHash: z.string().regex(HEX_HASH),
@@ -283,7 +284,7 @@ const ActionPassportCandidateSchema = z
         intentHash: NullableHashSchema,
         evidenceRoot: NullableHashSchema,
         policyDigest: NullableHashSchema,
-        recordedAt: z.string().datetime({ offset: true }).nullable(),
+        recordedAt: isoDateTime({ offset: true }).nullable(),
       })
       .strict(),
     execution: z

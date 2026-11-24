@@ -1,4 +1,6 @@
-import type { TokenHolder, TokenPool, TokenTrade } from '../../lib/spot/token-page.ts';
+import { isWholeTrade, type TokenHolder, type TokenPool, type TokenTrade } from '../../lib/spot/token-page.ts';
+import type { HoldersReach, TraderRow, TradersBasis } from '../../lib/spot/token-traders.ts';
+import { isWalletLabel, type LabelBasis, type WalletLabel } from '../../lib/spot/wallet-labels.ts';
 import type { EarnBinsAnswer } from '../../lib/earn-pools/bins.ts';
 import { digits } from '../../city/lib/i18n/dict.ts';
 import type { Lang } from '../../city/lib/i18n/langs.ts';
@@ -11,7 +13,7 @@ import { placedFigure, placesFor, priceText } from '../ui/figures.ts';
  * pool's bins); here they are only arranged. Pure: the screen reads, these lay out, the tests check.
  */
 
-export type { TokenHolder, TokenPool, TokenTrade };
+export type { HoldersReach, LabelBasis, TokenHolder, TokenPool, TokenTrade, TraderRow, TradersBasis, WalletLabel };
 
 /** The most trades the desk keeps of one coin: the engine's read is the pool's last few hundred. */
 export const TAPE_KEEP = 300;
@@ -19,7 +21,8 @@ export const TAPE_KEEP = 300;
 /**
  * The newest trades first, each once: a fresh read laid over what the screen holds, so a trade stays where it stood
  * and the new ones come in at the top. `fresh` — the signatures that were not on screen before (the screen lights them
- * a moment). A first read lights nothing.
+ * a moment). A first read lights nothing. Only whole trades are kept — a trade without its price, its size or its
+ * dollars is not a row (a tape of «Buy — 0.000069 —» reads as broken), whatever the source sent.
  */
 export function mergeTape(held: readonly TokenTrade[], read: readonly TokenTrade[]): Readonly<{ trades: TokenTrade[]; fresh: ReadonlySet<string> }> {
   const key = (trade: TokenTrade) => `${trade.signature}:${trade.side}`;
@@ -27,6 +30,7 @@ export function mergeTape(held: readonly TokenTrade[], read: readonly TokenTrade
   const seen = new Set<string>();
   const all: TokenTrade[] = [];
   for (const trade of [...read, ...held]) {
+    if (!isWholeTrade(trade)) continue;
     const k = key(trade);
     if (seen.has(k)) continue;
     seen.add(k);
@@ -213,3 +217,112 @@ export function dexName(dex: string | null): string {
   };
   return known[dex] ?? dex.replace(/[-_]/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 }
+
+/* ------------------------------------------------- who bought, who holds, who earned */
+
+/**
+ * The marks a wallet shows beside it, in the order a trader reads them: the wallet's own (Ryntra's agent, the creator, a
+ * top holder, a pool or a vault, a new wallet) before the trade's (a big one). Only the marks the engine sent; a field
+ * that is absent or holds something else is no mark.
+ */
+export const MARK_ORDER: readonly WalletLabel[] = ['ryntra-agent', 'creator', 'top-holder', 'pool', 'program', 'fresh', 'big'];
+
+export function marksOf(labels: readonly unknown[] | undefined, most = 2): WalletLabel[] {
+  if (!Array.isArray(labels) || !labels.length) return [];
+  const known = new Set(labels.filter(isWalletLabel));
+  return MARK_ORDER.filter((mark) => known.has(mark)).slice(0, most);
+}
+
+/** The signs the rows show (each row its first `most`), in the marks' own order: what the trades' «i» explains. */
+export function signsOf(trades: readonly Readonly<{ labels?: readonly unknown[] }>[], most = 2): WalletLabel[] {
+  const shown = new Set(trades.flatMap((trade) => marksOf(trade.labels, most)));
+  return MARK_ORDER.filter((mark) => shown.has(mark));
+}
+
+/** What the trades' marks stand on, as the filters need it: the creator named, the top holders read. Null — no marks came. */
+export type TapeMarks = Readonly<{ creator: boolean; top: boolean; bigUsd: number }>;
+
+export function tapeMarksOf(basis: unknown): TapeMarks | null {
+  if (!basis || typeof basis !== 'object') return null;
+  const b = basis as Partial<LabelBasis>;
+  const bigUsd = typeof b.bigTradeUsd === 'number' && Number.isFinite(b.bigTradeUsd) && b.bigTradeUsd > 0 ? b.bigTradeUsd : MARK_MIN_USD;
+  return { creator: b.creator === true, top: typeof b.topHolders === 'number' && b.topHolders > 0, bigUsd };
+}
+
+export const TAPE_FILTERS = ['all', 'creator', 'big', 'top', 'mine'] as const;
+export type TapeFilter = (typeof TAPE_FILTERS)[number];
+
+/**
+ * The filters a person can pick over the trades: «All» and «Big» always; «Creator» once the creator is named and «Top
+ * holders» once the holders were read — never a filter that would be empty for want of a read; «Mine» with a wallet.
+ */
+export function tapeFiltersOf(marks: TapeMarks | null, me: string | null): TapeFilter[] {
+  return TAPE_FILTERS.filter((filter) => filter === 'all' || filter === 'big' || (filter === 'creator' && marks?.creator === true) || (filter === 'top' && marks?.top === true) || (filter === 'mine' && Boolean(me)));
+}
+
+/** A big trade: the engine's own mark where it marked the trades, else the dollars against the bar. */
+export function isBigTrade(trade: TokenTrade, marks: TapeMarks | null): boolean {
+  if (marks) return Array.isArray(trade.labels) && trade.labels.includes('big');
+  return trade.usd !== null && trade.usd >= MARK_MIN_USD;
+}
+
+/** The trades a filter keeps, in their order. A filter the screen does not offer now keeps them all. */
+export function filterTape(trades: readonly TokenTrade[], filter: TapeFilter, marks: TapeMarks | null, me: string | null): readonly TokenTrade[] {
+  if (!tapeFiltersOf(marks, me).includes(filter) || filter === 'all') return trades;
+  const has = (trade: TokenTrade, mark: WalletLabel) => Array.isArray(trade.labels) && trade.labels.includes(mark);
+  if (filter === 'creator') return trades.filter((trade) => has(trade, 'creator'));
+  if (filter === 'top') return trades.filter((trade) => has(trade, 'top-holder'));
+  if (filter === 'mine') return trades.filter((trade) => trade.wallet === me);
+  return trades.filter((trade) => isBigTrade(trade, marks));
+}
+
+/** What a holder did in the trades read: bought more, sold, both evenly; null — it did not trade in them. */
+export type HolderMove = Readonly<{ kind: 'added' | 'sold' | 'even'; tokens: number }>;
+
+export function holderMoveOf(holder: Pick<TokenHolder, 'change' | 'trades'>): HolderMove | null {
+  const change = holder.change;
+  if (change === null || !Number.isFinite(change)) return null;
+  if (change > 0) return { kind: 'added', tokens: change };
+  if (change < 0) return { kind: 'sold', tokens: -change };
+  return holder.trades > 0 ? { kind: 'even', tokens: 0 } : null;
+}
+
+/** A holder's marks: the creator, a pool or a vault — the facts the holders read states. */
+export function holderMarksOf(labels: readonly string[]): WalletLabel[] {
+  if (labels.includes('creator')) return ['creator'];
+  if (labels.includes('pool')) return ['pool'];
+  if (labels.includes('program')) return ['program'];
+  return [];
+}
+
+/**
+ * Whether the holders listed are only part of them, and of how many: the largest `listed` of `of` holders, or the largest
+ * `listed` where the count is not stated. Null — the list is every holder, or the read did not say how far it reaches.
+ */
+export function holdersPartOf(reach: HoldersReach | null | undefined, listed: number): Readonly<{ listed: number; of: number | null }> | null {
+  if (!reach || listed <= 0) return null;
+  if (reach.holders !== null && Number.isFinite(reach.holders) && reach.holders > listed) return { listed, of: reach.holders };
+  if (reach.holders === null && !reach.whole) return { listed, of: null };
+  return null;
+}
+
+/** The traders' order: by their result, the largest first (`down`) or the smallest; a result not known goes last, by turnover. */
+export function sortTraders(rows: readonly TraderRow[], dir: 'down' | 'up' = 'down'): TraderRow[] {
+  const turnover = (row: TraderRow) => row.boughtUsd + row.soldUsd;
+  return [...rows].sort((a, b) => {
+    const ka = a.resultUsd !== null && Number.isFinite(a.resultUsd);
+    const kb = b.resultUsd !== null && Number.isFinite(b.resultUsd);
+    if (ka !== kb) return ka ? -1 : 1;
+    if (ka && kb && a.resultUsd !== b.resultUsd) return dir === 'down' ? b.resultUsd! - a.resultUsd! : a.resultUsd! - b.resultUsd!;
+    return turnover(b) - turnover(a) || a.wallet.localeCompare(b.wallet);
+  });
+}
+
+/** A signed sum in dollars as a result is read: «+$1.2K», «−$310», «$0». */
+export function signedSum(value: number, sum: (abs: number) => string): string {
+  if (!Number.isFinite(value)) return '—';
+  return `${value > 0 ? '+' : value < 0 ? '−' : ''}${sum(Math.abs(value))}`;
+}
+
+/** The tone of a result: mint up, flare down, none for nothing. */
+export const resultTone = (value: number | null): 'up' | 'down' | undefined => (value === null || !Number.isFinite(value) || value === 0 ? undefined : value > 0 ? 'up' : 'down');

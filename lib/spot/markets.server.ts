@@ -430,6 +430,18 @@ function readRanked(category: "toptraded" | "toporganicscore" | "toptrending") {
   return cachedRows(`ranked:${category}`, RANKED_TTL_MS, () => getRows(`/${category}/24h?limit=100`, LIST_CEILING_BYTES, 8_000));
 }
 
+/**
+ * A coin's place in the day's most traded list (`toptraded/24h`, 1 for the first), or null when it is not among the
+ * hundred or the list did not answer. Read-only, from the same one-minute copy the lists show: a share card says «top»
+ * only when this says so.
+ */
+export async function topTradedRank(mint: string): Promise<number | null> {
+  const read = await readRanked("toptraded");
+  if (!read.ok) return null;
+  const at = read.rows.findIndex((row) => row.mint === mint);
+  return at < 0 ? null : at + 1;
+}
+
 export type SpotMarketsRead = Readonly<{
   ok: true;
   rows: readonly SpotMarketListRow[];

@@ -3,6 +3,7 @@ import { getAddressEncoder, isAddress } from "@solana/kit";
 import { getAddress, verifyMessage } from "viem";
 import { createSiweMessage, parseSiweMessage } from "viem/siwe";
 import { z } from "zod";
+import { isoDateTime } from "../zod/iso-datetime.ts";
 
 /**
  * One partner, two wallets: a Solana wallet and an EVM wallet linked by a
@@ -197,9 +198,9 @@ export const WalletLinkRecordSchema = z
     schema: z.literal(1),
     solana: z.string().regex(/^[1-9A-HJ-NP-Za-km-z]{32,44}$/),
     evm: z.string().regex(EVM),
-    linkedAt: z.string().datetime({ offset: true }),
+    linkedAt: isoDateTime({ offset: true }),
     /** When the message both wallets signed was issued — the proof's own moment. */
-    signedAt: z.string().datetime({ offset: true }),
+    signedAt: isoDateTime({ offset: true }),
     /** Store bookkeeping: a newer link both wallets signed replaces this one under compare-and-set. */
     version: z.number().int().min(1),
   })

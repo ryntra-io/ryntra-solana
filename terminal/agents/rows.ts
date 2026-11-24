@@ -3,9 +3,10 @@ import type { MandateRecord, MandateStatus } from '../../city/lib/bots/mandate.t
 import { agentSymbol, resultRaw } from '../../city/lib/autopilot/report.ts';
 import type { AgentView } from '../../city/lib/autopilot/store.ts';
 import type { Role } from '../../city/lib/crew/read.ts';
-import type { CareRow } from '../../city/lib/earn/care.ts';
+import { careShown, careToWithdraw, type CareRow } from '../../city/lib/earn/care.ts';
 import type { PilotView } from '../../lib/pilot/view.ts';
 import { daysLeft } from './figures.ts';
+import { POOL_PATH } from '../shell/shelves.ts';
 
 /**
  * «My agents»: the agents at work for the connected wallet, each one row, from what the engine answers — every trader's
@@ -23,6 +24,8 @@ export type MineRow = Readonly<{
   coin: Readonly<{ mint: string; symbol: string }> | null;
   /** The keeper's pool today: earning in its range, or being moved back around the price. */
   pool: 'earning' | 'moving' | null;
+  /** The keeper's pool itself: its page carries the care and its «Stop and take it back». */
+  poolAddress?: string | null;
   /** Days the mandate has left; null — no end date. */
   daysLeft: number | null;
   state: RowState;
@@ -37,14 +40,21 @@ export type MineRow = Readonly<{
   dayRaw: string | null;
   /** What «Stop» takes back: the mandate (the trader's, the autopilot's), or the keeper's pool; null — nothing from here. */
   stop: Readonly<{ record: MandateRecord }> | Readonly<{ care: string }> | null;
+  /**
+   * The keeper's pool is stopped but not withdrawn — its rules or money are still on chain. Its row says so,
+   * and its «Stop» is «Withdraw»: the same stop and take back, for what is left.
+   */
+  left?: boolean;
 }>;
 
 /**
  * Where a worker at work is managed: Recurring buys and the money autopilot are bots, each on
- * its own page under «Bots»; the pool keeper's pools are Earn's.
+ * its own page under «Bots»; the pool keeper on its pool's page, whose ticket carries the care and its «Stop» — Earn,
+ * where the pool is not named.
  */
-export function workerPath(role: MineRow['role']): string {
-  return role === 'trader' ? '/bots/recurring' : role === 'pilot' ? '/bots/autopilot' : '/earn';
+export function workerPath(role: MineRow['role'], poolAddress: string | null = null): string {
+  if (role === 'keeper') return poolAddress ? `${POOL_PATH}/${poolAddress}` : '/earn';
+  return role === 'trader' ? '/bots/recurring' : '/bots/autopilot';
 }
 
 /** The mandate still stands on chain: «Stop» still means something (the city's own rule for its card). */
@@ -141,28 +151,32 @@ export function pilotRecord(policy: string | null, engine: readonly Pick<EngineM
   return (engine ?? []).find((m) => m.record.policy === policy)?.record ?? (local?.policy === policy ? local : null);
 }
 
-/** The pools the keeper looks after now: what each claimed and put back today, in SOL. */
+/**
+ * The pools the keeper looks after now: what each claimed and put back today, in SOL. A pool stopped whose rules or money
+ * the chain still carries stays as its own row — «Stopped — not withdrawn», «Withdraw» — until all is back.
+ */
 export function keeperRows(cares: readonly CareRow[] | null): MineRow[] {
-  return (cares ?? [])
-    .filter((care) => care.status === 'working')
-    .map((care) => {
-      const sol = care.day.claimedInY + care.day.reinvestedInY;
-      const raw = Number.isFinite(sol) && sol > 0 ? BigInt(Math.floor(sol * 1e9)).toString() : null;
-      return {
-        key: `keeper:${care.key}`,
-        role: 'keeper' as const,
-        coin: null,
-        pool: care.inRange === false ? ('moving' as const) : ('earning' as const),
-        daysLeft: null,
-        state: 'working' as const,
-        budget: null,
-        trades: null,
-        result: raw === null ? null : { raw },
-        span: 'day' as const,
-        dayRaw: raw,
-        stop: { care: care.key },
-      };
-    });
+  return (cares ?? []).filter(careShown).map((care) => {
+    const left = careToWithdraw(care);
+    const sol = care.day.claimedInY + care.day.reinvestedInY;
+    const raw = !left && Number.isFinite(sol) && sol > 0 ? BigInt(Math.floor(sol * 1e9)).toString() : null;
+    return {
+      key: `keeper:${care.key}`,
+      role: 'keeper' as const,
+      coin: null,
+      pool: left ? null : care.inRange === false ? ('moving' as const) : ('earning' as const),
+      poolAddress: care.pool,
+      daysLeft: null,
+      state: left ? ('stopped' as const) : ('working' as const),
+      budget: null,
+      trades: null,
+      result: raw === null ? null : { raw },
+      span: 'day' as const,
+      dayRaw: raw,
+      stop: { care: care.key },
+      ...(left ? { left: true } : {}),
+    };
+  });
 }
 
 

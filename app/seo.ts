@@ -8,8 +8,7 @@ import { marketsCard, type CardLocale, type CardSpec } from "./brand/page-card.t
 import { LANDING_META } from "./(home)/landing-meta.ts";
 import { MISSION_CONTROL_WORDS } from "../lib/mission-control/words.ts";
 import { LANDING_IS_LIVE } from "../lib/site/home-to-app.ts";
-import { CITY_CARD_SIZE, cityCardVersion } from "../city/lib/share/card.ts";
-import { CARD_WORDS } from "../city/lib/share/words.ts";
+import { SHARE_CARD_SIZE, cardOfPath, shareCardAlt, shareCardPath, type ShareLang } from "../terminal/share/cards.ts";
 import { pagePath as cityPagePath, type PageId as CityPageId } from "../city/lib/pages/pages.ts";
 
 export const SITE = "https://ryntra.io";
@@ -17,10 +16,11 @@ export const SITE = "https://ryntra.io";
  * The share card's address carries the card's own fingerprint. Link caches
  * (X, Telegram, LinkedIn, Slack) key on this string for days; a redrawn
  * card at an unchanged address kept the retired brand on every post until
- * the cache chose to expire. Every card is the city's:
- * the live city's frame, the mark and one line (`city/lib/share/card.ts`).
+ * the cache chose to expire. Since 21.11 every card is the terminal's
+ * (decision 105): a real frame of the section, the mark and the section's
+ * line (`terminal/share/cards.ts`); the city is in none of them.
  */
-export const OG_IMAGE = `${SITE}/opengraph-image?v=${cityCardVersion()}`;
+export const OG_IMAGE = `${SITE}${shareCardPath("home")}`;
 export const SITE_NAME = "Ryntra";
 export const TWITTER = "@Ryntra_io";
 
@@ -168,21 +168,31 @@ export function openGraphLocales(path: string, localeInput: string): Readonly<{ 
 }
 
 /**
- * A page's share card, as metadata names it. Every page shows the city's card in its language — the
- * old pages' own titles are the old product's words — so the key and the page's card words no longer change the
- * picture; `/og/…` still answers the addresses older posts name.
+ * A page's share card, as metadata names it: home's card in its language — the old pages' own titles are the old
+ * product's words — so the key and the page's card words no longer change the picture; `/og/…` still answers the
+ * addresses older posts name.
  */
 export function pageCardImage(locale: CardLocale, _key: readonly string[], _card: CardSpec): Readonly<{ url: string; alt: string }> {
   return { url: landingOgImage(locale), alt: cardAltFor(locale) };
+}
+
+/**
+ * A page's share card by its address (`terminal/share/cards.ts`): its section's frame of the terminal and its line —
+ * Swap's for `/swap`, the docs' for `/docs/…`, home's for any page without a section — at an address carrying the
+ * card's fingerprint, 1200 × 630.
+ */
+export function cardImageFor(path: string, lang: ShareLang = "en"): Readonly<{ url: string; width: number; height: number; alt: string }> {
+  const id = cardOfPath(path);
+  return { url: `${SITE}${shareCardPath(id, lang)}`, ...SHARE_CARD_SIZE, alt: shareCardAlt(id, lang) };
 }
 
 function safeLocale(locale: string): SeoLocale {
   return (ALL_LOCALES as readonly string[]).includes(locale) ? (locale as SeoLocale) : ROOT_LOCALE;
 }
 
-/** The words of the city's card in a page's language: what the picture behind `landingOgImage` shows. */
+/** The words of home's card in a page's language: what the picture behind `landingOgImage` shows. */
 export function cardAltFor(localeInput: string): string {
-  return CARD_WORDS[safeLocale(localeInput) === "uk" ? "uk" : "en"].alt;
+  return shareCardAlt("home", safeLocale(localeInput) === "uk" ? "uk" : "en");
 }
 
 /**
@@ -193,7 +203,7 @@ export function cardAltFor(localeInput: string): string {
  * one and not a hashed one.
  */
 export function landingOgImage(localeInput: string): string {
-  return safeLocale(localeInput) === "uk" ? `${SITE}/uk/opengraph-image?v=${cityCardVersion()}` : OG_IMAGE;
+  return safeLocale(localeInput) === "uk" ? `${SITE}${shareCardPath("home", "uk")}` : OG_IMAGE;
 }
 
 /**
@@ -247,9 +257,10 @@ export function buildMissionControlMetadata(
   path = "/",
   card = "/api/launch/mission-card",
   size: Readonly<{ width: number; height: number }> = { width: 1200, height: 675 },
+  alt: string = words.title,
 ): Metadata {
   const canonical = path === "/" ? SITE : `${SITE}${path}`;
-  const image = { url: `${SITE}${card}`, width: size.width, height: size.height, alt: words.title };
+  const image = { url: `${SITE}${card}`, width: size.width, height: size.height, alt };
   return {
     title: { absolute: words.title },
     description: words.description,
@@ -264,17 +275,18 @@ export function buildMissionControlMetadata(
 }
 
 /**
- * Ryntra City, the home at `/` since decision 70 (2026-10-26): the live Solana market as a night city. The words
- * say what the city does today and grow with it; the share card is the city's own: a frame of the live 3D
- * city, the mark and the line, 1200 × 630 — the shape Open Graph and X draw a large card at.
+ * The words of `/` with the terminal's switch closed, and the site's default words (the root layout, its structured
+ * data, the manifest, a coin's or a moment's page without words of its own). Since 21.11 they say what Ryntra is — the
+ * AI terminal, the first rule's line — never the city's «watch your tower rise» (decision 105: the city is a separate
+ * view, not the product's description). The name stays for its callers; the share card is home's — the terminal's, 1200 × 630.
  */
 export const CITY_WORDS = {
   title: "Ryntra — your AI agent on Solana",
-  description: "Say it, your AI agent does the rest: launch coins, trade and earn on Solana on autopilot. Watch your tower rise in a living 3D city.",
+  description: "Say it, your AI agent does the rest: trade, launch coins and earn on Solana in one pro terminal. Your wallet, your keys.",
 } as const;
 
 export function buildCityMetadata(path = "/"): Metadata {
-  return buildMissionControlMetadata(path === "/" ? CITY_WORDS : CITY_HOME_WORDS, path, `/opengraph-image?v=${cityCardVersion()}`, CITY_CARD_SIZE);
+  return buildMissionControlMetadata(path === "/" ? CITY_WORDS : CITY_HOME_WORDS, path, shareCardPath("home"), SHARE_CARD_SIZE, shareCardAlt("home"));
 }
 
 /** The city at its own address, `/city`, once the terminal is the home page. */
@@ -285,7 +297,8 @@ export const CITY_HOME_WORDS = {
 
 /**
  * The terminal, the home page at `/` once its switch is open: the line of the first rule — say
- * it, the agent does the rest — and the terminal's own card (a frame of the live Market, the mark and the line).
+ * it, the agent does the rest — and the card of the section a page stands in (`cardImageFor`): a real frame of it, the
+ * mark and the section's line.
  */
 export const TERMINAL_WORDS = {
   title: "Ryntra — your AI agent on Solana",
@@ -294,7 +307,9 @@ export const TERMINAL_WORDS = {
 
 /** A section of the terminal, in a tab and a link's preview: its name before the brand. */
 export function buildTerminalMetadata(section?: Readonly<{ name: string; path: string; index?: boolean }>): Metadata {
-  const base = buildMissionControlMetadata(TERMINAL_WORDS, section?.path ?? "/", `/opengraph-image?v=${cityCardVersion()}`, CITY_CARD_SIZE);
+  const path = section?.path ?? "/";
+  const card = cardOfPath(path);
+  const base = buildMissionControlMetadata(TERMINAL_WORDS, path, shareCardPath(card), SHARE_CARD_SIZE, shareCardAlt(card));
   /* A stand is never offered to the index; the build people use offers its sections, a person's own excepted. */
   const offered = LANDING_IS_LIVE && TERMINAL_MODE === "open";
   if (!section) return { ...base, robots: { index: offered, follow: offered } };
@@ -414,13 +429,13 @@ export function buildMetadata(locale: string): Metadata {
  * The city's pages at their own addresses: Docs, Developers, AI chats (`/connector`), Help (at
  * `/support` and `/feedback`), About,
  * the Terms and the Privacy Policy — the same contents the city's menu opens as windows. Each names its own address;
- * `/feedback` is the same Help and points the index at `/support`. The share card is the city's still until
- * the previews of every page are redrawn.
+ * `/feedback` is the same Help and points the index at `/support`. The share card is the terminal's by the page's
+ * address (`cardImageFor`): the docs' for Docs, Developers and AI chats, Help's for Help, home's for the rest.
  */
 export const CITY_PAGE_WORDS: Readonly<Record<CityPageId, Readonly<{ title: string; description: string }>>> = {
   docs: {
     title: "Ryntra Docs — your AI agent on Solana, explained",
-    description: "How Ryntra works: the live city, buying and selling, launches, earning, your agent, every fee and how your money stays yours.",
+    description: "How Ryntra works: the market, buying and selling, launches, earning, your agent, every fee and how your money stays yours.",
   },
   developers: {
     title: "Developers — connect your agent to Ryntra",
@@ -428,7 +443,7 @@ export const CITY_PAGE_WORDS: Readonly<Record<CityPageId, Readonly<{ title: stri
   },
   connector: {
     title: "Ryntra in your AI chat — Solana market and pre-sign check",
-    description: "Connect Ryntra to your AI chat: token passports, a coin's tower, the Solana market and a check of any transaction before you sign. Reads only — it never moves funds.",
+    description: "Connect Ryntra to your AI chat: token passports, the Solana market and a check of any transaction before you sign. Reads only — it never moves funds.",
   },
   help: {
     title: "Help — Ryntra",
@@ -436,7 +451,7 @@ export const CITY_PAGE_WORDS: Readonly<Record<CityPageId, Readonly<{ title: stri
   },
   about: {
     title: "About Ryntra",
-    description: "Ryntra is agentic finance on Solana: the market as a living city, every coin a tower. Non-custodial — your money stays in your wallet.",
+    description: "Ryntra is an AI terminal on Solana: say what to do, your agent does the rest. Your wallet signs every move.",
   },
   terms: {
     title: "Terms of Use — Ryntra",
@@ -451,7 +466,8 @@ export const CITY_PAGE_WORDS: Readonly<Record<CityPageId, Readonly<{ title: stri
 export function buildCityPageMetadata(id: CityPageId, path: string = cityPagePath(id)): Metadata {
   const words = CITY_PAGE_WORDS[id];
   const own = cityPagePath(id);
-  const base = buildMissionControlMetadata(words, own, `/opengraph-image?v=${cityCardVersion()}`, CITY_CARD_SIZE);
+  const card = cardOfPath(own);
+  const base = buildMissionControlMetadata(words, own, shareCardPath(card), SHARE_CARD_SIZE, shareCardAlt(card));
   /* A second address of the same page (`/feedback`) stays out of the index; its canonical is the page's own. */
   return { ...base, robots: { index: path === own, follow: true } };
 }

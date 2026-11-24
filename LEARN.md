@@ -10,17 +10,20 @@ connected.
 
 ## Your agent
 
-![Above, the sentence “Trade JUP with 1 SOL a day” in the agent's line; below, the card it filled, ready for one signature](public/showcase/screen-say.jpg)
+![Above, the sentence “Trade JUP with 1 SOL a day” in the agent's line; below, the AI trader's plan it filled, ready for one signature](public/showcase/screen-say.jpg)
 
 Type what you want in the line at the top of every screen — *“trade JUP every day”*, *“launch me a token”* — or press
 **Ctrl K**. A model reads the sentence and the engine checks what it read; the
 answer is one card with the coin, the amount a day and the limits filled in. What the card asks for, you fill; one
 signature in your own wallet starts it.
 
-- A trade becomes the agent's budget: a day's amount, a cap on each trade, a term and a strategy — steady buys, buys
-  on dips, a buy grid — with an optional take-profit and stop. When your take-profit or your stop is reached, it stops
-  buying; what it bought is already in your wallet, and you sell it with one signature. The agent selling on its own,
-  without your signature, is coming.
+- A trade becomes the **AI trader's** plan: a day's amount, a cap on each trade, a term, how it buys — steady buys,
+  buys on dips, a grid — and when it sells on its own: your stop, half at 2x, when trading fades, after a set time. You
+  see these rules before you sign. The coins it holds wait in an account of your own; the money from every sale lands
+  only in your wallet. If it can't read a price, it doesn't sell blind — it pauses and tells you. Your one signature
+  stops it and brings everything home.
+- **Scout** reads every new coin, screens out the traps by its numbers and its chain, writes a short thesis and trades
+  the coins it likes on paper, with live prices.
 - A launch opens the launch sheet with the name and ticker you said; a schedule becomes recurring buys.
 - **Analyst** answers questions about any coin or the market — advice only, it moves nothing.
 
@@ -31,9 +34,9 @@ signature in your own wallet starts it.
 - From the reading to a card: [`city/lib/command/plan.ts`](city/lib/command/plan.ts), [`city/lib/command/`](city/lib/command)
 - The line on every screen: [`terminal/shell/AgentLine.tsx`](terminal/shell/AgentLine.tsx)
 - The budget and its policy: [`lib/mandate/terms.ts`](lib/mandate/terms.ts), [`lib/mandate/ssa.ts`](lib/mandate/ssa.ts)
-- Strategies, take-profit and stop: [`lib/mandate/strategy.ts`](lib/mandate/strategy.ts)
+- Strategies: [`lib/mandate/strategy.ts`](lib/mandate/strategy.ts); selling on its own: [`lib/mandate/exit.ts`](lib/mandate/exit.ts), [`lib/mandate/exit.server.ts`](lib/mandate/exit.server.ts)
 - The agent's round every five minutes and its daily report: [`lib/mandate/tick.server.ts`](lib/mandate/tick.server.ts), [`app/api/cron/agent-mandate/`](app/api/cron/agent-mandate), [`app/api/cron/agent-report/`](app/api/cron/agent-report)
-- The Agents screen: [`terminal/agents/`](terminal/agents)
+- The Agents screen, the AI trader and the Scout: [`terminal/agents/`](terminal/agents), [`lib/scout/`](lib/scout)
 
 </details>
 
@@ -62,6 +65,10 @@ One coin: a live chart with drawing tools and indicators, the coin's trades, hol
 chart; where it has a Meteora DLMM Pro pool, the Limit tab places a ladder of up to 25 prices with a maker bonus
 ([Earn](#earn), [METEORA.md](METEORA.md#dlmm-pro)). The fee is shown before you sign.
 
+Under the chart, **Pools** lists the coin's Meteora pools with their liquidity, volume and fees of the day, and **My
+pools** your own positions in them: add, review or withdraw in a drawer, without leaving the coin. After a buy, the
+ticket offers to earn on the coin where it has a pool.
+
 ![MET's Limit tab on its Meteora DLMM Pro pool: a ladder of prices and the maker bonus](public/showcase/pro-limits.jpg)
 
 <details>
@@ -71,6 +78,7 @@ chart; where it has a Meteora DLMM Pro pool, the Limit tab places a ladder of up
 - The chart engine: [`vendor/ryntra-core/`](vendor/ryntra-core); candles and the coin's facts: [`app/api/spot/`](app/api/spot)
 - Quotes and tickets: [`city/lib/trade/`](city/lib/trade); stops watched on the server: [`app/api/cron/spot-stops/`](app/api/cron/spot-stops)
 - DLMM Pro limit orders: [`lib/pro-limits/`](lib/pro-limits), [`app/api/v1/ladders/`](app/api/v1/ladders)
+- The coin's pools and your positions under the chart: [`terminal/coin/earn-here/`](terminal/coin/earn-here)
 
 </details>
 
@@ -95,7 +103,7 @@ chart; where it has a Meteora DLMM Pro pool, the Limit tab places a ladder of up
 ![Earn across the whole width: pools with volume and fees, DLMM Pro, staking, lending, and a pool's ticket](public/showcase/screen-earn.jpg)
 
 Put SOL or dollars to work in one signature: **Meteora pools** (DLMM, DAMM v2 and DLMM Pro), **staked SOL**, or
-**lending** on Jupiter Lend. In a pool you pick a goal — Even, Near the price, Catch moves — and a width; the engine
+**lending** on Jupiter Lend. In a pool you pick a goal — Even, Near the price, Catch moves, and on DLMM Pro Meteora's Wave — and a width; the engine
 builds the shape (Spot, Curve or Bid-Ask) and the bins, and the position stays in your wallet. On a DLMM Pro pool you
 can pay with SOL alone: the part the shape needs of the other coin is swapped in the same pool, and the position opens
 in the same approval.
@@ -125,12 +133,13 @@ Limit ticket. Every Meteora DLMM pool opens on the same page.
 
 ## Bots
 
-![All bots: Grid on Meteora DLMM Pro, recurring buys, an order ladder, signals on paper, the money autopilot](public/showcase/screen-bots.jpg)
+![All bots: Grid, Signals, Copy a wallet, recurring buys, an order ladder, the money autopilot](public/showcase/screen-bots.jpg)
 
-Rules that keep working after one approval:
+Rules that keep working after one approval — with real money on your budget, or on paper first:
 
-- **Recurring buys** — buys a coin by itself on a budget a day, inside a Squads policy you sign once; you can practise
-  on paper first.
+- **Recurring buys** — buys a coin by itself on a budget a day, inside a Squads policy you sign once.
+- **Copy a wallet** — repeats a wallet's buys and sales on your budget, each coin with its own day's limit; before you
+  sign, it says the most a day could cost.
 - **Grid** — buys each step down and sells each step up between a low and a high price, both sides in one approval: on
   Meteora DLMM Pro limit orders where the coin has a DLMM Pro pool (with a maker bonus — MET first), on Meteora DLMM
   where it does not.
@@ -140,7 +149,11 @@ Rules that keep working after one approval:
 - **Order ladder** — several limit orders at once on a coin's Meteora DLMM pool, one signature.
 - **Money autopilot** — one plan for your whole budget: a part for the agent to trade, a part saved in Jupiter Lend, a
   part in a Meteora pool, and a reserve that stays in your wallet.
-- **Signals** — follows a fast and a slow average of the price; on paper, with no money and no signature.
+- **Signals** — follows a fast and a slow average of the price: buys as the trend turns up, sells as it turns down. On
+  paper with live prices for now; with money — coming.
+
+The grid also runs on your budget, the agent trading it for you: a level is sold one step higher and never below what
+it cost with the network's fees. The money from every sale lands in your wallet.
 
 <details>
 <summary><b>In the code</b></summary>
@@ -148,6 +161,7 @@ Rules that keep working after one approval:
 - The screens: [`terminal/bots/`](terminal/bots)
 - Recurring buys: [`lib/mandate/`](lib/mandate); the grid: [`lib/grid/`](lib/grid) on [`lib/pro-limits/`](lib/pro-limits);
   the ladder: [`lib/bots/ladder/`](lib/bots/ladder); the autopilot's plan: [`lib/pilot/`](lib/pilot)
+- Bots with money: [`lib/bots/money/`](lib/bots/money); copying a wallet: [`lib/wallet-watch/`](lib/wallet-watch)
 
 </details>
 
@@ -194,13 +208,15 @@ back to your wallet, and **Clean wallet** closes empty accounts and returns thei
 ## Money and Rewards
 
 **Money** — send to a wallet, receive at your address or its QR, and ask for an exact amount with a payment link
-anyone can pay from any Solana wallet; Ryntra takes nothing and never holds the money. **Rewards** — points and
-invites; a partner programme with a share of Ryntra's fee is coming.
+anyone can pay from any Solana wallet; Ryntra takes nothing and never holds the money. **Autopay** — to whom, how
+much, how often, until when: one signature, and the payments go by themselves; **Stop** brings back every payment not
+yet made. **Contacts** keeps your own names for addresses. **Rewards** — points and invites; a partner programme with a
+share of Ryntra's fee is coming.
 
 <details>
 <summary><b>In the code</b></summary>
 
-- [`terminal/money/`](terminal/money), [`lib/pay/`](lib/pay), [`app/api/v1/pay/`](app/api/v1/pay)
+- [`terminal/money/`](terminal/money), [`lib/pay/`](lib/pay), [`app/api/v1/pay/`](app/api/v1/pay); autopay: [`lib/autopay/`](lib/autopay)
 - [`terminal/rewards/`](terminal/rewards), [`lib/rewards/`](lib/rewards)
 
 </details>
@@ -229,8 +245,8 @@ yours stops it.
 
 - **Unsigned by default.** The engine builds every transaction of yours unsigned, with the fee in it, and your wallet
   is the only signer.
-- **The chain holds the budget.** A Squads smart account holds the agent's day, its cap on a trade and its venues, and
-  what it buys can only arrive in your own wallet.
+- **The chain holds the budget.** A Squads smart account of your own holds the agent's day, its cap on a trade, its
+  venues and a day's limit on what it may sell, and what it buys or sells can only arrive in your own accounts.
 - **Read before the key signs.** The agent's trade is read the way the Squads program will read it; one the chain would
   refuse is not sent ([`lib/mandate/judge.ts`](lib/mandate/judge.ts)).
 - **Checked before you sign.** Anyone can check a transaction or a payment link: the engine simulates the exact bytes
@@ -238,7 +254,6 @@ yours stops it.
 
 ## Honest notes
 
-- Coming: the agent selling on its own, without your signature; an AI trader that picks coins; futures on Phoenix in
-  the terminal.
+- Coming: the Scout trading with real money; private mode on mainnet; futures on Phoenix in the terminal.
 - Nothing here promises a profit. Fees, the minimum and the risk are shown before every signature; most new coins lose
   value.

@@ -23,6 +23,18 @@ test("the defaults follow the room: the trades column and the ticket wider on a 
   assert.ok(730 - small.bottom - DESK_GUTTER >= CHART_MIN_H + 200, "the bottom panel leaves the chart the height");
 });
 
+test("a tall desk gives the bottom panel five whole rows of trades; a 1440 one stays as it was; the chart keeps the larger part", () => {
+  /* The panel's tabs, the filters and the table's head (44 + 46 + 34), then a row each 34 px. */
+  const rows = (bottom) => Math.floor((bottom - 124) / 34);
+  const tall = deskDefault("bottom", W1920, 800); // a 1920×1080 window
+  assert.ok(rows(tall) >= 5, `the bottom panel on a 1920×1080 window shows ${rows(tall)} rows`);
+  assert.ok(800 - tall - DESK_GUTTER > tall, "the chart stays the larger part");
+  assert.equal(deskDefault("bottom", W1440, 730), Math.round(730 * 0.24 + 20));
+  assert.equal(deskDefault("bottom", W1440, 660), 180);
+  assert.equal(deskDefault("bottom", W1920, 1400), 320, "never more than its most on a very tall desk");
+  assert.ok(deskDefault("bottom", W1920, 741) >= deskDefault("bottom", W1920, 740), "no step down past the tall mark");
+});
+
 test("a dragged measure is held between its least and what leaves the chart its least", () => {
   assert.equal(deskClamp("tape", 10, W1920, 900, 380), DESK_LIMITS.tape.min);
   assert.equal(deskClamp("tape", 5_000, W1920, 900, 380), DESK_LIMITS.tape.max);
@@ -68,6 +80,20 @@ test("a fresh read lays over the trades on screen: newest first, each once, the 
   const next = mergeTape(first.trades, [trade("c", "2026-11-18T00:00:03Z", "buy", 7), trade("b", "2026-11-18T00:00:02Z", "buy", 10)]);
   assert.deepEqual(next.trades.map((t) => t.signature), ["c", "b", "a"]);
   assert.deepEqual([...next.fresh], ["c"]);
+});
+
+test("a trade without its price, its size or its dollars is not a row — neither a new one nor one held from before", () => {
+  const whole = trade("a", "2026-11-18T00:00:01Z", "sell", 5);
+  /* As the chain's events once sent them: «Buy — 0.000069 —». */
+  const noPrice = { ...trade("d", "2026-11-18T00:00:04Z", "buy", 1), tokenAmount: 0.000069, usd: null, priceUsd: null };
+  const noDollars = { ...trade("e", "2026-11-18T00:00:05Z", "sell", 1), usd: null };
+  const noSize = { ...trade("f", "2026-11-18T00:00:06Z", "buy", 1), tokenAmount: 0 };
+  const first = mergeTape([], [noSize, noDollars, noPrice, whole]);
+  assert.deepEqual(first.trades.map((t) => t.signature), ["a"]);
+  const next = mergeTape([noPrice, whole], [trade("g", "2026-11-18T00:00:07Z", "buy", 3), noDollars]);
+  assert.deepEqual(next.trades.map((t) => t.signature), ["g", "a"]);
+  assert.deepEqual([...next.fresh], ["g"], "only a row that is drawn is lit");
+  assert.ok(next.trades.every((t) => t.priceUsd > 0 && t.usd > 0 && t.tokenAmount > 0));
 });
 
 test("the traders of the read: dollars bought and sold by wallet, the most traded first; the buyers' share", () => {

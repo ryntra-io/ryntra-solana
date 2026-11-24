@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { isoDateTime } from "../zod/iso-datetime.ts";
 
 import { maskCode, maskWallet, REFERRAL_CODE_PATTERN, REFERRAL_COOKIE } from "../rewards/referral.ts";
 
@@ -124,7 +125,7 @@ export const PARTNER_SOURCES = [
 ] as const;
 export type PartnerSource = (typeof PARTNER_SOURCES)[number];
 
-const AT = z.string().datetime({ offset: true });
+const AT = isoDateTime({ offset: true });
 
 export const PartnerChecksSchema = z
   .object({

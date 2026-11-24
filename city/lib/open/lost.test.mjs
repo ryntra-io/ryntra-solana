@@ -9,17 +9,18 @@ import { LANGS } from "../i18n/langs.ts";
 import { pick } from "../art/frames.ts";
 import { LOST_CODE, LOST_FRAME, LOST_HOME, LOST_KINDS, LOST_MARK, LOST_SIZES } from "./lost.ts";
 
-/* An address that never was and a page that broke are the city's own pages — the island, one line, one way
-   back — never the framework's bare 404 and 500 on the old root. */
+/* A page that broke is the city's own page — the island, one line, one way back — never the framework's bare
+   500 on the old root. An address that never was is the terminal's own page since the eyes' pass of 19.11
+   (`terminal/shell/lost/lost.test.mjs`); it still carries the mark the walk reads. */
 
 const REPO = fileURLToPath(new URL("../../../", import.meta.url));
 const read = (path) => readFileSync(join(REPO, path), "utf8");
 
 const LOST_PAGE = read("city/components/open/Lost.tsx");
 const LOST_STYLE = read("city/components/open/lost.module.css");
-const ROUTES = { "app/not-found.tsx": "missing", "app/error.tsx": "broken", "app/global-error.tsx": "broken" };
+const ROUTES = { "app/error.tsx": "broken", "app/global-error.tsx": "broken" };
 
-test("the 404, the 500 and the root's own 500 are the city's page", () => {
+test("the 500 and the root's own 500 are the city's page", () => {
   for (const [path, kind] of Object.entries(ROUTES)) {
     const source = read(path);
     assert.match(source, /from "@\/city\/components\/open\/Lost"/, `${path} shows the city's page`);
@@ -28,10 +29,7 @@ test("the 404, the 500 and the root's own 500 are the city's page", () => {
   /* Next draws error pages in the browser: both are client components; the root's brings its own document. */
   for (const path of ["app/error.tsx", "app/global-error.tsx"]) assert.match(read(path), /^"use client";/, `${path} is a client component`);
   assert.match(read("app/global-error.tsx"), /<html lang="en"[^>]*>[\s\S]*<body/);
-  /* Never offered to the index; a shared link to it carries the city's card. */
-  const notFound = read("app/not-found.tsx");
-  assert.match(notFound, /robots: \{ index: false, follow: false \}/);
-  assert.match(notFound, /openGraph: city\.openGraph/);
+  /* Never offered to the index. */
   assert.match(read("app/global-error.tsx"), /<meta name="robots" content="noindex, nofollow" \/>/);
 });
 

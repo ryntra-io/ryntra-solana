@@ -1,14 +1,13 @@
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { PUBLIC_LOCALE_COOKIE, normalizePublicLocale } from "@/lib/site/locale";
-import { Geist, Geist_Mono, Unbounded } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
+import { ROOT_FONTS } from "@/app/fonts/root";
 /* The DESIGN.md projection loads first; globals.css re-resolves the legacy
    names onto it (the site rung of the migration ladder). */
 import "./design/tokens.css";
 import "./globals.css";
 import { HOMEPAGE_CATEGORY } from "@/lib/site/homepage-copy";
-import { BRAND } from "@/city/lib/brand";
 import { ALL_LOCALES, CITY_WORDS, SITE } from "./seo";
 import { CONTACTS, ORGANIZATION_PROFILES } from "@/lib/site/contacts";
 import { THEME_BOOT_SCRIPT } from "@/app/app/theme";
@@ -17,7 +16,8 @@ import { THEME_BOOT_SCRIPT } from "@/app/app/theme";
  * The brand faces, loaded once at the root — the brand book v1.0
  * (2026-09-11): Geist for the interface, Geist Mono for every figure, hash
  * and address, Unbounded only as the public landing's display accent. Both
- * interface faces ship the Cyrillic subset.
+ * interface faces carry Cyrillic. The files are the repository's own
+ * (`app/fonts/`): the build asks no one for a font.
  *
  * The CSS variable names are historical and carry the current faces:
  * `--font-geist` / `--font-geist-mono` feed `--ry-font-sans` / `--ry-font-mono`
@@ -30,11 +30,8 @@ import { THEME_BOOT_SCRIPT } from "@/app/app/theme";
  * arrives, `--ry-font-sans` in app/design/tokens.css is the one line that
  * changes.
  */
-const geist = Geist({ subsets: ["latin", "cyrillic"], display: "swap", variable: "--font-geist" });
-const geistMono = Geist_Mono({ subsets: ["latin", "cyrillic"], weight: ["400", "500", "600"], display: "swap", variable: "--font-geist-mono" });
-const sora = Unbounded({ subsets: ["latin"], weight: ["400", "600", "700"], display: "swap", variable: "--font-sora" });
 
-/* The words a page without its own say: the city's, as `/` says them. */
+/* The words a page without its own say, as `/` says them: the terminal's line (`CITY_WORDS`, kept by that name for its callers). */
 export const metadata: Metadata = {
   metadataBase: new URL(SITE),
   title: CITY_WORDS.title,
@@ -61,7 +58,8 @@ const jsonLd = [
        knowledge panel. The mark with the word is the `image`. */
     logo: SITE + "/brand/city/icon-512.png",
     image: SITE + "/brand/city/logo-dark.png",
-    slogan: BRAND.hook,
+    /* The first rule's line (decision 91), not the city's hook: the slogan says what Ryntra is today. */
+    slogan: "Say it. Your agent does the rest.",
     description: CITY_WORDS.description,
     email: CONTACTS.email,
     /* The identities Ryntra actually posts from. The retired Telegram channel
@@ -92,7 +90,7 @@ export default async function RootLayout({
       lang={locale}
       dir="ltr"
       suppressHydrationWarning
-      className={`${geist.variable} ${geistMono.variable} ${sora.variable}`}
+      className={ROOT_FONTS.className}
     >
       <body>
         <script dangerouslySetInnerHTML={{ __html: THEME_BOOT_SCRIPT }} />

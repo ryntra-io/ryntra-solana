@@ -288,6 +288,13 @@
   max-width: none;
 }
 
+/* Under a phone's row: a chip the thumb finds, its «i» full size (eyes 20.11, 87). */
+.riskWide .riskChip {
+  min-height: 32px;
+  gap: 6px;
+  padding: 0 10px;
+}
+
 .riskChip {
   display: inline-flex;
   align-self: flex-start;

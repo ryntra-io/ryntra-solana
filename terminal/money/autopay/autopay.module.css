@@ -1,0 +1,43 @@
+/* «Autopay»: the form and the list stand on «Money»'s own classes (money.module.css) and the Swap's fields;
+   here only what is the autopay's own. Every colour, face and size is the terminal's token (docs/terminal/DESIGN.md). */
+
+/* «How often» and «Until» side by side on a desk, one over the other on a phone. */
+.pair {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: end;
+  gap: 16px;
+}
+
+.until {
+  min-width: 0;
+}
+
+/* The browser's own date field, in the terminal's dark. */
+.date {
+  color-scheme: dark;
+  font-family: var(--display);
+}
+
+/* The schedule's line and the line under the form hold their place, said or not: nothing pushes the press down. */
+.plan,
+.said {
+  min-height: 22px;
+  margin: 0;
+}
+
+.plan[data-plan='none'],
+.said[data-said='none'] {
+  visibility: hidden;
+}
+
+.said[data-said='ok'],
+.ok.ok {
+  color: var(--mint);
+}
+
+@media (max-width: 767px) {
+  .pair {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

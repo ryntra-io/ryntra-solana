@@ -1393,6 +1393,39 @@
  * **1.102.0 — the Market by kind of asset.** Additive: `?kind=` (all · meme · crypto · stock ·
  * preipo), `coins[].kind` and the answer's `kind`. No new error code. A client that does not show it needs no release.
  *
+ * **1.105.0 — a launch paired with a stock.** Additive: two routes, served only where the
+ * deployment says `RYNTRA_LAUNCH_STOCK_PAIR=open` (elsewhere `CAPABILITY_UNAVAILABLE`, and nothing else of Launch
+ * changes). `GET /api/v1/launch/stock-pair` — the stocks of the register a coin may be launched against, each read now:
+ * open or closed with the reasons, the curve's threshold in the stock's own units with its dollars beside it, the market
+ * caps, and the facts of the line before the signature (what the issuer can do to the stock, the exchange, the issuer's
+ * terms). `POST /api/v1/launch/stock-pair/build` — the config of one such launch, built as «Розширений» builds one and
+ * sent by `advanced/config/submit`; the launch on it is an ordinary build naming it. Three new register refusals in
+ * `reasons`: `STOCK_NOT_ON_SHELF`, `SHELF_NOT_READ`, `PAIR_PAUSED`. No new error code. A client that does not show it
+ * needs no release.
+ *
+ * **1.106.0 — the reward for a launch's pool liquidity.**
+ * The pool is then made with
+ * liquidity mining, and the supply's step carries one more transaction the creator signs with the rest: the pool's
+ * creator reward slot set up with the launch's own coin and its emission funded from the opening for the days asked —
+ * so a step may hold five transactions (`unsignedWireBase64`, `signedWireBase64`). The build tells `reward` — its
+ * share, its coins, its days and, from the supply's step, its window —; the view adds the reward's state (WAITING ·
+ * PAYING · ENDED). The honest-launch check holds the slot to it. No new error code. A client that does not show it
+ * needs no release.
+ *
+ * **1.108.0 — what the reward for a launch's pool liquidity costs and whom it pays.** Additive,
+ * on the routes of a launch into a pool: the build's and the view's `reward` say `perDayRaw` — a day of it — and
+ * `locked` — who earns it while the launch's own locked liquidity is the only liquidity at the price: the creator's
+ * position and Ryntra's, 40 : 60 with the split (the program pays every position at the price by its liquidity and
+ * cannot leave one out). The view adds `spent` — what has flowed to the liquidity at the price, what found none there
+ * (it comes back to the creator once the days are over), and what is still to flow — from the pool's own reward slot.
+ * No new error code. A client that does not show it needs no release.
+ *
+ * **1.107.0 — which popular company a bot buys (2026-11-22).** Additive: each card of `GET /api/v1/stocks/popular`
+ * says `catalogued` — the issuer's own catalogue names the token, not only the venue's tag. The agent's engine puts a
+ * person's money only behind those (a tag alone never puts an issuer's rights over a token in front of a mandate), so
+ * a bot's recurring buys offer only them; the list itself, its order and every other card are unchanged. No new error
+ * code. A client that does not read it needs no release.
+ *
  * **1.98.0 — everything in Solana (the terminal's «Портфель», 2026-11-17; 1.95.0, once held for it, stays unused).** Additive: one route.
  * `GET /api/v1/portfolio?owner=` — what a wallet holds across Solana, outside Ryntra too, in one model: the wallet's
  * coins and liquid staking tokens (Helius DAS where the node is Helius, else the token accounts), native stake accounts
@@ -1476,6 +1509,7 @@ import { WATCH_PRESETS, WatchRuleSchema } from "../../assistant/watch/rules.ts";
 import { POPULAR_LIMIT, POPULAR_LIMIT_MAX } from "../../stocks/popular.ts";
 import { STOCK_ISSUER_IDS } from "../../stocks/representations.ts";
 import { z } from "zod";
+import { isoDateTime } from "../../zod/iso-datetime.ts";
 
 import { CREATOR_LOCK_IDS } from "../../core/launch/creator-lock.ts";
 import { FEE_SOURCES } from "../../core/launch/creator-earnings.ts";
@@ -1504,6 +1538,7 @@ import { ADVANCED_SUPPLIES, SNIPER_STRENGTHS, UNUSUAL_REASONS } from "../../core
 import { CURVE_RULES_SCOPE, CURVE_RULES_SIDE, CURVE_RULES_UPGRADE, CURVE_RULE_IDS, LOCKED_IN_RULE_IDS } from "../../core/launch/curve-rules.ts";
 import { TRANSFER_FEE_MAX_BPS, TRANSFER_FEE_PHASES } from "../../core/launch/transfer-fee.ts";
 import { QUOTE_ASSET_REFUSALS, QUOTE_CONFIG_VERSIONS } from "../../core/launch/quote-asset.ts";
+import { STOCK_PAIR_BASES, STOCK_PAIR_RISKS, STOCK_PAIR_SESSIONS, STOCK_PAIR_SIZING_REFUSALS } from "../../core/launch/stock-pair-codes.ts";
 import { BOOST_CURRENCIES, BOOST_ROUTES } from "../../core/launch/boost.ts";
 import { EARLY_ACCESS_MODES, EARLY_ACCESS_PHASES, EARLY_ACCESS_TOKEN } from "../../core/launch/early-access.ts";
 import { LaunchReceiptFactsSchema } from "../../core/venues/meteora-dbc/receipt.ts";
@@ -1587,7 +1622,7 @@ import { EXIT_ACTIONS, EXIT_MODES, EXIT_TARGETS } from "../../portfolio/exit/mod
 import { EXIT_RELAY_STATES, EXIT_SKIP_REASONS, EXIT_STEP_KINDS } from "../../portfolio/exit/steps.ts";
 
 export const API_MAJOR = 1;
-export const API_CONTRACT_VERSION = "1.103.0";
+export const API_CONTRACT_VERSION = "1.108.0";
 export const API_HEADER = "X-Ryntra-API";
 export const API_VERSION_HEADER = "X-Ryntra-API-Version";
 export const NETWORK = "solana:mainnet";
@@ -1597,7 +1632,7 @@ export const MINIMUM_APP_VERSION = { android: "1.0.0" } as const;
 
 export const BASE58 = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
 const Address = z.string().regex(BASE58);
-const Iso = z.string().datetime({ offset: true });
+const Iso = isoDateTime({ offset: true });
 const Semver = z.string().regex(/^\d+\.\d+\.\d+$/);
 
 /* ------------------------------------------------------------ errors */
@@ -5985,6 +6020,8 @@ export const PopularCompanySchema = z
     change24h: z.number().finite().nullable(),
     volume24h: z.number().int().nonnegative(),
     issuer: z.enum(STOCK_ISSUER_IDS),
+    /** 1.107.0: the issuer's own catalogue names the token, not only the venue's tag — a bot's recurring buys take only these. */
+    catalogued: z.boolean(),
   })
   .strict();
 export type PopularCompany = z.infer<typeof PopularCompanySchema>;
@@ -6282,7 +6319,7 @@ export const ReceiptsArchivePutRequestSchema = z.object({
         kind: z.enum(RECEIPT_KINDS_V1),
         contentHash: z.string().regex(/^[0-9a-f]{64}$/),
         payload: z.record(z.string(), z.unknown()),
-        occurredAt: z.string().datetime({ offset: true }).nullable().optional(),
+        occurredAt: isoDateTime({ offset: true }).nullable().optional(),
       }),
     )
     .min(1)
@@ -6386,10 +6423,10 @@ export const REWARD_ACHIEVEMENTS_V1 = ["FIRST_FRIEND", "FIVE_FRIENDS", "LAUNCH_O
 export const RewardsAchievementsSchema = z
   .object({
     ranks: z
-      .array(z.object({ rank: z.enum(REWARD_RANKS_V1), reached: z.boolean(), at: z.string().datetime({ offset: true }).nullable(), from: RewGrouped }).strict())
+      .array(z.object({ rank: z.enum(REWARD_RANKS_V1), reached: z.boolean(), at: isoDateTime({ offset: true }).nullable(), from: RewGrouped }).strict())
       .length(5),
     badges: z
-      .array(z.object({ id: z.enum(REWARD_ACHIEVEMENTS_V1), earned: z.boolean(), at: z.string().datetime({ offset: true }).nullable() }).strict())
+      .array(z.object({ id: z.enum(REWARD_ACHIEVEMENTS_V1), earned: z.boolean(), at: isoDateTime({ offset: true }).nullable() }).strict())
       .max(20),
   })
   .strict();
@@ -6421,7 +6458,7 @@ export const RewardsProgrammeSchema = z
         returned: RewUsdText,
         cap: RewUsdText,
         held: RewUsdText,
-        endsAt: z.string().datetime({ offset: true }),
+        endsAt: isoDateTime({ offset: true }),
       })
       .strict()
       .nullable(),
@@ -6517,7 +6554,7 @@ export type RewardsReferralPreview = z.infer<typeof RewardsReferralPreviewSchema
  * inviter, whether it can still be changed: once, inside that same window.
  */
 export const RewardsReferralBindingSchema = z
-  .object({ open: z.boolean(), until: z.string().datetime({ offset: true }).nullable() })
+  .object({ open: z.boolean(), until: isoDateTime({ offset: true }).nullable() })
   .strict();
 export type RewardsReferralBinding = z.infer<typeof RewardsReferralBindingSchema>;
 
@@ -12155,6 +12192,96 @@ export const LaunchAdvancedConfigSubmitResponseSchema = z
   .strict();
 export type LaunchAdvancedConfigSubmitResponse = z.infer<typeof LaunchAdvancedConfigSubmitResponseSchema>;
 
+/**
+ * 1.105.0 — «У парі з акцією»: a coin whose curve's pair currency is a stock of the register and of the
+ * shelf. Every amount of the curve is in the stock's own units; the dollars beside them are of the price read.
+ */
+const LaunchStockPairThresholdSchema = z
+  .object({ raw: LaunchRaw, units: z.string().min(1).max(40), usd: z.number().nonnegative(), basis: z.enum(STOCK_PAIR_BASES) })
+  .strict();
+const LaunchStockPairCapSchema = z.object({ units: z.number().nonnegative(), usd: z.number().nonnegative() }).strict();
+const LaunchStockPairCapsSchema = z.object({ start: LaunchStockPairCapSchema, graduation: LaunchStockPairCapSchema }).strict();
+/** 1.105.0 — the line before the signature as data: the issuer's powers read from the mint, the exchange, the terms. */
+export const LaunchStockPairHonestySchema = z
+  .object({
+    issuer: z.object({ id: z.enum(STOCK_ISSUER_IDS), label: z.string().min(1).max(80) }).strict(),
+    powers: z.object({ pause: z.boolean(), take: z.boolean(), freeze: z.boolean(), setHook: z.boolean(), mint: z.boolean() }).strict(),
+    paused: z.boolean(),
+    exchange: z.object({ session: z.enum(STOCK_PAIR_SESSIONS), nextChangeAt: Iso.nullable() }).strict(),
+    terms: z
+      .object({
+        title: z.string().min(1).max(200).nullable(),
+        url: z.string().url().nullable(),
+        excluded: z.array(z.object({ en: z.string().min(1).max(120), uk: z.string().min(1).max(120) }).strict()),
+        issuerOwn: z.boolean(),
+      })
+      .strict(),
+    /** The line's facts in the order said; the words are a page's. */
+    risks: z.array(z.enum(STOCK_PAIR_RISKS)),
+  })
+  .strict();
+export type LaunchStockPairHonesty = z.infer<typeof LaunchStockPairHonestySchema>;
+export const LaunchStockPairOfferSchema = z
+  .object({
+    mint: Address,
+    symbol: z.string().min(1).max(12),
+    decimals: z.number().int().min(0).max(18),
+    state: z.enum(["OPEN", "CLOSED"]),
+    reasons: z.array(z.enum(QUOTE_ASSET_REFUSALS)),
+    /** Why the curve could not be sized where the register itself is content; null otherwise. */
+    sizing: z.enum(STOCK_PAIR_SIZING_REFUSALS).nullable(),
+    threshold: LaunchStockPairThresholdSchema.nullable(),
+    marketCaps: LaunchStockPairCapsSchema.nullable(),
+    priceUsd: z.number().positive().nullable(),
+    priceAt: Iso.nullable(),
+    honesty: LaunchStockPairHonestySchema.nullable(),
+  })
+  .strict();
+export type LaunchStockPairOffer = z.infer<typeof LaunchStockPairOfferSchema>;
+export const LaunchStockPairResponseSchema = z
+  .object({
+    network: LaunchNetworkId,
+    preset: z
+      .object({
+        id: z.literal("stock-pair"),
+        name: z.object({ uk: z.string().min(1), en: z.string().min(1) }).strict(),
+        sniperFee: z.object({ startBps: z.number().int(), endBps: z.number().int(), periods: z.number().int(), seconds: z.number().int() }).strict(),
+        creatorTradingFeePct: z.number().int().min(0).max(100),
+        graduationFee: z.object({ pct: z.number().min(0).max(100), creatorPct: z.number().int().min(0).max(100) }).strict(),
+        graduatedPool: z.object({ startFeeBps: z.number().int(), endFeeBps: z.number().int() }).strict(),
+        creatorFirstBuyCapBps: z.number().int().min(0).max(10_000),
+        supply: z.number().int().positive(),
+        multiple: z.number().positive(),
+      })
+      .strict(),
+    stocks: z.array(LaunchStockPairOfferSchema),
+    checkedAt: Iso,
+  })
+  .strict();
+export type LaunchStockPairResponse = z.infer<typeof LaunchStockPairResponseSchema>;
+export const LaunchStockPairBuildRequestSchema = z.object({ creator: Address, quoteMint: Address }).strict();
+export type LaunchStockPairBuildRequest = z.infer<typeof LaunchStockPairBuildRequestSchema>;
+export const LaunchStockPairBuildResponseSchema = z
+  .object({
+    buildId: LaunchBuildId,
+    network: LaunchNetworkId,
+    config: Address,
+    unsignedWireBase64: z.string().min(1),
+    terms: LaunchAdvancedTermsSchema,
+    creatorCostLamports: LaunchRaw.nullable(),
+    /** The stock as any pair is said, the DBC version of its config, and what the curve raises and leaves at the DEX. */
+    quote: z
+      .object({ mint: Address, symbol: z.string().min(1).max(12), decimals: z.number().int().min(0).max(18), configVersion: z.enum(QUOTE_CONFIG_VERSIONS), figures: LaunchQuoteFiguresSchema })
+      .strict(),
+    stockPair: z
+      .object({ threshold: LaunchStockPairThresholdSchema, marketCaps: LaunchStockPairCapsSchema, priceUsd: z.number().positive(), priceAt: Iso.nullable(), honesty: LaunchStockPairHonestySchema })
+      .strict(),
+    expiresAt: Iso,
+    signableMs: SignableMs,
+  })
+  .strict();
+export type LaunchStockPairBuildResponse = z.infer<typeof LaunchStockPairBuildResponseSchema>;
+
 export const LaunchBuildResponseSchema = z
   .object({
     buildId: LaunchBuildId,
@@ -13018,18 +13145,35 @@ const LaunchPoolLadderShape = {
   rungs: z.number().int().positive(),
 } as const;
 const LaunchPoolLadder = z.object(LaunchPoolLadderShape).strict();
+/** 1.106.0: the reward for the pool's liquidity a new launch asks for — a share of the supply over whole days. */
+const LaunchPoolRewardAsk = z.object({ shareBps: z.number().int().min(10).max(1_000), days: z.number().int().min(1).max(365) }).strict();
+/** 1.106.0: the reward as it is told before signing — its share, its coins, its days, and its window (unix seconds) once the supply's step names it. */
+const LaunchPoolRewardShape = {
+  shareBps: z.number().int().min(0).max(10_000),
+  amountRaw: EaRaw,
+  days: z.number().int().positive(),
+  opensAt: z.number().int().positive().nullable(),
+  endsAt: z.number().int().positive().nullable(),
+  /** 1.108.0: a day of it, base units. */
+  perDayRaw: EaRaw.optional(),
+  /** 1.108.0: who earns it while the launch's own locked liquidity is the only liquidity at the price — the creator's position and Ryntra's, basis points. */
+  locked: LaunchPoolSplit.optional(),
+} as const;
+const LaunchPoolReward = z.object(LaunchPoolRewardShape).strict();
 
 /**
  * 1.93.0: a new launch names its stored details (`metadataUri`), its pair (SOL when absent), — optionally — when
  * trading opens, unix seconds (a quarter of an hour from now when absent), and whether the creator's take-profit
- * ladder rests a twentieth of the supply before the opening (`ladder`, none when absent). A launch already begun names
- * its coin (`mint`) alone: the build is then the step the chain shows is next.
+ * ladder rests a twentieth of the supply before the opening (`ladder`, none when absent). 1.106.0: and the reward for
+ * the pool's liquidity (`reward`, none when absent). A launch already begun names its coin (`mint`) alone: the build is
+ * then the step the chain shows is next.
  */
 export const LaunchPoolBuildRequestSchema = z
-  .object({ creator: EaAddress, metadataUri: z.string().url().max(512).optional(), pair: LaunchPoolPair.optional(), opensAt: z.number().int().positive().nullable().optional(), ladder: z.boolean().optional(), mint: EaAddress.optional() })
+  .object({ creator: EaAddress, metadataUri: z.string().url().max(512).optional(), pair: LaunchPoolPair.optional(), opensAt: z.number().int().positive().nullable().optional(), ladder: z.boolean().optional(), reward: LaunchPoolRewardAsk.nullable().optional(), mint: EaAddress.optional() })
   .strict()
   .refine((body) => (body.mint === undefined) !== (body.metadataUri === undefined), { message: "name the coin of a launch already begun, or the details of a new one — not both" })
-  .refine((body) => body.mint === undefined || body.ladder === undefined, { message: "a launch already begun keeps the ladder it was begun with" });
+  .refine((body) => body.mint === undefined || body.ladder === undefined, { message: "a launch already begun keeps the ladder it was begun with" })
+  .refine((body) => body.mint === undefined || body.reward === undefined, { message: "a launch already begun keeps the reward it was begun with" });
 export type LaunchPoolBuildRequest = z.infer<typeof LaunchPoolBuildRequestSchema>;
 
 export const LaunchPoolBuildResponseSchema = z
@@ -13037,8 +13181,8 @@ export const LaunchPoolBuildResponseSchema = z
     buildId: EaBuildId,
     network: LaunchPoolNetwork,
     stage: LaunchPoolStage,
-    /** The step's transactions — the creator's wallet signs them in one go; sent in this order, each after the one before lands. */
-    unsignedWireBase64: z.array(z.string().min(1)).min(1).max(4),
+    /** The step's transactions — the creator's wallet signs them in one go; sent in this order, each after the one before lands. Five at most (1.106.0: the reward's). */
+    unsignedWireBase64: z.array(z.string().min(1)).min(1).max(5),
     mint: EaAddress,
     pool: EaAddress,
     pair: LaunchPoolPair,
@@ -13054,13 +13198,15 @@ export const LaunchPoolBuildResponseSchema = z
     split: LaunchPoolSplit.nullable(),
     /** The creator's take-profit ladder; `null` — the launch has none. */
     ladder: LaunchPoolLadder.nullable(),
+    /** 1.106.0: the reward for the pool's liquidity; `null` — the launch has none. */
+    reward: LaunchPoolReward.nullable().optional(),
     expiresAt: z.string(),
     signableMs: z.number().int().min(0),
   })
   .strict();
 export type LaunchPoolBuildResponse = z.infer<typeof LaunchPoolBuildResponseSchema>;
 
-export const LaunchPoolSubmitRequestSchema = z.object({ buildId: EaBuildId, creator: EaAddress, signedWireBase64: z.array(EaWire).min(1).max(4) }).strict();
+export const LaunchPoolSubmitRequestSchema = z.object({ buildId: EaBuildId, creator: EaAddress, signedWireBase64: z.array(EaWire).min(1).max(5) }).strict();
 export type LaunchPoolSubmitRequest = z.infer<typeof LaunchPoolSubmitRequestSchema>;
 
 export const LaunchPoolSubmitResponseSchema = z
@@ -13104,6 +13250,21 @@ export const LaunchPoolViewSchema = z
      * owner took it down once trading was open; `null` — not read. `null` — the launch has none.
      */
     ladder: z.object({ ...LaunchPoolLadderShape, leftRaw: EaRaw.nullable(), state: z.enum(["WAITING", "RESTING", "SELLING", "CLOSED"]).nullable() }).strict().nullable(),
+    /**
+     * 1.106.0: the reward for the pool's liquidity — what was told, its window as the chain holds it, and its state:
+     * WAITING, not funded or not started; PAYING, the emission runs; ENDED, its days are over; `null` — not read.
+     * `null` — the launch has none.
+     */
+    reward: z
+      .object({
+        ...LaunchPoolRewardShape,
+        state: z.enum(["WAITING", "PAYING", "ENDED"]).nullable(),
+        /** 1.108.0: what the creator has spent of it so far — flowed to the liquidity at the price, idle (comes back once its days are over), still to flow; `null` — not funded yet, or not read. */
+        spent: z.object({ flowedRaw: EaRaw, idleRaw: EaRaw, leftRaw: EaRaw }).strict().nullable().optional(),
+      })
+      .strict()
+      .nullable()
+      .optional(),
     /** The honest-launch check, from the chain: `true`, `false` with `problems`, or `null` — not on chain whole yet, or not read: nothing is said either way. */
     honest: z.boolean().nullable(),
     problems: z.array(z.string()),
@@ -15958,7 +16119,8 @@ const EarnProNetwork = z.enum(["devnet", "mainnet"]);
 const EarnProWire = z.string().min(80).max(4_096).regex(/^[A-Za-z0-9+/]+=*$/);
 const EarnProSignature = z.string().regex(/^[1-9A-HJ-NP-Za-km-z]{64,88}$/);
 
-export const EARN_PRO_GOALS = ["even", "near", "edges"] as const;
+/** 1.104.0: `wave` — Meteora's own Wave (SDK 0.1.3), even by the price and rising to twice that at the edges, in at most nine ranges. */
+export const EARN_PRO_GOALS = ["even", "near", "edges", "wave"] as const;
 /** 1.103.0: what an opening is built from — a goal, or `custom`: the person's own painted grid. */
 export const EARN_PRO_OPEN_GOALS = [...EARN_PRO_GOALS, "custom"] as const;
 /** 1.103.0: a painted grid — 32 columns, 16 under the price and 16 over it, each 0 to 8 cells. */
@@ -16030,6 +16192,8 @@ export type EarnProPositionsResponse = z.infer<typeof EarnProPositionsResponseSc
  * 1.92.0: `POST /api/v1/earn/pro/review` — one action of the wallet's. `open` names a goal, a width and SOL in
  * lamports (0.05 to 10 SOL); `care_on` the stop, percent under the price now (0 — none); the rest the position.
  * 1.103.0: `open` may name the goal `custom` with `columns` — the person's own grid, painted on both sides of the price; any other goal takes no `columns`. Served where the deployment opened it, else `EARN_PRO_CLOSED`.
+ * 1.104.0: `open` may name the goal `wave` — served only where `RYNTRA_EARN_PRO_WAVE=open`, and like the three goals it takes no
+ * `columns`.
  */
 export const EarnProReviewRequestSchema = z.discriminatedUnion("action", [
   z

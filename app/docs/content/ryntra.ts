@@ -113,6 +113,28 @@ export const ASSISTANT: DocPage = {
         "caution",
       ),
     ]),
+    section("your-ai", "Bring your own AI", "Підключи свого AI", [
+      p(
+        "The AI you already talk to can work with Ryntra. It reads the market, a coin, the pools and a wallet's holdings by its address — and when you ask it to do something, it answers with a Ryntra link where the swap, the agent's budget, the launch or the pool is already filled in. You open it, check and sign in your own wallet.",
+        "AI, з яким ти вже говориш, може працювати з Ryntra. Він читає ринок, монету, пули й те, що тримає гаманець, за його адресою, — а коли просиш щось зробити, відповідає посиланням на Ryntra, де обмін, бюджет агента, запуск чи пул уже заповнені. Ти відкриваєш, перевіряєш і підписуєш у своєму гаманці.",
+      ),
+      steps(
+        [
+          "Open ryntra.io/agents.md and copy its first sentence into your AI.",
+          "Ask as you would ask your agent: «trade 1 SOL a day», «swap 1 SOL to JUP», «launch me a token».",
+          "Open the link it gives you, check the figures and sign.",
+        ],
+        [
+          "Відкрий ryntra.io/agents.md і встав його перше речення у свого AI.",
+          "Попроси, як попросив би свого агента: «торгуй на 1 SOL на день», «обміняй 1 SOL на JUP», «запусти мені токен».",
+          "Відкрий посилання, яке він дасть, перевір цифри й підпиши.",
+        ],
+      ),
+      note(
+        "Your AI never signs and never holds your keys: only you sign, in your wallet. A link never sends money to someone else's address.",
+        "Твій AI ніколи не підписує й не тримає твоїх ключів: підписуєш лише ти, у своєму гаманці. Посилання ніколи не надсилає гроші на чужу адресу.",
+      ),
+    ]),
     section("data", "What reaches the model", "Що отримує модель", [
       p(
         "To answer, Ryntra's server sends the model's provider your question and the facts it needs — for example your holdings as company and amount — but not your wallet's address, and asks the provider not to keep the request. Your conversations are kept with your account. Questions that reach the model have a daily limit per wallet.",

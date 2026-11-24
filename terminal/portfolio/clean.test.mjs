@@ -54,6 +54,7 @@ test('wrapped SOL: off until the person picks it, then said apart — «unwraps 
   const emptyWrapped = item({ kind: 'wrapped', symbol: 'wSOL', amountRaw: '0', decimals: 9, valueUsd: null, lamports: 2_039_280, picked: true });
   const r = read([whale, emptyWrapped]);
   assert.equal(unwrapOf(r, NO_CHOICE), null, 'nothing is unwrapped unless the person picks it');
+  assert.deepEqual(counts(r, NO_CHOICE), { coins: 0, accounts: 1 }, 'a wrapped SOL account counts as an account, never a dust coin (QA 19.11, eyes 28)');
   assert.equal(estimateSol(r, NO_CHOICE), 0.00203928, 'an empty wrapped account gives its rent');
   const on = toggled(NO_CHOICE, whale, true);
   assert.deepEqual(unwrapOf(r, on), { sol: 86_260.50892131, now: true });

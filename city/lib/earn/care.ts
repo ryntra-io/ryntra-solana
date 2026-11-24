@@ -41,8 +41,12 @@ export type CareWords = Readonly<{
   outOfRange: string;
   working: string;
   stopped: string;
+  /** Stopped, but its rules or money are still on chain. */
+  notWithdrawn: string;
   today: (claimed: string) => string;
   stopAction: string;
+  /** The same stop, asked again, for what is left. */
+  withdraw: string;
   details: string;
   detailsBody: readonly string[];
 }>;
@@ -66,8 +70,10 @@ const EN: CareWords = {
   outOfRange: 'Moving the range',
   working: 'On it',
   stopped: 'Stopped',
+  notWithdrawn: 'Stopped — not withdrawn',
   today: (claimed) => `Today ${claimed} SOL`,
   stopAction: 'Stop and take it back',
+  withdraw: 'Withdraw',
   details: 'Details',
   detailsBody: [
     'Funds leave only to your wallet. Stop any time.',
@@ -96,8 +102,10 @@ const UK: CareWords = {
   outOfRange: 'Переставляє діапазон',
   working: 'Працює',
   stopped: 'Зупинено',
+  notWithdrawn: 'Зупинено — не забрано',
   today: (claimed) => `Сьогодні ${claimed} SOL`,
   stopAction: 'Зупинити й забрати',
+  withdraw: 'Забрати',
   details: 'Деталі',
   detailsBody: [
     'Кошти виходять лише на твій гаманець. Зупиниш будь-коли.',
@@ -123,7 +131,21 @@ export type CareRow = Readonly<{
   /** The position at the venue's prices, USD — the engine's; null or absent — not priced, shown «—». */
   valueUsd?: number | null;
   unclaimedUsd?: number | null;
+  /**
+   * A stopped care whose policies or vault money the chain still carries (the engine's `careStatus`); absent
+   * or null — not read (an engine of before, or the chain did not answer), and the row stays hidden as before.
+   */
+  left?: boolean | null;
 }>;
+
+/**
+ * A care stopped but not withdrawn: its rules or money are still on chain. It stays on screen with one
+ * «Withdraw» — the same stop and take back, asked again — until everything is back; then it goes, as before.
+ */
+export const careToWithdraw = (care: Pick<CareRow, 'status' | 'left'>): boolean => care.status === 'stopped' && care.left === true;
+
+/** The cares a window shows: those at work, and those stopped with something still to take back. */
+export const careShown = (care: Pick<CareRow, 'status' | 'left'>): boolean => care.status === 'working' || careToWithdraw(care);
 
 type Connection = Readonly<{ wallet: unknown; address: string }>;
 
@@ -156,6 +178,16 @@ async function post<T>(body: Record<string, unknown>): Promise<(T & { ok: true }
   }
 }
 
+/**
+ * Every change of a care is the proven wallet's own (`lib/care/door.server.ts`): one signed message, no transaction —
+ * none where this browser already holds the wallet's proof. The read of the wallet's cares never asks for it.
+ */
+async function proven(connection: Connection): Promise<'ok' | 'cancelled' | 'failed'> {
+  const { proveWallet } = await import('../trade/proof.ts');
+  const proof = await proveWallet({ wallet: connection.wallet as string, address: connection.address });
+  return proof.ok ? 'ok' : proof.state === 'declined' ? 'cancelled' : 'failed';
+}
+
 async function signAll(connection: Connection, unsigned: readonly string[]): Promise<readonly string[] | 'cancelled'> {
   const signed = await citySigner.signTransactions({ wallet: connection.wallet as never, address: connection.address, unsignedWireBase64: [...unsigned], chain: chain() } as never);
   return signed.ok ? (signed as { signedWireBase64: readonly string[] }).signedWireBase64 : 'cancelled';
@@ -174,6 +206,8 @@ export const useCare = create<Store>((set, get) => ({
   async give(connection, input) {
     if (get().phase !== 'idle') return;
     set({ phase: 'building', notice: null });
+    const proof = await proven(connection);
+    if (proof !== 'ok') return set({ phase: 'idle', notice: proof });
     const review = await post<{ key: string; transactions: string[] }>({ action: 'review', owner: connection.address, pool: input.pool, lamports: input.lamports.toString(), ...(input.shape ? { shape: input.shape } : {}), width: input.width, stopPct: get().stop });
     if (!review) return set({ phase: 'idle', notice: 'failed' });
     set({ phase: 'wallet' });
@@ -190,12 +224,23 @@ export const useCare = create<Store>((set, get) => ({
     set(status ? { cares: status.cares, caresFailed: false } : { cares: get().cares ?? [], caresFailed: true });
   },
   async takeBack(connection, key) {
+    const proof = await proven(connection);
+    if (proof !== 'ok') return set({ notice: proof });
     const built = await post<{ transactions: string[] }>({ action: 'stop', owner: connection.address, key });
     if (!built) return set({ notice: 'failed' });
-    const signed = await signAll(connection, built.transactions);
-    if (signed === 'cancelled') return set({ notice: 'cancelled' });
-    /* The person's own transactions: relayed by the wallet bridge's submit, one after another. */
-    for (const wire of signed) await post({ action: 'relay', owner: connection.address, key, signed: [wire] });
+    if (built.transactions.length) {
+      const signed = await signAll(connection, built.transactions);
+      if (signed === 'cancelled') return set({ notice: 'cancelled' });
+      /* The person's own transactions, one after another; the first the chain refuses stops the rest — they were built
+         on what it would have done. The agent stopped when the stop was asked; a tap again builds what is left. */
+      for (const wire of signed) {
+        const sent = await post({ action: 'relay', owner: connection.address, key, signed: [wire] });
+        if (!sent) {
+          set({ notice: 'failed' });
+          break;
+        }
+      }
+    }
     void get().load(connection.address);
   },
 }));

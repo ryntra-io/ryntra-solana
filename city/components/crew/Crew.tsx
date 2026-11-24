@@ -18,11 +18,12 @@ import { RoleGlyph } from './glyphs';
 import { Says } from './Says';
 import s from './crew.module.css';
 
-type State = 'hire' | 'working' | 'soon';
+type State = 'hire' | 'working';
 
 /**
  * «Your agents» on top of «Bots → Start»: the workers a person hires — the Trader, the Autopilot, the pool
- * keeper, the Launcher — each one job, its state in one word, one tap to its own card. What each may do (its skills),
+ * keeper, the Launcher — each one job, its state in one word, one tap to its own card. An agent shut on this deployment
+ * has no tile: never a «soon» (decision 108, p. 5). What each may do (its skills),
  * how it is paid (a fee inside its trades, never credits) and that rules decide wait behind «How agents work». The
  * consultant is not here: it is Ryntra in the top bar.
  */
@@ -64,7 +65,6 @@ export function Crew() {
   }, [at, focus]);
 
   const stateOf = (role: Role): State => {
-    if (!gates[role]) return 'soon';
     if ((role === 'trader' && traderOn) || (role === 'pilot' && pilotOn) || (role === 'keeper' && keeperOn)) return 'working';
     return 'hire';
   };
@@ -74,14 +74,13 @@ export function Crew() {
     <section className={s.crew} aria-label={w.kicker} data-crew="">
       <h3 className={s.kicker}>{w.kicker}</h3>
       <div className={s.grid}>
-        {CREW.map((role) => {
+        {CREW.filter((role) => gates[role]).map((role) => {
           const state = stateOf(role);
           return (
             <button
               key={role}
               type="button"
               className={s.tile}
-              disabled={state === 'soon'}
               data-role={role}
               data-working={state === 'working' ? '' : undefined}
               data-focus={glow === role ? '' : undefined}
@@ -97,7 +96,7 @@ export function Crew() {
                 <span>{w[`${role}Job`]}</span>
               </span>
               <span className={s.state} data-state={state}>
-                {state === 'working' ? w.working : state === 'soon' ? w.soon : w.hire}
+                {state === 'working' ? w.working : w.hire}
               </span>
             </button>
           );

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { isoDateTime } from "../zod/iso-datetime.ts";
 
 import { isServiceFeeIncome, ServiceFeeSchema, settleServiceFee, type RyntraServiceFee } from "../swap/service-fee.ts";
 import { type SwapQuoteReview, verifySwapQuoteReview } from "./swap-review.ts";
@@ -24,7 +25,7 @@ const SourceSchema = z
   .strict();
 
 const TimedSourceSchema = SourceSchema.extend({
-  observedAt: z.string().datetime({ offset: true }),
+  observedAt: isoDateTime({ offset: true }),
 }).strict();
 
 const FeeSchema = z
@@ -56,7 +57,7 @@ const IndependentObservationSchema = z
     baseFeeLamports: RawAmount,
     priorityFeeLamports: RawAmount,
     programs: z.array(Address).min(1).max(32),
-    observedAt: z.string().datetime({ offset: true }),
+    observedAt: isoDateTime({ offset: true }),
     source: SourceSchema,
     /**
      * Raw base units of the fee mint that reached Ryntra's referral account in

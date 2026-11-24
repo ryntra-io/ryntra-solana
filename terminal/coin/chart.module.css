@@ -197,13 +197,37 @@
   border-radius: var(--r-ctl);
 }
 
-/* A narrower chart keeps its bar on one line: the intervals closer, «Live» or «Delayed» said by its dot alone. */
+/* The chip's word, and its short form for a narrow chart (the trade's age alone: «1m»). */
+.short {
+  display: none;
+}
+
+/* A narrower chart keeps its bar on one line: the intervals closer, «Live» or «Delayed» said by its light alone, a
+   trade's time by its age alone. The light stands without a box — a box with nothing in it read as an empty square
+   (QA 20.11, SOL and JUP at 1440) — and the full words stay for a screen reader and under the pointer. */
 @container coinchart (max-width: 720px) {
-  /* The chip keeps its dot; its word waits for a wider chart. */
   .live > span {
     gap: 0;
     padding: 0 8px;
-    font-size: 0;
+  }
+
+  .live[data-dot] > span {
+    padding: 0 6px;
+    border-color: transparent;
+    background: transparent;
+  }
+
+  .live .word {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .live .short {
+    display: inline;
   }
 
   .pane .core :global(.ryntra-chart__ind-label) {
@@ -221,6 +245,45 @@
   }
 
   .pane .core :global(.ryntra-chart__draw-toggle) {
+    display: none;
+  }
+}
+
+/* The bar's figures under the pointer stand on one line on every width (QA 20.11: «Chg» went down to a second line at
+   1440): the change follows the close at once, the volume after it, so what a narrow row leaves out is the volume — never
+   the change; the bar's time waits for a wider chart. A figure that does not fit whole drops to a second line nobody
+   sees (the row's own height), never cut to «О(». */
+.pane .core :global(.ryntra-chart__ohlc) {
+  height: var(--ryntra-type-caption-line);
+  overflow: hidden;
+}
+
+.pane .core :global(.ryntra-chart__ohlc-row) {
+  flex-wrap: wrap;
+  height: var(--ryntra-type-caption-line);
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+/* A bar without volume does not name it: «V no volume» beside the volume bars said the opposite of what they show. */
+.pane .core :global(.ryntra-chart__figure[data-coin-empty]) {
+  display: none;
+}
+
+.pane .core :global(.ryntra-chart__ohlc-row) > :nth-child(7) {
+  order: 1;
+}
+
+.pane .core :global(.ryntra-chart__ohlc-row) > :nth-child(6) {
+  order: 2;
+}
+
+@container coinchart (max-width: 720px) {
+  .pane .core :global(.ryntra-chart__ohlc-row) {
+    gap: 0 10px;
+  }
+
+  .pane .core :global(.ryntra-chart__time) {
     display: none;
   }
 }
@@ -316,10 +379,79 @@
   box-shadow: inset 0 -2px 0 var(--lilac);
 }
 
-.round[aria-pressed='true'] {
+.round[aria-pressed='true'],
+.round[aria-expanded='true'] {
   color: var(--ice);
   background: var(--chosen);
   border-color: var(--chosen-edge);
+}
+
+/* ── the chart's layers: one quiet menu under its button ───────────────── */
+
+.layers {
+  position: absolute;
+  top: 44px;
+  right: 10px;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  min-width: 232px;
+  padding: 4px;
+  border: 1px solid var(--glass-edge);
+  background: var(--panel-up);
+}
+
+.layer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 36px;
+  padding: 0 10px;
+  border: 0;
+  font: 600 var(--type-small) / 1.2 var(--ui);
+  text-align: left;
+  color: var(--dim);
+  background: transparent;
+  transition: color 0.15s, background-color 0.15s;
+}
+
+.layer:hover,
+.layer:focus-visible {
+  color: var(--ice);
+  background: var(--chosen);
+}
+
+.layer[aria-checked='true'] {
+  color: var(--ice);
+}
+
+.layerName {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* The pool's strip as the chart draws it by the scale: what the violet strips are, said here and not over the bars. */
+.swatch {
+  width: 18px;
+  border-top: 3px solid var(--lilac);
+  opacity: 0.6;
+}
+
+.check {
+  display: inline-flex;
+  color: var(--lilac);
+  visibility: hidden;
+}
+
+.layer[aria-checked='true'] .check {
+  visibility: visible;
+}
+
+/* A phone: the rows under the finger. */
+.wrap[data-phone] .layer {
+  min-height: 44px;
 }
 
 /* A narrower chart (the container steps above): the intervals closer. Here, after the base rules, so they apply. */
@@ -365,7 +497,8 @@
   color: var(--lilac);
   background: color-mix(in srgb, var(--panel) 86%, transparent);
   border: 1px solid color-mix(in srgb, var(--lilac) 45%, transparent);
-  pointer-events: none;
+  /* Its words under the pointer: what the count is. */
+  cursor: help;
 }
 
 /* ── what the core chart may still say over the candles ───────────────── */
@@ -397,6 +530,8 @@
   display: grid;
   flex: 1 1 auto;
   place-items: center;
+  align-content: center;
+  gap: 12px;
   min-height: 0;
   padding: 0 24px;
   text-align: center;

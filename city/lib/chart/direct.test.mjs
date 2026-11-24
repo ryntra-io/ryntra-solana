@@ -2,7 +2,7 @@ import { test, beforeEach } from "node:test";
 import assert from "node:assert/strict";
 
 import { fetchCandles } from "./candles.ts";
-import { DIRECT_BASE, DIRECT_PER_MINUTE, namedPool, namedPools, readCandlesDirect, readTradesDirect, resetDirect } from "./direct.ts";
+import { DIRECT_BASE, DIRECT_PAUSE_MAX_MS, DIRECT_PAUSE_MS, DIRECT_PER_MINUTE, namedPool, namedPools, readCandlesDirect, readTradesDirect, resetDirect } from "./direct.ts";
 
 /* The chart's spare way: the same source from the person's browser, only after the engine refused, only the
    pool and the interval in the request, and only bars that pass the engine's own check against the price on screen. */
@@ -89,6 +89,78 @@ test("the source's refusal pauses this browser's reads, and the minute's budget 
     await readCandlesDirect(MINT, i < 24 ? "1m" : "1h", { address, side: "base", name: null }, 0.0000968, deps);
   }
   assert.equal(asked.length, DIRECT_PER_MINUTE);
+});
+
+test("a refusal the browser cannot read pauses as a 429 does: one failed read, no repeats until the pause is over", async () => {
+  /* GeckoTerminal's 429 comes without its CORS headers, so the browser sees `TypeError: Failed to fetch` and
+     logs every such read. The first one pauses this browser; the reads that were waiting do not go out at all. */
+  let now = NOW;
+  let blocked = true;
+  const tried = [];
+  const browser = async (url, init) => {
+    tried.push(url);
+    if (blocked) throw new TypeError("Failed to fetch");
+    return fake(url, init);
+  };
+  const at = { fetch: browser, now: () => now };
+  const pool = { address: POOL, side: "base", name: null };
+  /* The chart's intervals and the coin's trades, all at once on a page that opens: one read goes out, one fails. */
+  const first = await Promise.all([
+    readCandlesDirect(MINT, "1m", pool, 0.0000968, at),
+    readCandlesDirect(MINT, "1h", pool, 0.0000968, at),
+    readCandlesDirect(MINT, "1d", pool, 0.0000968, at),
+    readTradesDirect(MINT, [POOL], 0.0000968, at),
+    readTradesDirect(MINT, [], 0.0000968, at),
+  ]);
+  assert.deepEqual(first.slice(0, 3).map((read) => read.status), ["unavailable", "unavailable", "unavailable"]);
+  assert.deepEqual(first.slice(3), [null, null]);
+  assert.equal(tried.length, 1, "one refusal is one failed read, not one per read");
+  /* Inside the pause — every poll of the chart and the tape — nothing is asked. */
+  for (let s = 1; s < DIRECT_PAUSE_MS / 1000; s += 3) {
+    now = NOW + s * 1000;
+    await readCandlesDirect(MINT, "15m", pool, 0.0000968, at);
+    await readTradesDirect(MINT, [POOL], 0.0000968, at);
+  }
+  assert.equal(tried.length, 1, "nothing is asked inside the pause");
+  /* Past it, one read tries; refused again, the pause doubles. */
+  now = NOW + DIRECT_PAUSE_MS + 1;
+  await Promise.all([readCandlesDirect(MINT, "15m", pool, 0.0000968, at), readTradesDirect(MINT, [POOL], 0.0000968, at)]);
+  assert.equal(tried.length, 2);
+  now += DIRECT_PAUSE_MS * 2 - 1_000;
+  await readCandlesDirect(MINT, "15m", pool, 0.0000968, at);
+  assert.equal(tried.length, 2, "the second pause is twice as long");
+  /* A run of refusals pauses at most five minutes. */
+  for (let i = 0; i < 8; i += 1) {
+    now += DIRECT_PAUSE_MAX_MS + 1;
+    await readCandlesDirect(MINT, "15m", pool, 0.0000968, at);
+  }
+  const run = tried.length;
+  now += DIRECT_PAUSE_MAX_MS - 1_000;
+  await readCandlesDirect(MINT, "15m", pool, 0.0000968, at);
+  assert.equal(tried.length, run);
+  /* The source answers again: the bars are drawn, and the reads go out together once more. */
+  blocked = false;
+  now += 2_000;
+  const back = await readCandlesDirect(MINT, "15m", pool, 0.0000968, at);
+  assert.equal(back.status, "ready");
+  const before = tried.length;
+  const together = await Promise.all([readCandlesDirect(MINT, "1h", pool, 0.0000968, at), readTradesDirect(MINT, [POOL], 0.0000968, at)]);
+  assert.equal(together[0].status, "ready");
+  assert.ok(Array.isArray(together[1]));
+  assert.equal(tried.length, before + 2);
+});
+
+test("bars this browser read stay on the chart, said stale, while the source refuses", async () => {
+  let now = NOW;
+  let blocked = false;
+  const at = { fetch: async (url, init) => { if (blocked) throw new TypeError("Failed to fetch"); return fake(url, init); }, now: () => now };
+  const pool = { address: POOL, side: "base", name: null };
+  assert.equal((await readCandlesDirect(MINT, "1m", pool, 0.0000968, at)).status, "ready");
+  blocked = true;
+  now += 5 * 60_000;
+  const held = await readCandlesDirect(MINT, "1m", pool, 0.0000968, at);
+  assert.equal(held.status, "ready");
+  assert.equal(held.stale, true);
 });
 
 test("a refused trades read names its pools; the page reads their trades by address and merges them", async () => {

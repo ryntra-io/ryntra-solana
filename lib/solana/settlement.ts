@@ -8,6 +8,7 @@
  */
 
 import { z } from "zod";
+import { isoDateTime } from "../zod/iso-datetime.ts";
 
 import {
   NATIVE_SOL_TRANSFER_ACTION_REF,
@@ -190,7 +191,7 @@ export const TransferPlanSchema = z
     lastValidBlockHeight: z.string().regex(RAW),
     unsignedWireBase64: z.string().min(64).max(8_192),
     fingerprint: TransferFingerprintSchema,
-    builtAt: z.string().datetime({ offset: true }),
+    builtAt: isoDateTime({ offset: true }),
   })
   .strict()
   .superRefine((plan, context) => {

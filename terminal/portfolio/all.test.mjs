@@ -23,7 +23,7 @@ import {
   withMarket,
 } from './all-view.ts';
 import { ALL } from './all-words.ts';
-import { DOOR_SHUT, amountFigure, doorOf, maybeSent, outcomeOf, receiveFigures, rentSol, reviewBody, reviewFresh, reviewOf } from './exit-view.ts';
+import { DOOR_SHUT, amountFigure, doorOf, maybeSent, outcomeOf, receiveFigures, rentSol, reviewBody, reviewFresh, reviewOf, unroutedOf } from './exit-view.ts';
 import { PortfolioExitOverviewResponseSchema, PortfolioExitReviewRequestSchema, PortfolioExitReviewResponseSchema, PortfolioExitSubmitResponseSchema } from '../../lib/api/v1/contract.ts';
 import { EXIT_SKIP_REASONS } from '../../lib/portfolio/exit/steps.ts';
 import { EXIT_REASONS } from '../../lib/portfolio/model.ts';
@@ -252,6 +252,46 @@ test('«Exit everything» is what works — never the wallet’s coins — each 
   assert.deepEqual(exitPicked(lines, [], ['kamino:O1:borrow']), [], 'naming a line an exit cannot take does not pick it');
 });
 
+test('a coin Jupiter carries no route for is not offered as one that sells — the overview names it, the panel says it in one line', () => {
+  // The engine's overview, as the routes answer it: JitoSOL held with NO_ROUTE beside a pool a protocol has no exit for.
+  const overview = {
+    canExit: true,
+    items: [],
+    held: [
+      { id: `wallet:${JITO}`, protocol: 'wallet', kind: 'lst', label: 'JitoSOL', reason: 'NO_ROUTE', usd: 1800, untilEpoch: null, untilTime: null },
+      { id: 'kamino:O1:deposit', protocol: 'kamino', kind: 'deposit', label: 'SOL', reason: 'NO_ROUTE', usd: 3000, untilEpoch: null, untilTime: null },
+      { id: 'other:orca:1', protocol: 'other', kind: 'pool', label: null, reason: 'PROJECTION', usd: 400, untilEpoch: null, untilTime: null },
+    ],
+  };
+  assert.deepEqual(unroutedOf(overview), [`wallet:${JITO}`], 'only the wallet’s own coins: a protocol with no exit says so on its own row');
+  assert.deepEqual([unroutedOf(null), unroutedOf({ held: 'no' }), unroutedOf({ held: [{ protocol: 'wallet', reason: 'NO_ROUTE' }] })], [[], [], []]);
+  const lines = exitLines(groupsOf(ANSWER), unroutedOf(overview));
+  const jito = lines.find((line) => line.id === `wallet:${JITO}`);
+  assert.deepEqual([jito.can, jito.reason, exitable(jito)], ['no', 'NO_SWAP', false]);
+  // Never picked, never in the estimate: $1 800 of a coin that does not sell is not beside «Exit».
+  const picked = exitPicked(lines, ['native-stake:S1']);
+  assert.equal(picked.some((line) => line.id === `wallet:${JITO}`), false);
+  assert.deepEqual(exitEstimate(picked, 'USDC', 150), { sol: null, usdc: 12_000 + 3_000 * 0.6 + 2_000 });
+  // «Exit everything» counts what sells: a wallet whose only position is a coin with no route is offered no exit.
+  const only = { ...ANSWER, positions: [coin(JITO, 'JitoSOL', 9, '10000000000', 1_800, { kind: 'lst' })] };
+  assert.equal(exitLines(groupsOf(only)).filter(exitable).length, 1);
+  assert.equal(exitLines(groupsOf(only), [`wallet:${JITO}`]).filter(exitable).length, 0);
+  // A pool is never «no route» by this list: its own exit decides.
+  assert.equal(exitLines(groupsOf(ANSWER), ['meteora-dlmm:P1']).find((line) => line.id === 'meteora-dlmm:P1').can, 'now');
+  // The one line, and the row's «i», the same in both languages.
+  assert.equal(ALL.en.noRoute('JitoSOL, mSOL', 2), 'Jupiter isn’t taking these coins right now · JitoSOL, mSOL');
+  assert.equal(ALL.uk.noRoute('JitoSOL, mSOL', 2), 'Jupiter не бере ці монети зараз · JitoSOL, mSOL');
+  assert.equal(ALL.en.noRoute('JitoSOL', 1), 'Jupiter isn’t taking this coin right now · JitoSOL');
+  assert.equal(ALL.uk.noRoute('JitoSOL', 1), 'Jupiter не бере цю монету зараз · JitoSOL');
+  assert.equal(ALL.en.reason('NO_SWAP'), 'Jupiter isn’t taking this coin right now');
+  assert.equal(ALL.uk.reason('NO_SWAP'), 'Jupiter не бере цю монету зараз');
+  // The panel: the line instead of rows that sell, «—» instead of an estimate when nothing can be built.
+  const panel = readFileSync(new URL('./ExitPanel.tsx', import.meta.url), 'utf8');
+  assert.match(panel, /line\.reason !== 'NO_SWAP'/);
+  assert.match(panel, /w\.noRoute\(noRouteNames\.join\(', '\), noRouteIds\.length\)/);
+  assert.match(panel, /const figures = phase === 'empty' \? \[\]/);
+});
+
 test('the estimate before the engine built anything: the picked worth in the chosen coin, a locked part at its share', () => {
   const lines = exitLines(groupsOf(ANSWER));
   const picked = exitPicked(lines, ['native-stake:S1']);
@@ -462,7 +502,7 @@ test('every reason the engine can give has a person’s own words in both langua
 
 test('both languages say the same things; every reason an exit can give has a person’s words in both', () => {
   assert.deepEqual(Object.keys(ALL.uk).sort(), Object.keys(ALL.en).sort());
-  const reasons = ['NOT_READ', 'PROJECTION', 'NO_ROUTE', 'LOCKED', 'LIQUIDITY', 'DEBT', 'REPAY', 'STAKE_ACTIVE', 'STAKE_COOLING', 'STAKE_LOCKUP', 'NOT_WITHDRAWER', 'CLOSED_HERE', 'SIMULATION_FAILED', 'NO_ROOM', 'NOTHING_TO_DO', 'NO_PRICE', 'TOO_SMALL', 'PAUSED', 'REFUSED', 'UNAVAILABLE', 'UNVERIFIED'];
+  const reasons = ['NOT_READ', 'PROJECTION', 'NO_ROUTE', 'NO_SWAP', 'LOCKED', 'LIQUIDITY', 'DEBT', 'REPAY', 'STAKE_ACTIVE', 'STAKE_COOLING', 'STAKE_LOCKUP', 'NOT_WITHDRAWER', 'CLOSED_HERE', 'SIMULATION_FAILED', 'NO_ROOM', 'NOTHING_TO_DO', 'NO_PRICE', 'TOO_SMALL', 'PAUSED', 'REFUSED', 'UNAVAILABLE', 'UNVERIFIED'];
   for (const lang of ['en', 'uk']) {
     const fallback = ALL[lang].reason('SOMETHING_NEW');
     assert.ok(fallback.length > 0, 'a code the screen does not know still says something');
@@ -479,6 +519,11 @@ test('both languages say the same things; every reason an exit can give has a pe
   assert.equal(ALL.en.exitFact(5), '5 positions → SOL, USDC or 50/50');
   assert.equal(ALL.uk.cleanFact('0,07', 1, 5), '≈ 0,07 SOL · 1 монета · 5 рахунків');
   assert.equal(ALL.en.cleanFact('0.07', 0, 1), '≈ 0.07 SOL · 1 account');
+  // QA 19.11, eyes 28: «Clean wallet» beside «Dust 307» says its coins out of the dust's own count.
+  assert.equal(ALL.en.cleanFact('0.12', 51, 0, 307), '≈ 0.12 SOL · 51 of 307 coins');
+  assert.equal(ALL.uk.cleanFact('0,12', 51, 3, 307), '≈ 0,12 SOL · 51 з 307 монет · 3 рахунки');
+  assert.equal(ALL.uk.cleanFact('0,12', 5, 0, 21), '≈ 0,12 SOL · 5 з 21 монети');
+  assert.equal(ALL.en.cleanFact('0.12', 0, 2, 307), '≈ 0.12 SOL · 2 accounts', 'no coins in it — no «of»');
   // No technical words on screen, and nothing of the city's.
   const said = JSON.stringify(ALL.uk) + JSON.stringify(ALL.en) + ['en', 'uk'].flatMap((lang) => reasons.map((code) => ALL[lang].reason(code))).join(' ');
   assert.doesNotMatch(said, /причал|вежа|pier|tower|\bAPI\b|\bRPC\b|program id|мінт/i);

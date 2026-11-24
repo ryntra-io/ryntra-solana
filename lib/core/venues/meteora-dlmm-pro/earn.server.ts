@@ -5,10 +5,10 @@
  * Everything here is put together from the venue's own parts — `./goals.ts`, `./swap.server.ts`,
  * `./positions.server.ts`, `./rewards.server.ts` — and adds no instruction of its own.
  *
- * - **open** — a goal (or a shape of the person's own, painted on a grid) and a width become one position,
- *   one NFT. The wallet pays in both of the pool's coins, or in
- *   one: then the part the shape needs of the other is swapped **in this very pool**, first, and the opening is built
- *   for the pool as that swap leaves it — its ranges and its deposit stand at the price the swap's quote ends at. The
+ * - **open** — a goal (Meteora's Wave among them; or a shape of the person's own, painted on a grid)
+ * and a width become one position, one NFT. The wallet pays in both of the pool's coins, or in one: then
+ *   the part the shape needs of the other is swapped **in this very pool**, first, and the opening is built for the
+ *   pool as that swap leaves it — its ranges and its deposit stand at the price the swap's quote ends at. The
  *   wallet is asked once for both transactions; they are sent in order. The swap's fee is the pool's own — Ryntra adds
  *   none, and the swap carries Ryntra's referral where its account exists, out of the protocol's share;
  * - **the band of the price** (`bandBps`) — how far the price may stand from where the opening was built for when it
@@ -151,7 +151,7 @@ export function createDlmmProEarn(context: DlmmProContext, venue: Readonly<{ poo
   /** A position from a goal — unsigned steps in the order they are sent; the wallet signs each, the fresh NFT key the opening. */
   async function open(request: EarnOpenRequest, options: SealOptions = {}): Promise<EarnOpenBuild> {
     return refusing(async () => {
-      if (!isOpenGoal(request.goal) || !isEarnStyle(request.style)) throw new DlmmProRefusal("BAD_INPUT", "The goal is Even, Near price, Catch moves or a shape of one's own; the width Calm, Balanced or Dense.");
+      if (!isOpenGoal(request.goal) || !isEarnStyle(request.style)) throw new DlmmProRefusal("BAD_INPUT", "The goal is Even, Near price, Catch moves, Wave or a shape of one's own; the width Calm, Balanced or Dense.");
       const custom = request.goal === CUSTOM_GOAL;
       if (custom ? !isShapeColumns(request.columns) : request.columns !== undefined) throw new DlmmProRefusal("BAD_INPUT", "A shape of one's own is 32 columns of 0 to 8 cells, painted on both sides of the price; a goal takes none.");
       const planAt = (at: Readonly<{ tickSpacing: number; tickCurrentId: number }>) => {

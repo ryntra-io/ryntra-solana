@@ -1,0 +1,127 @@
+/* The passport's stand (`/terminal/kit/passport`, for the eyes only): each coin's head with the passport's
+   row in its free room, the line in a ticket's width and the agent's sentence. Tokens only. */
+
+.stand {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 0;
+}
+
+/* A head as the coin's page draws it: the coin, its own figures, then the passport's row in the room left. */
+.head {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  min-width: 0;
+  min-height: 72px;
+  padding: 8px 16px;
+  border: 1px solid var(--glass-edge);
+  background: var(--glass);
+}
+
+.coin {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--display);
+  font-size: var(--type-title);
+  font-weight: 800;
+  color: var(--ice);
+}
+
+.headFigures {
+  display: flex;
+  flex: none;
+  align-items: center;
+  margin: 0;
+}
+
+.headFigure {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 0 16px;
+  border-left: 1px solid var(--line);
+  white-space: nowrap;
+}
+
+.headFigure dt {
+  font-size: var(--type-micro);
+  font-weight: 600;
+  color: var(--dim);
+}
+
+.headFigure dd {
+  margin: 0;
+  font-size: var(--type-body);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--ice);
+}
+
+.under {
+  display: flex;
+  align-items: flex-start;
+  gap: 24px;
+  min-width: 0;
+}
+
+/* The ticket's width: the line stands where it will by the buy button. */
+.ticket {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  gap: 8px;
+  width: 360px;
+  max-width: 100%;
+  padding: 14px 16px;
+  border: 1px solid var(--glass-edge);
+}
+
+.say {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.sentence {
+  margin: 0;
+  font-size: var(--type-body);
+  font-weight: 500;
+  line-height: 1.45;
+  color: var(--soft);
+}
+
+@media (max-width: 767px) {
+  .stand {
+    gap: 14px;
+  }
+
+  .head {
+    flex-wrap: wrap;
+    gap: 10px 12px;
+    padding: 10px 12px;
+  }
+
+  .headFigures {
+    flex: 1 1 auto;
+  }
+
+  .headFigure:first-child {
+    padding-left: 0;
+    border-left: 0;
+  }
+
+  .under {
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .ticket {
+    width: 100%;
+  }
+}

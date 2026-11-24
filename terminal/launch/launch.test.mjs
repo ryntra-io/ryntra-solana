@@ -28,7 +28,11 @@ import {
   lineShareBpsOf,
   measured,
   mineOf,
+  freshMerge,
+  freshOf,
+  freshSkip,
   problemOf,
+  pulseFresh,
   refusalOf,
   shareBpsOf,
   signaturesOf,
@@ -331,6 +335,72 @@ test("the showcase shows coins with a logo, a market cap and a decent name; crud
   assert.ok(rudeName("HITLER"));
 });
 
+/* The showcase read against the engine's recorded feeds — the Pulse of 17.11 (pump.fun and the launchpads) and
+   Jupiter's lists of 17.11 — and the names of the live feed of 19.11 (EYES): what slipped through before stays out now. */
+test("the showcase on the recorded feeds: no crude or hateful name, no company's share, wrapped or stable coin, no casino, nothing borrowed", () => {
+  const read = (path) => JSON.parse(readFileSync(new URL(path, import.meta.url), "utf8"));
+  const pulse = read("../market/fixtures/pulse-2026-11-17.json");
+  const jupiter = read("../../lib/market-depth/fixtures/jupiter-2026-11-17.json");
+  const recorded = [...["new", "soon", "dex"].flatMap((feed) => pulse[feed]), ...Object.values(jupiter).filter(Array.isArray).flat()];
+  assert.ok(recorded.length > 150, "the recorded feeds are read");
+  // Each coin as the showcase would see it with a logo, a market cap and holders: only its name decides.
+  const shownNames = new Set(recorded.filter((c) => showcased({ symbol: c.symbol, name: c.name ?? c.symbol, icon: "https://x.io/a.png", mcap: 5_000, holders: 10 })).map((c) => c.name));
+  const hidden = [
+    // crude and hateful
+    "Fartcoin", "Buttcoin", "Big Titty Coin", "Nigga Its Over", "Groyper",
+    // a company's share on the chain, a coin of another chain wrapped
+    "Apple xStock", "Meta xStock", "Broadcom xStock", "Circle xStock", "Nasdaq xStock", "SP500 xStock", "MicroStrategy xStock", "Strategy PP Variable xStock",
+    "Kalshi PreStocks", "Polymarket PreStocks", "Neuralink PreStocks", "Anduril PreStocks", "Figure AI PreStocks", "Oura PreStocks", "PreStocks",
+    "Snap - Backpack Securities", "Advanced Micro Devices - Backpack Securities", "Sandisk - Backpack Securities", "GoPro - Backpack Securities", "SK Hynix - Backpack Securities", "Take-Two Interactive Software - Backpack Securities",
+    "SpaceX (Ondo Tokenized)", "Wrapped NEAR fungible token",
+    // a stablecoin, a casino
+    "ZelleUSD", "Jupiter USD", "Global Dollar", "1win Token",
+    // borrowed: a game's people, a studio's hero, an assistant, a trader
+    "Lucia's Feet", "Lucia Camino", "Manni L. Perez", "Carl Johnson", "Doctor Doom", "Grokia", "The Black Bull",
+  ];
+  const slipped = hidden.filter((name) => shownNames.has(name));
+  assert.deepEqual(slipped, [], "left out of the showcase");
+  for (const name of hidden) assert.ok(recorded.some((c) => c.name === name), `${name} is in the recorded feeds`);
+  for (const name of ["New World Inu", "Sniffer", "Refugium", "supermassive black hole", "Claudia", "Cyber Security Inu", "Aura Farming Bird", "ni hao cat"]) assert.ok(shownNames.has(name), name);
+
+  // The live feed of 19.11 (EYES): an assistant's look-alike is left out; the plain coins beside it stay.
+  const coin = (symbol, name = symbol) => ({ symbol, name, icon: "https://x.io/a.png", mcap: 2400, holders: 12 });
+  assert.ok(!showcased(coin("clawd")), "clawd");
+  for (const [symbol, name] of [["AICoin", "AICoin"], ["GTL", "GTL"], ["2030Moon", "2030Moon"], ["Bruno", "Bruno"], ["BIRD", "Birdwatcher"]]) assert.ok(showcased(coin(symbol, name)), name);
+  // A short brand counts only as a word of its own: «Gazelle», «Lucian», «Juniper» stay.
+  for (const name of ["Gazelle", "Lucian", "Juniper Cat"]) assert.ok(showcased(coin("PLAIN", name)), name);
+});
+
+/* The showcase reads the Pulse's new
+   coins beside the depth list — the same rules, the rights as Jupiter's audit states them. */
+test("new coins from the Pulse: read defensively, the rights from the audit; a flagged coin, a stock look-alike, a Ryntra test are «out»", () => {
+  const pulse = JSON.parse(readFileSync(new URL("../market/fixtures/pulse-2026-11-17.json", import.meta.url), "utf8"));
+  const read = pulseFresh({ rows: pulse.new });
+  assert.equal(read.length, pulse.new.length, "every recorded row is read");
+  const first = read[0];
+  assert.equal(first.id, pulse.new[0].mint);
+  assert.equal(first.bornAt, pulse.new[0].firstPoolAt, "born when its first pool was");
+  assert.equal(first.mcap, pulse.new[0].marketCapUsd);
+  const row = (over) => ({ mint: "Mint1111", symbol: "KITE", name: "Kite", icon: "https://x.io/a.png", marketCapUsd: 4000, holders: 12, firstPoolAt: "2026-11-20T10:00:00Z", auditRead: true, notices: [], ...over });
+  assert.deepEqual([pulseFresh({ rows: [row({})] })[0].mint, pulseFresh({ rows: [row({})] })[0].freeze], ["off", "off"], "the audit read, no right kept");
+  assert.equal(pulseFresh({ rows: [row({ notices: ["MINT_AUTHORITY"] })] })[0].mint, "on");
+  assert.equal(pulseFresh({ rows: [row({ auditRead: false })] })[0].mint, null, "an audit not read says nothing");
+  // Read, and marked: such a coin is never shown, and still takes its older record off the screen.
+  assert.equal(pulseFresh({ rows: [row({ notices: ["FLAGGED"] })] })[0].out, true, "a flagged coin");
+  assert.equal(pulseFresh({ rows: [row({ passesFor: { ticker: "TSLAx" } })] })[0].out, true, "a coin passing for a stock");
+  assert.equal(pulseFresh({ rows: [row({ ryntra: { technicalValidation: true } })] })[0].out, true, "Ryntra's own test launch");
+  assert.equal(pulseFresh({ rows: [row({})] })[0].out, undefined, "a plain coin");
+  assert.equal(pulseFresh({ rows: [row({ holders: 0, marketCapUsd: -1 })] })[0].holders, null, "an unmeasured figure is null, never zero");
+  for (const body of [null, {}, { rows: "x" }, { rows: [null, 3, { symbol: "NO_MINT" }] }]) assert.deepEqual(pulseFresh(body), []);
+  assert.deepEqual(freshOf({ coins: [{ id: "a", symbol: "A", mint: "on" }] }).map((c) => c.mint), ["on"]);
+  // The depth list marks a stock, a private company's token and a stablecoin itself.
+  const depth = freshOf({ coins: [{ id: "a", symbol: "A", stock: true }, { id: "b", symbol: "B", stable: true }, { id: "c", symbol: "C", kind: "preipo" }, { id: "d", symbol: "D", kind: "meme" }] });
+  assert.deepEqual(depth.map((c) => c.out ?? false), [true, true, true, false]);
+  // The screen reads both, and the Pulse's two feeds of new coins.
+  const lists = readFileSync(new URL("./Lists.tsx", import.meta.url), "utf8");
+  for (const url of ["/api/v1/market/depth?list=fresh", "/api/spot/pulse?feed=new", "/api/spot/pulse?feed=soon"]) assert.ok(lists.includes(url), url);
+});
+
 /* A row is drawn only once its logo was
    read, so no row is drawn and then let go — and the rows keep the age order the tab writes. */
 test("new coins: a row stands only once its logo was read; newest first as they came; none let go after", () => {
@@ -343,4 +413,116 @@ test("new coins: a row stands only once its logo was read; newest first as they 
   assert.equal(ids(logoRows(coins, new Map(), new Set())), "");
   const lists = readFileSync(new URL("./Lists.tsx", import.meta.url), "utf8");
   assert.equal((lists.match(/logoRows\(coins \?\? \[\], seen, missed/g) ?? []).length, 2, "both lists of new coins read the logos first");
+});
+
+/* A coin's line gives way by its name, the count
+   whole; a sample in a field never reads as a typed value; on a phone a coin launched on Ryntra is not listed twice. */
+test("the look of the Launch screen's lists and fields after the review of 19.11", () => {
+  const css = readFileSync(new URL("./launch.module.css", import.meta.url), "utf8").replace(/\/\*[\s\S]*?\*\//g, "");
+  const rule = (selector) => css.match(new RegExp(`(?:^|\\n)${selector.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")} \\{([^}]*)\\}`))?.[1] ?? null;
+  /* As many cards to a row as the screen holds. */
+  assert.match(rule(".freshGrid") ?? "", /repeat\(auto-fill, minmax\(min\(100%, 420px\), 1fr\)\)/, "the cards fill the page's whole width");
+  assert.ok(!/\.freshCard:last-child:nth-child\(odd\) \{[^}]*grid-column/.test(css), "no card runs across the row");
+  assert.match(rule(".freshHeld") ?? "", /flex: none/, "the holders' count stands whole");
+  assert.match(rule(".tickerRow[data-empty] .dollar") ?? "", /var\(--dim\)/, "an empty ticker's «$» is faint");
+  assert.match(css, /\.linkText::placeholder \{[^}]*font-weight: 400/, "a sample is the face's regular weight");
+  const form = readFileSync(new URL("./Form.tsx", import.meta.url), "utf8");
+  assert.match(form, /className=\{l\.tickerRow\} data-empty=\{m\.draft\.symbol \? undefined : ''\}/);
+  const screen = readFileSync(new URL("./LaunchScreen.tsx", import.meta.url), "utf8");
+  assert.match(screen, /<RyntraLaunches m=\{m\} rows=\{ryntra\} \/>/, "one read of the launches on Ryntra for the list and what the new coins leave out");
+  assert.match(screen, /freshSkip\(ryntra, desk \? null : ryntraShown\(ryntra\)\)/, "a phone leaves out the coins listed above");
+  // The words behind «i» in plain words: no «deposit», no «supply» spelled as «пропозиція».
+  for (const lang of ["en", "uk"]) {
+    const all = Object.values(LAUNCH_SCREEN[lang]).map((v) => (typeof v === "function" ? v("1", "2", "3") : v)).join(" ");
+    assert.ok(!/deposit|депозит|пропозиц/i.test(all), lang);
+  }
+});
+
+/* The critic: a coin read again replaces its older record — or goes —, the newest win the cap and the ticker,
+   and a launch Ryntra took down or launched as a test never stands among the new coins. */
+test("new coins merged across reads: a coin read again stands with its new figures or goes; newest first; Ryntra's takedowns left out", () => {
+  const coin = (id, over = {}) => ({ id, symbol: id.toUpperCase(), name: id.toUpperCase(), icon: "https://x.io/a.png", mcap: 8_000, holders: 20, bornAt: "2026-11-20T10:00:00Z", mint: "off", freeze: "off", ...over });
+  const was = [coin("kite", { mcap: 8_000 }), coin("moth"), coin("owl")];
+  const after = freshMerge(was, [coin("kite", { mcap: 400 }), coin("moth", { out: true }), coin("lark", { bornAt: "2026-11-20T11:00:00Z" })], 40);
+  assert.deepEqual(after.map((c) => c.id), ["lark", "owl"], "kite dumped below $1K and moth flagged: both off the screen; owl, not read now, stays");
+  assert.equal(freshMerge(was, [coin("kite", { mcap: 9_500 })], 40).find((c) => c.id === "kite").mcap, 9_500, "a coin read again shows its new figures");
+  // The cap and one-per-ticker fall on the newest, whichever source said it first.
+  const older = coin("dup", { bornAt: "2026-11-20T09:00:00Z", mcap: 2_000 });
+  const newer = { ...coin("dup2", { bornAt: "2026-11-20T12:00:00Z" }), symbol: "DUP" };
+  assert.deepEqual(freshMerge([], [older, newer], 40).map((c) => c.id), ["dup2"]);
+  assert.deepEqual(freshMerge([], [coin("ant", { bornAt: "2026-11-20T01:00:00Z" }), coin("bee", { bornAt: "2026-11-20T03:00:00Z" }), coin("cat", { bornAt: "2026-11-20T02:00:00Z" })], 2).map((c) => c.id), ["bee", "cat"], "the two newest of three");
+
+  const rows = [
+    { token: "T1", symbol: "KITE", technicalValidation: false },
+    { token: "T2", symbol: "GONE", technicalValidation: false, hidden: true },
+    { token: "T3", symbol: "TEST", technicalValidation: true },
+  ];
+  // A coin any source marks `out` is out, though another source still lists it (the second critic).
+  assert.deepEqual(freshMerge([coin("kite")], [coin("kite", { out: true }), coin("kite")], 40), [], "flagged on the Pulse, still in the depth list");
+  // A figure not measured now keeps the one shown before: the row does not go and come back.
+  assert.equal(freshMerge([coin("kite", { holders: 20 })], [coin("kite", { holders: null, mcap: 9_000 })], 40)[0]?.holders, 20);
+  assert.equal(freshMerge([], [coin("kite", { holders: null }), coin("kite", { holders: 30 })], 40)[0]?.holders, 30, "two sources' figures together");
+
+  assert.deepEqual([...freshSkip(rows, null)].sort(), ["T2", "T3"], "a desk leaves out only what Ryntra took down or tested");
+  assert.deepEqual([...freshSkip(rows, [rows[0]])].sort(), ["$KITE", "T1", "T2", "T3"], "a phone also leaves out what it lists above, by address and ticker");
+});
+
+/* The critic probed the showcase with real names: no ticker glued to a name, the share and wrapped words only
+   where they mark one, a dollar only at a ticker's end, a short brand also with a meme word glued on. */
+test("the showcase reads the ticker and the name each on its own, and names a share, a wrapped coin and a stablecoin only as they are written", () => {
+  const coin = (symbol, name) => ({ symbol, name, icon: "https://x.io/a.png", mcap: 5_000, holders: 10 });
+  for (const [symbol, name] of [["CLAW", "Defender"], ["CLAWDIA", "Clawdia"], ["DOGCAT", "Claw Dog"], ["EGO", "Ego Problem"], ["MRV", "Marvelous"], ["GKC", "Grokking Cat"], ["GIFT", "Gift Wrapped"], ["SIX", "Six Stocks"], ["FOX", "Stocking"], ["BUSDRIVER", "Bus Driver"], ["GAZ", "Gazelle"], ["LUC", "Lucian"]]) {
+    assert.ok(showcased(coin(symbol, name)), `${symbol} ${name}`);
+  }
+  // The second critic: a borrowed name glued to an ordinary word inside one word is still borrowed; a word that only
+  // spans two is not; a stablecoin's ticker with a sign after «USD», a euro's, a coin bridged from another chain.
+  for (const [symbol, name] of [["FROG", "Frog Tank"], ["BIGT", "Big Taco"], ["PIG", "Pig Tail"], ["PUMA", "Puma Gang"], ["USDUCK", "US Duck"], ["USDOGE", "US Doge"]]) {
+    assert.ok(showcased(coin(symbol, name)), `${symbol} ${name}`);
+  }
+  for (const [symbol, name] of [["SUPERGROK", "Super Grok"], ["ELONGROK", "Elon Grok"], ["GROKCHAN", "Grok Chan"], ["BASEDCLAWD", "Based Clawd"], ["sUSDe", "Staked USDe"], ["syrupUSDC", "Syrup USDC"], ["EURC", "Euro Coin"], ["soETH", "Wrapped Ether (Sollet)"], ["SNDK", "SanDisk"], ["GPRO", "GoPro"], ["MSTR", "MicroStrategy"]]) {
+    assert.ok(!showcased(coin(symbol, name)), `${symbol} ${name}`);
+  }
+  for (const [symbol, name] of [["APPL", "Apple Ondo"], ["JUPITERDOG", "Jupiter Dog"], ["ANSEMCAT", "ANSEMCAT"], ["ZELLEPAY", "ZELLEPAY"], ["clawd", "clawd"], ["GROKIA", "Grokia"], ["ZLUSD", "ZelleUSD"], ["USDG", "Global Dollar"], ["wNEAR", "Wrapped NEAR fungible token"], ["AAPLx", "Apple xStock"], ["KALSHI", "Kalshi PreStocks"], ["SNAP", "Snap - Backpack Securities"], ["SPCXon", "SpaceX (Ondo Tokenized)"], ["GTAPETRA", "PETRA"]]) {
+    assert.ok(!showcased(coin(symbol, name)), `${symbol} ${name}`);
+  }
+});
+
+/* EYES-2 (20.11, the second pass by eye): the screen draws no second agent line — the header's own line is on every
+   screen (№21); on a phone the form's «i» is a sign in a square, not an empty 44 px cell (№22); a stock's long name
+   never stands among the new coins (№23); on two columns the side column ends on the form's last line and shows only
+   whole rows (№113); a new coin's count of holders stands whole beside a long name. */
+test("the Launch screen after the second pass by eye of 20.11", () => {
+  const screen = readFileSync(new URL("./LaunchScreen.tsx", import.meta.url), "utf8");
+  assert.ok(!/data-launch-say|beginSentence|SayRow/.test(screen), "no second agent line over the form");
+  for (const lang of ["en", "uk"]) assert.ok(!Object.keys(LAUNCH_SCREEN[lang]).some((key) => key.startsWith("say")), lang);
+  assert.match(screen, /<ActionBody side=\{side\} className=\{l\.newBody\}>/, "the form's body carries the side column's rule");
+
+  const css = readFileSync(new URL("./launch.module.css", import.meta.url), "utf8").replace(/\/\*[\s\S]*?\*\//g, "");
+  const block = (head) => {
+    const at = css.indexOf(head);
+    assert.ok(at >= 0, head);
+    let depth = 0;
+    for (let i = css.indexOf("{", at); i < css.length; i++) {
+      if (css[i] === "{") depth++;
+      else if (css[i] === "}" && --depth === 0) return css.slice(at, i + 1);
+    }
+    return "";
+  };
+  const rule = (scope, selector) => scope.match(new RegExp(`(?:^|\\n)\\s*${selector.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")} \\{([^}]*)\\}`))?.[1] ?? "";
+  const wide = block("@media (min-width: 1100px)");
+  assert.match(rule(wide, ".newBody > [data-page-side]"), /align-self: stretch/, "the side column as tall as the form");
+  assert.match(rule(wide, ".newBody > [data-page-side]"), /contain: size/, "and adding nothing to the form's height");
+  assert.match(rule(wide, ".newBody > [data-page-side] > :last-child:not(:first-child)"), /flex: 1 1 0/, "the list runs down to the form's last line");
+  assert.match(rule(wide, ".newBody > [data-page-side] .listRows"), /flex-flow: column wrap/, "a row that does not fit is not cut in half");
+  assert.match(rule(wide, ".newBody > [data-page-side] .listRows"), /overflow: hidden/);
+
+  const phone = block("@media (max-width: 767px)");
+  assert.match(rule(phone, ".coinPanel button[aria-expanded][aria-label]"), /width: 36px/, "the «i» drawn as the kit's on a phone");
+  assert.match(rule(phone, ".coinPanel button[aria-expanded][aria-label] > svg"), /width: 18px/, "its sign larger");
+  assert.match(rule(phone, ".coinPanel button[aria-expanded][aria-label]::after"), /inset: -4px/, "its place for a thumb 44 px");
+
+  const coin = (symbol, name) => ({ symbol, name, icon: "https://x.io/a.png", mcap: 5_000, holders: 10 });
+  assert.ok(!showcased(coin("TTWOx", "Take-Two Interactive Software - Backpack Securities")), "a stock is not a new coin");
+  assert.match(rule(css, ".freshHeld"), /flex: none/, "the holders' count stands whole");
+  assert.match(rule(css, ".freshName"), /text-overflow: ellipsis/, "the name gives way first");
 });

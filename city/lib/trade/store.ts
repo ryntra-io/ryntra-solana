@@ -372,6 +372,14 @@ export const BUSY: ReadonlySet<Phase> = new Set(['wallet', 'sending', 'checking'
 
 let actionTicket = 0;
 let quoteTicket = 0;
+/** The ask whose answer stands on the card now: an older ask's answer, arriving late, never replaces it. */
+let shownTicket = 0;
+/**
+ * The prices being asked this moment, by the choice they are for. A refresh of a choice already asked waits for that
+ * ask — its answer is the one shown — instead of asking again and dropping it (eyes pass 20.11, №17: the first answer
+ * came in 2.4 s, was let go, and the figure waited for a second ask until 9.8 s).
+ */
+const asking = new Map<string, Promise<void>>();
 /** Coins whose decimals are being read from the chain this moment. */
 const readingDecimals = new Set<string>();
 let typingTicket = 0;
@@ -588,32 +596,50 @@ export const useTrade = create<TradeStore>((set, get) => {
         return;
       }
       const key = choice.key;
-      const my = ++quoteTicket;
       const previous = get().quote;
       // A refresh of the same price keeps the old figures on screen until the new ones arrive.
       const kept = previous.status === 'ready' && previous.key === key ? previous : null;
+      // This very choice is being asked already (a beat of the refresh, the card opened again, the same amount typed
+      // back): the refresh waits for that ask — its answer is the one shown, and the venue's window is not spent twice.
+      const joined = asking.get(key);
+      if (joined) {
+        if (!kept && previous.status !== 'loading') set({ quote: { status: 'loading', key } });
+        return joined;
+      }
+      const my = ++quoteTicket;
       if (!kept) set({ quote: { status: 'loading', key } });
       const asked = { inputMint: choice.inputMint, outputMint: choice.outputMint, amountRaw: choice.askRaw };
-      const stale = () => my !== quoteTicket || current()?.key !== key;
+      // An answer stands while it is for the choice on the card and no newer ask's answer already stands there; asks
+      // started after it never drop it (they wait for it, above).
+      const stale = () => get().launch || current()?.key !== key || shownTicket > my;
       const young = () => kept !== null && env.now() - kept.at < KEEP_PRICE_MS;
-      let answer = await env.engine.quote(asked);
-      // Refused only for the moment: a young price on screen simply stays (the next beat asks again); a field still
-      // waiting for its first price shimmers on and the price is asked once more, quietly — after the slot the venue
-      // names, never into the same full window again and again.
-      const wait = !answer.ok && !young() ? quietWaitMs(answer.failure, env.jitter()) : null;
-      if (wait !== null) {
-        await env.sleep(wait);
+      const ask = (async () => {
+        let answer = await env.engine.quote(asked);
+        // Refused only for the moment: a young price on screen simply stays (the next beat asks again); a field still
+        // waiting for its first price shimmers on and the price is asked once more, quietly — after the slot the venue
+        // names, never into the same full window again and again.
+        const wait = !answer.ok && !young() ? quietWaitMs(answer.failure, env.jitter()) : null;
+        if (wait !== null) {
+          await env.sleep(wait);
+          if (stale()) return;
+          answer = await env.engine.quote(asked);
+        }
         if (stale()) return;
-        answer = await env.engine.quote(asked);
+        if (!answer.ok && momentary(answer.failure.code) && young()) return;
+        if (answer.ok) for (const [mint, decimals] of Object.entries(answer.value.decimals ?? {})) learnDecimals(mint, decimals);
+        shownTicket = my;
+        set({
+          quote: answer.ok
+            ? { status: 'ready', key, body: answer.value, at: env.now() }
+            : { status: 'error', key, refusal: quoteRefusal(answer.failure.code) },
+        });
+      })();
+      asking.set(key, ask);
+      try {
+        await ask;
+      } finally {
+        if (asking.get(key) === ask) asking.delete(key);
       }
-      if (stale()) return;
-      if (!answer.ok && momentary(answer.failure.code) && young()) return;
-      if (answer.ok) for (const [mint, decimals] of Object.entries(answer.value.decimals ?? {})) learnDecimals(mint, decimals);
-      set({
-        quote: answer.ok
-          ? { status: 'ready', key, body: answer.value, at: env.now() }
-          : { status: 'error', key, refusal: quoteRefusal(answer.failure.code) },
-      });
     },
 
     prepare: async (auto) => {

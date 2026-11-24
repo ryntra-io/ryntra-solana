@@ -1,15 +1,24 @@
 import type { Metadata, Viewport } from "next";
 
-import { CityDocument } from "@/city/components/pages/CityDocument";
 import { PALETTE } from "@/city/lib/palette";
 import { buildCityPageMetadata } from "@/app/seo";
 
-/* `/feedback` — the same Help as `/support` (Support and Feedback are one form); out of the index, its canonical is `/support`. */
+import { TerminalFrame } from "../docs/_book/frame";
+import { HelpView } from "../support/_view/HelpView";
+
+/* `/feedback` — the same Help as `/support` (Support and Feedback are one form), in the terminal's frame; out
+   of the index, its canonical is `/support`. */
+
+export const dynamic = "force-static";
 
 export const metadata: Metadata = buildCityPageMetadata("help", "/feedback");
 
-export const viewport: Viewport = { themeColor: PALETTE.inkDeep, colorScheme: "dark" };
+export const viewport: Viewport = { themeColor: PALETTE.inkDeep, colorScheme: "dark", viewportFit: "cover" };
 
 export default function Page() {
-  return <CityDocument id="help" />;
+  return (
+    <TerminalFrame>
+      <HelpView />
+    </TerminalFrame>
+  );
 }

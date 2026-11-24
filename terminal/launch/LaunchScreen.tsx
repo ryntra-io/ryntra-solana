@@ -2,13 +2,13 @@
 
 import { useRouter } from 'next/navigation';
 import { useNarrow } from '@/terminal/shell/useNarrow';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { run } from '@/city/lib/command/run';
 import { useWords } from '@/city/lib/i18n/dict';
 import { useLang } from '@/city/lib/i18n/lang';
 import { poolDoorHere, useLaunch } from '@/city/lib/launch/district';
 import { usePool } from '@/city/lib/launch/pool';
-import { beginSentence, type Ask } from '@/terminal/shell/ask';
+import type { Ask } from '@/terminal/shell/ask';
 import { shelfHref, shelfOn } from '@/terminal/shell/shelves';
 import { useTabInAddress } from '@/terminal/shell/address';
 import { useAskHere } from '@/terminal/shell/useAskHere';
@@ -18,9 +18,9 @@ import { ActionBody, Chip, Icon, Page, PageHead, Panel, Tabs, cx } from '@/termi
 import { Act } from './Act';
 import { launchDoors } from './doors';
 import { Form } from './Form';
-import { fillOf, launchCommandOf } from './launch-view';
+import { fillOf, freshSkip, launchCommandOf } from './launch-view';
 import { Glyph } from './glyphs';
-import { FreshSolana, FreshTab, RyntraLaunches, useFreshCoins } from './Lists';
+import { FreshSolana, FreshTab, RyntraLaunches, ryntraShown, useFreshCoins, useRyntraLaunches } from './Lists';
 import { FreshMini, FreshPanel, MinePanel, Preview } from './Side';
 import { useLaunchModel, type LaunchModel } from './useLaunchModel';
 import { LAUNCH_SCREEN } from './words';
@@ -30,12 +30,12 @@ type Tab = 'new' | 'mine' | 'fresh';
 const TABS: readonly Tab[] = ['new', 'mine', 'fresh'];
 
 /**
- * The Launch screen, a launchpad: the agent's line first — «Say it. Your agent does the rest.» —, the two
- * ready formats, then the new coin: its picture large, its name and ticker, a line about it and its links, for a pool
+ * The Launch screen, a launchpad: the two ready formats, then the new coin: its picture large, its name and ticker, a line about it and its links, for a pool
  * when trading opens, the launch's price and the creator's share in one row and one action. Beside it, the coin as people
  * will see it and the coins new on the market. Underneath is the city's launch as it is: its store, its engine's routes,
- * its two flows and the creator's wallet. «Launch me a token» said to the agent fills the form here; the wallet opens
- * only from the screen's own button.
+ * its two flows and the creator's wallet. «Launch me a token» said to the agent — in the header's line, on every screen —
+ * fills the form here; the screen draws no second line of its own (EYES-2 №21). The wallet opens only from the screen's
+ * own button.
  */
 export function LaunchScreen() {
   // One terminal: a desk shows the whole screen, a phone its own narrow one.
@@ -125,7 +125,12 @@ export function LaunchScreen() {
   // on Ryntra and the new coins, under the form.
   // The market's new coins, read once for the side list and the tab alike.
   const coins = useFreshCoins();
-  const fresh = <FreshSolana m={m} coins={coins} fallback={<FreshMini m={m} onAll={() => setTab('fresh')} />} />;
+  // The launches on Ryntra, read once: none Ryntra took down or launched as a test stands among the new coins, and on a
+  // phone, where they are listed above the new coins, none of them is listed twice.
+  const ryntra = useRyntraLaunches();
+  const skip = useMemo(() => (ryntra === null ? null : freshSkip(ryntra, null)), [ryntra]);
+  const skipBeside = useMemo(() => (ryntra === null ? null : freshSkip(ryntra, desk ? null : ryntraShown(ryntra))), [ryntra, desk]);
+  const fresh = <FreshSolana m={m} coins={coins} skip={skipBeside} fallback={<FreshMini m={m} onAll={() => setTab('fresh')} />} />;
   const side = desk ? (
     <>
       <Preview m={m} />
@@ -133,7 +138,7 @@ export function LaunchScreen() {
     </>
   ) : (
     <>
-      <RyntraLaunches m={m} />
+      <RyntraLaunches m={m} rows={ryntra} />
       {fresh}
     </>
   );
@@ -144,8 +149,7 @@ export function LaunchScreen() {
     <Page data-launch-screen="" data-tab={tab}>
       <PageHead title={shelves.launch} tabs={tabs} mark={marks.length ? marks : null} />
       <div className={l.view} data-off={tab !== 'new' ? '' : undefined}>
-        <ActionBody side={side}>
-          <SayRow m={m} />
+        <ActionBody side={side} className={l.newBody}>
           <Formats m={m} />
           <Panel tone="hi" pad="l" gap={20} edge label={w.newCoin} className={l.coinPanel}>
             <Form m={m} fileRef={fileRef} nameRef={nameRef} />
@@ -160,40 +164,10 @@ export function LaunchScreen() {
       </div>
       <div className={l.view} data-off={tab !== 'fresh' ? '' : undefined}>
         <ActionBody>
-          <FreshTab m={m} coins={coins} fallback={<FreshPanel m={m} />} />
+          <FreshTab m={m} coins={coins} skip={skip} fallback={<FreshPanel m={m} />} />
         </ActionBody>
       </div>
     </Page>
-  );
-}
-
-/**
- * The first rule, said first: «Say it. Your agent does the rest.» A tap puts «launch me a token …» into the agent's own
- * line in the header, the keyboard with it; the person finishes the sentence there and the agent fills this form.
- */
-function SayRow({ m }: { m: LaunchModel }) {
-  const { w } = m;
-  return (
-    <button
-      type="button"
-      className={l.say}
-      aria-label={w.sayLabel}
-      onClick={() => {
-        // The keyboard opens only on a focus inside the tap itself (a phone's rule); the line then takes the words.
-        document.querySelector<HTMLInputElement>('[data-city-command] input')?.focus();
-        beginSentence(w.sayStart);
-      }}
-      data-launch-say=""
-    >
-      <span className={l.saySign}>
-        <Glyph name="spark" />
-      </span>
-      <span className={l.sayWords}>
-        <b>{w.sayHead}</b>
-        <span>{w.sayExample}</span>
-      </span>
-      <Icon name="arrow" size="s" className={l.sayArrow} />
-    </button>
   );
 }
 

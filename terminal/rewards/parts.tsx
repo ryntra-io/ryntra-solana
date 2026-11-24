@@ -39,7 +39,7 @@ export function Top({ label, children }: { label: string; children?: React.React
  */
 export function Ask({ label, line, action, busy = false, message, onAct }: { label: string; line: string; action: string; busy?: boolean; message?: string | null; onAct: () => void }) {
   return (
-    <Panel tone="hi" pad="l" gap={24} edge label={label}>
+    <Panel tone="hi" pad="l" gap={24} label={label}>
       <Top label={label} />
       <p className={r.line}>{line}</p>
       {message ? <p className={r.bad}>{message}</p> : null}
@@ -54,7 +54,7 @@ export function Ask({ label, line, action, busy = false, message, onAct }: { lab
 export function Reading({ label }: { label: string }) {
   const w = useWords(REWARDS);
   return (
-    <Panel tone="hi" pad="l" gap={24} edge label={label}>
+    <Panel tone="hi" pad="l" gap={24} label={label}>
       <Top label={label} />
       <div className={r.bones} aria-busy="true" aria-label={w.reading}>
         <span className={r.boneHero} />
@@ -69,7 +69,7 @@ export function Reading({ label }: { label: string }) {
 export function Failed({ label, onAgain }: { label: string; onAgain: () => void }) {
   const w = useWords(REWARDS);
   return (
-    <Panel tone="hi" pad="l" gap={24} edge label={label}>
+    <Panel tone="hi" pad="l" gap={24} label={label}>
       <Top label={label} />
       <div className={r.badRow}>
         <p className={r.bad}>{w.failed}</p>

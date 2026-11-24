@@ -1,5 +1,6 @@
 import { createHash, createHmac, randomUUID, timingSafeEqual } from "node:crypto";
 import { z } from "zod";
+import { isoDateTime } from "../zod/iso-datetime.ts";
 import type { StrategySpec } from "./types.ts";
 import { StrategySpecSchema, validateStrategySpec } from "./validation.ts";
 
@@ -7,8 +8,7 @@ const TelegramIdSchema = z.number().finite().int().positive().refine(Number.isSa
 const UuidSchema = z.string().uuid();
 const Sha256Schema = z.string().regex(/^[a-f0-9]{64}$/);
 const ProofSchema = z.string().regex(/^v1\.[a-f0-9]{64}$/);
-const ApprovedAtSchema = z.string()
-  .datetime()
+const ApprovedAtSchema = isoDateTime()
   .refine((value) => {
     try {
       return new Date(value).toISOString() === value;

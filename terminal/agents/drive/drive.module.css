@@ -1,0 +1,206 @@
+/* The agent's drive on screen: its week under the bots, what the person hears and where, the agent's own page and the
+   closed trade's card. Colours, sizes and spacings are the terminal's variables and steps (terminal/styles); nothing
+   here names a colour, a corner or a cut of its own. */
+
+.grow {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.dim {
+  color: var(--dim);
+  font-size: var(--type-small);
+  font-weight: 600;
+}
+
+.line {
+  margin: 0;
+  font-size: var(--type-small);
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--soft);
+}
+
+.note {
+  margin: 0;
+  font-size: var(--type-small);
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--ice);
+}
+
+.note[data-tone='warn'] {
+  color: var(--warm);
+}
+
+/* ── the week under the bots ─────────────────────────────────────────────── */
+
+.head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 18px;
+  border-bottom: 1px solid var(--line);
+}
+
+.title {
+  font-size: var(--type-title);
+}
+
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+}
+
+.head + .tiles,
+.head + .line {
+  padding: 16px 18px;
+}
+
+.closed {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border-top: 1px solid var(--line);
+  padding-bottom: 8px;
+}
+
+.pad {
+  padding: 14px 18px 0;
+}
+
+.coin {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+}
+
+.phoneRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-right: 16px;
+  border-bottom: 1px solid var(--line);
+}
+
+.phoneRow > :first-child {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+/* ── what she hears and where ────────────────────────────────────────────── */
+
+.settings {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 20px;
+  padding: 16px 18px 18px;
+  border-top: 1px solid var(--line);
+}
+
+.settings > .note {
+  grid-column: 1 / -1;
+}
+
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 44px;
+  font-size: var(--type-body);
+  font-weight: 600;
+  color: var(--ice);
+  border-bottom: 1px solid var(--line);
+}
+
+.rowEnd {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* ── the agent's own page ────────────────────────────────────────────────── */
+
+.agentHead {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.agentWords {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.agentName {
+  font-size: var(--type-headline);
+}
+
+.lastMove {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px 16px;
+  background: var(--well);
+  border: 1px solid var(--line);
+  font-size: var(--type-base);
+  font-weight: 600;
+  color: var(--ice);
+}
+
+.bones {
+  height: 220px;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--ice) 3%, transparent), color-mix(in srgb, var(--ice) 7%, transparent), color-mix(in srgb, var(--ice) 3%, transparent));
+  background-size: 200% 100%;
+  animation: shimmer 1.4s linear infinite;
+}
+
+@keyframes shimmer {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: -100% 0;
+  }
+}
+
+/* ── the closed trade's card ─────────────────────────────────────────────── */
+
+.card {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1200 / 675;
+  border: 1px solid var(--pane-edge);
+  background: var(--ink-deep);
+}
+
+.factCol {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+@media (max-width: 767px) {
+  .head {
+    padding: 14px 16px;
+  }
+
+  .head + .tiles,
+  .head + .line,
+  .settings {
+    padding: 14px 16px;
+  }
+}

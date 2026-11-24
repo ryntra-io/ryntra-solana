@@ -24,6 +24,7 @@ import { turnMoney as showMoney } from '@/terminal/swap/state';
 import { ExplainBox, ExplainButton } from '@/terminal/coin/parts';
 import { Action, ActionBody, Chip, Icon, Kick, Page, PageHead, Panel, Quiet, QuietLink } from '@/terminal/ui';
 import { ActPanel, ActSheet } from './Acts';
+import { AgentsAsk, useAgentsAsk } from './AgentsAsk';
 import { addressOf, collectable, exitLines, exitable, mintOf, primaryOf, shortAddress, type ActionId } from './all-view';
 import { ALL } from './all-words';
 import { cleanBusy, followClean, settleClean, useClean } from './clean';
@@ -35,6 +36,7 @@ import { Groups, type CoinAsk } from './Groups';
 import { AddressField, Bones, Welcome } from './Lookup';
 import { mayClose } from './portfolio-view';
 import { PrivatePanel } from './Private';
+import { PnlPanel } from './pnl/PnlPanel';
 import { setAct, setWatch, usePortfolioScreen, type Act } from './state';
 import { ActionBar, ThumbBar, TotalPanel, type Offer } from './Summary';
 import { useAgentsHeld } from './useAgentsHeld';
@@ -111,10 +113,14 @@ export function PortfolioScreen() {
 
   const agents = useAgentsHeld(own ? owner : null);
   const data = useAll(address, agents.usd);
+  // A new device: the engine shows the wallet's agents only once the wallet is proven — one quiet way to do it.
+  const ask = useAgentsAsk(own ? owner : null, agents.rows.length);
+  const askRow = ask.shown ? <AgentsAsk said={ask.said} onShow={ask.show} onHide={ask.hide} /> : null;
   const cleanRead = useClean((st) => (address && st.owner === address ? st.read : null));
   const cleanChoice = useClean((st) => st.choice);
   const cleanDone = useClean((st) => st.phase === 'done');
   const door = useExit((st) => st.door);
+  const unrouted = useExit((st) => st.unrouted);
   const exitLanded = useExit((st) => st.landed);
 
   // A link that carries an address opens on it; the address on screen stays in the link, so it can be shared — and
@@ -244,19 +250,25 @@ export function PortfolioScreen() {
 
   // The three actions, each with what it gives this wallet now.
   const collect = useMemo(() => collectable(groups), [groups]);
-  const exits = useMemo(() => exitLines(groups).filter(exitable).length, [groups]);
+  // «Exit everything» stands only where there is something to sell: a coin Jupiter carries no route for is not counted.
+  const exits = useMemo(() => exitLines(groups, unrouted).filter(exitable).length, [groups, unrouted]);
   const cleanSol = cleanRead?.canClean ? estimateSol(cleanRead, cleanChoice) : null;
+  const dustCount = groups.find((group) => group.id === 'dust')?.count ?? 0;
   const offers = useMemo(() => {
     const out: Offer[] = [];
+    // A wallet only looked at offers nothing to do: its actions are its owner's (QA 19.11, eyes 27). What it holds and
+    // what is still to collect stand in its total; the one way in is «Connect wallet» at the page's head.
+    if (!own) return out;
     if (collect.rows.length) out.push({ id: 'collect', glyph: 'collect', title: w.collectTitle, fact: w.collectFact(sumText(collect.usd, lang), collect.rows.length), word: w.collect, open: door.canCollect, onPress: () => exit('collect') });
     if (exits) out.push({ id: 'exit', glyph: 'exit', title: w.exitTitle, fact: w.exitFact(exits), word: w.exitRow, open: door.canExit, onPress: () => exit('exit') });
     if (cleanRead && cleanSol !== null) {
       const n = counts(cleanRead, cleanChoice);
-      // The figure first, as the other two actions say theirs: what comes back, then what it takes.
-      out.push({ id: 'clean', glyph: 'sweep', title: c.title, fact: w.cleanFact(digits(solFigure(cleanSol), lang), n.coins, n.accounts), word: c.clean, open: true, onPress: () => open({ kind: 'clean' }) });
+      // The figure first, as the other two actions say theirs: what comes back, then what it takes — out of the dust
+      // group's own count where the clean leaves some of it, so the two numbers read as one (QA 19.11, eyes 28).
+      out.push({ id: 'clean', glyph: 'sweep', title: c.title, fact: w.cleanFact(digits(solFigure(cleanSol), lang), n.coins, n.accounts, dustCount > n.coins ? dustCount : null), word: c.clean, open: true, onPress: () => open({ kind: 'clean' }) });
     }
     return out;
-  }, [collect, exits, cleanRead, cleanSol, cleanChoice, door, w, c, lang, exit, open]);
+  }, [own, collect, exits, cleanRead, cleanSol, cleanChoice, dustCount, door, w, c, lang, exit, open]);
   const primary = primaryOf({ own, collectUsd: door.canCollect && collect.rows.length ? collect.usd : null, cleanUsd: cleanSol !== null ? (solUsd ? cleanSol * solUsd : 0.01) : null });
   // The panel in front carries the amber action; the bar is quiet while one is open.
   const barPrimary: ActionId | null = act === null && (primary === 'collect' || primary === 'clean') ? primary : null;
@@ -292,11 +304,20 @@ export function PortfolioScreen() {
       </Quiet>
     </span>
   ) : null;
+  // Another wallet looked at with none connected: the screen's one amber action, «Connect wallet», stands at the head
+  // beside the address field — where the wallet's own money actions stand — never under actions it cannot take.
+  const connectHead =
+    watch && owner === null ? (
+      <Action size="m" full={false} className={a.headAct} onClick={connect}>
+        {w.connect}
+      </Action>
+    ) : null;
   const deskMark =
     address || money ? (
       <>
         {address ? <AddressField small onShow={setWatch} /> : null}
         {money}
+        {connectHead}
       </>
     ) : null;
 
@@ -305,10 +326,12 @@ export function PortfolioScreen() {
       <div ref={top}>
         <PageHead title={names.portfolio} tabs={whose ?? (own && owner ? <WalletChip address={owner} /> : null)} mark={deskMark} />
       </div>
-      {/* A phone: the page's head shows no mark — the other wallet's address stands right under it. */}
+      {/* A phone: the page's head shows no mark — the address field stands right under it and, for a wallet only looked
+          at with none connected, the one way in beside it: in its place, never a band over the tabs (eyes 20.11, 84). */}
       {address ? (
-        <div className={a.phoneOnly}>
+        <div className={`${a.phoneOnly} ${a.phoneLead}`}>
           <AddressField small onShow={setWatch} />
+          {watch && owner === null ? <ThumbBar offers={offers} primary={null} busy={busy} connect={connect} /> : null}
         </div>
       ) : null}
 
@@ -322,13 +345,16 @@ export function PortfolioScreen() {
         </ActionBody>
       ) : data.read === 'failed' ? (
         <ActionBody>
-          <Panel pad="l" edge label={w.unread}>
-            <div className={a.blank}>
-              <p className={a.blankLine}>{w.unread}</p>
-              <Quiet disabled={data.rereading} onClick={data.reread}>
-                {w.again}
-              </Quiet>
-            </div>
+          {/* Where the total would stand: its name, what went wrong in the flare's colour in place of the figure, and a
+              quiet «Try again» under it — the same form in both languages, whatever the line's length (eyes 20.11, 89). */}
+          <Panel pad="l" gap={12} edge label={w.unread} className={a.failed}>
+            <Kick>{w.total}</Kick>
+            <p className={a.failLine} role="alert">
+              {w.unread}
+            </p>
+            <Quiet disabled={data.rereading} onClick={data.reread}>
+              {w.again}
+            </Quiet>
           </Panel>
         </ActionBody>
       ) : !held ? (
@@ -353,12 +379,9 @@ export function PortfolioScreen() {
                   {m.receive}
                 </QuietLink>
               </div>
-            ) : owner === null ? (
-              <Action size="m" full={false} onClick={connect}>
-                {w.connect}
-              </Action>
             ) : null}
           </Panel>
+          {askRow}
           {foot}
         </ActionBody>
       ) : (
@@ -367,23 +390,12 @@ export function PortfolioScreen() {
             <TotalPanel data={data} />
             {/* A phone: the wallet's own money right under its total, as a wallet app keeps it. */}
             {money ? <div className={a.phoneOnly}>{<MoneyActions amber={act === null && primary === 'topUp'} sends={sends} busy={busy} onTopUp={topUp} phone />}</div> : null}
-            <ActionBar
-              offers={offers}
-              primary={barPrimary}
-              own={own}
-              busy={busy}
-              tail={
-                owner === null ? (
-                  <Action size="m" full={false} onClick={connect}>
-                    {w.connect}
-                  </Action>
-                ) : undefined
-              }
-            />
-            <Groups data={data} own={own} narrow={narrow} door={door} risk={risk} cleanRead={cleanRead} agents={agents} onTrade={trade} onCollect={(id) => exit('collect', id)} onExit={(id) => exit('exit', id)} onClean={() => open({ kind: 'clean' })} />
+            <ActionBar offers={offers} primary={barPrimary} own={own} busy={busy} />
+            {address ? <PnlPanel owner={address} own={own} /> : null}
+            <Groups data={data} own={own} narrow={narrow} door={door} risk={risk} cleanRead={cleanRead} agents={agents} onTrade={trade} onCollect={(id) => exit('collect', id)} onExit={(id) => exit('exit', id)} onClean={() => open({ kind: 'clean' })} agentsAsk={askRow} />
             {foot}
           </ActionBody>
-          {own ? <ThumbBar offers={offers} primary={barPrimary} busy={busy} /> : owner === null ? <ThumbBar offers={offers} primary={null} busy={busy} connect={connect} /> : null}
+          {own ? <ThumbBar offers={offers} primary={barPrimary} busy={busy} /> : null}
         </>
       )}
 
@@ -453,7 +465,7 @@ function MoneyActions({ amber, sends, busy, onTopUp, phone = false }: { amber: b
     </>
   );
   return (
-    <div className={a.money} role="group" aria-label={w.actions}>
+    <div className={`${a.money} ${a.moneyHead}`} role="group" aria-label={w.actions}>
       {amber ? (
         <Action size="m" full={false} disabled={busy} onClick={onTopUp}>
           {label}

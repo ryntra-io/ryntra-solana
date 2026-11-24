@@ -9,8 +9,15 @@ import { EVERY_GATE, askHref, askRows, gatesFor, targetOf } from "../shell/ask-r
 import { engineGates } from "../shell/engine.ts";
 import { SHELVES, shelfOn } from "../shell/shelves.ts";
 import { budgetText, budgetUse, centsOf, daysLeft, lamportsTyped, resultShown, solPlain, usdShown } from "./figures.ts";
-import { agentCommand, agentRow, crewOpen } from "./read.ts";
+import { agentCommand, agentRow, crewOpen, planRecurring } from "./read.ts";
+import { REFUSAL, refusalLine, refusalOf } from "./refusal.ts";
+import { planAnswer } from "../shell/ask-route.ts";
+import { COIN_REFUSED, readCoin, TOKEN_2022_PROGRAM_ID } from "../../lib/mandate/token-2022.ts";
+import { antMintData, hooked, paused, startsFrozen } from "../../lib/mandate/fixtures/stock-mint.mjs";
+import { PublicKey } from "@solana/web3.js";
 import { keeperRows, mandateLive, pastAgents, pilotRecord, pilotRow, tradeHistory, traderRecords, traderRow, traderRows, traderState, workerPath } from "./rows.ts";
+import { signOnce, signOnceShown } from "./sign-once.ts";
+import { AGENTS } from "./words.ts";
 
 /* The Agents screen stands on the city's own readers and the engine's own figures: a sentence that is a job for an
    agent opens the agent's card — never a trade window, never a signature — and «My agents» says only what was read. */
@@ -86,11 +93,11 @@ test("the agents open here follow the line's gates; the keeper and the launcher 
 
 /* ------------------------------------------------------------------------------------------------ the header's line */
 
-test("the header's line puts a bot's job first and opens its own page under «Bots»", () => {
+test("the header's line puts the agent's job first: a budget a day opens the AI trader's plan on the Agents shelf", () => {
   const rows = askRows("Торгуй BONK на 0,1 SOL на день", BOOK, NONE, ALL, EVERY_GATE);
   assert.equal(rows[0].command.kind, "autopilot");
-  assert.deepEqual(rows[0].target, { shelf: "agents", mint: null, path: "/bots/recurring" }, "a budget a day is Recurring buys — a bot");
-  assert.equal(askHref(rows[0].target, "live"), "/bots/recurring");
+  assert.deepEqual(rows[0].target, { shelf: "agents", mint: null, path: "/agent?ai=trader" }, "a budget a day is the AI trader's plan — never a bot's card");
+  assert.equal(askHref(rows[0].target, "live"), "/agent?ai=trader");
   assert.equal(askHref(rows[0].target, "preview"), "/terminal/kit/agents", "the kit page has one preview a shelf");
   assert.equal(askLabel(rows[0].command, "uk"), "Торгувати з бюджетом на день");
   // Before: the same words opened the coin's own screen. That row still stands under the agent's.
@@ -102,7 +109,7 @@ test("the header's line puts a bot's job first and opens its own page under «Bo
   assert.deepEqual(targetOf(hire[0].command), { shelf: "agents", mint: null }, "a hire of no one is the Agents screen's");
   // A hire that names its worker goes where that worker is: the bots on their pages, the keeper on Earn, the launcher on Launch.
   const hireOf = (role) => targetOf({ kind: "hire", ask: { said: "", role } });
-  assert.equal(hireOf("trader").path, "/bots/recurring");
+  assert.equal(hireOf("trader").path, "/agent?ai=trader");
   assert.equal(hireOf("pilot").path, "/bots/autopilot");
   assert.deepEqual(hireOf("keeper"), { shelf: "earn", mint: null });
   assert.deepEqual(hireOf("launcher"), { shelf: "launch", mint: null });
@@ -310,10 +317,94 @@ test("the keeper's rows are the pools it looks after today, each with its own «
   assert.deepEqual(keeperRows(null), []);
 });
 
+test("a pool stopped but not withdrawn stays as its own row with «Withdraw»; once all is back it goes", () => {
+  const day = { claimedInY: 0.5, reinvestedInY: 0, rebalances: 0 };
+  const care = (key, status, left) => ({ key, pool: "Pool", status, inRange: null, day, ...(left === undefined ? {} : { left }) });
+  const rows = keeperRows([care("live", "stopped", true), care("back", "stopped", false), care("unread", "stopped", null), care("before", "stopped")]);
+  assert.deepEqual(rows.map((row) => row.key), ["keeper:live"], "only the one whose rules or money the chain still carries");
+  const [left] = rows;
+  assert.equal(left.left, true);
+  assert.equal(left.state, "stopped");
+  assert.equal(left.pool, null, "no «Earning» for a pool no one looks after");
+  assert.equal(left.result, null, "nothing works today: no figure of the day");
+  assert.deepEqual(left.stop, { care: "live" }, "its «Withdraw» is the same stop and take back");
+  assert.equal(left.poolAddress, "Pool", "its pool's page carries the same «Withdraw»");
+  // A working pool keeps its row exactly as before.
+  const working = keeperRows([{ ...care("w", "working"), inRange: true }])[0];
+  assert.equal(working.left, undefined);
+  assert.equal(working.state, "working");
+  // The words, both languages, the same keys; the screen says them.
+  for (const key of ["notWithdrawn", "withdraw"]) {
+    assert.equal(typeof AGENTS.en[key], "string", key);
+    assert.equal(typeof AGENTS.uk[key], "string", key);
+  }
+  assert.equal(AGENTS.en.notWithdrawn, "Stopped — not withdrawn");
+  assert.equal(AGENTS.uk.notWithdrawn, "Зупинено — не забрано");
+  assert.equal(AGENTS.en.withdraw, "Withdraw");
+  assert.equal(AGENTS.uk.withdraw, "Забрати");
+  const mine = readFileSync(new URL("./Mine.tsx", import.meta.url), "utf8");
+  assert.match(mine, /row\.left \? w\.withdraw : w\.stop/u, "the row's own button says «Withdraw»");
+  assert.match(mine, /if \(row\.left\) return w\.notWithdrawn;/u);
+});
+
+test("the engine refused the wallet for want of this device's proof (401) — «Sign once» stands in place of an empty list", () => {
+  const at = { owner: "Owner", served: true, locked: true, answered: false };
+  assert.equal(signOnceShown(at), true, "a new device: the engine said 401");
+  assert.equal(signOnceShown({ ...at, owner: null }), false, "no wallet: the screen keeps its «Connect»");
+  assert.equal(signOnceShown({ ...at, served: false }), false, "agents not served here");
+  assert.equal(signOnceShown({ ...at, locked: false }), false, "not refused: the list, or «none», is the truth");
+  assert.equal(signOnceShown({ ...at, answered: true }), false, "the engine answered since: its rows stand");
+  for (const key of ["signOnce", "signOnceAction", "signOnceHow", "signOnceText", "signOnceNo", "signOnceFailed"]) {
+    assert.equal(typeof AGENTS.en[key], "string", key);
+    assert.equal(typeof AGENTS.uk[key], "string", key);
+  }
+  assert.equal(AGENTS.en.signOnce, "Sign once to see your agents");
+  assert.equal(AGENTS.uk.signOnce, "Підпиши раз, щоб побачити своїх агентів");
+  // «My bots» on a desk and on a phone put the card where «None of these running yet» would stand.
+  const mine = readFileSync(new URL("./Mine.tsx", import.meta.url), "utf8");
+  assert.match(mine, /\) : locked \? null : \(\s*<p className=\{a\.empty\}>/u);
+  assert.match(mine, /<SignOnce owner=\{owner\} variant="row" \/>/u);
+  assert.match(mine, /<SignOnce owner=\{owner\} variant="card" \/>/u);
+  // The agent's own page waits on no read that will never come.
+  const pulse = readFileSync(new URL("./drive/PulseScreen.tsx", import.meta.url), "utf8");
+  assert.ok(pulse.indexOf("sign.shown") < pulse.indexOf("} else if (reading)"), "the card before the bones");
+});
+
+test("«Sign once» — one signed message, then the list is read again; a no or a silent wallet changes nothing", async () => {
+  const run = async (prove, read = async () => ({ owner: "Owner" })) => {
+    const calls = [];
+    const said = await signOnce({
+      refresh: async () => calls.push("refresh"),
+      prove: async () => (calls.push("prove"), prove),
+      forget: () => calls.push("forget"),
+      read: async () => (calls.push("read"), read()),
+    });
+    return { said, calls };
+  };
+  const signed = await run({ ok: true });
+  assert.equal(signed.said, "idle", "after the signature the list is read");
+  assert.deepEqual(signed.calls, ["refresh", "prove", "forget", "read"], "the proof read afresh, then the message, then the engine asked again at once");
+  const declined = await run({ ok: false, state: "declined" });
+  assert.equal(declined.said, "declined");
+  assert.deepEqual(declined.calls, ["refresh", "prove"], "not signed: nothing asked of the engine");
+  assert.equal((await run({ ok: false, state: "failed" })).said, "failed");
+  assert.equal((await run({ ok: true }, async () => null)).said, "failed", "signed, but the engine still said nothing: try again");
+  const thrown = await signOnce({ refresh: async () => { throw new Error("offline"); }, prove: async () => { throw new Error("gone"); }, forget: () => {}, read: async () => ({}) });
+  assert.equal(thrown, "failed");
+  // The wallet signs a message, never a transaction; the card asks only on its tap.
+  const card = readFileSync(new URL("./SignOnce.tsx", import.meta.url), "utf8");
+  assert.match(card, /prove: \(\) => proveWallet\(connection\)/u);
+  assert.doesNotMatch(card, /signTransaction|sendTransaction|signAll/u);
+  assert.doesNotMatch(card, /useEffect/u, "nothing asks the wallet at a visit");
+});
+
 test("a bot at work is managed on its own page: Recurring buys and the money autopilot under «Bots», the keeper's pools on Earn", () => {
   assert.equal(workerPath("trader"), "/bots/recurring");
   assert.equal(workerPath("pilot"), "/bots/autopilot");
   assert.equal(workerPath("keeper"), "/earn");
+  // The keeper on its pool's page, whose ticket carries the care and its «Stop and take it back».
+  assert.equal(workerPath("keeper", "Pool"), "/pool/Pool");
+  assert.equal(keeperRows([{ key: "a", pool: "Pool", status: "working", inRange: true, day: { claimedInY: 0, reinvestedInY: 0, rebalances: 0 } }])[0].poolAddress, "Pool");
 });
 
 
@@ -385,13 +476,218 @@ test("the new agent's budget is hers — the day, the trade and the term are her
   assert.match(card, /own\.current\.trade = true;/u);
   assert.match(card, /own\.current\.days = true;/u);
   assert.doesNotMatch(card, /own\.current\.(trade|days) = (trade|days) !== ''/u);
-  // The line before the signature breaks only between its parts.
-  assert.match(card, /\.split\(' · '\)/u);
-  // Before the signature, one line of her numbers and what stands under «the keys stay yours».
-  assert.equal(AGENTS.uk.terms("1"), "До 1 SOL на день · вивести не може · стоп будь-коли");
-  assert.equal(AGENTS.en.terms("1000"), "Up to 1000 SOL a day · it can’t withdraw · stop anytime");
+  // The line before the signature breaks only between its parts (its own component, `Limit.tsx`).
+  assert.match(readFileSync(new URL("./Limit.tsx", import.meta.url), "utf8"), /\.split\(' · '\)/u);
+  // Before the signature, one line of her numbers and what stands under «the keys stay yours» — the risk's edge.
+  assert.equal(AGENTS.uk.terms("1", "30,02"), "Витратить не більше 1 SOL на день і 30,02 SOL усього · вивести не може · стоп будь-коли");
+  assert.equal(AGENTS.en.terms("1000", "30000.5"), "Spends at most 1000 SOL a day, 30000.5 SOL in all · it can’t withdraw · stop anytime");
   for (const lang of ["en", "uk"]) {
-    assert.ok(AGENTS[lang].terms("0.125").length <= 64, lang);
+    // The first part carries the sum and may wrap; the short ones after it never break inside.
+    assert.ok(AGENTS[lang].terms("0.125", "3.77").length <= 96, lang);
     assert.doesNotMatch(Object.values(AGENTS[lang]).filter((v) => typeof v === "string").join(" "), /BONK|PUMP|WIF|0[.,]1 SOL/u, lang);
   }
+});
+
+
+const TSLAX = "XsDoVfqeBukxuZHWhdvWHBhgEHjGNst4MLodqsJHzoB";
+const STOCK_BOOK = bookOf([tower(BONK, "BONK", 9e8), tower(JUP, "JUP", 8e8), tower(TSLAX, "TSLAx", 7e8)]);
+
+test("«buy TSLAx every week for $50» is Recurring buys on a week, the sum and the coin — never a one-off buy", () => {
+  for (const said of ["buy TSLAx every week for $50", "купуй TSLAx щотижня на $50"]) {
+    const [first, second] = askRows(said, STOCK_BOOK, NONE, ALL, EVERY_GATE);
+    assert.equal(first.target.path, "/bots/recurring", said);
+    assert.equal(first.command.kind, "instruct", said);
+    assert.deepEqual({ coin: first.command.instruction.coin?.mint, usd: first.command.instruction.usd, cadence: first.command.instruction.cadence }, { coin: TSLAX, usd: "50", cadence: "weekly" }, said);
+    assert.equal(askHref(first.target, "live"), "/bots/recurring");
+    // The one-off buy stays a row below, for the person who meant it.
+    assert.equal(second?.command.kind, "buy", said);
+  }
+  assert.equal(askLabel(askRows("buy TSLAx every week for $50", STOCK_BOOK, NONE, ALL, EVERY_GATE)[0].command, "en"), "Recurring buys · TSLAX · $50 a week");
+  assert.equal(askLabel(askRows("купуй TSLAx щотижня на $12.5", STOCK_BOOK, NONE, ALL, EVERY_GATE)[0].command, "uk"), "Регулярні покупки · TSLAX · $12,5 на тиждень");
+  assert.equal(askLabel(askRows("Купуй акцію щотижня", STOCK_BOOK, NONE, ALL, EVERY_GATE)[0].command, "uk"), "Регулярні покупки · на тиждень");
+  // A sum in SOL rides the sentence: the bot's page reads it again.
+  const sol = askRows("buy JUP every day for 0.1 SOL", STOCK_BOOK, NONE, ALL, EVERY_GATE)[0];
+  assert.equal(sol.target.path, "/bots/recurring");
+  assert.equal(sol.command.instruction.said, "buy JUP every day for 0.1 SOL");
+  // Where the mandate's engine is shut, no bot is opened: the line reads the sentence as before.
+  const shut = askRows("buy TSLAx every week for $50", STOCK_BOOK, NONE, ALL, { ...EVERY_GATE, agentTrade: false })[0];
+  assert.equal(shut.command.kind, "buy");
+  // A budget a day said to trade is still the trader's card, and buying SOL itself on a rhythm is no bot's.
+  assert.equal(askRows("Торгуй BONK на 0,1 SOL на день", STOCK_BOOK, NONE, ALL, EVERY_GATE)[0].command.kind, "autopilot");
+  assert.notEqual(askRows("buy SOL every week for $20", STOCK_BOOK, NONE, ALL, EVERY_GATE)[0]?.target.path, "/bots/recurring");
+});
+
+test("the model's regular purchase opens Recurring buys too — with the digits the person typed", () => {
+  const draft = { understood: true, ask: "none", action: "dca", coin: "TSLAx", cadence: "weekly", numbers: [{ name: "usd", value: 50 }] };
+  const answer = planAnswer(draft, "every Monday put fifty… no, $50 into TSLAx", STOCK_BOOK, ALL, EVERY_GATE);
+  assert.equal(answer?.kind, "row");
+  assert.equal(answer.row.target.path, "/bots/recurring");
+  assert.equal(answer.row.command.instruction.usd, "50");
+  // A number the person did not type is not the sum.
+  const invented = planAnswer({ ...draft, numbers: [{ name: "usd", value: 70 }] }, "buy TSLAx every week for $50", STOCK_BOOK, ALL, EVERY_GATE);
+  assert.equal(invented.row.command.instruction.usd, null);
+  // SOL bought on a rhythm is no bot's; with the engine shut, no plan opens the bot.
+  assert.equal(planRecurring({ action: "dca", said: "x", coin: { mint: "So11111111111111111111111111111111111111112", symbol: "SOL" }, usd: "5", cadence: "daily" }, EVERY_GATE), null);
+  assert.equal(planRecurring({ action: "dca", said: "x", coin: null, usd: "5", cadence: "daily" }, { ...EVERY_GATE, agentTrade: false }), null);
+});
+
+/** The engine's own reasons for a stop before the wallet, as its source writes them (`lib/mandate/**`, read, never changed). */
+function engineReasons() {
+  const mandate = (name) => readFileSync(new URL(`../../lib/mandate/${name}`, import.meta.url), "utf8");
+  const coin = mandate("token-2022.ts");
+  const service = mandate("service.server.ts");
+  const strings = (text) => [...text.matchAll(/"([^"\n]{8,})"/g)].map((match) => match[1]);
+  // Every refusal of a coin: the features' table, the three lines kept as names, the plain refusals.
+  const table = coin.slice(coin.indexOf("const REFUSED"), coin.indexOf("]);", coin.indexOf("const REFUSED")));
+  const named = [...coin.matchAll(/^const (?:HIDDEN|FREEZABLE|STARTS_FROZEN) = "([^"]+)";/gm)].map((match) => match[1]);
+  const plain = [...coin.matchAll(/refused\("([^"]+)"\)/g)].map((match) => match[1]);
+  const coins = [...strings(table), ...named, ...plain].map((reason) => `The agent does not trade this coin: ${reason}.`);
+  // The review's own lines, before a signature: the coin read for the budget, and the budget itself.
+  const review = service.slice(service.indexOf("export async function coinForBudget"), service.indexOf("export async function", service.indexOf("export async function reviewEnable") + 10));
+  const lines = [...review.matchAll(/reason: ([^}]+)\}/g)].flatMap((match) => strings(match[1]));
+  return { coins, lines };
+}
+
+test("every reason the engine stops a budget with before the wallet is said in Ukrainian and English — none in the engine's English", () => {
+  const { coins, lines } = engineReasons();
+  assert.ok(coins.length >= 12 && lines.length >= 8, "the engine's reasons were read");
+  // «The mandate is not written» is the engine failing to build the transaction: the plain «stopped before your wallet».
+  const known = [...coins, ...lines.filter((line) => line !== "The mandate is not written."), "Not a budget: a trade is at most the day.", "Another wallet.", "The budget is not the one shown.", "The wallet changed the transaction.", "A program outside the mandate."];
+  for (const reason of known) {
+    assert.ok(refusalOf(reason), `a reason the screen does not know: «${reason}»`);
+    const uk = refusalLine(reason, "uk");
+    assert.match(uk, /[а-яіїєґ]/u, reason);
+    assert.doesNotMatch(uk.replace(/Ryntra/gu, ""), /[a-z]{3,}/iu, `Ukrainian with no English left: ${uk}`);
+    assert.doesNotMatch(refusalLine(reason, "en"), /Token-2022|router|mint|epoch|program/iu, "nothing technical");
+  }
+  // A transfer fee keeps its figures, in the language's own way.
+  const fee = `${COIN_REFUSED}it takes 2.5% on every transfer, above the 1% the agent pays`;
+  assert.equal(refusalLine(fee, "uk"), "Бот не купує цю монету: вона бере 2,5% з кожного переказу — більше за 1%, які платить бот.");
+  // A sentence the screen does not know — or none — is the plain line, never the English text.
+  assert.equal(refusalLine("Something new in the engine.", "uk"), null);
+  assert.equal(refusalLine(undefined, "en"), null);
+  for (const lang of ["en", "uk"]) assert.doesNotMatch(Object.values(REFUSAL[lang]).filter((v) => typeof v === "string").join(" "), /profit|прибут|guarantee|гарант/iu, lang);
+});
+
+test("the engine's real refusal of a coin reads as the screen's line", () => {
+  const mint = new PublicKey("ANTBTZQ1EUuTxUs3tfeampxdqTWPHmwyJmcWj4xoAyNe");
+  const info = { owner: TOKEN_2022_PROGRAM_ID, data: antMintData() };
+  for (const data of [info.data, paused(info.data), hooked(info.data), startsFrozen(info.data)]) {
+    const reading = readCoin(mint, { ...info, data });
+    assert.equal(reading.ok, false);
+    const reason = `${reading.reason.charAt(0).toUpperCase()}${reading.reason.slice(1)}.`;
+    assert.ok(refusalLine(reason, "uk"), reason);
+  }
+});
+
+test("the stop before the wallet carries the engine's reason to the screen, and the bots' page says it", () => {
+  const sign = readFileSync(new URL("../../city/lib/bots/mandate-sign.ts", import.meta.url), "utf8");
+  assert.match(sign, /say\(\{ kind: result\.kind, at: Date\.now\(\), \.\.\.\(result\.kind === 'refused' \? \{ reason: result\.reason \} : \{\}\) \}\)/u);
+  const page = readFileSync(new URL("../bots/Budget.tsx", import.meta.url), "utf8");
+  assert.match(page, /note\.kind === 'refused' \? refusalLine\(note\.reason, lang\) : null/u);
+});
+
+test("the Agents screen — the one action always lit, no small grey line over the name, the coin in focus under the analyst", () => {
+  const screen = source("./AgentsScreen.tsx");
+  assert.match(screen, /<Action full=\{false\} busy=\{asking\} disabled=\{asking\} onClick=\{press\}/u, "«Ask» is never pale while nothing is typed");
+  assert.match(screen, /else field\.current\?\.focus\(\);/u, "with nothing typed it puts the cursor in the field");
+  assert.doesNotMatch(screen, /<Kick>/u, "no small grey label over the analyst or the coins");
+  assert.match(screen, /<CoinFocus tower=\{focus\} \/>/u);
+  const words = source("./words.ts");
+  assert.doesNotMatch(words, /analystKick/u);
+  // The stock's example names no ticker and no sum (decision 108).
+  assert.match(words, /sayStockWeekly: 'Buy a stock every week'/u);
+  assert.match(words, /sayStockWeekly: 'Купуй акцію щотижня'/u);
+});
+
+
+test("the agent's ticket says the risk's edge before any signature — the day's most, no withdrawal, a stop", () => {
+  const parts = { en: [/at most/u, /can’t withdraw/u, /stop anytime/u], uk: [/не більше/u, /вивести не може/u, /стоп будь-коли/u] };
+  for (const lang of ["en", "uk"]) {
+    const sum = AGENTS[lang].terms("0,5", "15,02");
+    assert.match(sum, /0,5 SOL/u, `${lang}: her own day`);
+    assert.match(sum, /15,02 SOL/u, `${lang}: the whole the signature takes`);
+    for (const line of [sum, AGENTS[lang].termsAny]) {
+      assert.equal(line.split(" · ").length, 3, `${lang}: three parts`);
+      for (const part of parts[lang]) assert.match(line, part, lang);
+    }
+    assert.doesNotMatch(AGENTS[lang].termsAny, /\d/u, `${lang}: before she writes a day, no sum of Ryntra's`);
+  }
+  const card = source("./NewAgent.tsx");
+  assert.match(card, /<Limit budget=\{budget\} \/>/u, "the edge stands before a budget is written, too");
+  assert.match(source("./Limit.tsx"), /budgetText\(budgetTotal\(budget\), lang\)/u, "the whole, as the action signs it");
+  const limit = source("./Limit.tsx");
+  assert.match(limit, /className=\{a\.limit\} data-agent-terms=""/u);
+  const css = source("./agents.module.css");
+  const rule = css.slice(css.indexOf(".limit {"), css.indexOf("}", css.indexOf(".limit {")));
+  assert.match(rule, /var\(--type-base\)/u, "big: the card's body type");
+  assert.match(rule, /color: var\(--ice\)/u, "never the caption's grey");
+});
+
+test("with no wallet the ticket offers «Practice first» first, then «Connect and give the budget» — the wallet last", () => {
+  for (const lang of ["en", "uk"]) assert.equal(typeof AGENTS[lang].connectSign, "string", lang);
+  assert.equal(AGENTS.uk.connectSign, "Підключити й дати бюджет");
+  const card = source("./NewAgent.tsx");
+  const branch = card.slice(card.indexOf("{needsCoin && !owner ? ("), card.indexOf(") : (", card.indexOf("{needsCoin && !owner ? (")));
+  assert.ok(branch.length > 0);
+  const practice = branch.indexOf("w.practice");
+  const connect = branch.indexOf("w.connectSign");
+  assert.ok(practice > 0 && connect > practice, "practice first, the wallet after it");
+  assert.match(branch, /<Action onClick=\{\(event\) => \(coin && budget \? practise\(\) : focusField\(event\)\)\}/u, "practice needs no wallet: on paper in this browser");
+  assert.match(branch, /<ConnectOnly \/>/u, "what connecting does, beside the step");
+  // A wallet asked for anywhere else in the ticket says the whole step, too.
+  assert.match(card, /\{w\.connectSign\}\n\s*<\/Action>\n\s*<ConnectOnly \/>/u);
+  assert.match(source("./paper/PaperWeek.tsx"), /\{aw\.connectSign\}/u);
+});
+
+test("«Practice first» is a moment of the funnel on every card that offers it, the wallet's or none", () => {
+  const card = source("./NewAgent.tsx");
+  assert.match(card, /function practise\(\): void \{\n  funnelSay\('agent_practice'\);\n  startPaper\(\);/u);
+  assert.equal(card.match(/funnelSay\('agent_practice'\)/gu)?.length, 3, "no wallet, the week on paper, the money autopilot");
+});
+
+test("the edge looks the same on every card: the money autopilot says it as the trader's does, never in a small grey line", () => {
+  const card = source("./NewAgent.tsx");
+  assert.doesNotMatch(card, /className=\{a\.cap\}>\{w\.pilotRisk\}/u);
+  assert.match(card, /<Edge text=\{w\.pilotRisk\} \/>/u);
+  assert.match(card, /<Edge text=\{ask\.solRaw \? w\.pilotEdge\(budgetText\(BigInt\(ask\.solRaw\), lang\)\) : w\.pilotRisk\} \/>/u);
+  for (const lang of ["en", "uk"]) {
+    for (const line of [AGENTS[lang].pilotRisk, AGENTS[lang].pilotEdge("2")]) assert.equal(line.split(" · ").length, 3, `${lang}: ${line}`);
+    assert.match(AGENTS[lang].pilotEdge("2"), /2 SOL/u);
+  }
+  // A line breaks only before a «·»: each short part keeps its dot in front of it.
+  assert.match(source("./Limit.tsx"), /\{at \? `·\\u00a0\$\{part\}` : part\}/u);
+});
+
+/* ------------------------------------------------------------------------------------------------ the AI trader */
+
+test("«Trade JUP every day» opens the AI trader's plan: the agent's card on the Agents shelf, never the bot's", () => {
+  for (const said of ["Trade JUP every day", "Торгуй JUP щодня", "trade JUP for me, 1 SOL a day"]) {
+    const row = askRows(said, BOOK, NONE, ALL, EVERY_GATE)[0];
+    assert.equal(row.command.kind, "autopilot", said);
+    assert.equal(askHref(row.target, "live"), "/agent?ai=trader", said);
+  }
+  // A regular purchase on a schedule is a rule — the bot's page, as before.
+  assert.equal(askRows("buy JUP every day for 0.1 SOL", BOOK, NONE, ALL, EVERY_GATE)[0].target.path, "/bots/recurring");
+  const page = readFileSync(new URL("../../app/(terminal)/agent/page.tsx", import.meta.url), "utf8");
+  assert.match(page, /if \(ai === "trader"\) return <TraderScreen \/>;/u);
+  const screen = source("./TraderScreen.tsx");
+  assert.match(screen, /<RecurringBot lay=\{botDesk\} agent \/>/u, "the card and its engine are the bot's own, in the agent's place");
+  assert.match(screen, /<AgentTabs value="trader" \/>/u);
+  const budget = readFileSync(new URL("../bots/Budget.tsx", import.meta.url), "utf8");
+  assert.match(budget, /\{ head: \{ title: aw\.aiTraderTitle, job: MANDATE_EXIT \? aw\.aiTraderJob : aw\.aiTraderJobBuys, kick: aw\.newAiAgent, icon: 'aiTrader' \}, exit: true \}/u, "the agent's name, kick, mark and what it does over the plan — «sells on its own» only where the agent may sell");
+  assert.match(budget, /onStop=\{stop\} agent=\{agent\} \/>/u, "«My agents» under the agent's plan");
+  for (const lang of ["en", "uk"]) for (const key of ["aiTraderTitle", "aiTraderJob", "aiTraderJobBuys", "noteOnAgent", "newAiAgent", "mineAgents", "noAiAgents", "connectToSeeAgents"]) assert.equal(typeof AGENTS[lang][key], "string", `${lang}.${key}`);
+  assert.equal(AGENTS.uk.aiTraderTitle, "AI-трейдер");
+  // The bot's own line stays the bot's: «Recurring buys» buys a coin by itself, on a budget a day.
+  assert.equal(AGENTS.en.traderJob, "Buys a coin by itself, on your budget a day");
+});
+
+test("the Agents shelf's tabs: the AI trader, the Scout, the analyst — the menu's own items, ready", async () => {
+  const { MENU } = await import("../shell/menu.ts");
+  const agents = MENU.find((group) => group.id === "agents");
+  assert.equal(agents.items.find((item) => item.id === "aiTrader")?.ready, true);
+  const tabs = source("./scout/AgentTabs.tsx");
+  assert.match(tabs, /trader: '\/agent\?ai=trader'/u);
+  assert.match(tabs, /\.\.\.\(traderReady\(\) \? \[\{ id: 'trader' as const, label: w\.trader \}\] : \[\]\)/u);
 });

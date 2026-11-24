@@ -97,7 +97,89 @@
   gap: 16px;
 }
 
+/* The stock's facts on the coin's page: what the token is and whose, the share of a company that now
+   trades, and what the issuer can do to the token. Tokens only. */
+.issuer {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.issuerKind {
+  font-size: var(--type-caption);
+  font-weight: 600;
+  color: var(--dim);
+}
+
+.issuerName {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--type-small);
+  font-weight: 600;
+  color: var(--ice);
+}
+
+.listed {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+}
+
+.listedText {
+  min-width: 0;
+  font-size: var(--type-small);
+  font-weight: 600;
+  color: var(--ice);
+}
+
+.powers {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--type-caption);
+  font-weight: 600;
+  color: var(--warm);
+}
+
+.powers svg {
+  flex: none;
+  color: var(--warm);
+}
+
+/* The stand: the «Rights» cell as the coin's facts draw it — a label and the warm line under it. */
+.standRights {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: var(--type-caption);
+}
+
+.standRights [data-tone='warn'] {
+  color: var(--warm);
+}
+
+/* The stand's logos: the three test marks at three sizes, side by side. */
+.standLogos {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
 /* The stock's line before a position's signature: the ticket's own «line + i», marked for the eyes, no box of its own. */
 .line {
   display: contents;
+}
+
+/* The acting panel paints its shape as a layer under its parts (`.hi::before`, the kit's `.glass > *` lifts each
+   direct part above it). A box with `display: contents` gives no box to lift, so its own parts are lifted here — without
+   this the line and its «i» lay under the panel's 0.9 dark layer and barely read (release check 20.11). */
+.line > * {
+  position: relative;
 }

@@ -81,10 +81,13 @@ const no = (reason: string): PoolCheck => ({ ok: false, reason });
  * launch's pool is made from one (switched off until Meteora gives Ryntra its config, D-M1). Absent — nobody.
  * `handOvers` — how many NFTs the step may hand over: one in the supply's step of a launch with the split (Ryntra's
  * position), none otherwise. Absent — none.
+ * `reward` — the launch pays a reward for its pool's liquidity: its supply's step may hold one transaction
+ * more — the pool's own reward slot set up and funded, a call of DLMM Pro on the launch's pool like every other.
  */
-export function checkPoolStep(args: Readonly<{ wires: readonly string[]; stage: PoolStage; creator: string; mint: string; pool: string; poolSigner?: string | null; handOvers?: number }>): PoolCheck {
+export function checkPoolStep(args: Readonly<{ wires: readonly string[]; stage: PoolStage; creator: string; mint: string; pool: string; poolSigner?: string | null; handOvers?: number; reward?: boolean | null }>): PoolCheck {
   const { stage, creator, mint, pool } = args;
-  if (args.wires.length === 0 || args.wires.length > 4) return no('The step is not the transactions the launch is made of.');
+  const most = stage === 'SUPPLY' && args.reward === true ? 5 : 4;
+  if (args.wires.length === 0 || args.wires.length > most) return no('The step is not the transactions the launch is made of.');
   let callsPool = false;
   let handed = 0;
   const handOvers = stage === 'SUPPLY' ? Math.min(1, Math.max(0, args.handOvers ?? 0)) : 0;

@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { spendable } from '@/city/lib/districts/harbor/deposit';
+import { CARE_MODE, careToWithdraw, useCare, type CareRow } from '@/city/lib/earn/care';
 import { SOL_MINT } from '@/city/lib/earn/lst';
 import { GOAL_SHAPE, MAX_HALF, PIER_GOALS, PIER_SLIPPAGE_BPS, PIER_STYLES, STYLE_HALF, pierCosts, pierHalf, otherInSol, solShort, solUsd, styleOfHalf, unitsShort, zapFigures, type Pier, type PierGoal, type PierStyle } from '@/city/lib/earn/pier';
 import { pierSeries } from '@/city/lib/earn/pier-history';
@@ -10,8 +11,9 @@ import { digits, useWords } from '@/city/lib/i18n/dict';
 import { useLang } from '@/city/lib/i18n/lang';
 import { useWallet } from '@/city/lib/trade/wallet';
 import { explorerTxUrl } from '@/lib/solana/explorer';
-import { Action, AmountField, Kick, Quiet, Segment } from '@/terminal/ui';
+import { Action, AmountField, Chip, Kick, Quiet, Segment, SwitchRow } from '@/terminal/ui';
 import { Facts, Note, OneLine, Result, RiskDots, TicketHead, iconOf } from './bits';
+import { CARE_STOP_IDS, careBlock, careDaySol, caredHere, careStopOf, careWidthOf, type CareStopId } from './care-ticket';
 import { noticeKey } from './failures';
 import { SHAPE_WORD, factRows, gapLine, rangeLine } from './range/facts';
 import { dayEstimate, dayMove, edgeTexts, gapView, heldShare, pctText, rangeView, rangeWorth, reachOf, rentView } from './range/model';
@@ -49,6 +51,10 @@ export function lineOf(parts: readonly (string | null)[]): string {
  * opened in one approval; the exact figures are built while the form is read, and the wallet signs exactly those.
  * On a pool's own page the page names the pool: `bare` leaves out the ticket's head, and `peek` shows the
  * range over the pool's liquidity — its bars and edges — before «Tune» opens the rest.
+ *
+ * Where the agent's care is open, one switch more — «Your agent looks after it» (`./care-ticket.ts`, the city's
+ * `city/lib/earn/care.ts`): turned on, the stop is picked and the one action gives the SOL to her agent, which opens the
+ * position and looks after it; a care already at work on this pool stands on top with its own «Stop and take it back».
  */
 export function PoolTicket({ pier, row, addOpen, onConnect, bare = false, peek = false }: { pier: Pier; row: PoolRow; addOpen: boolean; onConnect: () => void; bare?: boolean; peek?: boolean }) {
   const w = useWords(EARN);
@@ -82,13 +88,32 @@ export function PoolTicket({ pier, row, addOpen, onConnect, bare = false, peek =
   const bins = useBins('dlmm', pier.pool.address);
   const [tune, setTune] = useTune();
   const editorId = useEditorId();
+  // The agent's care: offered where its switch is open and the pool is not a copied strategy; off until she turns it on.
+  const careOffered = CARE_MODE !== 'closed' && !copied;
+  const [careChosen, setCareChosen] = useState(false);
+  const caring = careOffered && careChosen;
+  const carePhase = useCare((st) => st.phase);
+  const careNotice = useCare((st) => st.notice);
+  const careStop = useCare((st) => st.stop);
+  const cares = useCare((st) => st.cares);
+  const here = useMemo(() => (careOffered ? caredHere(cares, pier.pool.address) : []), [careOffered, cares, pier.pool.address]);
 
-  // The exact figures of what is on the form, while the person reads it.
+  // The exact figures of what is on the form, while the person reads it — the plain add's; the care builds its own.
   useEffect(() => {
-    if (!connection || !admitted || !choice.key || phase !== 'idle' || notice || shown) return;
+    if (caring || !connection || !admitted || !choice.key || phase !== 'idle' || notice || shown) return;
     const timer = setTimeout(() => void usePier.getState().prepare(connection, { kind: 'add' }, useWallet.getState().holdings), AUTO_REVIEW_MS);
     return () => clearTimeout(timer);
-  }, [connection, admitted, choice.key, phase, notice, shown]);
+  }, [caring, connection, admitted, choice.key, phase, notice, shown]);
+
+  // The wallet's cares, read once the ticket knows the wallet: one at work on this pool stands on top.
+  useEffect(() => {
+    if (careOffered && owner) void useCare.getState().load(owner);
+  }, [careOffered, owner]);
+  // Another pool's ticket starts from a clean care: a result said for one pool is not said for the next.
+  useEffect(() => {
+    const st = useCare.getState();
+    if (st.phase === 'done' || st.notice) st.reset();
+  }, [pier.pool.address]);
 
   if (outcome) return <PoolOutcome pier={pier} row={row} />;
 
@@ -178,13 +203,23 @@ export function PoolTicket({ pier, row, addOpen, onConnect, bare = false, peek =
     if (shown) void usePier.getState().confirm(connection, useWallet.getState().holdings);
     else void usePier.getState().prepare(connection, { kind: 'add' }, holdings);
   };
+  // The care: the range's width the agent keeps, why it cannot go yet, and its one action.
+  const careWidth = careWidthOf(half);
+  const careStopped = careBlock({ lamports: choice.lamports, problem: choice.problem, width: careWidth });
+  const careBusy = carePhase === 'building' || carePhase === 'wallet' || carePhase === 'sending';
+  const careLabel = carePhase === 'building' ? w.building : carePhase === 'wallet' ? w.inWallet : carePhase === 'sending' ? w.sending : w.careGive;
+  const give = () => {
+    if (!connection) return onConnect();
+    if (choice.lamports) void useCare.getState().give(connection, { pool: pier.pool.address, lamports: choice.lamports, width: careWidth, shape: GOAL_SHAPE[goal] });
+  };
 
   return (
     <>
       {/* A day's fees as the table's row says them: what trades paid the pool, from the very read the ticket stands on. */}
       {bare ? null : <TicketHead coins={row.coins} name={row.name} sub={feeText(row.feePct, lang)} figure={pier.pool.fees24hUsd !== null ? shortUsd(pier.pool.fees24hUsd, lang) : null} figureCap={w.fees24} />}
+      {here.length ? <CaredHere rows={here} /> : null}
       {/* While the wallet is open or the bytes travel, the form is what is being signed: it holds still. */}
-      <fieldset className={e.form} disabled={PIER_LOCKED.has(phase)}>
+      <fieldset className={e.form} disabled={PIER_LOCKED.has(phase) || careBusy}>
       <AmountField
         label={w.youPut}
         aside={sol !== null ? w.balance(digits(solShort(sol), lang)) : undefined}
@@ -226,7 +261,34 @@ export function PoolTicket({ pier, row, addOpen, onConnect, bare = false, peek =
         />
       ) : null}
       </fieldset>
+      {careOffered ? (
+        <div className={e.choice} data-earn-care="">
+          <SwitchRow
+            label={w.careTitle}
+            on={careChosen}
+            disabled={careBusy}
+            onChange={(on) => {
+              setCareChosen(on);
+              useCare.getState().reset();
+            }}
+          />
+          {caring ? (
+            <>
+              <Kick>{w.careStop}</Kick>
+              <Segment<CareStopId> label={w.careStop} value={String(careStop) as CareStopId} onChange={(id) => useCare.getState().setStop(careStopOf(id))} items={CARE_STOP_IDS.map((id) => ({ id, label: id === '0' ? w.careStopOff : digits(`−${id}%`, lang) }))} />
+            </>
+          ) : null}
+        </div>
+      ) : null}
       {gap ? <Note>{gap}</Note> : null}
+      {caring ? (
+        <OneLine label={w.careHow} line={w.careLine}>
+          <p>{w.careText1}</p>
+          <p>{w.careText2}</p>
+          <p>{w.careText3}</p>
+          <p>{w.rangeText}</p>
+        </OneLine>
+      ) : (
       <OneLine label={w.poolDetails} line={lineOf([figures ? (figures.feePct ? w.ryntraFee(digits(figures.feePct, lang)) : w.ryntraNone) : null, w.band(digits(String(PIER_SLIPPAGE_BPS / 100), lang))])}>
         <Facts
           rows={[
@@ -249,12 +311,88 @@ export function PoolTicket({ pier, row, addOpen, onConnect, bare = false, peek =
         <p>{w.feeText}</p>
         <p>{w.keysText}</p>
       </OneLine>
+      )}
       {problem ? <Note>{problem}</Note> : null}
-      {states?.stopped ? <Note>{w.paused}</Note> : closed || !addOpen ? <Note>{w.fClosed}</Note> : null}
-      {notice ? <Note tone={notice.tone}>{said ? w[said] : notice.text}</Note> : null}
-      <Action onClick={press} busy={waiting} disabled={waiting || !addOpen || (connection !== null && (!admitted || Boolean(choice.problem)))}>
-        {connection ? label : w.connect}
-      </Action>
+      {caring ? (
+        <>
+          {careStopped === 'width' ? <Note>{w.careNarrow}</Note> : null}
+          {careNotice ? <Note>{careNotice === 'cancelled' ? w.careCancelled : w.careFailed}</Note> : null}
+          {carePhase === 'done' ? (
+            <>
+              <Result good word={w.careDone} line={w.careDoneLine} />
+              <Quiet full onClick={() => useCare.getState().reset()}>
+                {w.ok}
+              </Quiet>
+            </>
+          ) : (
+            <Action onClick={give} busy={careBusy} disabled={careBusy || (connection !== null && careStopped !== null)} data-earn-care-give="">
+              {connection ? careLabel : w.connect}
+            </Action>
+          )}
+        </>
+      ) : (
+        <>
+          {states?.stopped ? <Note>{w.paused}</Note> : closed || !addOpen ? <Note>{w.fClosed}</Note> : null}
+          {notice ? <Note tone={notice.tone}>{said ? w[said] : notice.text}</Note> : null}
+          <Action onClick={press} busy={waiting} disabled={waiting || !addOpen || (connection !== null && (!admitted || Boolean(choice.problem)))}>
+            {connection ? label : w.connect}
+          </Action>
+        </>
+      )}
+    </>
+  );
+}
+
+/**
+ * The cares at work on this pool for the wallet: «Looked after by your agent», what it does now and what it took
+ * today, and her own «Stop and take it back» — one approval in her wallet, no agent needed. A care stopped but not
+ * withdrawn: «Stopped — not withdrawn» and «Withdraw» — the same stop, for what the chain still holds.
+ */
+function CaredHere({ rows }: { rows: readonly CareRow[] }) {
+  const w = useWords(EARN);
+  const lang = useLang();
+  const connection = useWallet((st) => st.connection);
+  const [taking, setTaking] = useState(false);
+  // What the last «Stop» or «Withdraw» from here answered: cancelled in the wallet or not through — the row stays.
+  const [said, setSaid] = useState<'cancelled' | 'failed' | null>(null);
+  const take = async (key: string) => {
+    if (!connection || taking) return;
+    setTaking(true);
+    setSaid(null);
+    useCare.setState({ notice: null });
+    await useCare.getState().takeBack(connection, key);
+    setSaid(useCare.getState().notice);
+    setTaking(false);
+  };
+  return (
+    <>
+      {rows.map((care) => {
+        const left = careToWithdraw(care);
+        const day = left ? null : careDaySol(care);
+        return (
+          <div key={care.key} className={e.oneLine} data-earn-cared={left ? 'left' : ''}>
+            <span>
+              {left ? (
+                <Chip tone="warn">{w.careLeft}</Chip>
+              ) : (
+                <>
+                  <Chip tone="ok" dot>
+                    {w.caredHere}
+                  </Chip>{' '}
+                  {care.inRange === false ? w.careMoving : w.careEarning}
+                  {day !== null ? ` · ${w.careToday(digits(solShort(day), lang))}` : ''}
+                </>
+              )}
+            </span>
+            {connection ? (
+              <Quiet size="s" disabled={taking} aria-busy={taking || undefined} onClick={() => void take(care.key)}>
+                {left ? w.careWithdraw : w.careTake}
+              </Quiet>
+            ) : null}
+          </div>
+        );
+      })}
+      {said ? <Note>{said === 'cancelled' ? w.careCancelled : w.careFailed}</Note> : null}
     </>
   );
 }

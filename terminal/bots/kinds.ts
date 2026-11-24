@@ -14,13 +14,15 @@ import { engineGates } from '../shell/engine.ts';
  *   deployment names the DLMM Pro orders' network.
  * - Order ladder — several limit orders at once on a coin's Meteora pool, signed once: the ladder's engine
  *   (`lib/bots/ladder`, the city's `city/lib/bots/ladder*`), where the deployment names its network.
+ * - Copy a wallet — repeats a wallet's buys and sales on a share of the person's budget: on paper, the engine's
+ *   own pass (`lib/wallet-watch`); money behind its closed switch.
  * - Signals — buys when the fast average crosses over the slow one and sells when it falls under; on paper.
  * - Money autopilot — one plan for the whole budget; where its engine is open.
  *
  * Pure: the doors are an argument; `botDoors()` reads this deployment's.
  */
 
-export const BOT_IDS = ['recurring', 'grid', 'ladder', 'signals', 'autopilot'] as const;
+export const BOT_IDS = ['recurring', 'grid', 'ladder', 'copy', 'signals', 'autopilot'] as const;
 export type BotId = (typeof BOT_IDS)[number];
 
 /**
@@ -29,7 +31,7 @@ export type BotId = (typeof BOT_IDS)[number];
  * (`GridScreen`), the others on the section's (`BotsScreen`). `docs/terminal/DESIGN.md`, «Сторінка», holds the rule;
  * `terminal/styles/page.test.mjs` keeps it.
  */
-export const BOT_PAGE = { recurring: 'chart', grid: 'chart', ladder: 'chart', signals: 'chart', autopilot: 'chart' } as const satisfies Record<BotId, 'form' | 'chart'>;
+export const BOT_PAGE = { recurring: 'chart', grid: 'chart', ladder: 'chart', copy: 'chart', signals: 'chart', autopilot: 'chart' } as const satisfies Record<BotId, 'form' | 'chart'>;
 
 /** A bot drawn by the section's own desk (`BotsScreen.tsx`): every one but the Grid, which has a desk of its own. */
 export type DeskBotId = Exclude<BotId, 'grid'>;
@@ -52,7 +54,7 @@ export type BotDoors = Readonly<{ trader: boolean; ladder: boolean; pilot: boole
 
 export const EVERY_BOT_DOOR: BotDoors = { trader: true, ladder: true, pilot: true };
 
-/** Whether a bot stands: the paper ones and the grid everywhere (the grid signs only where its network is named); the others where their engines run. */
+/** Whether a bot stands: the paper ones, the copy and the grid everywhere (the grid signs only where its network is named); the others where their engines run. */
 export function botOpen(id: BotId, doors: BotDoors): boolean {
   switch (id) {
     case 'recurring':
@@ -62,6 +64,7 @@ export function botOpen(id: BotId, doors: BotDoors): boolean {
     case 'autopilot':
       return doors.pilot;
     case 'grid':
+    case 'copy':
     case 'signals':
       return true;
   }

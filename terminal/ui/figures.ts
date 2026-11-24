@@ -6,6 +6,13 @@ import type { Lang } from '../../city/lib/i18n/langs.ts';
  * How the terminal writes the engine's figures: the city's own short forms (`city/lib/feed/format.ts`), each in the
  * language's own way — in Ukrainian the decimal point is a comma and the thousands a narrow space. Only for the eye:
  * a value that goes back into a field or a request never passes here.
+ *
+ * One way of writing on every screen, in both languages (flaws 2 and 3 — «$8,9M» beside «$572,9 тис.», «+0,60%»
+ * beside «−1,17 %» on one Ukrainian screen):
+ * - a short sum or count takes the letters K, M, B — in Ukrainian too, with its comma: «$8,9M», «77K», «$1,20B»; never
+ *   «тис.», «млн», «млрд» beside them;
+ * - a per cent stands straight after its number, no space, in both languages: «+0,60%», «20%», «Комісія 0,5%».
+ * `figures.test.mjs` holds it across the terminal's code.
  */
 
 /** A price: cents above a dollar, four places below, as many as it takes for a coin worth less than a cent. */

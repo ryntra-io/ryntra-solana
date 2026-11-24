@@ -94,3 +94,46 @@ test("the window's words stand in both languages", () => {
     assert.match(WALLET[lang].openIn("Solflare"), /Solflare/);
   }
 });
+
+test("the phone's header says a word beside the wallet's icon — «Connect», on a Seeker its Seed Vault", () => {
+  for (const lang of ["en", "uk"]) {
+    assert.ok(WALLET[lang].connectShort.length <= 12, `${lang}: one short word`);
+    assert.equal(WALLET[lang].seedVault, "Seed Vault");
+  }
+  const button = readFileSync(new URL("./Wallet.tsx", import.meta.url), "utf8");
+  assert.match(button, /seeker \? w\.seedVault : w\.connectShort/u);
+  // The word shown stands in the button's name: «Connect wallet» holds «Connect»; a Seeker's name says its Seed Vault.
+  assert.match(button, /aria-label=\{seeker \? `\$\{label\} · \$\{w\.seedVault\}` : label\}/u);
+  for (const lang of ["en", "uk"]) assert.ok(WALLET[lang].connect.startsWith(WALLET[lang].connectShort), lang);
+  // The Seeker's wallet by one name in the window too.
+  assert.doesNotMatch(button, /w\.inYourPhone|w\.onSeeker/u);
+  assert.equal(button.match(/s\.choiceSub\}>\{w\.seedVault\}/gu)?.length, 2);
+  const css = readFileSync(new URL("./shell.module.css", import.meta.url), "utf8");
+  const phone = css.slice(css.indexOf("@media (max-width: 767px) {\n  .app {"));
+  // On the home page, where the header has no agent's line; elsewhere that line keeps the room (never cut to «Tell you»).
+  assert.match(phone, /\.app:has\(\[data-terminal='hero'\]\) \.walletShort \{\n    display: inline;/u, "the word stands on the phone's first screen");
+  assert.match(phone, /\.app:has\(\[data-terminal='hero'\]\) \.wallet\[data-connect\] \{\n    width: auto;/u);
+  // The agent's tab has one look on every page: no page, the home page included, dresses it otherwise.
+  const gemRules = css.split("\n").filter((line) => /\.gem\b/u.test(line) && line.includes("{"));
+  assert.deepEqual(gemRules, [".gem {"], "no page-bound rule for the agent's tab");
+  const gem = css.slice(css.indexOf("\n.gem {"));
+  assert.match(gem.slice(0, gem.indexOf("}")), /background: linear-gradient\(180deg, var\(--amber-hi\), var\(--amber\)\);/u);
+});
+
+test("under the window's action, one calm line on what connecting does — the address only, money by a signature", () => {
+  assert.match(WALLET.en.closeCalm, /only shows your address/u);
+  assert.match(WALLET.uk.closeCalm, /лише показує адресу/u);
+  // Beside «One signature and your wallet is connected»: this signature is not the money's.
+  assert.match(WALLET.en.closeCalm, /moves no money/u);
+  assert.match(WALLET.uk.closeCalm, /не рухає гроші/u);
+});
+
+test("the tickets' wallet list is the window's own — Seeker Connect first, its Seed Vault named, each with its logo", () => {
+  const rows = walletRows([{ name: "Phantom", icon: null }, { name: SEEKER_CONNECT_WALLET, icon: null }], "android", HERE).installed;
+  assert.equal(rows[0].wallet, SEEKER_CONNECT_WALLET, "Seeker Connect first");
+  const pick = readFileSync(fileURLToPath(new URL("../coin/WalletPick.tsx", import.meta.url)), "utf8");
+  assert.match(pick, /walletRows\(/u, "the ticket orders its wallets as the window does");
+  assert.match(pick, /row\.seeker \? <span className=\{s\.doorSub\}>\{w\.seedVault\}<\/span>/u);
+  assert.match(pick, /<DoorLogo src=\{row\.logo\}/u);
+  assert.doesNotMatch(pick, /wallets\.map\(/u, "never the browser's raw order");
+});

@@ -75,8 +75,12 @@ export type AgentTrade = Readonly<{
  * part outgrew its share. Only that care lifts them; the tick never does.
  * `mismatch` — the vault holds less than the agent's book can explain (`./mission.ts` `reconcile`): it spends
  * nothing more; nothing lifts it, her withdraw takes what is there.
+ *
+ * A mandate whose agent keeps its coin and sells on its own (`./exit.ts`): `stop`, `fade` and `time` — it sold
+ * everything by the person's rules and holds nothing; `blind` — it could not read the price of what it holds, so it sells
+ * nothing and buys nothing until it can (that lifts on its own, like `unread`).
  */
-export type PauseReason = "failing" | "loss" | "losses" | "short" | "unread" | "take" | "stop" | "late" | "market" | "balance" | "mismatch";
+export type PauseReason = "failing" | "loss" | "losses" | "short" | "unread" | "take" | "stop" | "late" | "market" | "balance" | "mismatch" | "fade" | "time" | "blind";
 
 export type StrategyInput = Readonly<{
   strategy: StrategyId;

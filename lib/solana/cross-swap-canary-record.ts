@@ -30,6 +30,7 @@
  */
 
 import { z } from "zod";
+import { isoDateTime } from "../zod/iso-datetime.ts";
 
 import { withBoundedCasRetry, type GuardStore } from "../guard/store.ts";
 
@@ -53,10 +54,10 @@ export const CrossSwapCanaryRecordSchema = z
     /** How many submits were attempted. Never more than one. */
     submitCount: z.number().int().min(0).max(1),
     resolution: z.enum(CROSS_SWAP_CANARY_RESOLUTIONS).nullable(),
-    firstPlannedAt: z.string().datetime({ offset: true }).nullable(),
-    submitAttemptedAt: z.string().datetime({ offset: true }).nullable(),
-    resolvedAt: z.string().datetime({ offset: true }).nullable(),
-    updatedAt: z.string().datetime({ offset: true }),
+    firstPlannedAt: isoDateTime({ offset: true }).nullable(),
+    submitAttemptedAt: isoDateTime({ offset: true }).nullable(),
+    resolvedAt: isoDateTime({ offset: true }).nullable(),
+    updatedAt: isoDateTime({ offset: true }),
   })
   .strict();
 

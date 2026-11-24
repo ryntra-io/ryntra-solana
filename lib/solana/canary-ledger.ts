@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 
 import { z } from "zod";
+import { isoDateTime } from "../zod/iso-datetime.ts";
 
 import { canonicalJson } from "../guard/canonical-json.ts";
 import {
@@ -54,7 +55,7 @@ export const SolanaCanaryLedgerRecordSchema = z
     feeReservedUsdMicros: RawUsdMicros,
     feeSpentUsdMicros: RawUsdMicros,
     families: FamiliesLedgerSchema,
-    updatedAt: z.string().datetime({ offset: true }),
+    updatedAt: isoDateTime({ offset: true }),
   })
   .strict()
   .superRefine((value, context) => {
@@ -100,8 +101,8 @@ export const SolanaCanaryIntentRecordSchema = z
     usdMicros: RawUsdMicros,
     state: z.enum(SOLANA_CANARY_INTENT_STATES),
     signature: z.string().min(64).max(96).nullable(),
-    createdAt: z.string().datetime({ offset: true }),
-    updatedAt: z.string().datetime({ offset: true }),
+    createdAt: isoDateTime({ offset: true }),
+    updatedAt: isoDateTime({ offset: true }),
   })
   .strict()
   .superRefine((value, context) => {

@@ -1,0 +1,214 @@
+/* A stock's pools on its page: a quiet head with «i», the line of the exchange's hours and the issuer's
+   rights, and one row a pool — pair and venue, one action, and under them the pool's figures. Tokens and the scale's
+   steps only; the logos, the buttons and «i» are the kit's own. The whole row opens its pool; its action stands over
+   that. */
+
+.shelf {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.title {
+  font-size: var(--type-caption);
+  font-weight: 700;
+  color: var(--soft);
+}
+
+/* One line: when the exchange next opens or closes, and what the issuer can do to the token. */
+.line {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin: 0;
+  font-size: var(--type-caption);
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--soft);
+  font-variant-numeric: tabular-nums;
+  text-wrap: pretty;
+}
+
+.line svg {
+  flex: none;
+  margin-top: 2px;
+  color: var(--dim);
+}
+
+.line[data-tone='warn'],
+.line[data-tone='warn'] svg {
+  color: var(--warm);
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.row {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-areas:
+    'logos name act'
+    '. figs figs';
+  align-items: center;
+  column-gap: 10px;
+  row-gap: 4px;
+  min-height: 56px;
+  padding: 10px 0;
+}
+
+.row + .row {
+  border-top: 1px solid var(--line);
+}
+
+.logos {
+  grid-area: logos;
+  display: flex;
+}
+
+.logos > * + * {
+  margin-left: -6px;
+  box-shadow: 0 0 0 2px var(--panel);
+}
+
+.name {
+  grid-area: name;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+}
+
+.pair {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--type-body);
+  font-weight: 700;
+  color: var(--ice);
+  text-decoration: none;
+}
+
+/* The pair's link answers a tap anywhere on the row. */
+.pair::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+}
+
+.row:hover .pair {
+  color: var(--lilac);
+}
+
+.pair:focus-visible {
+  outline: none;
+}
+
+.pair:focus-visible::after {
+  outline: 1px solid var(--lilac);
+}
+
+.venue {
+  flex: none;
+  font-size: var(--type-micro);
+  font-weight: 600;
+  color: var(--dim);
+  white-space: nowrap;
+}
+
+/* The action stands over the row's own link. */
+.act {
+  grid-area: act;
+  position: relative;
+  z-index: 1;
+  display: flex;
+}
+
+.figs {
+  grid-area: figs;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 12px;
+  min-width: 0;
+  font-size: var(--type-caption);
+  font-weight: 600;
+  color: var(--dim);
+  font-variant-numeric: tabular-nums;
+}
+
+/* The pool's depth: the row's one figure in the figures' face. */
+.depth {
+  font-family: var(--display);
+  font-size: var(--type-small);
+  font-weight: 700;
+  color: var(--ice);
+}
+
+.bonus {
+  color: var(--mint);
+}
+
+.more {
+  display: flex;
+}
+
+/* Behind «i»: how the figures are read, the bonus, the deposit, and the issuer's terms. */
+.why {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.whyHead {
+  font-weight: 700;
+  color: var(--ice);
+}
+
+.whyLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 32px;
+  color: var(--lilac);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.whyLink:hover {
+  color: var(--ice);
+}
+
+/* The stand's page: the cases one under the other, each in a column as wide as the coin's ticket. */
+.stand {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 380px));
+  gap: 20px;
+}
+
+.standCase {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
+.standLabel {
+  font-size: var(--type-caption);
+  font-weight: 600;
+  color: var(--dim);
+}

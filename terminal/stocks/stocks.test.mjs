@@ -4,7 +4,7 @@ import test from "node:test";
 
 import { notAStock } from "../../lib/stocks/pool-facts.ts";
 import { chipKey, chipOf, factsShown, guardKey, guardOf, timeText } from "./facts-view.ts";
-import { STOCK_FACTS } from "./words.ts";
+import { STOCK_COIN, STOCK_COPY, STOCK_FACTS, STOCK_FACTS_STAND } from "./words.ts";
 
 /* A stock's facts on a pool page: what shows, in which words, and how the page mounts it. */
 
@@ -106,7 +106,38 @@ test("the detail is one block: the kit's chip and «i», the guard's line, nothi
 });
 
 test("the terminal's stocks touch no file of the pool page's wave", () => {
-  for (const path of ["./StockPoolFacts.tsx", "./useStockPoolFacts.ts", "./facts-view.ts", "./words.ts"]) {
+  for (const path of ["./StockPoolFacts.tsx", "./useStockPoolFacts.ts", "./facts-view.ts", "./words.ts", "./StockCoinFacts.tsx", "./IssuerPowers.tsx"]) {
     assert.doesNotMatch(code(path), /from '@\/terminal\/(pool|earn|bots|coin)\//, path);
   }
+});
+
+/* The coin's page: the stock's facts, the issuer's powers, a copy's mark. */
+test("the coin's words stand in both halves, say no chain's word and promise no «private stocks»", () => {
+  for (const words of [STOCK_COIN, STOCK_COPY, STOCK_FACTS_STAND]) {
+    assert.deepEqual(Object.keys(words.en).sort(), Object.keys(words.uk).sort());
+    for (const lang of ["en", "uk"]) {
+      for (const value of Object.values(words[lang])) {
+        const said = typeof value === "string" ? value : value("Anthropic", "ANT");
+        assert.doesNotMatch(said, /delegate|token-2022|lookalike|extension|делегат|private|приватн|anonym|анонім/i, said);
+      }
+    }
+  }
+  assert.equal(STOCK_COPY.uk.says("Anthropic"), "Не акція Anthropic — інша монета");
+  assert.equal(STOCK_COPY.uk.mark("ANT"), "не акція ANT");
+  assert.equal(STOCK_COIN.uk.listedNow("Anthropic", "ANT"), "Anthropic вже на біржі · ANT");
+});
+
+test("the coin's detail and the «Rights» line read through the one hook, from the kit's parts, nothing for a coin that is no stock", () => {
+  const view = code("./StockCoinFacts.tsx");
+  assert.match(view, /export function StockCoinFacts\(\{ mint, facts: given, headSays = false \}: \{ mint: string; facts\?: PoolFacts \| null; headSays\?: boolean \}\)/);
+  assert.match(view, /\{chip && !headSays \? \(/, "the exchange's chip once on a desk — in the head");
+  assert.match(view, /if \(now === null \|\| !facts\?\.isStock \|\| !facts\.issuer\) return null;/);
+  assert.match(view, /<Info label=\{d\.terms\}>/, "the issuer's terms behind «i»");
+  assert.match(view, /issuerPowersLine\(facts\.powers, lang\)/, "the powers in the engine's own words");
+  assert.match(view, /coinHref\(facts\.listed\.solana\.mint, 'live'\)/, "a company that now trades: its share one tap away");
+  assert.doesNotMatch(view, /fetch\(|<Action\b/, "one read through the hook; no amber action of its own");
+  const powers = code("./IssuerPowers.tsx");
+  assert.match(powers, /useStockPoolFacts\(mint, given\)/);
+  assert.match(powers, /data-tone="warn"/, "the «Rights» cell's own warm tone");
+  assert.doesNotMatch(powers, /fetch\(/);
 });

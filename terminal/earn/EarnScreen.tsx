@@ -18,8 +18,9 @@ import type { EarnLendRate } from '@/lib/earn-pools/model';
 import type { ProPoolRow } from '@/lib/pro-pools/model';
 import { pctOfBps, proLead, proListRows } from '@/terminal/pool/pool-view';
 import { useProPools } from '@/terminal/pool/usePro';
+import { DAY_ROWS, useProDays } from '@/terminal/pool/useProTape';
 import { POOL } from '@/terminal/pool/words';
-import { Action, Cell, Chip, Columns, Figure, Info, Kick, Page, PageHead, Panel, Quiet, Segment, Table, TableHead, TableRow, Tabs, Tile, Title, cx, useColumnSet, usdText } from '@/terminal/ui';
+import { Action, Cell, Chip, Columns, Figure, Info, Kick, Page, PageHead, Panel, Quiet, QuietLink, Segment, Table, TableHead, TableRow, Tabs, Tile, Title, cx, useColumnSet, usdText } from '@/terminal/ui';
 import { useTabInAddress } from '../shell/address';
 import { openPanel } from '../shell/frame';
 import { PRO_PATH } from '../shell/shelves';
@@ -28,9 +29,11 @@ import { NARROW, useNarrow } from '../shell/useNarrow';
 import { connectWallet } from '../shell/Wallet';
 import { SHELL } from '../shell/words';
 import { Pair, Sign } from './bits';
-import { useCatalog } from './catalog';
+import { useCatalog, usePeriods } from './catalog';
 import { FilterBar, PhoneRows, PoolsTable, StrategyCards, type StrategyCard } from './Chooser';
-import { START_FILTERS, START_SORT, STRATEGY_SORT, bestStake, chooseRows, dayPctText, filterRows, lendOf, sortRows, strategyFilters, strategyPick, type ChooseRow, type Filters, type Sort, type Strategy } from './choose';
+import { START_FILTERS, START_PERIOD, START_SORT, STRATEGY_SORT, bestStake, chooseRows, dayPctText, filterRows, lendOf, savedRows, sortRows, strategyFilters, strategyPick, withPeriods, withProDays, type ChooseRow, type Filters, type Period, type Sort, type Strategy } from './choose';
+import { LSTS } from '@/city/lib/earn/lst';
+import { startSavedPools, useSavedPools } from './saved-pools';
 import { ProPhoneRows, ProPoolLink, ProPoolTicket, ProTable, proName } from './ProList';
 import { resultTone, sumText, type PositionRow, type StakeRow } from './rows';
 import { TicketBody, TicketSheet, ticketName, useTicketPlaced } from './TicketPanel';
@@ -42,7 +45,13 @@ import { EARN } from './words';
 import e from './earn.module.css';
 import p from '@/terminal/pool/pool.module.css';
 
-const HOLD_COLUMNS = 'minmax(200px, 1.4fr) repeat(3, minmax(84px, 1fr)) 120px';
+/* «vs holding» and its «i» stand on one line (G6, fault 43): its column a step wider than the sums beside it. */
+const HOLD_COLUMNS = 'minmax(200px, 1.4fr) repeat(3, minmax(84px, 1fr)) minmax(132px, 1.2fr) 120px';
+/** On a narrower panel what was put in goes first, then what was earned: the position, its worth now, «vs holding» and
+ *  the row's action stay. */
+const HOLD_FOLD = ['minmax(200px, 1.4fr) repeat(2, minmax(84px, 1fr)) minmax(132px, 1.2fr) 120px', 'minmax(200px, 1.4fr) minmax(84px, 1fr) minmax(132px, 1.2fr) 120px'] as const;
+/** How many pools stand under staking and lending (G6, fault 41). */
+const NEAR_ROWS = 5;
 /** Rows a table shows before «more». */
 const ROWS_SHOWN = 30;
 /** How often the chooser's pools are read again while the screen is in view. */
@@ -65,7 +74,10 @@ type Which = 'deep' | 'every';
  * What the screen keeps across its two addresses (/earn and /pro are one screen): the pools' filters and order, and the
  * DLMM Pro pool in front with the list's choice of pools. A turn to DLMM Pro and back keeps them.
  */
-const useKept = create<{ filters: Filters; sort: Sort; proAt: string | null; which: Which }>(() => ({ filters: START_FILTERS, sort: START_SORT, proAt: null, which: 'deep' }));
+const useKept = create<{ filters: Filters; sort: Sort; proAt: string | null; which: Which; period: Period; saved: boolean }>(() => ({ filters: START_FILTERS, sort: START_SORT, proAt: null, which: 'deep', period: START_PERIOD, saved: false }));
+
+/** A pool's address as a person pastes it (base58, 32–44 signs): a search that finds no row may still be a pool's page. */
+const POOL_ADDRESS = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
 
 /** Lending that opens the city's own ticket here: USDC and SOL on Jupiter Lend. */
 const LEND_ASSET: ReadonlyMap<string, 'USDC' | 'SOL'> = new Map([
@@ -138,6 +150,15 @@ export function EarnDesk() {
   const which = useKept((st) => st.which);
   const setFilters = useCallback((next: Filters) => useKept.setState({ filters: next }), []);
   const setSort = useCallback((next: Sort) => useKept.setState({ sort: next }), []);
+  // The window the table reads, and the person's own pools.
+  const period = useKept((st) => st.period);
+  const onlySaved = useKept((st) => st.saved);
+  const savedPools = useSavedPools((st) => st.pools);
+  useEffect(() => startSavedPools(), []);
+  const periods = usePeriods((st) => st.value);
+  useEffect(() => {
+    if (period !== '24h') void usePeriods.getState().load();
+  }, [period, catalog.at]);
   const [all, setAll] = useState(false);
   const [nowMs, setNowMs] = useState(() => useCatalog.getState().at);
 
@@ -181,12 +202,32 @@ export function EarnDesk() {
   // Ages are counted from the time of the read, so the server's page and the first paint agree.
   useEffect(() => setNowMs(catalog.at || Date.now()), [catalog.at]);
 
+  const proRead = useProPools();
+  const proAll = proRead.read.status === 'ready' ? proRead.read.value : null;
+  const proAdds = useCallback((row: ProPoolRow) => figures.pools.some((entry) => entry.kind === 'pro' && entry.address === row.address && entry.takes), [figures.pools]);
+  const proRows = useMemo(() => (proAll ? proListRows(proAll, { which, adds: proAdds, deepUsd: DEEP_USD, leadUsd: PRO_CARD_USD }) : []), [proAll, which, proAdds]);
+  const proActiveCount = useMemo(() => (proAll ? proListRows(proAll, { which: 'deep', adds: proAdds, deepUsd: DEEP_USD, leadUsd: PRO_CARD_USD }).length : 0), [proAll, proAdds]);
+  const proTotal = useMemo(() => (proAll ? proRows.reduce((sum, row) => sum + (row.tvlUsd ?? 0), 0) : null), [proAll, proRows]);
+  // Before a pick the tab opens on the list's first pool with liquidity — the one the card names, its ticket the limit
+  // order with its bonus; a pick stands while the pool is listed.
+  const proDeep = (row: ProPoolRow) => (row.tvlUsd ?? 0) >= DEEP_USD;
+  const proSel: ProPoolRow | null = proRows.find((row) => row.address === proAt) ?? proRows.find(proDeep) ?? proRows[0] ?? null;
+  // The day of DLMM Pro's pools, from the program's own trades: each pool is its own read, so only the pools the view
+  // in front shows are asked — on the DLMM Pro tab its first rows (and the one picked), on the pools tab the city's own.
+  const dayAddresses = useMemo(() => {
+    if (view === 'pro') return [...new Set([...(proSel ? [proSel.address] : []), ...proRows.slice(0, DAY_ROWS).map((row) => row.address)])];
+    if (view === 'pools') return figures.proPiers.slice(0, DAY_ROWS).map((pier) => pier.address);
+    return [];
+  }, [view, proRows, proSel, figures.proPiers]);
+  const proDays = useProDays(dayAddresses);
   const harbor = piers.status === 'ready' ? piers.value.pools : null;
   const rows = useMemo(
-    () => chooseRows({ catalog: catalog.value?.pools ?? [], harbor: harbor ?? [], addOpen: figures.addOpen, proPiers: figures.proPiers, rows: figures.pools }),
-    [catalog.value, harbor, figures.addOpen, figures.proPiers, figures.pools],
+    () => withPeriods(withProDays(chooseRows({ catalog: catalog.value?.pools ?? [], harbor: harbor ?? [], addOpen: figures.addOpen, proPiers: figures.proPiers, rows: figures.pools }), proDays), periods),
+    [catalog.value, harbor, figures.addOpen, figures.proPiers, figures.pools, proDays, periods],
   );
-  const shown = useMemo(() => sortRows(filterRows(rows, filters), sort), [rows, filters, sort]);
+  // «Saved» lists every starred pool — the person chose them, no filter hides one; else the filters. Either in the order
+  // the table reads by its window.
+  const shown = useMemo(() => sortRows(onlySaved ? savedRows(rows, savedPools) : filterRows(rows, filters), sort, period), [rows, filters, sort, period, onlySaved, savedPools]);
   const lend = useMemo(() => catalog.value?.lend ?? [], [catalog.value]);
   const coins = useMemo(() => topCoins(rows), [rows]);
   const poolsRead: 'reading' | 'ready' | 'failed' = rows.length || (catalog.status === 'ready' && figures.poolsRead !== 'reading') ? 'ready' : catalog.status === 'failed' && figures.poolsRead !== 'reading' ? 'failed' : 'reading';
@@ -229,16 +270,6 @@ export function EarnDesk() {
   // 19.11) —, then the other verified pools with liquidity, then the rest with liquidity; the city's own pools that hold
   // nothing yet close «Active», each a quiet «Be the first». No name a person should not meet stands in it:
   // no name, a test, a crude word, a look-alike ticker (`proListRows`).
-  const proRead = useProPools();
-  const proAll = proRead.read.status === 'ready' ? proRead.read.value : null;
-  const proAdds = useCallback((row: ProPoolRow) => figures.pools.some((entry) => entry.kind === 'pro' && entry.address === row.address && entry.takes), [figures.pools]);
-  const proRows = useMemo(() => (proAll ? proListRows(proAll, { which, adds: proAdds, deepUsd: DEEP_USD, leadUsd: PRO_CARD_USD }) : []), [proAll, which, proAdds]);
-  const proActiveCount = useMemo(() => (proAll ? proListRows(proAll, { which: 'deep', adds: proAdds, deepUsd: DEEP_USD, leadUsd: PRO_CARD_USD }).length : 0), [proAll, proAdds]);
-  const proTotal = useMemo(() => (proAll ? proRows.reduce((sum, row) => sum + (row.tvlUsd ?? 0), 0) : null), [proAll, proRows]);
-  // Before a pick the tab opens on the list's first pool with liquidity — the one the card names, its ticket the limit
-  // order with its bonus; a pick stands while the pool is listed.
-  const proDeep = (row: ProPoolRow) => (row.tvlUsd ?? 0) >= DEEP_USD;
-  const proSel: ProPoolRow | null = proRows.find((row) => row.address === proAt) ?? proRows.find(proDeep) ?? proRows[0] ?? null;
   // The card above the tabs names the same pool the list leads with (`proLead`): the card and the first row never differ.
   const proTop = useMemo(() => (EARN_PRO_OPEN && proAll ? proLead(proAll, { leadUsd: PRO_CARD_USD, deepUsd: DEEP_USD }) : null), [proAll]);
 
@@ -352,6 +383,7 @@ export function EarnDesk() {
   }, []);
   const choose = useCallback(
     (strategy: Strategy, row: ChooseRow | null) => {
+      useKept.setState({ saved: false });
       setFilters(strategyFilters(strategy));
       setSort(STRATEGY_SORT[strategy]);
       setAll(false);
@@ -395,7 +427,8 @@ export function EarnDesk() {
       out.push({
         id: 'pro',
         title: 'DLMM Pro',
-        line: w.sProLine(proName(proTop)),
+        // The figure is the bonus alone, the line says what it is: «+0,6% на лімітках» broke in two in Ukrainian (G6, 48).
+        line: w.sProLimits(proName(proTop)),
         figure: w.sProBonus(digits(pctOfBps(proTop.bonusBps), lang)),
         on: view === 'pro',
         act: () => {
@@ -459,13 +492,17 @@ export function EarnDesk() {
     (view === 'staking' && figures.yieldRead === 'reading' && !stakes.length) ||
     (view === 'lending' && (catalog.status === 'reading' || catalog.status === 'idle') && !lend.length) ||
     (view === 'mine' && figures.positionsRead === 'reading');
-  // Where a tab has nothing to act on, its place holds what leads on: a wallet to connect, or a pool to find.
+  // Where a tab has nothing to act on, its place holds what leads on: a wallet to connect, or a pool to find. Without a
+  // wallet the ask is said once, here, with its one action; the list keeps its own line (G6, fault 43).
   const sideCard: ReactNode =
     ticketBody || reading ? null : view === 'mine' && figures.positionsRead === 'guest' ? (
-      <SideCard title={w.connectTitle} act={w.connect} onAct={connect} />
+      <SideCard title={w.guestLine} act={w.connect} onAct={connect} />
     ) : view === 'mine' && figures.positionsRead === 'ready' && !figures.positions.length ? (
       <SideCard title={w.connectTitle} act={w.findPool} onAct={() => go('pools')} />
     ) : null;
+  // A list whose source did not answer: one line and «Try again» across the desk, no filters that filter nothing and no
+  // empty ticket's place beside it (G6, fault 45).
+  const failed = (view === 'pools' && poolsRead === 'failed') || (view === 'pro' && proRead.read.status === 'failed');
   const side: ReactNode = ticketBody ? (
     <Panel tone="hi" gap={12} label={label} className={e.hi}>
       {ticketBody}
@@ -513,7 +550,16 @@ export function EarnDesk() {
       <FilterBar
         filters={filters}
         onFilters={(next) => {
+          // A filter picked leaves «Saved»: the list is the filters' again.
+          useKept.setState({ saved: false });
           setFilters(next);
+          setAll(false);
+        }}
+        period={period}
+        onPeriod={(next) => useKept.setState({ period: next })}
+        saved={onlySaved}
+        onSaved={() => {
+          useKept.setState({ saved: !onlySaved });
           setAll(false);
         }}
         sort={sort}
@@ -543,10 +589,14 @@ export function EarnDesk() {
     ) : view === 'pro' ? (
       <Bar>
         <span className={cx(p.badge, e.barBadge)}>{q.pro}</span>
+        {/* How many pools and what they hold together, each with its word (G6, fault 51 — «$4K» stood alone); the day the
+            table's volume and fees are counted over (fault 42 — the heads no longer carry it). */}
         {proAll ? (
           <span className={e.barFigures}>
-            <span>{digits(q.pools(proRows.length), lang)}</span>
-            {proTotal !== null ? <b>{usdText(proTotal, lang)}</b> : null}
+            <span>{digits(w.proCount(proRows.length), lang)}</span>
+            {proTotal !== null ? <span>{`· ${w.proHeld(usdText(proTotal, lang))}`}</span> : null}
+            {/* A phone's rows carry no day figures: the window is the desk's. */}
+            <span className={e.barDay}>{`· ${w.proDay}`}</span>
           </span>
         ) : null}
         <Info label={q.title}>{q.listWhy}</Info>
@@ -577,21 +627,29 @@ export function EarnDesk() {
     poolsRead === 'reading' ? (
       <Bones rows={phone ? 5 : 8} />
     ) : poolsRead === 'failed' ? (
-      <Blank line={w.poolsFailed}>
+      <Blank line={w.poolsFailed} wide>
         <Quiet size="s" onClick={() => void useCatalog.getState().load(true)}>
           {w.tryAgain}
         </Quiet>
       </Blank>
+    ) : !shown.length && onlySaved ? (
+      <Blank line={w.savedNone} />
     ) : !shown.length ? (
       <Blank line={w.noMatch}>
+        {/* A pool's address that no listed pool has: its own page reads any pool of Meteora. */}
+        {POOL_ADDRESS.test(filters.coin.trim()) ? (
+          <QuietLink href={`/pool/${filters.coin.trim()}`} size="s">
+            {w.openThisPool}
+          </QuietLink>
+        ) : null}
         <Quiet size="s" onClick={() => setFilters(START_FILTERS)}>
           {w.fReset}
         </Quiet>
       </Blank>
     ) : phone ? (
-      <PhoneRows rows={visible} held={held} onPick={onPick} />
+      <PhoneRows rows={visible} held={held} onPick={onPick} period={period} />
     ) : (
-      <PoolsTable rows={visible} every={every} sort={sort} onSort={setSort} frontKey={frontKey} held={held} onPick={onPick} nowMs={nowMs} />
+      <PoolsTable rows={visible} every={every} sort={sort} onSort={setSort} frontKey={frontKey} held={held} onPick={onPick} nowMs={nowMs} period={period} />
     );
   const moreFoot =
     more > 0 && poolsRead === 'ready' ? (
@@ -605,7 +663,8 @@ export function EarnDesk() {
     proRead.read.status === 'reading' ? (
       <Bones rows={phone ? 4 : 6} />
     ) : proRead.read.status !== 'ready' ? (
-      <Blank line={q.failed}>
+      // The same words as the pools' own failure: one source, one sentence (G6, fault 45).
+      <Blank line={w.poolsFailed} wide>
         <Quiet size="s" onClick={proRead.again}>
           {q.again}
         </Quiet>
@@ -615,8 +674,43 @@ export function EarnDesk() {
     ) : phone ? (
       <ProPhoneRows rows={proRows} held={held} adds={proAdds} deepUsd={DEEP_USD} onPick={pickPro} />
     ) : (
-      <ProTable rows={proRows} frontKey={proSel ? `pro-pool:${proSel.address}` : null} held={held} adds={proAdds} deepUsd={DEEP_USD} onPick={pickPro} />
+      <ProTable rows={proRows} days={proDays} frontKey={proSel ? `pro-pool:${proSel.address}` : null} held={held} adds={proAdds} deepUsd={DEEP_USD} onPick={pickPro} />
     );
+
+  // Under staking and lending, the pools the same coins earn fees in (G6, fault 41 — two rows over half an empty desk):
+  // staked SOL's pools, and the pools of USDC; a tap opens the pool's ticket on the pools' tab.
+  const lstMints = useMemo(() => new Set(LSTS.map((lst) => lst.mint)), []);
+  const lstRows = useMemo(() => sortRows(rows.filter((row) => row.coins.some((coin) => lstMints.has(coin.mint))), { key: 'tvl', dir: 'desc' }, '24h').slice(0, NEAR_ROWS), [rows, lstMints]);
+  const usdcRows = useMemo(() => sortRows(rows.filter((row) => row.coins.some((coin) => coin.mint === DOLLAR_MINT.USDC)), { key: 'tvl', dir: 'desc' }, '24h').slice(0, NEAR_ROWS), [rows]);
+  const nearPools = (list: readonly ChooseRow[], title: string): ReactNode =>
+    list.length ? (
+      <section className={e.near} aria-label={title}>
+        <Bar>
+          <BarName sign="pools">{title}</BarName>
+          <span className={e.grow} />
+          <Quiet size="s" onClick={() => go('pools')}>
+            {w.allPools}
+          </Quiet>
+        </Bar>
+        <Panel pad="none" label={title}>
+          <PoolsTable
+            rows={list}
+            every={false}
+            sort={{ key: 'tvl', dir: 'desc' }}
+            onSort={() => undefined}
+            frontKey={null}
+            held={held}
+            onPick={(row) => {
+              go('pools');
+              onPick(row);
+            }}
+            nowMs={nowMs}
+            period="24h"
+            fixed
+          />
+        </Panel>
+      </section>
+    ) : null;
 
   const mainOf = (phone: boolean): ReactNode =>
     view === 'pools' ? (
@@ -642,8 +736,12 @@ export function EarnDesk() {
         </Panel>
       )
     ) : view === 'staking' ? (
-      <StakingList stakes={stakes} facts={stakeFacts} frontKey={frontKey} held={held} reading={figures.yieldRead === 'reading'} onStake={(row) => onStake(row)} phone={phone} />
+      <>
+        <StakingList stakes={stakes} facts={stakeFacts} frontKey={frontKey} held={held} reading={figures.yieldRead === 'reading'} onStake={(row) => onStake(row)} phone={phone} />
+        {phone ? null : nearPools(lstRows, w.lstPools)}
+      </>
     ) : view === 'lending' ? (
+      <>
       <LendingList
         rates={lendRows}
         assetOf={(rate) => LEND_ASSET.get(rate.mint) ?? null}
@@ -656,6 +754,8 @@ export function EarnDesk() {
         onLend={onLend}
         phone={phone}
       />
+      {phone ? null : nearPools(usdcRows, w.usdcPools)}
+      </>
     ) : phone ? (
       <PhoneMine figures={figures} held={held} onConnect={connect} onFind={() => go('pools')} />
     ) : (
@@ -688,14 +788,14 @@ export function EarnDesk() {
         }
       />
 
-      <div className={e.desk} data-earn-desk={view}>
+      <div className={e.desk} data-earn-desk={view} data-solo={failed || undefined}>
         <div className={e.deskMain} data-earn-main="">
           <StrategyCards cards={cards} />
-          {bar}
+          {failed ? null : bar}
           <div className={cx(e.mainCol, e.desktopOnly)}>{mainOf(false)}</div>
           <div className={cx(e.phoneOnly, e.phoneCol)}>{mainOf(true)}</div>
         </div>
-        {narrow ? null : (
+        {narrow || failed ? null : (
           <aside className={e.deskSide} data-earn-side="" aria-label={label || w.title}>
             <div ref={ticketBox} className={e.deskTicket} data-tall={tall || undefined}>
               {side}
@@ -780,9 +880,9 @@ function Bones({ rows }: { rows: number }) {
   );
 }
 
-function Blank({ title, line, children }: { title?: string; line: string; children?: ReactNode }) {
+function Blank({ title, line, wide = false, children }: { title?: string; line: string; wide?: boolean; children?: ReactNode }) {
   return (
-    <div className={e.blank} data-earn-blank="">
+    <div className={cx(e.blank, wide && e.blankWide)} data-earn-blank="">
       {title ? <span className={e.sym}>{title}</span> : null}
       <p className={e.blankLine}>{line}</p>
       {children}
@@ -844,28 +944,35 @@ function PositionsPanel({ figures, frontKey, held }: { figures: EarnFigures; fro
   const head = (
     <TableHead>
       <Cell head>{w.position}</Cell>
-      <Cell head end>
+      <Cell head end fold={1}>
         {w.putIn}
       </Cell>
       <Cell head end>
         {w.now}
       </Cell>
-      <Cell head end>
+      <Cell head end fold={2}>
         {w.earned}
+      </Cell>
+      <Cell head end>
+        <span className={e.headInfo}>
+          {w.vsHold}
+          <Info label={w.vsHoldTitle}>{w.vsHoldWhy}</Info>
+        </span>
       </Cell>
       <Cell head />
     </TableHead>
   );
+  const unknownLine = resultGapLine(rows, w);
   return (
     <Panel pad="none" label={w.positions}>
       {figures.positionsRead === 'guest' || (figures.positionsRead === 'ready' && !rows.length) ? (
         // The table's own head and one line where its rows will stand; the one action — «Connect wallet», «Find a pool»
         // — is in the ticket's place beside the list.
         <>
-          <Table columns={HOLD_COLUMNS} minWidth={640} label={w.positions}>
+          <Table columns={HOLD_COLUMNS} fold={HOLD_FOLD} minWidth={640} label={w.positions}>
             {head}
           </Table>
-          <MineEmpty title={figures.positionsRead === 'guest' ? w.guestLine : w.emptyTitle} />
+          <MineEmpty title={figures.positionsRead === 'guest' ? w.guestList : w.emptyTitle} />
         </>
       ) : figures.positionsRead === 'reading' ? (
         <Bones rows={3} />
@@ -876,7 +983,7 @@ function PositionsPanel({ figures, frontKey, held }: { figures: EarnFigures; fro
           </Quiet>
         </Blank>
       ) : (
-        <Table columns={HOLD_COLUMNS} minWidth={640} label={w.positions}>
+        <Table columns={HOLD_COLUMNS} fold={HOLD_FOLD} minWidth={640} label={w.positions}>
           {head}
           {rows.map((row) => {
             const ticket = positionTicket(row, figures);
@@ -889,12 +996,15 @@ function PositionsPanel({ figures, frontKey, held }: { figures: EarnFigures; fro
                     <span className={e.cap}>{kindLine(row)}</span>
                   </span>
                 </span>
-                <Cell end tone="dim">
+                <Cell end tone="dim" fold={1}>
                   {sumText(row.investedUsd, lang)}
                 </Cell>
                 <Cell end>{sumText(row.nowUsd, lang)}</Cell>
-                <Cell end tone={resultTone(row.earnedUsd)} className={e.lead}>
+                <Cell end tone={resultTone(row.earnedUsd)} fold={2}>
                   {sumText(row.earnedUsd, lang, true)}
+                </Cell>
+                <Cell end tone={resultTone(row.vsHoldUsd ?? null)} className={e.lead}>
+                  {row.vsHoldUsd === undefined ? '' : sumText(row.vsHoldUsd, lang, true)}
                 </Cell>
                 <span role="cell" className={e.cellEnd}>
                   {ticket ? (
@@ -908,8 +1018,27 @@ function PositionsPanel({ figures, frontKey, held }: { figures: EarnFigures; fro
           })}
         </Table>
       )}
+      {figures.positionsRead === 'ready' && unknownLine ? <p className={cx(e.hint, e.gapLine)}>{unknownLine}</p> : null}
     </Panel>
   );
+}
+
+/**
+ * What the engine does not know of the positions' results, in one line — the first that applies: a pool position whose
+ * deposit was not seen here, one changed outside Ryntra, an action that landed in part, a price not read. None — none.
+ */
+function resultGapLine(rows: readonly PositionRow[], w: (typeof EARN)['en']): string | null {
+  const pools = rows.filter((row) => row.kind === 'pool' || row.kind === 'pro');
+  const why = (row: PositionRow) => (row.result ? row.result.unknown : row.vsHoldUsd === null ? 'entry' : null);
+  for (const [unknown, line] of [
+    ['entry', w.resultEntry],
+    ['changed', w.resultChanged],
+    ['lost', w.resultLost],
+    ['price', w.resultPrice],
+  ] as const) {
+    if (pools.some((row) => why(row) === unknown)) return line;
+  }
+  return null;
 }
 
 /* ── the phone: what the wallet has at work ── */
@@ -960,6 +1089,7 @@ function PhoneMine({ figures, held, onConnect, onFind }: { figures: EarnFigures;
           );
         })}
       </div>
+      {resultGapLine(figures.positions, w) ? <p className={cx(e.hint, e.gapLine)}>{resultGapLine(figures.positions, w)}</p> : null}
     </>
   );
 }

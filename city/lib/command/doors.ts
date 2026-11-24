@@ -16,7 +16,6 @@ import { launchOpenHere, launchTowerIn, poolDoorHere, useLaunch } from '../launc
 import { poolChoiceOf, usePool } from '../launch/pool.ts';
 import { openLearn } from '../learn/store.ts';
 import { hire } from '../crew/hire.ts';
-import { langNow } from '../i18n/lang.ts';
 import type { Tower } from '../market/types.ts';
 import { NATIVE_ID } from '../money/assets.ts';
 import { openMoney, useMoney } from '../money/open.ts';
@@ -279,7 +278,7 @@ export const cityDoors: Doors = {
   openCrew: (role) => {
     nextCommand();
     clearPanels();
-    hire(role, bookNow(), langNow() === 'uk' ? 'uk' : 'en', { pilot: (ask) => cityDoors.openPilot(ask) });
+    hire(role);
   },
 
   /* «Buy cheaper», «sell higher»: the coin's window on its Spot face, and the ladder's panel filled in from the sentence. It fills and opens; the person reads the ladder there and signs in their wallet. */

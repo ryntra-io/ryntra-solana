@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { isoDateTime } from "../zod/iso-datetime.ts";
 
 import type { GuardStore } from "../guard/store.ts";
 import { PARTNER_NETWORKS, type PartnerNetwork, type PoolPartner, POOL_PARTNER_COLLECTION, PoolPartnerSchema, poolPartnerKey } from "./partner.ts";
@@ -36,7 +37,7 @@ export const DEVICE_COLLECTION = "growthDevices" as const;
 export const ACTIVATION_COLLECTION = "growthActivations" as const;
 
 const MAX_ROUNDS = 5;
-const AT = z.string().datetime({ offset: true });
+const AT = isoDateTime({ offset: true });
 const HASH = z.string().regex(SIGNAL_HASH);
 
 const retentionEnd = (at: string) => new Date(Date.parse(at) + PROTECT_RULES.retentionDays * DAY_MS).toISOString();

@@ -7,12 +7,19 @@
  * - `steady` — regular buys: the day's budget in equal buys of the trade cap across the day.
  * - `dip` — a buy only when the price is at least `dropBps` under its high of the last day.
  * - `grid` — levels `stepBps` apart under the price it started at; one buy at each level the price comes down to. A level
- *   bought is held; where the engine can sell, the coins of a level are offered for sale one step up.
+ *   bought is held; where the engine can sell, the coins of a level are offered for sale one step up. With
+ *   `sell:1` (the «Сітка» bot) the agent with money sells them — a level sold opens again; without it, it buys and holds,
+ *   exactly as before.
+ * - `signal` — a buy only while its condition holds: the price against where it started,
+ *   the change over the day, the trading against its pace, or the fast average over the slow; «cross» sells everything
+ *   once the fast average falls under the slow (`../bots/money/rules.ts`).
  * - `early` — one new launch the agent picks itself through the city's risk filter (`earlyPick`), bought on the steady
  *   rhythm while the launch is young (`maxAgeH`).
  * - an exit on any of them — `takeBps` («фіксуй +20 %»): the agent stops buying once what it bought is worth that much
  *   more than it paid; `stopBps`: it stops once it is worth that much less. Where the engine can sell, the stop or the take
  *   is offered as a sale; on mainnet the agent does not sell yet — it stops buying and holds.
+ * - `hours` on any of them — a tokenized stock bought only while its exchange is in its regular session: a buy
+ *   the rhythm allows waits while the session is not on, or not known. A hold, never a buy.
  *
  * What a strategy never changes: the amount of a buy (the trade cap), the day's cap, the rhythm's spacing (no strategy
  * buys more often than the steady one), the venues, the end of the mandate and the agent's own autostop (`AUTOSTOP`,
@@ -20,7 +27,11 @@
  * mandate allows is made now. No language model is asked at the moment of a trade: these rules are the whole decision.
  */
 
-export const PLAN_IDS = ["steady", "dip", "grid", "early"] as const;
+import { DAY_WINDOW_MS, gridLevel, SIGNAL_DEFAULTS, signalFrom, signalLeaves, signalNow, signalText, type SignalMarket, type SignalTrigger } from "../bots/money/rules.ts";
+
+export { gridLevel, type SignalTrigger } from "../bots/money/rules.ts";
+
+export const PLAN_IDS = ["steady", "dip", "grid", "early", "signal"] as const;
 export type PlanId = (typeof PLAN_IDS)[number];
 
 export type PlanExit = Readonly<{ takeBps: number | null; stopBps: number | null }>;
@@ -32,11 +43,22 @@ export type PlanExit = Readonly<{ takeBps: number | null; stopBps: number | null
  */
 type Paced = Readonly<{ pace?: number }>;
 
+/**
+ * The exchange's hours: a stock's buy waits while its exchange is not in its regular session (the session as
+ * the stocks engine reads it, `lib/stocks/pool-facts.ts` `PoolSession` — never a «Monday to Friday» rule). It holds a buy
+ * back and never adds one: the amount, the caps, the rhythm and the venue stay the mandate's. Absent — any hour, as before.
+ */
+type Houred = Readonly<{ hours?: true }>;
+
 export type StrategyPlan =
-  | (Readonly<{ id: "steady"; exit: PlanExit | null }> & Paced)
-  | (Readonly<{ id: "dip"; dropBps: number; exit: PlanExit | null }> & Paced)
-  | (Readonly<{ id: "grid"; stepBps: number; levels: number; exit: PlanExit | null }> & Paced)
-  | (Readonly<{ id: "early"; maxAgeH: number; exit: PlanExit | null }> & Paced);
+  | (Readonly<{ id: "steady"; exit: PlanExit | null }> & Paced & Houred)
+  | (Readonly<{ id: "dip"; dropBps: number; exit: PlanExit | null }> & Paced & Houred)
+  | (Readonly<{ id: "grid"; stepBps: number; levels: number; exit: PlanExit | null; sell?: true }> & Paced & Houred)
+  | (Readonly<{ id: "early"; maxAgeH: number; exit: PlanExit | null }> & Paced & Houred)
+  | (Readonly<{ id: "signal"; trigger: SignalTrigger; exit: PlanExit | null }> & Paced & Houred);
+
+/** The exchange's session as the hours' rule reads it: `open` — the regular session; anything else — not. */
+export type ExchangeSession = "open" | "pre" | "post" | "closed" | "unknown";
 
 /** Every bound of the strategies, in one place: a plan outside them is not read. */
 export const PLAN_BOUNDS = Object.freeze({
@@ -56,13 +78,13 @@ export const PLAN_BOUNDS = Object.freeze({
  * a dip, a grid's level, a young launch — at most twice. The default strategies trade little: the fees stay small and the
  * budget lasts. The caps the person signs do not change; the pace only spaces the buys inside them.
  */
-export const CALM_PACE: Readonly<Record<PlanId, number>> = Object.freeze({ steady: 1, dip: 2, grid: 2, early: 2 });
+export const CALM_PACE: Readonly<Record<PlanId, number>> = Object.freeze({ steady: 1, dip: 2, grid: 2, early: 2, signal: 2 });
 
 /** The plan at the city's calm pace, unless it names its own. */
 export const calmPlan = (plan: StrategyPlan): StrategyPlan => (plan.pace === undefined ? { ...plan, pace: CALM_PACE[plan.id] } : plan);
 
 /** The day the dip's high is measured over. */
-export const DIP_WINDOW_MS = 86_400_000;
+export const DIP_WINDOW_MS = DAY_WINDOW_MS;
 
 const within = (value: number, bound: Readonly<{ min: number; max: number }>) => Number.isInteger(value) && value >= bound.min && value <= bound.max;
 
@@ -72,12 +94,15 @@ export const STEADY: StrategyPlan = Object.freeze({ id: "steady", exit: null });
 
 /**
  * The plan in a few characters, the one form the city, the routes and the agent's book share: `steady`, `dip:800`,
- * `grid:500:5`, `early:24`, with an exit after a comma — `dip:800,take:2000,stop:1000`.
+ * `grid:500:5`, `early:24`, `signal:cross:6:24`, with an exit after a comma — `dip:800,take:2000,stop:1000` — then a
+ * grid's sales (`sell:1`), then the pace, then the exchange's hours last — `steady,pace:1,hours:1`.
  */
 export function planText(plan: StrategyPlan): string {
-  const head = plan.id === "dip" ? `dip:${plan.dropBps}` : plan.id === "grid" ? `grid:${plan.stepBps}:${plan.levels}` : plan.id === "early" ? `early:${plan.maxAgeH}` : "steady";
+  const head =
+    plan.id === "dip" ? `dip:${plan.dropBps}` : plan.id === "grid" ? `grid:${plan.stepBps}:${plan.levels}` : plan.id === "early" ? `early:${plan.maxAgeH}` : plan.id === "signal" ? `signal:${signalText(plan.trigger)}` : "steady";
   const exit = plan.exit;
-  return [head, exit?.takeBps ? `take:${exit.takeBps}` : null, exit?.stopBps ? `stop:${exit.stopBps}` : null, plan.pace !== undefined ? `pace:${plan.pace}` : null].filter(Boolean).join(",");
+  const sell = plan.id === "grid" && plan.sell ? "sell:1" : null;
+  return [head, exit?.takeBps ? `take:${exit.takeBps}` : null, exit?.stopBps ? `stop:${exit.stopBps}` : null, sell, plan.pace !== undefined ? `pace:${plan.pace}` : null, plan.hours ? "hours:1" : null].filter(Boolean).join(",");
 }
 
 const INT = /^\d{1,6}$/u;
@@ -89,23 +114,37 @@ export function planFrom(text: unknown): StrategyPlan | null {
   const parts = head!.split(":");
   let takeBps: number | null = null;
   let stopBps: number | null = null;
+  let sell = false;
   let pace: number | null = null;
+  let hours = false;
   for (const part of rest) {
     const [name, value, ...more] = part.split(":");
     if (more.length || !value || !INT.test(value)) return null;
     const n = Number(value);
-    if (name === "take" && takeBps === null && pace === null && within(n, PLAN_BOUNDS.takeBps)) takeBps = n;
-    else if (name === "stop" && stopBps === null && pace === null && within(n, PLAN_BOUNDS.stopBps)) stopBps = n;
+    /* The order is the text's own: the exit, a grid's sales, the pace, the hours — nothing after the hours. */
+    if (hours) return null;
+    if (name === "take" && takeBps === null && !sell && pace === null && within(n, PLAN_BOUNDS.takeBps)) takeBps = n;
+    else if (name === "stop" && stopBps === null && !sell && pace === null && within(n, PLAN_BOUNDS.stopBps)) stopBps = n;
+    else if (name === "sell" && !sell && pace === null && n === 1 && parts[0] === "grid") sell = true;
     else if (name === "pace" && pace === null && within(n, PLAN_BOUNDS.pace)) pace = n;
+    else if (name === "hours" && n === 1) hours = true;
     else return null;
   }
   const exit = takeBps === null && stopBps === null ? null : { takeBps, stopBps };
   const head0 = planHead(parts, exit);
-  return head0 && pace !== null ? { ...head0, pace } : head0;
+  if (!head0) return null;
+  const selling = sell && head0.id === "grid" ? { ...head0, sell: true as const } : head0;
+  const paced = pace !== null ? { ...selling, pace } : selling;
+  return hours ? { ...paced, hours: true } : paced;
 }
 
 /** The plan's head — its strategy and numbers — with its exit; null outside the strategies' bounds. */
 function planHead(parts: readonly string[], exit: PlanExit | null): StrategyPlan | null {
+  /* A signal names its condition by a word, then its numbers. */
+  if (parts[0] === "signal") {
+    const trigger = signalFrom(parts.slice(1));
+    return trigger ? { id: "signal", trigger, exit } : null;
+  }
   const ints = parts.slice(1);
   if (!ints.every((part) => INT.test(part))) return null;
   const [a, b] = ints.map(Number);
@@ -124,13 +163,17 @@ function planHead(parts: readonly string[], exit: PlanExit | null): StrategyPlan
 }
 
 /** A plan with its numbers drawn into bounds: what the reader of a sentence builds. Never outside `PLAN_BOUNDS`. */
-export function boundedPlan(input: Readonly<{ id: PlanId; dropBps?: number | null; stepBps?: number | null; levels?: number | null; maxAgeH?: number | null; takeBps?: number | null; stopBps?: number | null; pace?: number | null }>): StrategyPlan {
+export function boundedPlan(
+  input: Readonly<{ id: PlanId; dropBps?: number | null; stepBps?: number | null; levels?: number | null; maxAgeH?: number | null; takeBps?: number | null; stopBps?: number | null; pace?: number | null; trigger?: SignalTrigger | null }>,
+): StrategyPlan {
   const plan = boundedHead(input);
   const pace = input.pace === null || input.pace === undefined || !Number.isFinite(input.pace) ? null : Math.min(PLAN_BOUNDS.pace.max, Math.max(PLAN_BOUNDS.pace.min, Math.round(input.pace)));
   return pace === null ? plan : { ...plan, pace };
 }
 
-function boundedHead(input: Readonly<{ id: PlanId; dropBps?: number | null; stepBps?: number | null; levels?: number | null; maxAgeH?: number | null; takeBps?: number | null; stopBps?: number | null }>): StrategyPlan {
+function boundedHead(
+  input: Readonly<{ id: PlanId; dropBps?: number | null; stepBps?: number | null; levels?: number | null; maxAgeH?: number | null; takeBps?: number | null; stopBps?: number | null; trigger?: SignalTrigger | null }>,
+): StrategyPlan {
   const clamp = (value: number | null | undefined, bound: Readonly<{ min: number; max: number; default?: number }>) => {
     if (value === null || value === undefined || !Number.isFinite(value)) return bound.default ?? null;
     return Math.min(bound.max, Math.max(bound.min, Math.round(value)));
@@ -145,6 +188,11 @@ function boundedHead(input: Readonly<{ id: PlanId; dropBps?: number | null; step
       return { id: "grid", stepBps: clamp(input.stepBps, PLAN_BOUNDS.stepBps)!, levels: clamp(input.levels, PLAN_BOUNDS.levels)!, exit };
     case "early":
       return { id: "early", maxAgeH: clamp(input.maxAgeH, PLAN_BOUNDS.maxAgeH)!, exit };
+    case "signal": {
+      /* A condition out of its bounds is not drawn in: the reader's numbers would change its meaning — the default stands. */
+      const trigger = input.trigger && signalFrom(signalText(input.trigger).split(":")) ? input.trigger : SIGNAL_DEFAULTS.cross;
+      return { id: "signal", trigger, exit };
+    }
     default:
       return { id: "steady", exit };
   }
@@ -170,9 +218,22 @@ export type RuleInput = Readonly<{
   position: Position;
   /** Early: when the launch was born, ms; null when not known. */
   bornAt: number | null;
+  /**
+   * The stock's exchange as the agent read it just now, for a plan with `hours`; absent — not asked (the run on
+   * history and the practice, which have no session of the past), and the hours' rule is not applied.
+   */
+  session?: ExchangeSession | null;
+  /** The coin's trading now, for a signal on the trading; absent — not read, and such a signal waits. */
+  market?: SignalMarket | null;
+  /**
+   * The widest step between two marks a signal's averages are read over — the engine's and the paper's own
+   * spacing (`./tick.server.ts` `MARK_GAP_MS`); wider, the averages are «unread». Absent — the run on history, whose bars
+   * stand evenly apart.
+   */
+  markGapMs?: number | null;
 }>;
 
-export type HoldReason = "unread" | "no-dip" | "no-level" | "too-old" | "no-coin";
+export type HoldReason = "unread" | "no-dip" | "no-level" | "too-old" | "no-coin" | "closed" | "no-signal";
 export type ExitReason = "take" | "stop";
 
 export type Rule =
@@ -188,9 +249,6 @@ export function exitOf(exit: PlanExit | null, position: Position): ExitReason | 
   if (exit.stopBps !== null && change <= -exit.stopBps) return "stop";
   return null;
 }
-
-/** The grid's level `k` under its anchor: `anchor × (1 − step)^k`. */
-export const gridLevel = (anchor: number, stepBps: number, k: number) => anchor * (1 - stepBps / 10_000) ** k;
 
 /** The highest price of the last day the agent saw; null with no price. */
 export function dayHigh(marks: readonly Mark[], now: number): number | null {
@@ -208,10 +266,17 @@ export function ruleOf(input: RuleInput): Rule {
   const exit = exitOf(plan.exit, input.position);
   if (exit) return { do: "exit", why: exit };
   if (plan.exit && input.position.spent > 0n && input.position.worth === null) return { do: "hold", why: "unread" };
+  /* The exchange's hours — while its session is not on, or not known, the buy waits for the next pass. */
+  if (plan.hours && input.session !== undefined && input.session !== "open") return { do: "hold", why: "closed" };
   if (plan.id === "steady") return { do: "buy" };
   if (plan.id === "early") {
     if (input.bornAt === null) return { do: "hold", why: "no-coin" };
     return now - input.bornAt <= plan.maxAgeH * 3_600_000 ? { do: "buy" } : { do: "hold", why: "too-old" };
+  }
+  /* A signal buys while its condition holds. */
+  if (plan.id === "signal") {
+    const read = signalNow(plan.trigger, { marks: input.marks, anchor: input.anchor, market: input.market ?? null, now, maxGapMs: input.markGapMs ?? null });
+    return read === "on" ? { do: "buy" } : { do: "hold", why: read === "unread" ? "unread" : "no-signal" };
   }
   const price = input.marks.at(-1)?.price ?? null;
   if (price === null || !(price > 0)) return { do: "hold", why: "unread" };
@@ -238,6 +303,14 @@ export function ruleOf(input: RuleInput): Rule {
 export function gridSells(plan: Extract<StrategyPlan, { id: "grid" }>, anchor: number, held: readonly number[], price: number): number[] {
   return held.filter((k) => price >= gridLevel(anchor, plan.stepBps, k - 1));
 }
+
+/** Whether the plan's own rule sells everything now — a «cross» signal under its slow average. */
+export function planLeaves(plan: StrategyPlan, input: Readonly<{ marks: readonly Mark[]; anchor: number | null; market?: SignalMarket | null; now: number; markGapMs?: number | null }>): boolean {
+  return plan.id === "signal" && signalLeaves(plan.trigger, signalNow(plan.trigger, { marks: input.marks, anchor: input.anchor, market: input.market ?? null, now: input.now, maxGapMs: input.markGapMs ?? null }));
+}
+
+/** Whether the plan reads the price marks — a dip, a grid, a signal on the price. */
+export const planMarks = (plan: StrategyPlan): boolean => plan.id === "dip" || plan.id === "grid" || (plan.id === "signal" && plan.trigger.kind !== "volume");
 
 /* ---------------------------------------------------------------- early: the city's risk filter */
 

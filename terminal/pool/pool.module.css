@@ -156,6 +156,30 @@
   pointer-events: none;
 }
 
+/* The person's own range over the columns: a quiet lilac band, its name once at its top. */
+.distMine {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: var(--from);
+  width: calc(var(--to) - var(--from));
+  border-top: 2px solid var(--lilac);
+  background: color-mix(in srgb, var(--lilac) 12%, transparent);
+  pointer-events: none;
+}
+
+.distMineTag {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  padding: 1px 6px;
+  background: var(--panel-up);
+  font-size: var(--type-micro);
+  font-weight: 600;
+  color: var(--lilac);
+  white-space: nowrap;
+}
+
 .distTag {
   position: absolute;
   top: -20px;
@@ -272,17 +296,31 @@
   color: var(--ice);
 }
 
-/* A card that names another pool: the figure and its words on one line, the way to that pool under the words — never
-   the words squeezed into a column beside the button. */
+/* The way to that pool only where it pays more, beside the line or under it. The
+   card of 123 px that called people into a pool with a smaller bonus took the height of the form. */
 .bonus[data-elsewhere] {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  row-gap: 8px;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  padding: 8px 12px;
 }
 
-.bonus[data-elsewhere] > :last-child {
-  grid-column: 2;
-  justify-self: start;
+.bonusLine {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+  font-size: var(--type-small);
+  color: var(--soft);
+}
+
+.bonusSmall {
+  flex: none;
+  font-family: var(--display);
+  font-size: var(--type-body);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: var(--mint);
 }
 
 /* A laptop's short desk (a window 900 px tall or less): the ticket's own «Bonus» tile and the head say the
@@ -298,7 +336,22 @@
 
 /* The ticket stands the column's whole height, as the Spot's does. */
 .side {
+  --side-gap: 12px;
+
   flex: 1 0 auto;
+}
+
+/* The desk keeps its floor of 600 px; a phone has no desk. */
+.deskBox > div {
+  --desk-h: max(600px, calc(100dvh - var(--top) - 156px));
+}
+
+/* A short desk (a laptop's 900 px or less): the ticket's rows a step closer, so the Limit's action and its line stand on
+   the first screen — the form keeps every row. */
+@media (min-width: 768px) and (max-height: 900px) {
+  .side {
+    --side-gap: 8px;
+  }
 }
 
 .sidePhone {
@@ -576,5 +629,252 @@
 
   .facts {
     min-width: 0;
+  }
+}
+
+/* ── a DLMM Pro pool's own trades and filled limit orders, read from the program ───────────────────── */
+
+/* Four columns in the narrow column: what, how much, whose — a tap opens the wallet — and when or the bonus. The element
+   in the selector keeps these over the tape's own three columns, whichever sheet loads first. */
+div.tapeCols,
+li.tapeRow {
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.9fr) minmax(0, 0.8fr) minmax(32px, 0.5fr);
+}
+
+li.tapeRow > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* A filled limit order on two lines — what it was and the bonus it took; what it got and whose it was. */
+.fillRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, auto);
+  align-items: center;
+  column-gap: 8px;
+  row-gap: 2px;
+  padding: 6px 12px;
+  border-bottom: 1px solid var(--line);
+  font-size: var(--type-small);
+  font-variant-numeric: tabular-nums;
+}
+
+.fillWhat {
+  overflow: hidden;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fillRow[data-side='buy'] .fillWhat {
+  color: var(--mint);
+}
+
+.fillRow[data-side='sell'] .fillWhat {
+  color: var(--flare);
+}
+
+.fillBonus,
+.fillRow .tapeWallet {
+  text-align: right;
+}
+
+.fillBonus {
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.fillGot {
+  overflow: hidden;
+  font-size: var(--type-caption);
+  color: var(--ice);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+div.tapeCols > span:nth-child(3),
+.tapeWallet {
+  text-align: right;
+}
+
+.tapeWallet {
+  overflow: hidden;
+  font-size: var(--type-caption);
+  color: var(--soft);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+a.tapeWallet:hover,
+a.tapeWallet:focus-visible {
+  color: var(--ice);
+  text-decoration: underline;
+}
+
+.tapeLine {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.fillsHead,
+.fillsMine {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 0;
+  padding: 8px 12px;
+  font-size: var(--type-caption);
+  color: var(--soft);
+}
+
+.fillsHead {
+  border-bottom: 1px solid var(--line);
+}
+
+.fillsFigure {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px;
+  min-width: 0;
+}
+
+.fillsHead b,
+.fillsMine b {
+  font-family: var(--display);
+  font-size: var(--type-small);
+  font-variant-numeric: tabular-nums;
+}
+
+.fillsMine {
+  border-bottom: 1px solid var(--line);
+  background: var(--chosen);
+}
+
+/* The person's own position in the pool, over the ticket: the figures of its result, one quiet block. */
+.mineHere {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 14px;
+  border: 1px solid var(--glass-edge);
+  background: var(--glass);
+}
+
+.mineHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: var(--type-caption);
+  font-weight: 600;
+  color: var(--soft);
+}
+
+/* In range or not, and the history behind «i», at the card's head. */
+.mineTools {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 8px;
+}
+
+.mineState {
+  font-size: var(--type-micro);
+  font-weight: 700;
+  color: var(--soft);
+  white-space: nowrap;
+}
+
+.mineState[data-out] {
+  color: var(--warm);
+}
+
+.mineHistory {
+  min-width: 240px;
+  font-size: var(--type-caption);
+}
+
+.mineWhy {
+  display: block;
+  margin-top: 8px;
+  font-size: var(--type-micro);
+  color: var(--dim);
+}
+
+/* The day's figures, how they are read: one line under the pool's facts. */
+.dayWhy {
+  max-width: 320px;
+  font-size: var(--type-caption);
+  line-height: 1.45;
+  color: var(--soft);
+}
+
+
+/* Fault 62 — the table under the chart: its wrapper is no box of its own, the panel's column holds the table as before;
+   the page snaps the table's scroller to a row's edge (`PoolScreen.tsx`, `useSnapUnder`). */
+.underBox {
+  display: contents;
+}
+
+/* Fault 61 — a pool that did not read: «Try again» and the way to every pool, side by side under the line. */
+.lostActs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Fault 119 — a wide desk (1920): the pool's figures stand a step further apart; the tools stand at the far end. */
+@media (min-width: 1681px) {
+  .poolHead dl > div {
+    padding: 0 20px;
+  }
+}
+
+@media (max-width: 767px) {
+  /* Fault 55 — a phone: every figure of the head in sight, in rows of three (five of DLMM Pro's: 3 + 2) or two (four of
+     DLMM's and DAMM v2's: 2 + 2) — never the pool's fee past the right edge with no sign of it. */
+  .poolHead dl {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    row-gap: 10px;
+    height: auto;
+    overflow: visible;
+  }
+
+  .poolHead dl:has(> div:nth-child(4):last-child) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .poolHead dl > div {
+    min-width: 0;
+    padding: 0 8px;
+    border-left: 1px solid var(--line);
+  }
+
+  .poolHead dl > div:nth-child(3n + 1),
+  .poolHead dl:has(> div:nth-child(4):last-child) > div:nth-child(3) {
+    padding-left: 0;
+    border-left: 0;
+  }
+
+  .poolHead dl:has(> div:nth-child(4):last-child) > div:nth-child(4) {
+    padding-left: 8px;
+    border-left: 1px solid var(--line);
+  }
+
+  /* Fault 56 — an empty pool's column on a phone: its one line and the way in, not a 420 px block around them. */
+  .phoneBlock[data-quiet] {
+    height: auto;
+  }
+
+  .phoneBlock[data-quiet] .emptyPool {
+    padding: 20px 16px;
   }
 }

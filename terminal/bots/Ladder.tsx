@@ -19,6 +19,7 @@ import { connectWallet } from '@/terminal/shell/Wallet';
 import { WALLET } from '@/terminal/shell/words';
 import { useOffHoursRisk } from '@/terminal/stocks/useStockPoolFacts';
 import { Action, AmountField, Cell, Chip, CoinLogo, Figure, Info, Kick, Panel, Quiet, Segment, Shares, Table, TableHead, TableRow, Title, amountOf, priceText, usdText } from '@/terminal/ui';
+import { FEE } from '@/terminal/ui/words';
 import { BotChart } from './BotChart';
 import { BotHead, CoinAmount, HowInfo, MinePanel, Note, SOL_COIN, coinOf, useTowers, type PickedCoin } from './parts';
 import type { BotParts } from './Paper';
@@ -111,6 +112,7 @@ const COLUMNS = 'minmax(200px, 1.5fr) minmax(150px, 1.1fr) minmax(120px, 0.9fr) 
 export function LadderBot({ lay }: { lay: (parts: BotParts) => ReactNode }) {
   const w = useWords(BOTS);
   const wallet = useWords(WALLET);
+  const fw = useWords(FEE);
   const lang = useLang();
   const towers = useTowers();
   const who = useWho();
@@ -228,7 +230,7 @@ export function LadderBot({ lay }: { lay: (parts: BotParts) => ReactNode }) {
   const gets = composed && composed.prices.length ? (side === 'buy' ? w.approxCoin(amountOf(composed.receives, 4, lang), symbol) : w.approxUsd(usdText(composed.receives, lang))) : '—';
 
   const form = (
-    <Panel tone="hi" pad="l" label={w.ladder} className={`${g.sheet} ${g.sheetStack}`}>
+    <Panel tone="hi" pad="l" label={w.ladder} className={g.sheetStack}>
       <BotHead id="ladder" kick={w.newBot} info={<HowInfo lines={[w.ladderHow, w.ladderSafe]} />} />
       <Segment
         label={w.sideLabel}
@@ -262,7 +264,7 @@ export function LadderBot({ lay }: { lay: (parts: BotParts) => ReactNode }) {
       </div>
       {/* Before the signature, one line: real or test money and Ryntra's fee; the network and the deposit behind its «i». */}
       <div className={g.costRow}>
-        <CostLine text={`${netWord} · ${w.feeZero}`} />
+        <CostLine text={`${netWord} · ${fw.none}`} />
         {costs ? <Info label={w.costHow}>{w.costMore(lamportsSol(costs.networkLamports, lang), lamportsSol(costs.rentBackLamports, lang))}</Info> : null}
       </div>
       {risk ? (

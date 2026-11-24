@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { isoDateTime } from "../zod/iso-datetime.ts";
 
 import { maskWallet } from "../rewards/referral.ts";
 import { REWARD_RANKS, type RewardRank } from "../rewards/rules.ts";
@@ -57,8 +58,8 @@ const SeasonHeadSchema = z
   .object({
     number: z.number().int().min(1),
     theme: z.enum(SEASON_THEMES),
-    start: z.string().datetime(),
-    end: z.string().datetime(),
+    start: isoDateTime(),
+    end: isoDateTime(),
     /** The week of the season the board's week is, 1 to `weeks`; null outside it. */
     week: z.number().int().min(1).nullable(),
     weeks: z.number().int().min(1),
@@ -71,10 +72,10 @@ export const LeaderboardsResponseSchema = z
     week: z
       .object({
         kind: z.enum(["current", "previous"]),
-        start: z.string().datetime(),
-        end: z.string().datetime(),
+        start: isoDateTime(),
+        end: isoDateTime(),
         final: z.boolean(),
-        updatedAt: z.string().datetime(),
+        updatedAt: isoDateTime(),
       })
       .strict(),
     season: SeasonHeadSchema.nullable(),
@@ -200,8 +201,8 @@ export const SeasonResponseSchema = z
       z
         .object({
           number: z.number().int().min(1),
-          start: z.string().datetime(),
-          end: z.string().datetime(),
+          start: isoDateTime(),
+          end: isoDateTime(),
           state: z.enum(["ENDED", "LIVE", "AHEAD"]),
           /** Ended and past the time late settlements may land: its podium is final. */
           final: z.boolean(),
@@ -214,9 +215,9 @@ export const SeasonResponseSchema = z
     you: z
       .object({
         hidden: z.boolean(),
-        tasks: z.array(z.object({ id: z.enum(SEASON_TASK_IDS), done: z.boolean(), have: z.number().int().min(0), need: z.number().int().min(1), at: z.string().datetime().nullable() }).strict()),
+        tasks: z.array(z.object({ id: z.enum(SEASON_TASK_IDS), done: z.boolean(), have: z.number().int().min(0), need: z.number().int().min(1), at: isoDateTime().nullable() }).strict()),
         complete: z.boolean(),
-        completedAt: z.string().datetime().nullable(),
+        completedAt: isoDateTime().nullable(),
         /** The best finished weekly place in the top three, if any: the podium badge. */
         podium: z.object({ board: Board, place: z.number().int().min(1), week: z.number().int().min(1) }).strict().nullable(),
       })

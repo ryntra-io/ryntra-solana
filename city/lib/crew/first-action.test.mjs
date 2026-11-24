@@ -16,9 +16,9 @@ import { readAsk } from "../autopilot/read.ts";
 const SNAPSHOT = JSON.parse(readFileSync(new URL("../market/snapshot.json", import.meta.url), "utf8"));
 const BOOK = bookOf(SNAPSHOT.towers);
 
-test("the funnel is nine moments on the agent's path, four on the way to money, three beside it, every name fixed", () => {
+test("the funnel is nine moments on the agent's path, five on the way to money, three beside it, every name fixed", () => {
   assert.deepEqual([...FUNNEL_STEPS], ["agent_home", "agent_drawn", "agent_hint", "agent_line", "agent_said", "agent_card", "agent_wallet", "agent_sign", "agent_signed"]);
-  assert.deepEqual([...FUNNEL_WIDE], ["agent_connect", "agent_signin", "agent_trade", "agent_traded"]);
+  assert.deepEqual([...FUNNEL_WIDE], ["agent_practice", "agent_connect", "agent_signin", "agent_trade", "agent_traded"]);
   assert.deepEqual([...FUNNEL_SIDE], ["agent_sign_no", "agent_wallet_app", "agent_trade_no"]);
   assert.equal(new Set(FUNNEL_EVENT_NAMES).size, FUNNEL_EVENT_NAMES.length);
   for (const name of FUNNEL_EVENT_NAMES) assert.match(name, /^agent_[a-z_]{3,16}$/);

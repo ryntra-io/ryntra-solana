@@ -6,8 +6,9 @@ import { useLang } from '@/city/lib/i18n/lang';
 import { useWallet } from '@/city/lib/trade/wallet';
 import { exposureParts, type PrivateAction } from '@/lib/privacy/exposure';
 import { lamportsOf, solText } from '@/lib/privacy/flows';
-import { LINK_FEE_LAMPORTS, LINK_MIN_LAMPORTS, RING_SOL, explorerUrl } from '@/lib/privacy/network';
+import { LINK_FEE_LAMPORTS, LINK_MIN_LAMPORTS, PRIVATE_TEST, RING_SOL, explorerUrl } from '@/lib/privacy/network';
 import { keyCopyFile } from '@/lib/privacy/codes';
+import { walletsThatCan } from '@/lib/privacy/check';
 import { usePrivate, type PrivateFailure } from '@/lib/privacy/usePrivate';
 import { walletSignsV1 } from '@/lib/solana/wallet.client';
 import { ExplainBox, ExplainButton } from '@/terminal/coin/parts';
@@ -42,10 +43,46 @@ export function SeenLine({ action, w, who }: { action: PrivateAction; w: Words; 
 
 function failureText(failure: PrivateFailure, w: Words): string {
   if (failure.code === 'NOT_READ') return w.notReadAfter;
+  if (failure.code === 'KEYS_REFUSED') return w.keysRefused;
   if (failure.code === 'TOO_SMALL') return w.tooSmall;
   if (failure.code === 'WALLET_REFUSED') return w.refused;
+  if (failure.code === 'GATE_FLAGGED') return w.gateFlagged;
+  if (failure.code === 'GATE_FLAGGED_TO') return w.gateFlaggedTo;
+  if (failure.code === 'GATE_BACK_ONLY') return w.gateBackOnly;
+  if (failure.code === 'GATE_PAUSED') return w.gatePaused;
+  if (failure.code === 'GATE_UNCHECKED') return w.gateUnchecked;
+  if (failure.code === 'GATE_OVER_CAP') return w.gateOverCap(failure.detail);
   if (failure.code === 'KEYS_ELSEWHERE') return failure.detail === 'another wallet' || failure.detail === 'not these keys' || failure.detail === 'not a key copy' ? w.wrongCopy : w.elsewhere;
   return w.failed;
+}
+
+/** The proof may take up to 20 seconds; past that the line says so calmly. */
+const PREPARE_USUAL_S = 20;
+
+/**
+ * Where a running step is, as the busy button says it: the key request and its repeat, preparing with the seconds,
+ * the wallet's signature, sending with the seconds, reading. Null while nothing runs.
+ */
+function useStageLabel(w: Words): string | null {
+  const lang = useLang();
+  const stage = usePrivate((st) => st.stage);
+  const since = usePrivate((st) => st.since);
+  const [seconds, setSeconds] = useState(0);
+  useEffect(() => {
+    if (!stage || since === null) return;
+    const tick = () => setSeconds(Math.max(0, Math.floor((Date.now() - since) / 1000)));
+    tick();
+    const timer = setInterval(tick, 1000);
+    return () => clearInterval(timer);
+  }, [stage, since]);
+  if (!stage) return null;
+  const sec = digits(String(seconds), lang);
+  if (stage === 'keys') return w.stageKeys;
+  if (stage === 'again') return w.stageAgain;
+  if (stage === 'prepare') return seconds < PREPARE_USUAL_S ? w.stagePrepare(sec) : w.stageSlow(sec);
+  if (stage === 'sign') return w.stageSign;
+  if (stage === 'send') return w.stageSend(sec);
+  return w.stageRead;
 }
 
 function TxLine({ signature, w }: { signature: string; w: Words }) {
@@ -94,7 +131,9 @@ export function PrivateBalance() {
     usePrivate.getState().follow(connection?.wallet ?? null, connection?.address ?? null);
   }, [connection?.wallet, connection?.address]);
 
+  const stageLabel = useStageLabel(w);
   const signsV1 = connection ? walletSignsV1(connection.wallet) : false;
+  const can = walletsThatCan();
   const sol = st.held?.find((h) => h.mint === RING_SOL)?.amount ?? 0n;
   const others = st.held?.filter((h) => h.mint !== RING_SOL) ?? [];
 
@@ -108,9 +147,11 @@ export function PrivateBalance() {
           <Kick>{w.title}</Kick>
           {st.phase === 'ready' ? <Figure value={digits(solText(sol), lang)} unit="SOL" size="m" /> : null}
           {st.phase === 'off' ? <p className={s.line}>{w.offLine}</p> : null}
+          {st.phase === 'locked' ? <p className={s.line}>{w.lockedLine}</p> : null}
+          {st.phase === 'cannot' ? <p className={s.line}>{w.cannotLine}</p> : null}
           {st.phase === 'loading' ? <p className={s.line}>{w.reading}</p> : null}
         </span>
-        <Chip>{w.net}</Chip>
+        {PRIVATE_TEST ? <Chip>{w.net}</Chip> : null}
         <ExplainButton label={w.howTitle} open={how} controls={howId} onToggle={() => setHow((was) => !was)} />
       </div>
       {how ? (
@@ -118,13 +159,13 @@ export function PrivateBalance() {
           <ul className={s.howList}>
             <li>{w.how1}</li>
             <li>{w.how2}</li>
-            <li>{w.how3}</li>
-            <li>{w.how4}</li>
+            <li>{st.keys === 'copy' ? w.how3Copy : w.how3}</li>
+            {PRIVATE_TEST ? <li>{w.how4}</li> : null}
           </ul>
         </ExplainBox>
       ) : null}
 
-      {connection && !signsV1 && (st.phase === 'off' || st.phase === 'ready') ? (
+      {connection && !signsV1 && (st.phase === 'off' || st.phase === 'locked' || st.phase === 'ready') ? (
         <div className={s.row}>
           <p className={s.line}>{w.noV1}</p>
           <QuietLink href="/private/check" size="s">
@@ -136,10 +177,26 @@ export function PrivateBalance() {
       {st.phase === 'off' ? (
         <>
           <SeenLine action="enable" w={w} />
+          <p className={s.line}>{w.turnOnSigs}</p>
           <Quiet full disabled={st.busy !== null} aria-busy={st.busy === 'on' || undefined} onClick={() => void st.turnOn()}>
-            {st.busy === 'on' ? w.turningOn : w.turnOn}
+            {st.busy === 'on' ? (stageLabel ?? w.turningOn) : w.turnOn}
           </Quiet>
         </>
+      ) : null}
+
+      {st.phase === 'locked' ? (
+        <Quiet full disabled={st.busy !== null} aria-busy={st.busy === 'open' || undefined} onClick={() => void st.unlock()}>
+          {st.busy === 'open' ? (stageLabel ?? w.working) : w.openDo}
+        </Quiet>
+      ) : null}
+
+      {st.phase === 'cannot' ? (
+        <div className={s.row} data-cannot={st.cannot ?? undefined}>
+          {can.length ? <p className={s.line}>{w.worksWith(can.join(', '))}</p> : null}
+          <QuietLink href="/private/check" size="s">
+            {w.checkWallet}
+          </QuietLink>
+        </div>
       ) : null}
 
       {st.phase === 'elsewhere' ? <Restore w={w} /> : null}
@@ -168,12 +225,14 @@ export function PrivateBalance() {
             </ul>
           ) : null}
           {st.copyDue ? <CopyDue w={w} /> : null}
-          <Act w={w} held={sol} />
+          <Act w={w} held={sol} stageLabel={stageLabel} />
           <Links w={w} />
-          <div className={s.row}>
-            <span className={s.grow} />
-            <SaveCopy w={w} label={w.keyCopy} size="s" />
-          </div>
+          {st.keys === 'copy' ? (
+            <div className={s.row}>
+              <span className={s.grow} />
+              <SaveCopy w={w} label={w.keyCopy} size="s" />
+            </div>
+          ) : null}
         </>
       ) : null}
 
@@ -238,14 +297,17 @@ function Restore({ w }: { w: Words }) {
           if (picked) await usePrivate.getState().restore(await picked.text());
         }}
       />
-      <Quiet full disabled={busy} aria-busy={busy || undefined} onClick={() => file.current?.click()}>
-        {w.restore}
-      </Quiet>
+      {/* Older test keys only: their key copy still opens the balance they registered. */}
+      <div className={s.row}>
+        <Quiet size="s" disabled={busy} aria-busy={busy || undefined} onClick={() => file.current?.click()}>
+          {w.restore}
+        </Quiet>
+      </div>
     </div>
   );
 }
 
-function Act({ w, held }: { w: Words; held: bigint }) {
+function Act({ w, held, stageLabel }: { w: Words; held: bigint; stageLabel: string | null }) {
   const lang = useLang();
   const [tab, setTab] = useState<Tab>('hide');
   const [amount, setAmount] = useState('');
@@ -287,7 +349,7 @@ function Act({ w, held }: { w: Words; held: bigint }) {
   }
 
   const action: PrivateAction = tab === 'send' ? (needsLink ? 'link' : 'send') : tab;
-  const label = busy && busy !== 'take' ? w.working : tab === 'hide' ? w.hideDo : tab === 'return' ? w.returnDo : needsLink ? w.makeLink : w.sendDo;
+  const label = busy && busy !== 'take' ? (stageLabel ?? w.working) : tab === 'hide' ? w.hideDo : tab === 'return' ? w.returnDo : needsLink ? w.makeLink : w.sendDo;
 
   return (
     <div className={s.form}>

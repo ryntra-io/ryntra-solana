@@ -31,6 +31,12 @@
   overflow: hidden;
 }
 
+/* No still at the head: the words stand under the bar with no empty band above them. */
+.hero[data-plain] {
+  min-height: 0;
+  padding-top: clamp(88px, 12vh, 120px);
+}
+
 .art {
   position: absolute;
   inset: 0;

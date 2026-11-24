@@ -17,14 +17,49 @@
   min-width: 100%;
 }
 
-.table[data-narrow] {
+.table[data-narrow],
+.table[data-fit] {
   width: auto;
+}
+
+/* A fitted table: a cell longer than its column ends in «…» rather than pushing the last column out. */
+.table[data-fit] [role='cell'],
+.table[data-fit] [role='columnheader'] {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* A phone's table is one grid its rows share (each row a subgrid of it): a column is as wide as its widest cell in any
+   row, so «auto» columns hold their longest word and the rows still line up (EYES 19.11, вада 8). */
+.table[data-narrow] {
+  display: grid;
+  grid-template-columns: var(--cols);
+  column-gap: 8px;
 }
 
 .table[data-narrow] .head,
 .table[data-narrow] .row {
+  grid-column: 1 / -1;
+  grid-template-columns: subgrid;
   column-gap: 8px;
   padding: 0 12px;
+}
+
+/* It ends inside the screen: each cell inside its own column — what is still longer than its column ends in «…» rather
+   than running into the next one or past the edge. */
+.table[data-narrow] [role='cell'],
+.table[data-narrow] [role='columnheader'] {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The wallet and its one mark, close: the column holds the widest short address with it. */
+.table[data-narrow] .wallet {
+  gap: 4px;
 }
 
 .head,
@@ -179,4 +214,95 @@
   font-size: var(--type-small);
   font-weight: 600;
   color: var(--dim);
+}
+
+/* The filters over the trades: quiet chips in one row that scrolls on a phone; the chosen one a lighter ground. */
+/* The filters over the trades, and on the right the «i» that says what the signs by the wallets mean. */
+.filterRow {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 8px;
+  padding-right: 16px;
+  border-bottom: 1px solid var(--line);
+}
+
+.filters {
+  display: flex;
+  flex: 1 1 auto;
+  gap: 6px;
+  min-width: 0;
+  padding: 8px 16px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.filters::-webkit-scrollbar {
+  display: none;
+}
+
+.filters .filter {
+  flex: none;
+  height: 30px;
+  padding: 0 10px;
+  font-size: var(--type-micro);
+  color: var(--dim);
+  background: transparent;
+  border-color: var(--line);
+  transition: color 0.15s, background-color 0.15s;
+}
+
+.filters .filter:hover {
+  color: var(--ice);
+}
+
+.filters .filter[aria-checked='true'] {
+  color: var(--ice);
+  background: var(--chosen);
+}
+
+/* A line over a table: what it is on the left, its «i» on the right. */
+.captionRow {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 34px;
+  padding: 4px 16px;
+  font-size: var(--type-caption);
+  color: var(--dim);
+  border-bottom: 1px solid var(--line);
+}
+
+/* The result's head turns the order. */
+.sort {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font: inherit;
+  color: inherit;
+}
+
+.sort:hover {
+  color: var(--ice);
+}
+
+.move {
+  white-space: nowrap;
+}
+
+.move[data-move='added'] {
+  color: var(--mint);
+}
+
+.move[data-move='sold'] {
+  color: var(--flare);
+}
+
+/* Under a finger the chips are taller. */
+@media (pointer: coarse) {
+  .filters .filter {
+    height: 36px;
+  }
 }

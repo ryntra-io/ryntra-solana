@@ -45,6 +45,14 @@ export const EARN_PRO_SHAPE_ENV = "RYNTRA_EARN_PRO_SHAPE";
 export const earnProShapeOpen = (env: Env): boolean => env[EARN_PRO_SHAPE_ENV]?.trim() === "open";
 
 /**
+ * Meteora's Wave as a goal (SDK 0.1.3): a new shape of money, so it waits for its own rehearsal. Closed unless a
+ * deployment sets it to `open` (exactly); closed, a Review of it is refused as a closed shape of one's own is. The
+ * terminal's own switch (`NEXT_PUBLIC_RYNTRA_EARN_PRO_WAVE=open`) only decides whether the ticket offers it.
+ */
+export const EARN_PRO_WAVE_ENV = "RYNTRA_EARN_PRO_WAVE";
+export const earnProWaveOpen = (env: Env): boolean => env[EARN_PRO_WAVE_ENV]?.trim() === "open";
+
+/**
  * A position of one's own in any pool of SOL against another coin (MET/SOL and the like), not only against
  * the coins Earn checked (USDC and the staked SOL). Closed unless a deployment sets it to `open` (exactly). An agent's
  * care stays where it knows the coin (`./coins.ts`): in any other pool the person looks after the position. The

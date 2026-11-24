@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { isoDateTime } from "../zod/iso-datetime.ts";
 
 import type { GuardStore } from "../guard/store.ts";
 import { listAllPointsEntries, listPointsEntries } from "../points/ledger.ts";
@@ -20,7 +21,7 @@ const EdgeSchema = z
     referrer: z.string().min(32).max(64),
     wallet: z.string().min(32).max(64),
     level: z.number().int().min(1).max(2),
-    at: z.string().datetime({ offset: true }),
+    at: isoDateTime({ offset: true }),
   })
   .passthrough();
 

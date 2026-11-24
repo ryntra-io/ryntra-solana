@@ -13,6 +13,7 @@
 import { randomBytes } from "node:crypto";
 
 import { z } from "zod";
+import { isoDateTime } from "../zod/iso-datetime.ts";
 
 import { AGENT_DRAFT_ID, AGENT_SESSION_ID, AGENT_TURN_ID, AgentMonitoringDraftCardSchema, AgentPlanDraftCardSchema, AgentTradeDraftCardSchema, BASE58, type AgentDraftCard } from "../api/v1/contract.ts";
 import type { GuardStore } from "../guard/store.ts";
@@ -32,8 +33,8 @@ export const AgentDraftRecordSchema = z
     sessionId: z.string().regex(AGENT_SESSION_ID),
     turnId: z.string().regex(AGENT_TURN_ID),
     draft: z.discriminatedUnion("kind", [AgentPlanDraftCardSchema, AgentMonitoringDraftCardSchema, AgentTradeDraftCardSchema]),
-    createdAt: z.string().datetime({ offset: true }),
-    expiresAt: z.string().datetime({ offset: true }),
+    createdAt: isoDateTime({ offset: true }),
+    expiresAt: isoDateTime({ offset: true }),
   })
   .strict();
 export type AgentDraftRecord = z.output<typeof AgentDraftRecordSchema>;

@@ -12,10 +12,9 @@ first in the numbers' stack.
 python terminal/styles/zero/build.py <Hubot Sans latin .woff2> terminal/styles/zero/ryntra-zero.woff2
 ```
 
-The source is Hubot Sans as the build serves it: the Latin file `next/font/google` downloads for
-`Hubot_Sans({ subsets: ['latin'], axes: ['wdth'] })` (`city/styles/fonts.ts`) — after `next build`, the preloaded
-`.next/static/media/*-s.p.woff2` whose family is Hubot Sans. The script needs Python with `fontTools` and `brotli`.
-Build it again only if the face of the numbers changes.
+The source is Hubot Sans as the site serves it: `app/fonts/files/hubot-sans-latin-standard-normal.woff2`. It was first built from the Latin file `next/font/google` downloaded for the same face; the two
+files carry the same glyphs, advances and axes. The script needs Python with `fontTools` and `brotli`. Build it again
+only if the face of the numbers changes.
 
 ## Licence
 

@@ -9,8 +9,12 @@
  * - `submit` — the signed transactions, each checked to be the built one, relayed in order; the care goes into the book;
  * - `status` — the cares of a wallet, what each holds and what the agent did today;
  * - `stop` — everything back: the position out through the person's own settings signature, the policies removed,
- *   the vault emptied to the wallet.
+ *   the vault emptied to the wallet. Building it changes nothing: the care keeps working until the chain shows the
+ *   person's signed stop (`relayStop`).
  * The agent (`careMinute`, the cron) reads each care of the book and does the one thing `./decide.ts` says.
+ *
+ * Every action is the proven wallet's own: the door (`./door.server.ts`) hands these functions only the address the
+ * wallet proved, never one a request names.
  *
  * The switch goes by the release protocol (decision 92): devnet → a release with a point to roll back to → the person
  * who owns Ryntra tries it. `RYNTRA_AGENT_CARE` — `devnet` or `mainnet` opens it, anything else closes it (404); the
@@ -27,12 +31,14 @@ import type { GuardStore } from "../guard/store.ts";
 import { agentKeyFor } from "../mandate/agent-service.server.ts";
 import { unsignedTransaction, type SmartAccount } from "../mandate/human.ts";
 import { mandateConnection, onNetwork, registryAgent } from "../mandate/service.server.ts";
-import { NATIVE_MINT, TOKEN_PROGRAM_ID, readProgramConfig, readSettings, ssaAddress } from "../mandate/ssa.ts";
+import { NATIVE_MINT, readProgramConfig, readSettings, ssaAddress } from "../mandate/ssa.ts";
 import { decide, inRange, careDay, type CareEvent, type PositionSnapshot } from "./decide.ts";
 import { ownTokenAccount, planCareEnable, planCareStop, planCareWithdraw, type Care } from "./enable.ts";
 import { careAct } from "./run.server.ts";
+import type { DoorActions } from "./door.server.ts";
 import { careSigner } from "./signer.server.ts";
 import { careOwnerExecuteInstruction } from "./ssa-care.ts";
+import { stockKeeperGate } from "./stock-keeper-gate.ts";
 import { CARE_MAX_DAYS, type CarePool, type FeeMode } from "./terms.ts";
 import { careWorth, NO_WORTH, type CareRecord } from "./worth.ts";
 import { dlmmClaimToWallet, dlmmExit, dlmmOpen, dlmmPool, dlmmPositions, dlmmRebalance, type CareBuild } from "./venue.server.ts";
@@ -104,7 +110,7 @@ export type CareEntry = Readonly<{
   status: "signing" | "working" | "stopped";
   /** The hashes of the messages the person was asked to sign, in order — only those are relayed. */
   messages: readonly string[];
-  /** The hashes of the person's «stop and take it back» messages, once built — only those are relayed. */
+  /** A row written before the stop ticket (`stopTicketKey`): the hashes of its «stop and take it back» messages. */
   stopMessages?: readonly string[];
   /** The range's width in bins the agent keeps around the price. */
   width: number;
@@ -122,6 +128,54 @@ export type CareEntry = Readonly<{
 const EVENTS_KEPT = 60;
 const bookOf = (store: GuardStore) => store.collection<CareEntry>(CARE_BOOK);
 const keyOf = (cluster: string, owner: string, vaultIndex: number) => `c:${cluster}:${owner}:${vaultIndex}`;
+
+/**
+ * The person's «stop» transactions as last built: the hashes of their messages — only those are relayed. Kept beside the
+ * row (`s:<row key>`), never in it: the agent's pass rewrites its row and would drop them, and building a stop writes
+ * nothing the agent reads. The care's and the keeper's alike (`./stock-keeper.server.ts`).
+ */
+export type StopTicket = Readonly<{ v: 1; messages: readonly string[]; at: number }>;
+export const stopTicketKey = (key: string) => `s:${key}`;
+
+export async function writeStopTicket(store: GuardStore, key: string, messages: readonly string[], at: number): Promise<void> {
+  await store.collection<StopTicket>(CARE_BOOK).set(stopTicketKey(key), { v: 1, messages, at });
+}
+
+/** The hashes a stop of this row may relay: the ticket's, else those of a row written before the ticket. */
+export async function stopMessagesOf(store: GuardStore, row: Readonly<{ key: string; stopMessages?: readonly string[] }>): Promise<readonly string[]> {
+  const ticket = await store.collection<StopTicket>(CARE_BOOK).get(stopTicketKey(row.key));
+  return ticket?.v === 1 && Array.isArray(ticket.messages) ? ticket.messages : (row.stopMessages ?? []);
+}
+
+export type RelayFailure = Readonly<{ ok: false; code: "SIGNED" | "RELAY"; reason: string }>;
+
+/**
+ * The person's signed stop, relayed in order — each one a built message, each awaited. A transaction the chain refuses
+ * (its simulation, or its landing) stops the rest: what follows it in the stop was built on the state it would have left.
+ */
+export async function relaySigned(connection: Connection, messages: readonly string[], signed: readonly string[]): Promise<Readonly<{ ok: true; signatures: readonly string[] }> | RelayFailure> {
+  const transactions: VersionedTransaction[] = [];
+  for (const wire of signed) {
+    let tx: VersionedTransaction;
+    try {
+      tx = VersionedTransaction.deserialize(Buffer.from(wire, "base64"));
+    } catch {
+      return { ok: false, code: "SIGNED", reason: "A transaction could not be read." };
+    }
+    if (!messages.includes(sha(tx.message.serialize()))) return { ok: false, code: "SIGNED", reason: "Not a transaction that was built." };
+    transactions.push(tx);
+  }
+  const signatures: string[] = [];
+  for (const tx of transactions) {
+    const id = await connection.sendRawTransaction(tx.serialize(), { maxRetries: 5 }).catch((error: unknown) => (error instanceof Error ? error : new Error("refused")));
+    if (id instanceof Error) return { ok: false, code: "RELAY", reason: id.message.split("\n")[0] ?? "refused" };
+    const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash("confirmed");
+    const landed = await connection.confirmTransaction({ signature: id, blockhash, lastValidBlockHeight }, "confirmed").catch(() => null);
+    if (landed?.value?.err) return { ok: false, code: "RELAY", reason: "The chain refused the transaction." };
+    signatures.push(id);
+  }
+  return { ok: true, signatures };
+}
 
 export function careToJson(care: Care): CareJson {
   const p = care.terms.pool;
@@ -270,7 +324,7 @@ export async function submitCare(input: Readonly<{ owner: string; key: string; s
   if (!gate.open) return fail("CARE_CLOSED", "The agent does not look after piers here yet.");
   const store = deps.store ?? getGuardRuntime().store;
   const entry = await bookOf(store).get(input.key);
-  if (!entry || entry.care.owner !== input.owner || entry.status !== "signing") return fail("CARE_UNKNOWN", "Nothing to sign here.");
+  if (!entry || entry.care.owner !== input.owner || entry.care.cluster !== gate.network || entry.status !== "signing") return fail("CARE_UNKNOWN", "Nothing to sign here.");
   if (input.signed.length !== entry.messages.length) return fail("CARE_SIGNED", "Not the transactions that were built.");
   const connection = deps.connection ?? mandateConnection(gate.network);
   const signatures: string[] = [];
@@ -317,12 +371,8 @@ export async function careStep(entry: CareEntry, deps: Readonly<{ env: Env; conn
     const event: CareEvent = { at: deps.now, kind: ok ? kind : "refused", valueInY: ok ? valueInY : 0, signature: outcome.status === "landed" || outcome.status === "unknown" ? outcome.signature : null };
     return { ok, event };
   };
-  const balanceOf = async (owner: PublicKey, mint: PublicKey) => {
-    const info = await deps.connection.getAccountInfo(ownTokenAccount(owner, mint, TOKEN_PROGRAM_ID), "confirmed");
-    return info && info.data.length >= 72 ? Buffer.from(info.data).readBigUInt64LE(64) : 0n;
-  };
   const p = care.terms.pool;
-  const idle = { x: await balanceOf(care.vault, p.mintX), y: await balanceOf(care.vault, p.mintY) };
+  const idle = { x: await tokenHeld(deps.connection, care.vault, p.mintX, p.programX), y: await tokenHeld(deps.connection, care.vault, p.mintY, p.programY) };
   const positions = await dlmmPositions(pool, care);
   let next: CareEntry = entry;
   const push = (event: CareEvent, patch: Partial<CareEntry> = {}) => {
@@ -345,7 +395,9 @@ export async function careStep(entry: CareEntry, deps: Readonly<{ env: Env; conn
   const active = await pool.getActiveBin();
   const price = Number(active.pricePerToken);
   const solIsY = p.mintY.equals(NATIVE_MINT);
-  const feesInY = solIsY ? Number(position.feeY) / LAMPORTS + (Number(position.feeX) / 1e6) * price : Number(position.feeX) / LAMPORTS;
+  /* The other coin's fees in its own decimals — a staked SOL's 9, a dollar's 6 — never one number for every coin. */
+  const otherUnit = 10 ** (chainDecimals(solIsY ? pool.tokenX : pool.tokenY) ?? 6);
+  const feesInY = solIsY ? Number(position.feeY) / LAMPORTS + (Number(position.feeX) / otherUnit) * price : Number(position.feeX) / LAMPORTS;
   const snapshot: PositionSnapshot = {
     kind: "dlmm",
     price,
@@ -406,8 +458,14 @@ export async function careMinute(
       continue;
     }
     try {
-      const after = await step(row, { env, connection, store, now });
-      if (after !== row) {
+      /* The row as it stands now: the owner's stop may have landed since this pass read the book. */
+      const fresh = await bookOf(store).get(row.key);
+      if (!fresh || fresh.status !== "working") continue;
+      const after = await step(fresh, { env, connection, store, now });
+      if (after !== fresh) {
+        /* Never written over the owner's stop that landed while the step ran. */
+        const latest = await bookOf(store).get(row.key);
+        if (latest?.status !== "working") continue;
         await bookOf(store).set(row.key, after);
         acted += 1;
       }
@@ -415,7 +473,12 @@ export async function careMinute(
       /* The next pass reads this care again. */
     }
   }
-  return { ran: true, cares: rows.length, acted, skipped } as const;
+  /* The stock pool's keeper, the same agent on the same cron — only where its own switch names a network, so a
+     care without it loads nothing of DLMM Pro. Its failure never fails this pass. */
+  const keeper = stockKeeperGate(env).open
+    ? await import("./stock-keeper.server.ts").then((module) => module.stockKeeperMinute(env, { store, ...(deps.now ? { now: deps.now } : {}) })).catch(() => ({ ran: false, reason: "failed" }) as const)
+    : null;
+  return { ran: true, cares: rows.length, acted, skipped, ...(keeper ? { keeper } : {}) } as const;
 }
 
 /* ------------------------------------------------------------------ status · stop */
@@ -434,6 +497,12 @@ export type CareView = Readonly<{
   valueUsd: number | null;
   /** Its fees not yet taken, USD; null — not priced. */
   unclaimedUsd: number | null;
+  /**
+   * A stopped care, as the chain stands: true — its policies or the vault's money are still there (the stop's
+   * relay failed, or it was never finished), so the window keeps it with one «Withdraw»; false — all of it is back;
+   * null — not read, or the care still works.
+   */
+  left: boolean | null;
 }>;
 
 /** The pool's prices as Earn reads them: Meteora's record of the pool, on mainnet only — a devnet coin has no price. */
@@ -459,6 +528,41 @@ const withChainDecimals = (record: CareRecord | null, pool: Readonly<{ tokenX: {
   return { x: fill(record.x), y: fill(record.y) };
 };
 
+/** The accounts of a care the chain carries while anything of it is left: the two policies, the vault, the vault's two coins. */
+const careAccounts = (care: Care): readonly PublicKey[] => [
+  care.exitPolicy,
+  care.tendPolicy,
+  care.vault,
+  ownTokenAccount(care.vault, care.terms.pool.mintX, care.terms.pool.programX),
+  ownTokenAccount(care.vault, care.terms.pool.mintY, care.terms.pool.programY),
+];
+const LEFT_READ = 100;
+
+/**
+ * What of each stopped care the chain still carries, in one read for all of them: its policies (the agent's key
+ * still has rights), the vault's SOL, the vault's coin accounts. Any of them there — true: the person's «stop and take it
+ * back» is not finished, and the same stop builds what is left (`buildCareStop`). None — false: everything is back. The
+ * chain did not answer — null for each, never a guess. Read only: nothing here is built or sent.
+ */
+export async function careLeftOnChain(connection: Pick<Connection, "getMultipleAccountsInfo">, cares: readonly Care[]): Promise<readonly (boolean | null)[]> {
+  if (!cares.length) return [];
+  const keys = cares.flatMap((care) => careAccounts(care));
+  const read: unknown[] = [];
+  for (let at = 0; at < keys.length; at += LEFT_READ) {
+    const part = keys.slice(at, at + LEFT_READ);
+    let got: unknown;
+    try {
+      got = await connection.getMultipleAccountsInfo([...part], "confirmed");
+    } catch {
+      got = null;
+    }
+    if (!Array.isArray(got) || got.length !== part.length) return cares.map(() => null);
+    read.push(...got);
+  }
+  const each = careAccounts(cares[0]!).length;
+  return cares.map((_, index) => read.slice(index * each, (index + 1) * each).some(Boolean));
+}
+
 export async function careStatus(owner: string, deps: Readonly<{ env?: Env; store?: GuardStore; connection?: Connection; now?: () => number; price?: PriceRead }> = {}) {
   const gate = careGate(deps.env);
   if (!gate.open) return fail("CARE_CLOSED", "The agent does not look after piers here yet.");
@@ -466,6 +570,9 @@ export async function careStatus(owner: string, deps: Readonly<{ env?: Env; stor
   const connection = deps.connection ?? mandateConnection(gate.network);
   const now = deps.now?.() ?? Date.now();
   const rows = (await caresOf(store, gate.network, owner)).filter((row) => row.status !== "signing");
+  const stopped = rows.filter((row) => row.status === "stopped");
+  const leftRead = await careLeftOnChain(connection, stopped.map((row) => careFromJson(row.care)));
+  const leftOf = new Map(stopped.map((row, index) => [row.key, leftRead[index] ?? null]));
   const views: CareView[] = [];
   for (const row of rows) {
     const care = careFromJson(row.care);
@@ -487,24 +594,48 @@ export async function careStatus(owner: string, deps: Readonly<{ env?: Env; stor
         );
       }
     }
-    views.push({ key: row.key, pool: row.care.pool.address, status: row.status, inRange: inside, holdsX, holdsY, day: careDay(row.events, null, now, { now: null, dayAgo: null }), stopBelow: row.care.stopBelow, fees: row.care.fees, valueUsd: worth.valueUsd, unclaimedUsd: worth.unclaimedUsd });
+    views.push({ key: row.key, pool: row.care.pool.address, status: row.status, inRange: inside, holdsX, holdsY, day: careDay(row.events, null, now, { now: null, dayAgo: null }), stopBelow: row.care.stopBelow, fees: row.care.fees, valueUsd: worth.valueUsd, unclaimedUsd: worth.unclaimedUsd, left: leftOf.get(row.key) ?? null });
   }
   return { ok: true as const, network: gate.network, cares: views };
 }
 
+/** What an account of `owner` holds of a coin, by the coin's own token program (Token-2022's too); 0 — no account. */
+async function tokenHeld(connection: Connection, owner: PublicKey, mint: PublicKey, program: PublicKey): Promise<bigint> {
+  const info = await connection.getAccountInfo(ownTokenAccount(owner, mint, program), "confirmed");
+  return info && info.data.length >= 72 ? Buffer.from(info.data).readBigUInt64LE(64) : 0n;
+}
+
 /**
- * Everything back, as the settings signer: the position's liquidity, fees and rent out to the person (the exit the
- * agent would make, signed by the person through the care vault — no policy, no agent), the policies removed, the
- * vault emptied. The window asks the wallet to sign the transactions in one approval.
+ * A coin's decimals as the chain holds them: the pool's own read of its mint (`DLMM.create`), else the mint account
+ * itself (byte 44 of every mint, Token-2022's too); null — not read.
  */
-export async function stopCare(input: Readonly<{ owner: string; key: string }>, deps: Readonly<{ env?: Env; store?: GuardStore; connection?: Connection }> = {}) {
-  const gate = careGate(deps.env);
-  if (!gate.open) return fail("CARE_CLOSED", "The agent does not look after piers here yet.");
-  const store = deps.store ?? getGuardRuntime().store;
-  const entry = await bookOf(store).get(input.key);
-  if (!entry || entry.care.owner !== input.owner) return fail("CARE_UNKNOWN", "No such care.");
-  const connection = deps.connection ?? mandateConnection(gate.network);
-  const care = careFromJson(entry.care);
+export function chainDecimals(read: Readonly<{ mint?: Readonly<{ decimals?: number }> }> | null | undefined, mintData: Uint8Array | null = null): number | null {
+  const named = read?.mint?.decimals;
+  if (typeof named === "number" && Number.isInteger(named) && named >= 0 && named <= 18) return named;
+  return mintData && mintData.length >= 82 ? mintData[44]! : null;
+}
+
+async function coinDecimals(connection: Connection, mint: PublicKey, read: Readonly<{ mint?: Readonly<{ decimals?: number }> }> | undefined): Promise<number | null> {
+  return chainDecimals(read) ?? chainDecimals(null, (await connection.getAccountInfo(mint, "confirmed").catch(() => null))?.data ?? null);
+}
+
+type StopDeps = Readonly<{ env?: Env; store?: GuardStore; connection?: Connection; now?: () => number; build?: typeof buildCareStop }>;
+
+/**
+ * Whether the chain still carries the care's two policies — the only rights the agent's key has here — or null where it
+ * did not answer. Gone, the agent can do nothing more: that, and only that, is a stopped care.
+ */
+async function policiesLive(connection: Connection, care: Care): Promise<boolean | null> {
+  const read = await Promise.all([connection.getAccountInfo(care.exitPolicy, "confirmed"), connection.getAccountInfo(care.tendPolicy, "confirmed")]).catch(() => null);
+  return read ? read.some(Boolean) : null;
+}
+
+/**
+ * The person's stop as the chain stands now, unsigned: each position out through the person's own settings signature,
+ * the policies removed (where the chain still carries them — a stop asked again after they went would otherwise hold a
+ * transaction that can only fail), the vault emptied. In that order: the policies go only once every position is out.
+ */
+export async function buildCareStop(connection: Connection, care: Care): Promise<Readonly<{ ok: true; transactions: readonly VersionedTransaction[] }> | CareFailure> {
   const owner = care.terms.human;
   const groups: (readonly import("@solana/web3.js").TransactionInstruction[])[] = [];
   const pool = await dlmmPool(connection, care);
@@ -512,43 +643,104 @@ export async function stopCare(input: Readonly<{ owner: string; key: string }>, 
     const exit = await dlmmExit(pool, care, position);
     groups.push([...exit.setup.map((ix) => withPayer(ix, care.terms.agent, owner)), careOwnerExecuteInstruction({ settings: care.settings, signer: owner, instructions: exit.inner, accountIndex: care.vaultIndex })]);
   }
-  groups.push(planCareStop(care));
-  const balanceOf = async (mint: PublicKey) => {
-    const info = await connection.getAccountInfo(ownTokenAccount(care.vault, mint, TOKEN_PROGRAM_ID), "confirmed");
-    return info && info.data.length >= 72 ? Buffer.from(info.data).readBigUInt64LE(64) : 0n;
-  };
+  const live = await policiesLive(connection, care);
+  if (live === null) return fail("CARE_UNREAD", "The care was not read. Try again.");
+  if (live) groups.push(planCareStop(care));
   const p = care.terms.pool;
+  /* Each coin back by its own token program and its own decimals, as the chain holds them: a transfer with another
+     coin's decimals is refused, and the person's money would stay in the vault. */
+  const decimals = { x: await coinDecimals(connection, p.mintX, pool.tokenX), y: await coinDecimals(connection, p.mintY, pool.tokenY) };
+  if (decimals.x === null || decimals.y === null) return fail("CARE_POOL", "The pool's coins were not read.");
   const lamports = BigInt((await connection.getBalance(care.vault, "confirmed").catch(() => 0)) ?? 0);
-  groups.push(planCareWithdraw(care, { x: await balanceOf(p.mintX), y: await balanceOf(p.mintY), lamports }, { x: p.mintX.equals(NATIVE_MINT) ? 9 : 6, y: p.mintY.equals(NATIVE_MINT) ? 9 : 6 }));
+  groups.push(planCareWithdraw(care, { x: await tokenHeld(connection, care.vault, p.mintX, p.programX), y: await tokenHeld(connection, care.vault, p.mintY, p.programY), lamports }, { x: decimals.x, y: decimals.y }));
   const { blockhash } = await connection.getLatestBlockhash("confirmed");
-  const txs = groups.map((instructions) => unsignedTransaction(owner, instructions, blockhash, []));
-  await bookOf(store).set(entry.key, { ...entry, status: "stopped", stopMessages: txs.map((tx) => sha(tx.message.serialize())), updatedAt: Date.now() });
-  return { ok: true as const, transactions: txs.map((tx) => Buffer.from(tx.serialize()).toString("base64")) };
+  return { ok: true, transactions: groups.map((instructions) => unsignedTransaction(owner, instructions, blockhash, [])) };
 }
 
-/** One of the person's signed «stop and take it back» transactions, relayed only when it is one that was built. */
-export async function relayStop(input: Readonly<{ owner: string; key: string; signed: readonly string[] }>, deps: Readonly<{ env?: Env; store?: GuardStore; connection?: Connection }> = {}) {
+/**
+ * Everything back, as the settings signer: the position's liquidity, fees and rent out to the person (the exit the
+ * agent would make, signed by the person through the care vault — no policy, no agent), the policies removed, the
+ * vault emptied. The window asks the wallet to sign the transactions in one approval.
+ *
+ * The owner's stop takes effect when it is asked: the row is «stopped» at once, so the agent's pass leaves the care
+ * whatever happens to the transactions after (an exit built for a position the agent has since moved, a relay that
+ * fails). Only the proven owner reaches here — the door (`door.server.ts`) hands the action the address the wallet
+ * proved, never one a request names. The hashes the person may relay go to the stop ticket, the last built only.
+ */
+export async function stopCare(input: Readonly<{ owner: string; key: string }>, deps: StopDeps = {}) {
   const gate = careGate(deps.env);
   if (!gate.open) return fail("CARE_CLOSED", "The agent does not look after piers here yet.");
   const store = deps.store ?? getGuardRuntime().store;
   const entry = await bookOf(store).get(input.key);
-  if (!entry || entry.care.owner !== input.owner || !entry.stopMessages?.length) return fail("CARE_UNKNOWN", "Nothing to send here.");
+  if (!entry || entry.care.owner !== input.owner || entry.care.cluster !== gate.network) return fail("CARE_UNKNOWN", "No such care.");
   const connection = deps.connection ?? mandateConnection(gate.network);
-  const signatures: string[] = [];
-  for (const wire of input.signed) {
-    const tx = VersionedTransaction.deserialize(Buffer.from(wire, "base64"));
-    if (!entry.stopMessages.includes(sha(tx.message.serialize()))) return fail("CARE_SIGNED", "Not a transaction that was built.");
-    const id = await connection.sendRawTransaction(tx.serialize(), { maxRetries: 5 }).catch((error: unknown) => (error instanceof Error ? error : new Error("refused")));
-    if (id instanceof Error) return fail("CARE_RELAY", id.message.split("\n")[0] ?? "refused");
-    const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash("confirmed");
-    await connection.confirmTransaction({ signature: id, blockhash, lastValidBlockHeight }, "confirmed").catch(() => null);
-    signatures.push(id);
+  const built = await (deps.build ?? buildCareStop)(connection, careFromJson(entry.care));
+  if (!built.ok) return built;
+  const at = deps.now?.() ?? Date.now();
+  await writeStopTicket(store, entry.key, built.transactions.map((tx) => sha(tx.message.serialize())), at);
+  /* The row as it is now — the agent's pass may have written it since it was read. */
+  const latest = (await bookOf(store).get(entry.key)) ?? entry;
+  if (latest.status !== "stopped") await bookOf(store).set(entry.key, { ...latest, status: "stopped", updatedAt: at });
+  return { ok: true as const, transactions: built.transactions.map((tx) => Buffer.from(tx.serialize()).toString("base64")) };
+}
+
+/**
+ * The person's signed «stop and take it back» transactions, relayed only when each is one that was built. The row is
+ * already «stopped» since the stop was asked (`stopCare`); `stopped` tells the window whether the chain no longer carries
+ * the policies.
+ */
+export async function relayStop(input: Readonly<{ owner: string; key: string; signed: readonly string[] }>, deps: StopDeps = {}) {
+  const gate = careGate(deps.env);
+  if (!gate.open) return fail("CARE_CLOSED", "The agent does not look after piers here yet.");
+  const store = deps.store ?? getGuardRuntime().store;
+  const entry = await bookOf(store).get(input.key);
+  if (!entry || entry.care.owner !== input.owner || entry.care.cluster !== gate.network) return fail("CARE_UNKNOWN", "Nothing to send here.");
+  const messages = await stopMessagesOf(store, entry);
+  if (!messages.length) return fail("CARE_UNKNOWN", "Nothing to send here.");
+  const connection = deps.connection ?? mandateConnection(gate.network);
+  const relayed = await relaySigned(connection, messages, input.signed);
+  if (!relayed.ok) return fail(`CARE_${relayed.code}`, relayed.reason);
+  const stopped = (await policiesLive(connection, careFromJson(entry.care))) === false;
+  if (stopped) {
+    /* The row as it is now — the agent's pass may have written it since it was read. */
+    const latest = (await bookOf(store).get(entry.key)) ?? entry;
+    if (latest.status !== "stopped") await bookOf(store).set(entry.key, { ...latest, status: "stopped", updatedAt: deps.now?.() ?? Date.now() });
   }
-  return { ok: true as const, signatures };
+  return { ok: true as const, signatures: relayed.signatures, stopped };
 }
 
 /** A token account the agent would have opened at its cost: in the person's own stop, the person pays it. */
 function withPayer(instruction: import("@solana/web3.js").TransactionInstruction, from: PublicKey, to: PublicKey) {
   instruction.keys = instruction.keys.map((meta) => (meta.pubkey.equals(from) ? { ...meta, pubkey: to } : meta));
   return instruction;
+}
+
+/* ------------------------------------------------------------------ the door's actions */
+
+/**
+ * What each action of the care's door asks (`/api/city/earn/care`, `./door.server.ts`), for the wallet the door proved:
+ * `owner` is that address, never the one the body names.
+ */
+export function careActions(deps: Readonly<{ env?: Env; store?: GuardStore; connection?: Connection; now?: () => number }> = {}): DoorActions {
+  const signedOf = (body: Readonly<Record<string, unknown>>) => (Array.isArray(body.signed) ? body.signed.map(String) : []);
+  const keyIn = (body: Readonly<Record<string, unknown>>) => String(body.key ?? "");
+  return {
+    review: (owner, body) =>
+      reviewCare(
+        {
+          owner,
+          pool: String(body.pool ?? ""),
+          lamports: String(body.lamports ?? ""),
+          fees: body.fees === "wallet" ? "wallet" : "reinvest",
+          width: typeof body.width === "number" ? body.width : undefined,
+          shape: typeof body.shape === "string" ? (body.shape as LiquidityShape) : undefined,
+          stopPct: typeof body.stopPct === "number" ? body.stopPct : 0,
+        },
+        deps,
+      ),
+    submit: (owner, body) => submitCare({ owner, key: keyIn(body), signed: signedOf(body) }, deps),
+    stop: (owner, body) => stopCare({ owner, key: keyIn(body) }, deps),
+    relay: (owner, body) => relayStop({ owner, key: keyIn(body), signed: signedOf(body) }, deps),
+    status: (owner) => careStatus(owner, deps),
+  };
 }

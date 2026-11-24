@@ -33,7 +33,7 @@ import {
   type ProgramConfig,
   type SettingsState,
 } from "./ssa.ts";
-import { budgetProgramOf, budgetToken, mandatePolicy, termsRefusal, type MandateTerms } from "./terms.ts";
+import { budgetProgramOf, budgetToken, copyChunks, copySalePolicyOf, heldAccountOf, mandatePolicy, salePolicyOf, termsRefusal, type HeldCoin, type MandateTerms } from "./terms.ts";
 
 export type Cluster = "devnet" | "mainnet";
 
@@ -47,6 +47,10 @@ export type Mandate = Readonly<{
   policySeed: bigint;
   /** The vault's token account of the budget — the only account the agent may spend from. */
   budgetAccount: PublicKey;
+  /** The sale's own policy, when the agent keeps the coin it buys (`terms.heldCoin`) and may sell it on its own. */
+  salePolicy?: PublicKey | undefined;
+  /** Her copy's sales' policies, one for each group of its coins (`terms.copyCoins`, `copyChunks`), in that order. */
+  salePolicies?: readonly PublicKey[] | undefined;
 }>;
 
 /** The person's smart account as the chain has it: none yet (the program's config names the next one), or hers. */
@@ -110,14 +114,37 @@ export function planEnable(
     }
   }
   const fixed = terms.fixedBuy;
-  const receive = [...(input.receiveMints ?? []).map(receiveOf), ...(fixed ? [{ mint: fixed.outputMint, program: fixed.outputProgram ?? TOKEN_PROGRAM_ID }] : [])];
+  const held = terms.heldCoin;
+  const receive = [...(input.receiveMints ?? []).map(receiveOf), ...(fixed ? [{ mint: fixed.outputMint, program: fixed.outputProgram ?? TOKEN_PROGRAM_ID }] : []), ...(held ? [held] : [])];
   for (const { mint, program } of new Map(receive.map((entry) => [entry.mint.toBase58(), entry])).values()) {
     instructions.push(createAssociatedTokenAccountIdempotentInstruction(human, tokenAccountOf(human, mint, program), human, mint, program));
-    /* Jupiter's `route_v2` lands the output in the vault's own account of the mint first, then hands it on to her. */
-    if (terms.venue.kind === "jupiter") instructions.push(createAssociatedTokenAccountIdempotentInstruction(human, tokenAccountOf(vault, mint, program), vault, mint, program));
+    /*
+     * Jupiter's `route_v2` lands the output in the vault's own account of the mint first, then hands it on to her.
+     * The coin the agent keeps lands there and stays, on either venue.
+     */
+    if (terms.venue.kind === "jupiter" || (held && held.mint.equals(mint))) instructions.push(createAssociatedTokenAccountIdempotentInstruction(human, tokenAccountOf(vault, mint, program), vault, mint, program));
   }
   if (input.agentFeeLamports && input.agentFeeLamports > 0n) instructions.push(SystemProgram.transfer({ fromPubkey: human, toPubkey: terms.agent, lamports: input.agentFeeLamports }));
 
+  /* A copy's sales' policies follow its buy's, the next seeds of the same account, in the same approval. */
+  if (terms.copyCoins) return planCopyEnable({ ...input, instructions, settings, vault, policy, policySeed, budgetAccount });
+  /* The sale's policy follows the buy's, the next seed of the same account, in the same approval. */
+  const salePolicy = terms.heldCoin ? ssaAddress.policy(settings, policySeed + 1n) : undefined;
+  const saleCreate =
+    terms.heldCoin && salePolicy
+      ? settingsSyncInstruction({
+          settings,
+          rentPayer: human,
+          signers: [human],
+          policyAccounts: [salePolicy],
+          actions: [
+            {
+              kind: "policyCreate",
+              create: { seed: policySeed + 1n, policy: salePolicyOf(terms, { vault, budgetAccount }), signers: [{ key: terms.agent, permissions: ALL_PERMISSIONS }], threshold: 1, start: null, expiresAt: terms.expiresAt },
+            },
+          ],
+        })
+      : null;
   const policyCreate =
     settingsSyncInstruction({
       settings,
@@ -138,10 +165,53 @@ export function planEnable(
         },
       ],
     });
-  const mandate: Mandate = { cluster: input.cluster, terms, settings, vault, policy, policySeed, budgetAccount };
-  if (fits(human, [...instructions, policyCreate])) return { mandate, transactions: [[...instructions, policyCreate]] };
+  const mandate: Mandate = { cluster: input.cluster, terms, settings, vault, policy, policySeed, budgetAccount, ...(salePolicy ? { salePolicy } : {}) };
+  const sale: (readonly TransactionInstruction[])[] = saleCreate ? [[saleCreate]] : [];
+  if (saleCreate && !fits(human, [saleCreate])) throw new Error("The mandate's sale policy does not fit one transaction.");
+  if (fits(human, [...instructions, policyCreate])) return { mandate, transactions: [[...instructions, policyCreate], ...sale] };
   if (!fits(human, [policyCreate]) || !fits(human, instructions)) throw new Error("The mandate's policy does not fit one transaction.");
-  return { mandate, transactions: [instructions, [policyCreate]] };
+  return { mandate, transactions: [instructions, [policyCreate], ...sale] };
+}
+
+/**
+ * Her copy turned on: what `planEnable` built (her account, the budget moved in, the agent's SOL), then the buy's
+ * policy, then a sale's policy for each group of her coins at the next seeds — all asked of her wallet at once, one
+ * approval. The vault's accounts of her coins are not opened now: the agent opens each, at its own cost, before its first
+ * buy of that coin (the signer lets it open only the vault's or her own account), and her stop closes each to her.
+ */
+function planCopyEnable(
+  input: Parameters<typeof planEnable>[0] & Readonly<{ instructions: readonly TransactionInstruction[]; settings: PublicKey; vault: PublicKey; policy: PublicKey; policySeed: bigint; budgetAccount: PublicKey }>,
+): EnablePlan {
+  const { terms, settings, vault, policy, policySeed, budgetAccount } = input;
+  const human = terms.human;
+  const create = (seed: bigint, at: PublicKey, rules: ReturnType<typeof mandatePolicy>) =>
+    settingsSyncInstruction({
+      settings,
+      rentPayer: human,
+      signers: [human],
+      policyAccounts: [at],
+      actions: [{ kind: "policyCreate", create: { seed, policy: rules, signers: [{ key: terms.agent, permissions: ALL_PERMISSIONS }], threshold: 1, start: null, expiresAt: terms.expiresAt } }],
+    });
+  const salePolicies = copyChunks(terms.copyCoins ?? []).map((_coins, chunk) => ssaAddress.policy(settings, policySeed + 1n + BigInt(chunk)));
+  const policyCreate = create(policySeed, policy, mandatePolicy(terms, { vault, budgetAccount }));
+  const sales = salePolicies.map((at, chunk) => [create(policySeed + 1n + BigInt(chunk), at, copySalePolicyOf(terms, { vault, budgetAccount }, chunk))]);
+  if (sales.some((sale) => !fits(human, sale))) throw new Error("A sale's policy of the copy does not fit one transaction.");
+  const mandate: Mandate = { cluster: input.cluster, terms, settings, vault, policy, policySeed, budgetAccount, salePolicies };
+  if (fits(human, [...input.instructions, policyCreate])) return { mandate, transactions: [[...input.instructions, policyCreate], ...sales] };
+  if (!fits(human, [policyCreate]) || !fits(human, input.instructions)) throw new Error("The mandate's policy does not fit one transaction.");
+  return { mandate, transactions: [input.instructions, [policyCreate], ...sales] };
+}
+
+/**
+ * Which of her copy's sales' policies this is — its group's index (`copyChunks`) — or null: no copy, another
+ * policy, or a mandate whose sales' policies are not one for each group of its coins.
+ */
+export function copySaleChunk(mandate: Pick<Mandate, "terms" | "salePolicies">, policy: PublicKey): number | null {
+  const coins = mandate.terms.copyCoins;
+  const policies = mandate.salePolicies;
+  if (!coins || !policies || policies.length !== copyChunks(coins).length) return null;
+  const at = policies.findIndex((entry) => entry.equals(policy));
+  return at < 0 ? null : at;
 }
 
 /** Whether these instructions make one transaction within the packet ceiling. */
@@ -154,10 +224,32 @@ export function fits(payer: PublicKey, instructions: readonly TransactionInstruc
   }
 }
 
-/** Stop the agent: the policy removed; its rent goes back to the person who paid it. */
+/**
+ * Stop the agent: the policy removed — and the sale's, when it has one; and every sale's policy of her
+ * copy. Their rent goes back to the person who paid it.
+ */
 export function planStop(mandate: Mandate): readonly TransactionInstruction[] {
   const human = mandate.terms.human;
-  return [settingsSyncInstruction({ settings: mandate.settings, rentPayer: human, signers: [human], policyAccounts: [mandate.policy], actions: [{ kind: "policyRemove", policy: mandate.policy }] })];
+  const policies = [mandate.policy, ...(mandate.salePolicy ? [mandate.salePolicy] : []), ...(mandate.salePolicies ?? [])];
+  return [settingsSyncInstruction({ settings: mandate.settings, rentPayer: human, signers: [human], policyAccounts: policies, actions: policies.map((policy) => ({ kind: "policyRemove" as const, policy })) })];
+}
+
+/** The coin the agent kept for her in the vault, as her withdraw takes it back. */
+export type HeldBalance = Pick<HeldCoin, "mint" | "program"> & Readonly<{ decimals: number; balance: bigint; transferFee?: boolean | undefined }>;
+
+/**
+ * Take the coin the agent kept back, as the settings signer: all of it to her own account of it, then the
+ * vault's account closed to her (its rent was hers). A coin with a transfer fee keeps what it withheld in the account: that
+ * share is swept to the mint first, as with a coin she sold (`planWithdraw`).
+ */
+export function planWithdrawHeld(mandate: Mandate, held: HeldBalance): readonly TransactionInstruction[] {
+  const human = mandate.terms.human;
+  const account = heldAccountOf(mandate.vault, held);
+  const inner: TransactionInstruction[] = [];
+  if (held.balance > 0n) inner.push(createTransferCheckedInstruction(account, held.mint, tokenAccountOf(human, held.mint, held.program), mandate.vault, held.balance, held.decimals, [], held.program));
+  inner.push(createCloseAccountInstruction(account, human, mandate.vault, [], held.program));
+  const sweep = held.transferFee ? [createHarvestWithheldTokensToMintInstruction(held.mint, [account], held.program)] : [];
+  return [createAssociatedTokenAccountIdempotentInstruction(human, tokenAccountOf(human, held.mint, held.program), human, held.mint, held.program), ...sweep, ownerExecuteInstruction({ settings: mandate.settings, signer: human, instructions: inner })];
 }
 
 /**

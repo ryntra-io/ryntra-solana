@@ -1090,8 +1090,10 @@ test("every retained public composition mounts one chrome and a focusable skip t
   const cityPage = read("city/components/pages/DocumentPage.tsx");
   assert.equal((cityPage.match(/<main\b/g) ?? []).length, 1, "the city's page has one main landmark");
   assert.doesNotMatch(cityPage, /<(?:PublicHeader|FrozenHeader|FrozenFooter)\b/);
-  for (const file of ["app/developers/page.tsx"]) {
-    assert.match(read(file), /<CityDocument id="[a-z]+" \/>/, `${file} is the city's page`);
+  /* Developers, AI chats and the second address of Help stand in the terminal's frame since 21.11: its one main. */
+  for (const file of ["app/developers/page.tsx", "app/connector/page.tsx", "app/feedback/page.tsx"]) {
+    assert.match(read(file), /<TerminalFrame>/, `${file} stands in the terminal's frame`);
+    assert.doesNotMatch(read(file), /<main\b|CityDocument|<(?:PublicHeader|FrozenHeader|FrozenFooter)\b/, `${file} draws no landmark, chrome or city page of its own`);
   }
   /* The legal documents are the terminal's: its frame holds their one main. */
   for (const file of ["app/legal/terms/page.tsx", "app/legal/privacy/page.tsx", "app/legal/licenses/page.tsx", "app/legal/review/layout.tsx"]) {

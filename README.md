@@ -23,25 +23,25 @@
 
 ---
 
-Tell your agent what you want — *“trade JUP every day”*, *“launch me a token”* — sign its budget once in your own
-wallet, and it does the work: buys inside your limits and reports back every day — and when you ask for a coin, it
-prepares the launch for your one signature. When your take-profit or your stop is reached, it
-stops buying; what it bought is already in your wallet, and you sell it with one signature. The agent selling on its
-own, without your signature, is coming.
+Tell your agent what you want — *“trade JUP every day”*, *“copy this wallet”*, *“launch me a token”* — sign its budget
+once in your own wallet, and it does the work: it buys by its plan inside your limits, sells on its own by the rules you
+saw before you signed — your stop, half at 2x, when trading fades, after a set time — and reports back every day. The
+money from every sale lands only in your wallet, and one signature stops the agent and brings everything home. Ask for a
+coin, and it prepares the launch for your one signature.
 
 ## The terminal
 
 <table>
   <tr>
     <td width="50%" valign="top">
-      <img src="public/showcase/screen-say.jpg" alt="Above, the sentence “Trade JUP with 1 SOL a day” in the agent's line; below, the card it filled — recurring buys of JUP, 1 SOL a day, 0.5 SOL a trade, 30 days — ready for one signature">
+      <img src="public/showcase/screen-say.jpg" alt="Above, the sentence “Trade JUP with 1 SOL a day” in the agent's line; below, the AI trader's plan it filled — JUP, 1 SOL a day, 0.5 SOL a trade, 30 days, and when it sells on its own — ready for one signature">
       <h4>Say it</h4>
-      One sentence fills the card — the coin, the day, the limits; one signature starts it.
+      One sentence fills the AI trader's plan — the coin, the day, the limits, when it sells; one signature starts it.
     </td>
     <td width="50%" valign="top">
-      <img src="public/showcase/screen-spot.jpg" alt="Spot: a coin's live chart, its trades and liquidity, and one ticket for market, limit and stop orders">
+      <img src="public/showcase/screen-spot.jpg" alt="Spot: JUP's live chart, one ticket for market, limit and stop orders, and under the chart the Pools tab — JUP's Meteora pools with their liquidity, volume and fees of the day">
       <h4>Spot</h4>
-      A live chart, the coin's trades and one ticket for market, limit and stop.
+      A live chart, one ticket for market, limit and stop — and the coin's pools under the chart, to earn on it.
     </td>
   </tr>
   <tr>
@@ -58,9 +58,9 @@ own, without your signature, is coming.
   </tr>
   <tr>
     <td width="50%" valign="top">
-      <img src="public/showcase/screen-bots.jpg" alt="All bots: Grid on Meteora DLMM Pro with its maker bonus, recurring buys, an order ladder on Meteora DLMM, signals on paper and the money autopilot">
+      <img src="public/showcase/screen-bots.jpg" alt="All bots: Grid, Signals, Copy a wallet, recurring buys, an order ladder on Meteora DLMM and the money autopilot">
       <h4>Bots</h4>
-      A grid, recurring buys, an order ladder — rules that keep working after one approval.
+      A grid, copying a wallet, recurring buys — rules that keep working with real money after one approval.
     </td>
     <td width="50%" valign="top">
       <img src="public/showcase/screen-launch.jpg" alt="Launch: Quick start or Straight to a pool on DLMM Pro; a name, a ticker and a picture; the launch fee, your share of the fees and how people see the coin">
@@ -71,8 +71,10 @@ own, without your signature, is coming.
 </table>
 
 The home screen above is the **Market**: new launches live and every coin in one table, a buy in one tap.
-**Portfolio** shows everything a wallet holds across Solana — coins, pools, staking, deposits — and collects every fee
-or exits everything from one place. **Money** sends, receives and asks for a payment with a link.
+**Agents** holds the AI trader, which trades a coin by itself on your budget, and the Scout, which reads every new coin,
+screens out the traps and trades the ones it likes on paper with live prices. **Portfolio** shows everything a wallet
+holds across Solana — coins, pools, staking, deposits — and collects every fee or exits everything from one place.
+**Money** sends, receives, asks for a payment with a link and pays on a schedule by itself.
 
 ### On your phone
 
@@ -96,11 +98,13 @@ a person builds on a pool from the terminal and signs each step in their own wal
 
 - **Every pool, on its own page.** All DLMM Pro pools on Solana in one list, and a page for each: the chart, the
   pool's liquidity by price around the pool price, its book read from the bins, the fee and the limit bonus.
-- **A goal, or your own shape.** Pick Even, Near the price or Catch moves — or paint the shape yourself on 32 columns,
+- **A goal, or your own shape.** Pick Even, Near the price, Catch moves or Meteora's Wave — or paint the shape yourself on 32 columns,
   16 each side of the price, and save it as yours. One position of many ranges, paid with SOL alone if you like.
 - **Limit orders with a maker bonus.** Up to 25 prices in one order, each filled at its own price; a filled order
   earns part of the pool's fee — on a pool's page and a coin's Limit tab.
 - **Grid.** Buys each step down and sells each step up on DLMM Pro limit orders, both sides in one approval — in Bots.
+- **Earn on a coin's page.** Under a coin's chart, its Meteora pools with their volume and fees, and your own positions:
+  add, review or withdraw without leaving the coin.
 - **Launch straight into a pool.** No curve: the coin trades in its own pool from the time you pick, a fee against
   snipers falls as it grows, and the supply goes in as liquidity locked for ever — in Launch.
 - **Your agent looks after it.** As Meteora's delegate with three rights — fees, rewards and the exit at your stop —
@@ -132,7 +136,7 @@ a person builds on a pool from the terminal and signs each step in their own wal
   </tr>
 </table>
 
-Program `dPro1D5wiqnGMH8vMDG23jh35btTHoWdyqXjqkqxe8n` · SDK `@meteora-ag/dlmm-pro-sdk` 0.1.2, pinned · every path
+Program `dPro1D5wiqnGMH8vMDG23jh35btTHoWdyqXjqkqxe8n` · SDK `@meteora-ag/dlmm-pro-sdk` 0.1.3, pinned · every path
 rehearsed on the program's own binary before mainnet. **[METEORA.md](METEORA.md#dlmm-pro)** maps each piece to its
 file, with the tests that prove it.
 
@@ -141,15 +145,15 @@ file, with the tests that prove it.
 <p align="center">
   <picture>
     <source media="(max-width: 640px)" srcset="public/showcase/how-it-works-phone.jpg">
-    <img src="public/showcase/how-it-works.jpg" alt="How Ryntra works. You say one sentence. Your agent reads it and fills one card. One signature in your own wallet turns the card into rules on-chain: a Squads smart account with a budget a day and a cap a trade, paying only into your wallet. Your agent acts only inside rules the chain holds: it buys through Jupiter and looks after your pools on Meteora (DLMM Pro, DLMM, DAMM v2). Jupiter also swaps, places limits and lends; Meteora's DBC carries launches; Relay bridges to other chains; Phoenix futures are coming. You sign your own swaps, bridges and launches in your wallet, and what the agent buys lands there. One signature stops the agent." width="100%">
+    <img src="public/showcase/how-it-works.jpg" alt="How Ryntra works. You say one sentence. Your agent reads it and fills one card. One signature in your own wallet turns the card into rules on-chain: a Squads smart account with a budget a day and a cap a trade, paying only into your wallet. Your agent acts only inside rules the chain holds: it trades through Jupiter and looks after your pools on Meteora (DLMM Pro, DLMM, DAMM v2). Jupiter also swaps, places limits and lends; Meteora's DBC carries launches; Relay bridges to other chains; Phoenix futures are coming. You sign your own swaps, bridges and launches in your wallet, and the money of every sale the agent makes lands there. One signature stops the agent." width="100%">
   </picture>
 </p>
 
 A model reads your sentence and the engine checks it into one card — the coin, the amount a day, the limits. One
-signature turns the card into rules on Solana: a Squads smart account holds the budget, the cap on each trade, the
-venues, and the rule that what it buys can only arrive in your own wallet. Inside rules the chain holds, the agent only
-buys through Jupiter and looks after your pools on Meteora. Everything else — a swap, a bridge, a launch, a deposit —
-the engine builds unsigned, and you sign it yourself.
+signature turns the card into rules on Solana: a Squads smart account of your own holds the budget, the cap on each
+trade, the venues, a day's limit on what it may sell, and the rule that what it buys or sells can only arrive in your
+own accounts. Inside rules the chain holds, the agent trades only through Jupiter and looks after your pools on Meteora.
+Everything else — a swap, a bridge, a launch, a deposit — the engine builds unsigned, and you sign it yourself.
 
 Your keys stay with you: every transaction of yours is shown and signed in your own wallet. The agent signs its trades
 with its own key — Ryntra's, held in Google Cloud KMS — only inside limits that live on-chain, and one signature of
@@ -161,9 +165,13 @@ yours stops it.
 - **The terminal** — the frame, the shelves, the agent's line: [`terminal/`](terminal), [`app/(terminal)/`](app/(terminal))
 - **From a sentence to a card** — [`lib/sentence/`](lib/sentence), [`city/lib/command/`](city/lib/command)
 - **The budget as a Squads policy** — [`lib/mandate/ssa.ts`](lib/mandate/ssa.ts), [`lib/mandate/terms.ts`](lib/mandate/terms.ts)
-- **The agent's strategies, take-profit and stop** — [`lib/mandate/strategy.ts`](lib/mandate/strategy.ts), [`lib/mandate/tick.server.ts`](lib/mandate/tick.server.ts)
+- **The agent's strategies and its round** — [`lib/mandate/strategy.ts`](lib/mandate/strategy.ts), [`lib/mandate/tick.server.ts`](lib/mandate/tick.server.ts)
+- **The agent selling on its own — the stop, half at 2x, the fade, the clock** — [`lib/mandate/exit.ts`](lib/mandate/exit.ts), [`lib/mandate/exit.server.ts`](lib/mandate/exit.server.ts)
+- **Bots with money and copying a wallet** — [`lib/bots/money/`](lib/bots/money), [`lib/wallet-watch/copy-money.server.ts`](lib/wallet-watch/copy-money.server.ts), [`terminal/bots/`](terminal/bots)
+- **The AI trader and the Scout** — [`terminal/agents/`](terminal/agents), [`lib/scout/`](lib/scout)
 - **The agent's key, and its trade read before the key signs** — [`lib/mandate/signer.server.ts`](lib/mandate/signer.server.ts), [`lib/mandate/judge.ts`](lib/mandate/judge.ts)
 - **Trading through Jupiter** — [`lib/core/venues/jupiter.ts`](lib/core/venues/jupiter.ts), [`city/lib/trade/`](city/lib/trade)
+- **A coin's pools under its chart** — [`terminal/coin/earn-here/`](terminal/coin/earn-here)
 - **Meteora DLMM Pro** — [`terminal/pool/`](terminal/pool), [`lib/core/venues/meteora-dlmm-pro/`](lib/core/venues/meteora-dlmm-pro), [`lib/earn-pro/`](lib/earn-pro), [`lib/pro-limits/`](lib/pro-limits), [`lib/grid/`](lib/grid), [`lib/launch-pool/`](lib/launch-pool)
 - **Launches on DBC and DAMM v2, Earn on DLMM** — [`lib/core/venues/`](lib/core/venues), [`lib/launch/`](lib/launch), [`lib/liquidity/`](lib/liquidity)
 - **A transaction or a link checked before a signature** — [`lib/ward/`](lib/ward)
@@ -177,15 +185,15 @@ yours stops it.
 |---|---|
 | [`terminal/`](terminal) | The terminal: its frame and every shelf |
 | [`app/`](app) | The Next.js app: the pages and the versioned API |
-| [`lib/`](lib) | The engine: venues, the agent's rules, Earn, launches, payouts |
+| [`lib/`](lib) | The engine: venues, the agent's rules and exits, bots, Earn, launches, payments |
 | [`city/`](city) | Client logic the terminal stands on — tickets, money, launches, the agent's sentence |
 | [`packages/`](packages) | Libraries with their own interface: the API client, developer kits |
 | [`apps/mobile/`](apps/mobile) | The Android app — Expo and React Native, Mobile Wallet Adapter |
 | [`supabase/`](supabase) | The database schema, migration by migration |
 | [`public/`](public) | Static assets and these pictures |
 
-7,818 files, each test beside the code it tests. Every update of this repository is one commit named for what
-shipped; the latest is from 2026-11-20.
+8,507 files, each test beside the code it tests. Every update of this repository is one commit named for what
+shipped; the latest is from 2026-11-24.
 
 **Built with** Next.js 15 · React 19 · TypeScript · Solana Kit and web3.js · Jupiter · Meteora DLMM Pro, DLMM, DBC and
 DAMM v2 · Squads · Relay · Supabase · Expo and React Native · Vercel.

@@ -1,15 +1,15 @@
 import type { CSSProperties } from 'react';
-import { Geist, Hubot_Sans, Mona_Sans } from 'next/font/google';
+
+import { hubotSans as display, monaSans as ui } from '@/app/fonts/city';
+import { geistCyrillic as cyrillic } from '@/app/fonts/root';
 
 /**
  * The city's two faces (brandbook: Hubot Sans for the big words, Mona Sans for the sentences) and the Cyrillic beneath
  * them. Hubot and Mona have no Cyrillic, so a Ukrainian letter falls to Geist — the brand's interface face,
- * which has it — before the metric fallback; Latin letters keep their own faces. Geist's files are the ones the root
- * layout already preloads, so the Cyrillic costs no extra download.
+ * which has it — before the metric fallback; Latin letters keep their own faces. Geist's Cyrillic is the face the root
+ * layout already loads and preloads (`app/fonts/root.ts`), so it costs no extra download. Every file is the repository's
+ * own (`app/fonts/`).
  */
-const display = Hubot_Sans({ subsets: ['latin'], axes: ['wdth'], variable: '--font-display', display: 'swap' });
-const ui = Mona_Sans({ subsets: ['latin'], axes: ['wdth'], variable: '--font-ui', display: 'swap' });
-const cyrillic = Geist({ subsets: ['cyrillic'], display: 'swap', adjustFontFallback: false, preload: false });
 
 /** A face's stack with the Cyrillic face right after the face itself, ahead of its metric fallback. */
 function withCyrillic(stack: string): string {

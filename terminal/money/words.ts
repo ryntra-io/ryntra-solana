@@ -15,7 +15,6 @@ export const MONEY_WORDS = words(
     invoices: 'Invoices',
     recent: 'Recent transfers',
     noTransfers: 'What you send and receive shows here.',
-    transfersConnect: 'Connect a wallet to see your transfers.',
     connect: 'Connect wallet',
     // A tab with no wallet yet.
     sendBlankTitle: 'Send to any Solana address',
@@ -90,9 +89,9 @@ export const MONEY_WORDS = words(
     invoices: 'Рахунки',
     recent: 'Останні перекази',
     noTransfers: 'Тут з’явиться те, що ти надсилаєш і отримуєш.',
-    transfersConnect: 'Підключи гаманець, щоб бачити свої перекази.',
     connect: 'Підключити гаманець',
-    sendBlankTitle: 'Надсилай на будь-яку адресу Solana',
+    // «адресу Solana» never breaks: no word left hanging on a phone's second line (the eyes' pass of 20.11, flaw 100).
+    sendBlankTitle: 'Надсилай на будь-яку адресу\u00a0Solana',
     sendBlankLine: 'SOL чи будь-яку монету — на адресу чи ім’я .skr.',
     receiveBlankTitle: 'Твоя адреса для поповнення',
     receiveBlankLine: 'SOL чи будь-яка монета Solana — за адресою чи її QR.',

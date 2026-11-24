@@ -72,9 +72,6 @@ const browserFetch: FetchLike = (url, init) => fetch(url, init);
 
 const short = (address: string) => (address.length > 12 ? `${address.slice(0, 4)}…${address.slice(-4)}` : address);
 
-/** A still of our own live city behind the window (`public/city/art/`): filmed from the 3D scene, never generated. */
-const BACKDROP = { small: '/city/art/district-harbor-800.webp', large: '/city/art/district-harbor-1600.webp' } as const;
-
 /**
  * The payer's page: `/pay/<id>` as one window of the city. It says what is asked — the sum and the coin, for
  * what, to whom (the `.skr` name when the wallet chose one) — the status the engine reports, and offers one amber
@@ -472,11 +469,9 @@ function Frame({ children }: { children: ReactNode }) {
   const lang = useLang();
   return (
     <div className={s.page} data-pay-page="">
-      <div className={s.backdrop} aria-hidden="true">
-        {/* A still of the live 3D scene in two widths; decoration, so no next/image round trip. */}
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={BACKDROP.large} srcSet={`${BACKDROP.small} 800w, ${BACKDROP.large} 1600w`} sizes="100vw" alt="" decoding="async" />
-      </div>
+      {/* The night ground alone since 21.11: the city's district that stood here is not the product, and a frame of a
+          screen behind the request would read as buttons that do nothing. */}
+      <div className={s.backdrop} aria-hidden="true" />
       <div className={s.shade} aria-hidden="true" />
       <header className={s.top}>
         {/* A whole page load into the city, not a client navigation: the city is its own page. */}

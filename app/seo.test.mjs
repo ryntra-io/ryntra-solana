@@ -119,7 +119,7 @@ test("SEO locale registry is exact and every public surface has canonical hrefla
  * indexed. Until 2026-10-31 it named 103 addresses and 102 were pages of the old site, drawn in the old interface
  * nobody is to see (decision 75); each comes back here when the city takes it over at its own address.
  */
-const ADVERTISED_PATHS = ["/", "/launches", "/roadmap", "/build", "/partners", "/docs", ...DOC_IDS.map((id) => `/docs/${id}`), "/developers", "/connector", "/support", "/about", "/legal/terms", "/legal/privacy"];
+const ADVERTISED_PATHS = ["/", "/launches", "/roadmap", "/partners", "/docs", ...DOC_IDS.map((id) => `/docs/${id}`), "/developers", "/connector", "/support", "/about", "/legal/terms", "/legal/privacy"];
 
 /**
  * The site's old public pages: reachable at their addresses, never in the sitemap, and answering noindex until the
@@ -151,6 +151,8 @@ const NEVER_ADVERTISED = [
   "/stellar", "/robinhood",
   /* The short addresses lead into the city; the partner Terms are the Growth line's page. */
   "/launch", "/trade", "/rewards", "/terms", "/privacy", "/promo/partners/terms",
+  /* The pages that described the city lead to the documentation (21.11, `lib/site/retired-pages.ts`). */
+  "/build", "/how-it-works", "/learn", "/investors",
 ];
 /* 27: the prediction demo's page left with the demo; 33 since the new site (2026-09-26). */
 assert.ok(DOC_PAGES.length >= 33, "the documentation set is not the full one");
@@ -402,9 +404,11 @@ test("the Handbook and structured data consume the product's own facts without i
   assert.doesNotMatch(graphCode, /InternalCapabilityEvidence|evidence:\s*\{/);
   /* The share card used to stage a mock risk panel, which is why it carried
      "NOT A LIVE VERDICT" and "planned, not shipped" — disclaimers for a
-     fabricated example. It is the city's card: the live city's
-     frame, the mark and one line, with no verdict to disclaim. */
-  assert.match(og, /cityCard\(/);
-  assert.match(og, /CARD_WORDS/);
+     fabricated example. Since 21.11 it is the terminal's home card (decision
+     105): a real frame of the Market, the mark and the first rule's line, with
+     no verdict to disclaim and no city. */
+  assert.match(og, /sectionCard\(\{ id: "home", lang: "en" \}\)/);
+  assert.match(og, /shareCardAlt\("home", "en"\)/);
+  assert.doesNotMatch(og, /cityCard|city\/lib\/share/);
   assert.doesNotMatch(og, /RISK STATE|EVIDENCE REQUIRED|LIVE VERDICT/);
 });

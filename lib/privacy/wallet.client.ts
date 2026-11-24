@@ -1,7 +1,7 @@
 /**
- * The person's connected wallet, as the private balance asks it: sign these exact transaction bytes for devnet, sign
- * these exact message bytes. Both go through the wallet modules Ryntra already uses (`lib/solana/wallet.client.ts`);
- * nothing here sends or keeps anything.
+ * The person's connected wallet, as the private balance asks it: sign these exact transaction bytes for the private balance's network, sign
+ * these exact message bytes — the key request (`check.ts`), from which the private balance's keys come. Both go through
+ * the wallet modules Ryntra already uses (`lib/solana/wallet.client.ts`); nothing here sends, keeps or logs anything.
  */
 
 import { registeredWallet, signTransaction } from '../solana/wallet.client.ts';
@@ -30,6 +30,24 @@ export function walletSigner(wallet: string, address: string): PrivateSigner {
   };
 }
 
+/**
+ * The same signer, telling the screen when the wallet is asked and when it has answered — so a long wait reads as
+ * «preparing», «sign in your wallet» or «sending», never as a frozen button.
+ */
+export function watchedSigner(base: PrivateSigner, on: (moment: 'asked' | 'answered') => void): PrivateSigner {
+  return {
+    address: base.address,
+    async signWire(wire) {
+      on('asked');
+      try {
+        return await base.signWire(wire);
+      } finally {
+        on('answered');
+      }
+    },
+  };
+}
+
 type SignMessageFeature = {
   signMessage?: (input: Readonly<{ account: unknown; message: Uint8Array }>) => Promise<readonly { signedMessage?: Uint8Array; signature: Uint8Array }[]>;
 };
@@ -37,7 +55,10 @@ type SignMessageFeature = {
 /** `signedMessage` is null when the wallet did not return the bytes it signed. */
 export type SignedMessage = Readonly<{ signedMessage: Uint8Array | null; signature: Uint8Array }>;
 
-/** `solana:signMessage` over raw bytes; null when the wallet has no such feature. */
+/**
+ * `solana:signMessage` over raw bytes; null when the wallet has no such feature. A refusal is thrown as the wallet
+ * worded it. The answer is the caller's to drop: the key request's signature is a secret and lives only in memory.
+ */
 export async function signMessageBytes(wallet: string, address: string, message: Uint8Array): Promise<SignedMessage | null> {
   const found = registeredWallet(wallet);
   const feature = found?.features['solana:signMessage'] as SignMessageFeature | undefined;

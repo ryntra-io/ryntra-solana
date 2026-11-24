@@ -215,14 +215,18 @@ for (const size of SIZES) {
     await open();
     if (want("empty")) await shot("empty");
     if (want("empty") && size.mobile) await shot("empty-full", true);
-    // The agent's row puts «launch me a token …» into the header's line, the keyboard with it.
-    if (want("say")) {
-      await visible("[data-launch-say]").click();
-      await page.waitForTimeout(500);
-      report.states.push({ state: "say", size: size.name, lang, line: await visible("[data-city-command] input").inputValue() });
-      await shot("say");
-      await open();
-    }
+    // EYES-2 №113: on two columns the side column ends on the form's last line — their bottoms, in px, for the report.
+    const columns = async (state) => {
+      const box = await page.evaluate(() => {
+        const bottom = (selector) => {
+          const node = [...document.querySelectorAll(selector)].find((each) => each.offsetParent !== null);
+          return node ? Math.round(node.getBoundingClientRect().bottom + window.scrollY) : null;
+        };
+        return { main: bottom("[data-launch-screen] [data-page-main]"), side: bottom("[data-launch-screen] [data-page-side] > :last-child") };
+      });
+      report.states.push({ state: `columns-${state}`, size: size.name, lang, ...box });
+    };
+    if (!size.mobile) await columns("empty");
     await fill();
     // The pool's way, where its door is open: trading opens in an hour, with the ladder — the approved design's state.
     const poolDoor = await page.locator("[data-launch-ready=pool]").count();
@@ -232,6 +236,7 @@ for (const size of SIZES) {
       await visible("[data-launch-ladder] [role=switch]").click();
     }
     await page.waitForTimeout(1500);
+    if (!size.mobile) await columns(poolDoor ? "pool" : "curve");
     if (want("form")) {
       await page.evaluate(() => window.scrollTo(0, 0));
       await shot(poolDoor ? "form-pool" : "form-curve");
@@ -245,6 +250,7 @@ for (const size of SIZES) {
     if (poolDoor && want("curve")) {
       await visible("[data-launch-ready=quick]").click();
       await page.waitForTimeout(2500);
+      if (!size.mobile) await columns("curve");
       await shot("form-curve");
       if (size.mobile) await shot("form-curve-full", true);
     }

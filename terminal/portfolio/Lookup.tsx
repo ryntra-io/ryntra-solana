@@ -54,8 +54,9 @@ const PARTS = ['pools', 'staking', 'lendingGroup', 'coins', 'agents'] as const;
 
 /**
  * No wallet yet: one panel and one way in (QA 19.11: forty bones that never filled and three tiles that looked like
- * buttons). The screen's promise in one line, what it gathers as a quiet legend — the colours the total will draw — and
- * «Connect wallet», the screen's one amber action; beside it, quieter, any wallet by its address, read only.
+ * buttons). The screen's promise in one line and, under it, what it gathers in plain words — never coloured marks of a
+ * chart that is not there (QA 19.11, eyes 29) — then «Connect wallet», the screen's one amber action; beside it,
+ * quieter, any wallet by its address, read only.
  */
 export function Welcome({ onShow, onConnect }: { onShow: (address: string) => void; onConnect: () => void }) {
   const w = useWords(ALL);
@@ -65,18 +66,11 @@ export function Welcome({ onShow, onConnect }: { onShow: (address: string) => vo
         <span className={a.heroBadge} aria-hidden="true">
           <Glyph name="wallet" />
         </span>
-        <Title as="h2" className={a.heroLine}>
-          {w.lookLine}
-        </Title>
+        <div className={a.heroWords}>
+          <Title as="h2">{w.lookLine}</Title>
+          <p className={a.heroParts}>{PARTS.map((id) => w[id]).join(' · ')}</p>
+        </div>
       </div>
-      <ul className={a.parts} aria-label={w.preview}>
-        {PARTS.map((id) => (
-          <li key={id} className={a.part}>
-            <i className={a.dot} data-part={id === 'lendingGroup' ? 'lending' : id} aria-hidden="true" />
-            {w[id]}
-          </li>
-        ))}
-      </ul>
       <div className={a.heroRow}>
         <Action size="m" full={false} className={a.heroAct} onClick={onConnect}>
           {w.connect}

@@ -41,7 +41,8 @@ import { onNetwork, recordOf, type MandateNetwork, type MandateRecord, type Stop
 import type { AgentTrade } from "./strategy.ts";
 import { LAYOUT, feeMintOf, jupiterQuoteFloor } from "./terms.ts";
 import { NO_TIDY, withTidy, type EmptyAccount, type Tidy } from "./tidy.ts";
-import { EXTENSION, TOKEN_2022_PROGRAM_ID, afterTransferFee, isTokenProgram, mintExtensions, readCoin } from "./token-2022.ts";
+import { readShelfCoin, stocksOf, type StockShelf } from "./stocks.server.ts";
+import { EXTENSION, TOKEN_2022_PROGRAM_ID, afterTransferFee, isTokenProgram, mintExtensions, pausedNow } from "./token-2022.ts";
 import { receivedIn, settled, tradeOf } from "./tick.server.ts";
 
 /** The agent sells on the gate's network: devnet through its pool, mainnet through Jupiter. */
@@ -208,7 +209,8 @@ export type SaleReview =
   | Readonly<{ ok: true; record: MandateRecord; transactions: readonly string[]; figures: SaleFigures }>
   | Readonly<{ ok: false; code: string; reason: string }>;
 
-type SaleDeps = Readonly<{ store: GuardStore; connection: Connection; venue?: SaleVenue; now?: () => number }>;
+/** `stocks` — the shelf a stock's mint is found on (`./stocks.server.ts`); the network's own when not handed in. */
+type SaleDeps = Readonly<{ store: GuardStore; connection: Connection; venue?: SaleVenue; now?: () => number; stocks?: StockShelf }>;
 
 const refused = (code: string, reason: string) => ({ ok: false as const, code, reason });
 const toBase64 = (tx: VersionedTransaction) => Buffer.from(tx.serialize()).toString("base64");
@@ -272,7 +274,8 @@ export async function reviewSale(input: Readonly<{ owner: string; policy: string
   const coinInfo = await connection.getAccountInfo(coin, "confirmed");
   /* A coin of Token-2022 that withholds a fee on transfers: the vault gets what is left of it, at the epoch's rate. */
   const epoch = coinInfo?.owner.equals(TOKEN_2022_PROGRAM_ID) ? BigInt((await connection.getEpochInfo("confirmed")).epoch) : undefined;
-  const reading = readCoin(coin, coinInfo, epoch);
+  /* A stock of the shelf is sold as one — never while it is paused: the coin would wait in her vault. */
+  const reading = await readShelfCoin(coin, coinInfo, epoch, deps.stocks ?? stocksOf(network));
   if (!reading.ok) return refused("REFUSED", `The agent does not sell this coin: ${reading.reason}.`);
   const decimals = reading.coin.decimals;
   const program = reading.coin.program;
@@ -653,8 +656,13 @@ export async function readTidy(
     const [read] = await input.connection.getMultipleAccountsInfo([account], "confirmed");
     /* A mint that cannot be read whole: the account stays — a close that fails would cost her the whole transaction. */
     const sweep = withholds(mintInfo);
-    if (read && read.owner.equals(program) && sweep !== null && mintInfo.data.length > 44) {
-      const amount = heldIn(read.data);
+    /* A stock its issuer has paused moves nowhere: coin left in its account stays there with the account, so
+       nothing of it holds back the rest of her signature — her SOL home, the mandates removed; she takes the coin back
+       once the issuer resumes. An empty account closes all the same: the pause stops transfers, not a close (the
+       mainnet fork, Token-2022's own build), and its rent comes home. */
+    const paused = pausedNow(mintInfo);
+    const amount = read ? heldIn(read.data) : 0n;
+    if (read && read.owner.equals(program) && sweep !== null && paused !== null && !(paused && amount > 0n) && mintInfo.data.length > 44) {
       const left = amount > 0n ? { left: { mint: coinMint, amount, decimals: mintInfo.data[44]!, to: tokenAccountOf(input.owner, coinMint, program) } } : {};
       empty.push({ account, program, ...(sweep ? { withheld: coinMint } : {}), ...left });
     }
@@ -695,6 +703,11 @@ export async function reviewSaleBack(input: Readonly<{ owner: string; policy: st
     (read) => BigInt(read.value.amount),
     () => null,
   );
+  /* A coin its issuer has paused cannot leave the vault: said here, rather than handing her a transaction the chain refuses. */
+  if (balance !== null && balance > 0n) {
+    const coinInfo = await connection.getAccountInfo(mandate.terms.budgetMint, "confirmed").catch(() => null);
+    if (coinInfo && pausedNow(coinInfo) === true) return refused("PAUSED", "The coin's issuer has paused every transfer of it. It stays in your vault and comes back to you once the issuer lets it move.");
+  }
   const [policyInfo, parentInfo] = await Promise.all([connection.getAccountInfo(mandate.policy, "confirmed"), connection.getAccountInfo(new PublicKey(row.parent), "confirmed")]);
   const keepOpen = gate.network === "mainnet" && Boolean(parentInfo);
   /* Only what still stands: a removed mandate is not removed twice, a closed account is not closed again. */

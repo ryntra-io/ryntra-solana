@@ -1,6 +1,7 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 
 import { z } from "zod";
+import { isoDateTime } from "../zod/iso-datetime.ts";
 
 import { withBoundedCasRetry, type GuardStore } from "../guard/store.ts";
 import { sendMessage } from "../telegram/api.ts";
@@ -38,7 +39,7 @@ export const TelegramChannelSchema = z
     accountId: z.string().uuid(),
     telegramId: z.number().int().positive(),
     username: z.string().min(1).max(64).nullable(),
-    connectedAt: z.string().datetime({ offset: true }),
+    connectedAt: isoDateTime({ offset: true }),
   })
   .strict();
 

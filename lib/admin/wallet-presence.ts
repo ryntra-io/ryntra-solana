@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { isoDateTime } from "../zod/iso-datetime.ts";
 
 import { withBoundedCasRetry, type GuardStore } from "../guard/store.ts";
 
@@ -37,12 +38,12 @@ export const WalletPresenceSchema = z
     version: z.number().int().min(0),
     network: z.literal("mainnet"),
     wallet: z.string().regex(BASE58_ADDRESS),
-    firstSeenAt: z.string().datetime({ offset: true }),
-    lastSeenAt: z.string().datetime({ offset: true }),
+    firstSeenAt: isoDateTime({ offset: true }),
+    lastSeenAt: isoDateTime({ offset: true }),
     /** Cabinet sessions, thirty minutes apart at least. */
     sessions: z.number().int().min(0),
-    firstVerifiedAt: z.string().datetime({ offset: true }).nullable(),
-    lastVerifiedAt: z.string().datetime({ offset: true }).nullable(),
+    firstVerifiedAt: isoDateTime({ offset: true }).nullable(),
+    lastVerifiedAt: isoDateTime({ offset: true }).nullable(),
     verifications: z.number().int().min(0),
   })
   .strict();

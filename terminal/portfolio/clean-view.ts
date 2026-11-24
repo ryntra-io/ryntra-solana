@@ -97,10 +97,14 @@ export function backSol(lamports: number): number | null {
   return lamports > 0 ? lamports / LAMPORTS : null;
 }
 
-/** How many of each a clean takes, for the tile's one line. */
+/**
+ * How many of each a clean takes, for the tile's one line: the coins are the dust's own kinds — small coins swapped and
+ * litter burnt — so they compare with the «Dust» group's count (QA 19.11, eyes 28); a wrapped SOL account is an account
+ * (closing it gives its rent back, the SOL in it is the person's already).
+ */
 export function counts(read: CleanRead, choice: Choice): Readonly<{ coins: number; accounts: number }> {
   const taken = read.items.filter((item) => inClean(item, choice));
-  return { coins: taken.filter((item) => item.kind !== 'empty').length, accounts: taken.filter((item) => item.kind === 'empty').length };
+  return { coins: taken.filter((item) => item.kind === 'small' || item.kind === 'litter').length, accounts: taken.filter((item) => item.kind === 'empty' || item.kind === 'wrapped').length };
 }
 
 /** Ryntra's fee as a person reads it: «0.1 %»; null — no swap, the clean is free. */

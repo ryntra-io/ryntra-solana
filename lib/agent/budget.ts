@@ -38,6 +38,7 @@
 import { randomBytes } from "node:crypto";
 
 import { z } from "zod";
+import { isoDateTime } from "../zod/iso-datetime.ts";
 
 import { BASE58, type AgentBudgetState } from "../api/v1/contract.ts";
 import { readCredits, reserveCredits, settleCredits, type ReserveRefusal } from "../assistant/credits/ledger.ts";
@@ -109,10 +110,10 @@ export function resolveAgentBudgetConfig(env: Readonly<Record<string, string | u
 
 /* ------------------------------------------------------------ records */
 
-const CounterSchema = z.object({ version: z.number().int().min(1), key: z.string().min(1), count: z.number().int().min(0), updatedAt: z.string().datetime({ offset: true }) }).strict();
+const CounterSchema = z.object({ version: z.number().int().min(1), key: z.string().min(1), count: z.number().int().min(0), updatedAt: isoDateTime({ offset: true }) }).strict();
 type Counter = z.output<typeof CounterSchema>;
 
-const LeasesSchema = z.object({ version: z.number().int().min(1), owner: z.string().regex(BASE58), leases: z.array(z.object({ id: z.string().min(8).max(64), expiresAt: z.string().datetime({ offset: true }) }).strict()).max(16), updatedAt: z.string().datetime({ offset: true }) }).strict();
+const LeasesSchema = z.object({ version: z.number().int().min(1), owner: z.string().regex(BASE58), leases: z.array(z.object({ id: z.string().min(8).max(64), expiresAt: isoDateTime({ offset: true }) }).strict()).max(16), updatedAt: isoDateTime({ offset: true }) }).strict();
 type Leases = z.output<typeof LeasesSchema>;
 
 /** A guest is metered by a digest of the request's address, never the address (`lib/assistant/guest.ts`). */
@@ -138,7 +139,7 @@ const ReceiptV1 = z
     tokens: z.object({ input: z.number().int().min(0), output: z.number().int().min(0), total: z.number().int().min(0) }).strict(),
     latencyMs: z.number().int().min(0),
     outcome: Outcome,
-    at: z.string().datetime({ offset: true }),
+    at: isoDateTime({ offset: true }),
   })
   .strict();
 
@@ -163,7 +164,7 @@ const ReceiptV11 = z
     serviceTier: z.enum(["default", "flex"]).optional(),
     latencyMs: z.number().int().min(0),
     outcome: Outcome,
-    at: z.string().datetime({ offset: true }),
+    at: isoDateTime({ offset: true }),
   })
   .strict();
 

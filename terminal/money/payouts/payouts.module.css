@@ -1,0 +1,369 @@
+/* «Money → Payouts»: the list, the sum, one line before the signature, one amber press — in the money
+   section's panel; past payouts beside it. Every colour, face and size is the terminal's own token
+   (docs/terminal/DESIGN.md); every spacing is a step of its scale. */
+
+.grow {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+}
+
+.line {
+  margin: 0;
+  font-size: var(--type-body);
+  line-height: 1.45;
+  color: var(--soft);
+}
+
+.line[data-tone='warn'] {
+  color: var(--warm);
+}
+
+.stop {
+  margin: 0;
+  color: var(--flare);
+}
+
+.warn {
+  margin: 0;
+  color: var(--warm);
+}
+
+/* ── no list yet: the tab's sign, its name and one line ───────────────────────────────────────────────────────────── */
+
+.blank {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 24px 16px 8px;
+  text-align: center;
+}
+
+.blankSign {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 72px;
+  height: 72px;
+  margin-bottom: 8px;
+  color: var(--amber);
+  background:
+    radial-gradient(circle at 50% 40%, color-mix(in srgb, var(--amber) 22%, transparent), transparent 70%),
+    var(--well);
+  border: 1px solid var(--edge);
+}
+
+.blankSign svg {
+  width: 30px;
+  height: 30px;
+  stroke-width: 1.5;
+}
+
+.blankTitle {
+  max-width: 420px;
+  margin: 0;
+  font-family: var(--display);
+  font-size: var(--type-title);
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  line-height: 1.25;
+  color: var(--ice);
+}
+
+/* While the private balance is read: three still wells the height of the list. */
+.bones {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 24px 0;
+}
+
+.bones > span {
+  display: block;
+  height: 44px;
+  background: var(--well);
+  border: 1px solid var(--line);
+}
+
+/* ── the list ─────────────────────────────────────────────────────────────────────────────────────────────────────── */
+
+.head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.box {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.input {
+  width: 100%;
+  min-height: 88px;
+  padding: 12px 14px;
+  font: inherit;
+  font-size: var(--type-body);
+  line-height: 1.5;
+  color: var(--ice);
+  resize: vertical;
+  background: var(--well);
+  border: 1px solid var(--line);
+}
+
+.input::placeholder {
+  color: var(--dim);
+}
+
+.input:focus-visible {
+  outline: 1px solid var(--edge);
+  outline-offset: 0;
+}
+
+.file {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--line);
+}
+
+.item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto 44px;
+  align-items: center;
+  column-gap: 12px;
+  min-height: 52px;
+  padding: 6px 0 6px 12px;
+  border-bottom: 1px solid var(--line);
+  border-left: 2px solid transparent;
+}
+
+.item[data-tone='stop'] {
+  border-left-color: var(--flare);
+}
+
+.item[data-tone='ask'] {
+  border-left-color: var(--amber);
+}
+
+.who {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.name {
+  overflow: hidden;
+  font-size: var(--type-base);
+  font-weight: 600;
+  color: var(--ice);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.note {
+  overflow: hidden;
+  font-size: var(--type-small);
+  color: var(--dim);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.amount {
+  font-family: var(--display);
+  font-size: var(--type-base);
+  font-weight: 600;
+  color: var(--ice);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.flag {
+  display: flex;
+  justify-content: flex-end;
+  min-width: 0;
+}
+
+.drop {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  color: var(--dim);
+  cursor: pointer;
+  background: none;
+  border: 0;
+  transition: color 0.15s;
+}
+
+.drop:hover:not(:disabled) {
+  color: var(--ice);
+}
+
+.drop:focus-visible {
+  outline: 1px solid var(--edge);
+  outline-offset: -4px;
+}
+
+.drop:disabled {
+  cursor: default;
+  opacity: 0.4;
+}
+
+/* ── the sum and the line before the signature ────────────────────────────────────────────────────────────────────── */
+
+.sum {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.sumLine {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.people {
+  font-size: var(--type-lead);
+  font-weight: 600;
+  color: var(--soft);
+}
+
+.way {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* One line, its height kept whatever it says: the press under it never moves. */
+.status {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  min-height: 44px;
+  font-size: var(--type-body);
+  color: var(--soft);
+}
+
+.how {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* ── after the payout ─────────────────────────────────────────────────────────────────────────────────────────────── */
+
+.done {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.doneTitle {
+  margin: 0;
+  font-family: var(--display);
+  font-size: var(--type-headline);
+  font-weight: 650;
+  line-height: 1.2;
+  color: var(--ice);
+}
+
+.links {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.linkRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 44px;
+  font-size: var(--type-body);
+  color: var(--ice);
+}
+
+/* ── past payouts ─────────────────────────────────────────────────────────────────────────────────────────────────── */
+
+.historyPanel {
+  flex: none;
+  min-width: 0;
+}
+
+.historyHead {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 18px 12px;
+}
+
+.historyKick.historyKick {
+  flex: 1 1 0;
+  color: var(--ice);
+}
+
+.history {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 0 18px 18px;
+}
+
+.historyList {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.historyItem {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  min-height: 52px;
+  padding: 4px 0;
+  font-size: var(--type-body);
+  color: var(--soft);
+  border-bottom: 1px solid var(--line);
+}
+
+@media (max-width: 767px) {
+  .item {
+    grid-template-columns: minmax(0, 1fr) auto 44px;
+    row-gap: 4px;
+  }
+
+  .flag {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    justify-content: flex-start;
+  }
+}

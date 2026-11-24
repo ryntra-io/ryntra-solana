@@ -30,6 +30,66 @@ export const SHELF_WORDS = words(
   },
 );
 
+/**
+ * A page's name in the browser's tab, in the person's language (flaw 6: Ukrainian pages were named in English).
+ * The English names are the pages' own metadata (each `page.tsx` under `app/(terminal)`) word for word —
+ * `tab-title.test.mjs` holds them equal; the frame writes the tab with them and « · Ryntra» (`tab-title.ts`).
+ */
+export const TAB_WORDS = words(
+  {
+    home: 'Ryntra — your AI agent on Solana',
+    swap: 'Swap',
+    bridge: 'Bridge',
+    launch: 'Launch',
+    earn: 'Earn',
+    pro: 'Meteora DLMM Pro',
+    pool: 'Meteora pool',
+    agents: 'Agents',
+    bots: 'Bots',
+    recurring: 'Recurring buys',
+    grid: 'Grid bot',
+    ladder: 'Order ladder',
+    copy: 'Copy a wallet',
+    signals: 'Signals bot',
+    autopilot: 'Money autopilot',
+    pulse: 'Your agent',
+    portfolio: 'Portfolio',
+    money: 'Money',
+    rewards: 'Rewards',
+    watch: 'Watch',
+    wallet: 'Wallet',
+    pay: 'Invoice',
+    claim: 'Money for you',
+    check: 'Wallet check',
+  },
+  {
+    home: 'Ryntra — твій AI-агент на Solana',
+    swap: 'Обмін',
+    bridge: 'Міст',
+    launch: 'Запуск',
+    earn: 'Заробіток',
+    pro: 'Meteora DLMM Pro',
+    pool: 'Пул Meteora',
+    agents: 'Агенти',
+    bots: 'Боти',
+    recurring: 'Регулярні покупки',
+    grid: 'Сітка',
+    ladder: 'Драбина ордерів',
+    copy: 'Повтор за гаманцем',
+    signals: 'Сигнали',
+    autopilot: 'Автопілот грошей',
+    pulse: 'Твій агент',
+    portfolio: 'Портфель',
+    money: 'Гроші',
+    rewards: 'Винагороди',
+    watch: 'Стеження',
+    wallet: 'Гаманець',
+    pay: 'Рахунок',
+    claim: 'Тобі гроші',
+    check: 'Перевірка гаманця',
+  },
+);
+
 /** The menu's groups and items, as the rail and the phone's sheet write them. */
 export const MENU_WORDS = words(
   {
@@ -74,6 +134,7 @@ export const MENU_WORDS = words(
     send: 'Send',
     receive: 'Receive',
     invoices: 'Invoices',
+    payouts: 'Payouts',
     private: 'Private',
     contacts: 'Contacts',
     autopay: 'Autopay',
@@ -116,7 +177,8 @@ export const MENU_WORDS = words(
     pools: 'Пули',
     dlmmPro: 'DLMM Pro',
     staking: 'Стейкінг SOL',
-    lending: 'Позики',
+    // «Вклади», as the tab of «Заробіток» says it: «Позики» read as taking a loan (G6, fault 49).
+    lending: 'Вклади',
     earnMine: 'Мої позиції',
     overview: 'Огляд',
     positions: 'Позиції',
@@ -125,6 +187,7 @@ export const MENU_WORDS = words(
     send: 'Надіслати',
     receive: 'Отримати',
     invoices: 'Рахунки',
+    payouts: 'Виплати',
     private: 'Приватно',
     contacts: 'Контакти',
     autopay: 'Автоплатежі',
@@ -216,6 +279,9 @@ export const SHELL = words(
 export const WALLET = words(
   {
     connect: 'Connect wallet',
+    // On a Seeker, the phone's own vault.
+    connectShort: 'Connect',
+    seedVault: 'Seed Vault',
     wallet: 'Wallet',
     aWallet: 'wallet',
     opening: (name: string) => `Opening ${name}…`,
@@ -227,7 +293,7 @@ export const WALLET = words(
     inYourPhone: 'the wallet in your phone',
     recommended: 'Recommended',
     signInWith: (name: string) => `Sign in with ${name}`,
-    closeCalm: 'Close the window and nothing changes',
+    closeCalm: 'Connecting only shows your address — this signature moves no money',
     none: 'No Solana wallet in this browser.',
     getPhantom: 'Get Phantom',
     openInPhantom: 'Open in Phantom',
@@ -247,9 +313,12 @@ export const WALLET = words(
     signIn: 'Sign in',
     disconnect: 'Disconnect',
     walletOf: (address: string, signed: boolean) => `Wallet ${address}${signed ? '' : ', not signed in'}`,
+    close: 'Close',
   },
   {
     connect: 'Підключити гаманець',
+    connectShort: 'Підключити',
+    seedVault: 'Seed Vault',
     wallet: 'Гаманець',
     aWallet: 'гаманець',
     opening: (name: string) => `Відкриваємо ${name}…`,
@@ -261,7 +330,7 @@ export const WALLET = words(
     inYourPhone: 'гаманець у телефоні',
     recommended: 'Рекомендуємо',
     signInWith: (name: string) => `Увійти з ${name}`,
-    closeCalm: 'Закрив вікно — нічого не змінилось',
+    closeCalm: 'Підключення лише показує адресу — цей підпис не рухає гроші',
     none: 'У цьому браузері немає гаманця Solana.',
     getPhantom: 'Встановити Phantom',
     openInPhantom: 'Відкрити в Phantom',
@@ -281,6 +350,29 @@ export const WALLET = words(
     signIn: 'Увійти',
     disconnect: 'Від’єднати',
     walletOf: (address: string, signed: boolean) => `Гаманець ${address}${signed ? '' : ', вхід не виконано'}`,
+    close: 'Закрити',
+  },
+);
+
+/** The quiet list of keys («?»): its title and what each key does. */
+export const KEYS = words(
+  {
+    title: 'Keys',
+    search: 'Find a coin',
+    buy: 'Buy',
+    sell: 'Sell',
+    sums: 'Quick amount',
+    close: 'Close',
+    list: 'Keys',
+  },
+  {
+    title: 'Клавіші',
+    search: 'Знайти монету',
+    buy: 'Купити',
+    sell: 'Продати',
+    sums: 'Швидка сума',
+    close: 'Закрити',
+    list: 'Клавіші',
   },
 );
 
@@ -291,6 +383,8 @@ export const ASK = words(
     sell: (coin: string, amount: string) => (amount ? `Sell ${coin} · ${amount}` : `Sell ${coin}`),
     limit: (coin: string, buy: boolean) => (buy ? `Buy ${coin} at a price` : `Sell ${coin} at a price`),
     stop: (coin: string) => `Stop on ${coin}`,
+    limitOff: (coin: string, buy: boolean, pct: string) => (buy ? `Buy ${coin} ${pct}% lower` : `Sell ${coin} ${pct}% higher`),
+    stopOff: (coin: string, pct: string) => `Stop on ${coin} ${pct}% lower`,
     ladder: (coin: string, buy: boolean) => (buy ? `Buy ${coin} cheaper` : `Sell ${coin} higher`),
     coin: (coin: string) => coin,
     mint: (short: string) => `Coin ${short}`,
@@ -303,6 +397,10 @@ export const ASK = words(
     dollar: 'Put my dollars to work',
     launch: (coin: string) => (coin ? `Launch ${coin}` : 'Launch a coin'),
     instruct: 'Set it for my agent',
+    recurring: (parts: string) => (parts ? `Recurring buys · ${parts}` : 'Recurring buys'),
+    everyDay: 'a day',
+    everyWeek: 'a week',
+    everyMonth: 'a month',
     instructions: 'My instructions',
     agentTrade: 'Trade within a daily budget',
     agentLaunch: 'Launch a token for me',
@@ -317,6 +415,8 @@ export const ASK = words(
     sell: (coin: string, amount: string) => (amount ? `Продати ${coin} · ${amount}` : `Продати ${coin}`),
     limit: (coin: string, buy: boolean) => (buy ? `Купити ${coin} за ціною` : `Продати ${coin} за ціною`),
     stop: (coin: string) => `Стоп на ${coin}`,
+    limitOff: (coin: string, buy: boolean, pct: string) => (buy ? `Купити ${coin} на ${pct}% дешевше` : `Продати ${coin} на ${pct}% дорожче`),
+    stopOff: (coin: string, pct: string) => `Стоп на ${coin} на ${pct}% нижче`,
     ladder: (coin: string, buy: boolean) => (buy ? `Купити ${coin} дешевше` : `Продати ${coin} дорожче`),
     coin: (coin: string) => coin,
     mint: (short: string) => `Монета ${short}`,
@@ -329,6 +429,10 @@ export const ASK = words(
     dollar: 'Мої долари — в роботу',
     launch: (coin: string) => (coin ? `Запустити ${coin}` : 'Запустити монету'),
     instruct: 'Доручити агентові',
+    recurring: (parts: string) => (parts ? `Регулярні покупки · ${parts}` : 'Регулярні покупки'),
+    everyDay: 'на день',
+    everyWeek: 'на тиждень',
+    everyMonth: 'на місяць',
     instructions: 'Мої доручення',
     agentTrade: 'Торгувати з бюджетом на день',
     agentLaunch: 'Запусти мені токен',

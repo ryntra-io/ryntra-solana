@@ -1,6 +1,7 @@
 import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
 
 import { z } from "zod";
+import { isoDateTime } from "../../zod/iso-datetime.ts";
 
 import type { GuardStore, GuardVersionedCollection } from "../../guard/store.ts";
 import {
@@ -77,7 +78,7 @@ export class AgentOAuthError extends Error {
   }
 }
 
-const timestamp = z.string().datetime({ offset: true });
+const timestamp = isoDateTime({ offset: true });
 const HTTPS_REDIRECT = /^https:\/\/[^\s]+$/;
 const LOOPBACK_REDIRECT = /^http:\/\/(?:127\.0\.0\.1|\[::1\]|localhost)(?::\d+)?(?:\/[^\s]*)?$/;
 

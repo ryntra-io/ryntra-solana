@@ -20,6 +20,7 @@
  */
 
 import { z } from "zod";
+import { isoDateTime } from "../zod/iso-datetime.ts";
 
 import { withBoundedCasRetry, type GuardStore } from "../guard/store.ts";
 import { SWAP_SUBMISSION_LANES, type SwapSubmissionLane } from "./swap-submission.ts";
@@ -65,7 +66,7 @@ const SwapOwnerLockRecordSchema = z
     requestId: z.string().min(1).max(128),
     messageDigest: z.string().regex(DIGEST),
     reviewDigest: z.string().regex(DIGEST),
-    reviewExpiresAt: z.string().datetime({ offset: true }),
+    reviewExpiresAt: isoDateTime({ offset: true }),
     state: z.enum(SWAP_OWNER_LOCK_STATES),
     signature: z.string().regex(BASE58).nullable(),
     submissionLane: z.enum(SWAP_SUBMISSION_LANES).nullable().default(null),
@@ -73,8 +74,8 @@ const SwapOwnerLockRecordSchema = z
     receipt: z.unknown().nullable(),
     bundle: z.unknown(),
     proof: z.unknown(),
-    createdAt: z.string().datetime({ offset: true }),
-    updatedAt: z.string().datetime({ offset: true }),
+    createdAt: isoDateTime({ offset: true }),
+    updatedAt: isoDateTime({ offset: true }),
   })
   .strict();
 

@@ -18,6 +18,7 @@
 import { randomUUID } from "node:crypto";
 
 import { z } from "zod";
+import { isoDateTime } from "../../zod/iso-datetime.ts";
 
 import type { GuardStore } from "../../guard/store.ts";
 import { BIP39_ENGLISH } from "./bip39-english.ts";
@@ -28,7 +29,7 @@ export const MEMORY_NOTE_MAX_CHARS = 160;
 export const MEMORY_ABOUT_MAX_CHARS = 600;
 
 const Wallet = z.string().regex(/^[1-9A-HJ-NP-Za-km-z]{32,44}$/);
-const Iso = z.string().datetime({ offset: true });
+const Iso = isoDateTime({ offset: true });
 
 export const MemoryNoteSchema = z
   .object({

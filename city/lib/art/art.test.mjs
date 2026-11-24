@@ -20,7 +20,6 @@ import {
   PHONE_MEDIA,
   pick,
   playsFilm,
-  SHARE_SCENE,
   skylineReady,
   srcSet,
 } from "./frames.ts";
@@ -236,10 +235,10 @@ test("every district says what it is and what you do there, in one or two plain 
   }
 });
 
-test("the share card of `/` is the city's card over a frame of the live scene, 1200 × 630, for Open Graph and X alike", () => {
-  // The frame is our own 3D city (scripts/city/card.mjs through window.__cityView), never a generated one.
-  assert.deepEqual(size(read(SHARE_SCENE.src)), { width: 1200, height: 630 });
+test("the share card of the city's address is the terminal's home card, 1200 × 630, for Open Graph and X alike", () => {
+  // Decision 105: no card shows the city — neither the generated one of 28.10 nor the live scene's frame.
   assert.throws(() => read("/city/art/og-1200x630.jpg"), "the generated city of 28.10 is gone");
+  assert.throws(() => read("/city/share-scene.jpg"), "the live city's frame for cards is gone");
   const meta = buildCityMetadata();
   const og = meta.openGraph.images[0];
   assert.match(og.url, /^https:\/\/ryntra\.io\/opengraph-image\?v=[0-9a-f]{8}$/);

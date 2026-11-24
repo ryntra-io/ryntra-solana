@@ -15,6 +15,7 @@
  */
 
 import { z } from "zod";
+import { isoDateTime } from "../zod/iso-datetime.ts";
 
 export const PREDICTION_PLAN_ID = /^pplan_[0-9a-f]{24}$/;
 export const PREDICTION_PLAN_STATUSES = ["draft", "active", "executed", "cancelled", "expired"] as const;
@@ -25,7 +26,7 @@ export const PREDICTION_PLAN_JOURNAL_KEPT = 100;
 
 const Usd = z.number().finite().positive().max(1_000_000);
 const Probability = z.number().finite().min(0.001).max(0.999);
-const Iso = z.string().datetime({ offset: true });
+const Iso = isoDateTime({ offset: true });
 const Note = z.string().max(240);
 const Url = z.string().url().max(512);
 

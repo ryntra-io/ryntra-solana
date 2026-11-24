@@ -11,6 +11,8 @@ import { awaitingSources } from "./city/lib/open/site-map.ts";
 import { oldChapterRedirects, shadowedByChapters, throughChapters } from "./city/lib/docs/old-chapters.ts";
 import { takenByTerminal } from "./terminal/shell/shelves.ts";
 import { asTerminalHome, terminalHomeRedirects, terminalHomeRewrites } from "./terminal/shell/home.ts";
+import { RETIRED_PAGE_REDIRECTS, retiredPage } from "./lib/site/retired-pages.ts";
+import { withPureBigintBuffer } from "./lib/build/bigint-buffer.ts";
 
 /* The landing is a page again — English at `/`, Ukrainian at `/uk`. What stays of it is the language map of the
    home page:
@@ -201,6 +203,12 @@ const nextConfig: NextConfig = {
   devIndicators: false,
   reactStrictMode: true,
   /*
+   * A clean production log: on the server `bigint-buffer` (under `@solana/spl-token`) resolves to its
+   * pure-JavaScript entry, the code functions already ran, without the «Failed to load bindings» line it printed on
+   * every cold start. Why this way and not another — `lib/build/bigint-buffer.ts`.
+   */
+  webpack: (config, { isServer }) => withPureBigintBuffer(config, isServer),
+  /*
    * Where the build lands, overridable for verification builds.
    *
    * A production build overwrites `.next`, and a dev server pointed at the same
@@ -214,6 +222,12 @@ const nextConfig: NextConfig = {
    * Unset — which is every deploy — this is exactly the default.
    */
   distDir: process.env.RYNTRA_DIST_DIR || ".next",
+  /*
+   * Ryntra Private on mainnet (`lib/privacy/network.ts`): the private balance opens on mainnet only when the
+   * build also holds the mainnet relay's Helius key. Pages are told the key's presence — "1" or "" — never its value;
+   * the relay reads the key itself on the server at each call.
+   */
+  env: { RYNTRA_PRIVATE_MAINNET_KEY_SEEN: process.env.HELIUS_PRIVACY_MAINNET_API_KEY?.trim() ? "1" : "" },
   /*
    * A dev stand that reads a public chain node keeps its compiled routes:
    * by default the dev server drops all but a few, and a dropped route's
@@ -348,11 +362,9 @@ const nextConfig: NextConfig = {
          leads to it; a 307, because `/updates` may yet become a page of its own
          and a cached 308 could not be taken back. */
       { source: "/updates", destination: "/roadmap", permanent: false },
-      /* «For investors» is «What we're building» now. The old deck's address and its PDFs keep answering, each in one hop: the investor
-         deck and its PDFs to the page that offers the new PDF, the partner deck's PDFs to the partner page. Permanent —
-         the old decks are not coming back. */
-      { source: "/investors", destination: "/build", permanent: true },
-      { source: "/decks/ryntra-investors-:rest", destination: "/build", permanent: true },
+      /* «For investors» became «What we're building», which leads to the terminal's documentation since 21.11
+         with the investor deck and its PDFs (`lib/site/retired-pages.ts`); the partner deck's PDFs go to the partner page.
+         Permanent — the old decks are not coming back. */
       { source: "/decks/ryntra-partners-:rest", destination: "/partners", permanent: true },
       /* «Points and levels» merged into «Rewards» on 2026-10-26 (SOL-C17,
          audit card UX-751, following Ріст 19). It documented the Points V1
@@ -436,6 +448,9 @@ const nextConfig: NextConfig = {
          product shell `/predict` on the other hosts is an old address now, and the city's table leads it to the Oracle. */
       ...predictHostRedirects().filter((row) => row.has),
       ...TERMINAL_HOME_REDIRECTS,
+      /* The pages that still described the product as the 3D city lead to the terminal's documentation, whatever the
+         terminal's switch (`lib/site/retired-pages.ts`). */
+      ...RETIRED_PAGE_REDIRECTS,
       /* The old interface and the short addresses, ahead of every row that still names one of their pages. The rows below that answer under one of its prefixes, or at an address it answers as it is
          (`/status`, `/home`), are never reached, so they are left out: what is left leads to the city in one hop. */
       ...OLD_ADDRESS_REDIRECTS,
@@ -451,7 +466,7 @@ const nextConfig: NextConfig = {
         ...siteHostRedirects(table),
         ...table.slice(LANDING_REDIRECTS.length),
       ]
-        .filter((row) => !shadowedByOldAddresses(row.source) && !shadowedByChapters(row.source))
+        .filter((row) => !shadowedByOldAddresses(row.source) && !shadowedByChapters(row.source) && !retiredPage(row.source))
         .map(throughChapters),
     ];
   },
@@ -461,11 +476,9 @@ const nextConfig: NextConfig = {
     return {
       /* With the terminal open, `/` is the Market's page; the address stays `/`. */
       beforeFiles: [...appHostRewrites(), ...terminalHomeRewrites()],
-      /* «Ryntra from A to Z»: a static page in public/learn/, built by scripts/learn/build.mjs. */
-      afterFiles: [
-        { source: "/learn", destination: "/learn/index.html" },
-        { source: "/learn/uk", destination: "/learn/uk.html" },
-      ],
+      /* «Ryntra from A to Z» (`public/learn/`) was the city's guide: `/learn` leads to the documentation now
+         (`lib/site/retired-pages.ts`), so it has no rewrite. */
+      afterFiles: [],
       fallback: [],
     };
   },

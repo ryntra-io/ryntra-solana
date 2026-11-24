@@ -134,6 +134,14 @@
   text-overflow: ellipsis;
 }
 
+/* «Another address» and the form's «i» beside it, on the line's right. */
+.landEnd {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 12px;
+}
+
 .link {
   flex: none;
   font-size: var(--type-body);
@@ -558,9 +566,17 @@
   color: var(--flare);
 }
 
+/* A popular way into Solana: a tap puts it on the form — the quiet arrow says where it goes. */
+.routeGo {
+  color: var(--dim);
+  transform: rotate(-90deg);
+}
+
+/* The empty list's one line stands on the panel's own edge, under «My transfers» — not a few pixels in (eyes pass 20.11,
+   №20). */
 .blank {
   margin: 0;
-  padding: 18px 6px;
+  padding: 18px 0;
   font-size: var(--type-base);
   color: var(--soft);
 }

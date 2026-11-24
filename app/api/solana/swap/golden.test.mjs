@@ -794,6 +794,12 @@ scenario("quote refused: Jupiter finds no route", async (ctx) => {
   await ctx.post("quote", QUOTE_INPUT);
 });
 
+/* Jupiter says «no route» in its own words alone — the card hears «no route» (409), never a refused 502. */
+scenario("quote refused: Jupiter says no route in its own words, with no code", async (ctx) => {
+  ctx.world.jupiterOrder = () => jsonResponse({ error: "No routes found" }, 400);
+  await ctx.post("quote", QUOTE_INPUT);
+});
+
 scenario("quote refused: a retired mint", async (ctx) => {
   await ctx.post("quote", { ...QUOTE_INPUT, outputMint: fx.RETIRED_MINT });
 });

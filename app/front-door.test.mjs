@@ -11,7 +11,7 @@ import { ENABLED_LOCALE_CODES } from "./i18n/locales.ts";
 import manifest from "./manifest.ts";
 import robots from "./robots.ts";
 import { APP_HOME_PATH, CITY_WORDS, SITE, buildAppHomeMetadata, buildMetadata, landingOgImage } from "./seo.ts";
-import { CARD_WORDS } from "../city/lib/share/words.ts";
+import { SHARE_WORDS } from "../terminal/share/words.ts";
 import { sitemapEntries } from "./sitemap.ts";
 import { CITY_PAGES } from "../city/lib/open/site-map.ts";
 import { helpTopic } from "./shell/help-topics.ts";
@@ -136,7 +136,7 @@ test("Home has words of its own as the app's page, at both of its addresses, wit
     assert.equal(metadata.openGraph?.url, pair[locale]);
     assert.equal(metadata.openGraph?.locale, locale === "uk" ? "uk_UA" : "en_US");
     assert.equal(metadata.openGraph?.images?.[0]?.url, landingOgImage(locale), "the landing's card in the page's language (plan §6)");
-    assert.equal(metadata.openGraph?.images?.[0]?.alt, CARD_WORDS[locale].alt, "the alt is the city card's own words");
+    assert.equal(metadata.openGraph?.images?.[0]?.alt, SHARE_WORDS.home[locale].alt, "the alt is home's card's own words (decision 105)");
     assert.equal(metadata.twitter?.card, "summary_large_image");
     assert.equal(metadata.twitter?.title, HOME_WORDS[locale].title);
     assert.equal(metadata.twitter?.description, description);
@@ -167,11 +167,13 @@ test("the manifest, the share card and the structured data say the city's line",
     ],
   );
   for (const icon of app.icons) assert.ok(existsSync(new URL(`../public${icon.src}`, import.meta.url)), `${icon.src} is published`);
-  assert.match(read("./layout.tsx"), /slogan: BRAND\.hook,/);
+  /* The slogan is the first rule's line, not the city's «Every coin is a tower.» (21.11). */
+  assert.match(read("./layout.tsx"), /slogan: "Say it\. Your agent does the rest\.",/);
+  assert.doesNotMatch(read("./layout.tsx"), /tower|living city|3D city/i);
   assert.match(read("./layout.tsx"), /logo: SITE \+ "\/brand\/city\/icon-512\.png"/);
-  assert.match(read("./opengraph-image.tsx"), /export const alt = CARD_WORDS\.en\.alt;/);
-  assert.match(read("./uk/opengraph-image.tsx"), /export const alt = CARD_WORDS\.uk\.alt;/);
-  assert.match(read("./uk/opengraph-image.tsx"), /return cityCard\(\{ lang: "uk" \}\);/, "the Ukrainian addresses share the card in Ukrainian");
+  assert.match(read("./opengraph-image.tsx"), /export const alt = shareCardAlt\("home", "en"\);/);
+  assert.match(read("./uk/opengraph-image.tsx"), /export const alt = shareCardAlt\("home", "uk"\);/);
+  assert.match(read("./uk/opengraph-image.tsx"), /return sectionCard\(\{ id: "home", lang: "uk" \}\);/, "the Ukrainian addresses share the card in Ukrainian");
   /* Outside the route group, so its address is the plain one the page names — inside `(home)` Next would hash it. */
   assert.equal(existsSync(new URL("./(home)/uk/opengraph-image.tsx", import.meta.url)), false);
   /* A public page without a card of its own shares the city's, in its language, and the alt is the card's own words — never «Paper-first». */

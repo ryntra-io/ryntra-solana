@@ -29,9 +29,11 @@ import { partOf, useAddressTail, useTabInAddress } from '@/terminal/shell/addres
 import { NARROW } from '@/terminal/shell/useNarrow';
 import { connectWallet } from '@/terminal/shell/Wallet';
 import { StockPoolFacts } from '@/terminal/stocks/StockPoolFacts';
+import { DlmmStockTicket } from '@/terminal/stocks/dlmm/DlmmStockTicket';
+import { useDlmmStockPool } from '@/terminal/stocks/dlmm/useDlmmStockPool';
 import { Action, Icon, Info, Panel, Quiet, QuietLink, Tabs, cx } from '@/terminal/ui';
 import { proOffer, ticketTabs, type DeskPool, type TicketTab } from './desk-pool';
-import { pctOfBps } from './pool-view';
+import { elsewhereBetter, pctOfBps } from './pool-view';
 import type { Read } from './usePro';
 import { POOL } from './words';
 import s from '@/terminal/coin/ticket.module.css';
@@ -105,12 +107,14 @@ export function PoolSide({ pool, coin, usd, pro, onOrders, foot, trade, phone = 
   const harbor = useHarborPool(pool);
   const way = usePositionWay(pool);
   const named = partOf(useAddressTail(), 'tab');
+  // A pool of a checked stock takes two coins here, behind its own switch — off, nothing is asked.
+  const stock = useDlmmStockPool(pool);
   // A pool that holds nothing yet opens on its first position, not on limits nothing would fill.
   const empty = pool.tvlUsd === 0;
   // While it is not known whether a position opens here, the Position tab stands only where the page would open on it —
   // a pool Earn may add to, a pool that holds nothing, an address that names it — as a waiting box, never a swap a
   // person starts typing in that then jumps away; elsewhere it comes only once it is known to open.
-  const adds = way === 'open' || (way === 'waiting' && (pool.venue !== 'pro' || empty || named === 'position'));
+  const adds = way === 'open' || stock.read !== null || (way === 'waiting' && (pool.venue !== 'pro' || empty || named === 'position'));
   const { tabs, first } = useMemo(() => ticketTabs({ venue: pool.venue, ladder: trade && ladderOn && !noLadder, trade, adds, empty }), [pool.venue, ladderOn, noLadder, trade, adds, empty]);
   const [tab, setTab] = useState<TicketTab>(first ?? 'swap');
   useTabInAddress(tab, setTab, tabs, first ?? 'swap');
@@ -146,13 +150,15 @@ export function PoolSide({ pool, coin, usd, pro, onOrders, foot, trade, phone = 
   // Where a position is not open here, its tab leads on with one action: the pool's limit order, else its swap.
   const act = tabs.includes('limit') ? { label: w.goLimit, onClick: () => pick('limit') } : tabs.includes('swap') ? { label: w.goSwap, onClick: () => pick('swap') } : null;
   return (
-    <Panel tone="hi" gap={12} label={w.ticket} className={cx(p.side, phone && p.sidePhone, tab === 'swap' && !phone && s.desk)}>
+    // The rows' gap is the column's (`--side-gap`): a short desk closes them a step, so the action stands on the first
+    // screen.
+    <Panel tone="hi" gap={12} style={SIDE_GAP} label={w.ticket} className={cx(p.side, phone && p.sidePhone, tab === 'swap' && !phone && s.desk)}>
       {tabs.length > 1 ? <Tabs fill label={w.ticket} value={tab} onChange={pick} items={items} /> : null}
       {tab === 'position' ? (
         <>
           {/* A tokenised stock's session stands over every tab of the ticket — the column has no copy of it. */}
           <StockPoolFacts mint={coin.mint} />
-          {pool.venue === 'pro' && pool.pro ? <ProPosition row={pool.pro} peek={!phone} act={act} /> : <DlmmPosition pool={pool} harbor={harbor} peek={!phone} act={act} />}
+          {pool.venue === 'pro' && pool.pro ? <ProPosition row={pool.pro} peek={!phone} act={act} /> : <DlmmPosition pool={pool} harbor={harbor} stock={stock} peek={!phone} act={act} />}
         </>
       ) : tab === 'limit' ? (
         <>
@@ -173,6 +179,9 @@ export function PoolSide({ pool, coin, usd, pro, onOrders, foot, trade, phone = 
     </Panel>
   );
 }
+
+/** The ticket's rows stand the column's own gap apart: 12 px, a step less on a short desk (`pool.module.css`). */
+const SIDE_GAP = { gap: 'var(--side-gap)' } as const;
 
 type Act = Readonly<{ label: string; onClick: () => void }> | null;
 
@@ -313,7 +322,7 @@ function useHarborPool(pool: DeskPool) {
 }
 
 /** A DLMM pool's position: Earn's own form where Earn adds to the pool; elsewhere «soon», with the pool's page at Meteora. */
-function DlmmPosition({ pool, harbor, peek, act }: { pool: DeskPool; harbor: ReturnType<typeof useHarborPool>; peek: boolean; act: Act }) {
+function DlmmPosition({ pool, harbor, stock, peek, act }: { pool: DeskPool; harbor: ReturnType<typeof useHarborPool>; stock: ReturnType<typeof useDlmmStockPool>; peek: boolean; act: Act }) {
   const w = useWords(POOL);
   const list = useEarnData((st) => st.piers);
   const owner = useWallet((st) => st.connection?.address ?? null);
@@ -330,7 +339,9 @@ function DlmmPosition({ pool, harbor, peek, act }: { pool: DeskPool; harbor: Ret
   }, [harbor, placed, elsewhere, phase]);
   const pier = useMemo(() => (harbor ? pierOf(harbor) : null), [harbor]);
   if (!harbor || !pier) {
-    const waiting = EARN_OPEN && (list.status === 'idle' || list.status === 'loading');
+    // The exchange's state stands over the tab already (`StockPoolFacts` above): the ticket draws no second copy.
+    if (stock.read) return <DlmmStockTicket read={stock.read} onConnect={connect} head={false} />;
+    const waiting = (EARN_OPEN && (list.status === 'idle' || list.status === 'loading')) || stock.waiting;
     return waiting ? <div className={p.sideWait} aria-busy="true" /> : <Soon why={w.soonPool} link={pool.page} act={act} />;
   }
   if (placed !== harbor.address) return elsewhere || PIER_BUSY.has(phase) ? <Busy /> : <div className={p.sideWait} aria-busy="true" />;
@@ -363,23 +374,41 @@ export function BonusCard({ row, pools, mint, sym }: { row: ProPoolRow; pools: R
   const bonusBps = elsewhere ? ladder!.bonus.ownerBps : row.bonusBps;
   if (reading || (!elsewhere && bonusBps < 1)) return null;
   const pct = (bps: number) => digits(pctOfBps(bps), lang);
+  if (!elsewhere) {
+    return (
+      <div className={p.bonus} data-pool-bonus="">
+        <span className={p.bonusBig}>{`+${pct(bonusBps)}`}</span>
+        <span className={p.bonusWords}>
+          <b>{w.bonusTitle}</b>
+        </span>
+        <Info label={w.bonusTitle}>{w.bonusWhy}</Info>
+      </div>
+    );
+  }
+  // The way to that pool only where it pays more than this one; a
+  // card that called people into a pool with a smaller bonus, and took the height of the form, was a defect.
   // The pool is named by its pair where its pair is not this page's (MET's ladder in MET · USDC on MET · SOL's page), by
   // its fee alone where it is the same pair.
   const otherPair = there !== null && pairOf(there).quote.mint !== pairOf(row).quote.mint ? `${tickerOf(pairOf(there).coin)} · ${tickerOf(pairOf(there).quote)} ` : '';
+  const fee = pct(there?.fee.totalBps ?? ladder!.bonus.feeBps);
+  const better = elsewhereBetter(bonusBps, row.bonusBps);
   return (
-    <div className={p.bonus} data-pool-bonus="" data-elsewhere={elsewhere || undefined}>
-      <span className={p.bonusBig}>{`+${pct(bonusBps)}`}</span>
-      <span className={p.bonusWords}>
-        <b>{w.bonusTitle}</b>
-        {elsewhere ? <span>{w.elsewhereIn(sym, otherPair, pct(there?.fee.totalBps ?? ladder!.bonus.feeBps))}</span> : null}
+    <div className={p.bonus} data-pool-bonus="" data-elsewhere="" data-better={better || undefined}>
+      <span className={p.bonusLine}>
+        <b className={p.bonusSmall}>{`+${pct(bonusBps)}`}</b>
+        <span>{w.bonusIn(`${otherPair}${fee}`)}</span>
       </span>
-      {elsewhere ? (
+      {better ? (
         <QuietLink href={`/pool/${ladderPool}?tab=limit`} size="s">
           {w.elsewhereGo}
         </QuietLink>
-      ) : (
-        <Info label={w.bonusTitle}>{w.bonusWhy}</Info>
-      )}
+      ) : null}
+      <Info label={w.bonusTitle}>
+        <span className={p.facts}>
+          <b>{w.elsewhereIn(sym, otherPair, fee)}</b>
+          <span>{w.bonusWhy}</span>
+        </span>
+      </Info>
     </div>
   );
 }

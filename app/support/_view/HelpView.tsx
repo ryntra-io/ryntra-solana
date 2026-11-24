@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useId, useState } from "react";
+import { useEffect, useId, useState } from "react";
 
 import { useRyntraApp } from "@/city/lib/app-mode";
 import { CONTACT_MAX, HELP_MAX, HELP_TOPICS, helpPayload, helpReady, sendHelp, type HelpOutcome, type HelpTopic } from "@/city/lib/pages/help";
@@ -9,7 +9,7 @@ import { CONTACTS, contactMailto } from "@/lib/site/contacts";
 import { Action, ActionBody, Page, PageHead, Panel, Quiet, Segment } from "@/terminal/ui";
 
 import b from "../../docs/_book/book.module.css";
-import { Disclosure, DocsBar, useDocsLang } from "../../docs/_book/parts";
+import { Disclosure, DocsBar, LinkList, useDocsLang } from "../../docs/_book/parts";
 
 /** The page's words, English and Ukrainian; the inbox's rules are the engine's (`city/lib/pages/help.ts`). */
 export const HELP_WORDS = {
@@ -71,10 +71,17 @@ export const HELP_WORDS = {
   },
 } as const;
 
+/** The topic a link asks for (`/support?topic=security` from About), when it is one the inbox knows. */
+function askedTopic(search: string): HelpTopic | null {
+  const asked = new URLSearchParams(search).get("topic");
+  return HELP_TOPICS.find((topic) => topic === asked) ?? null;
+}
+
 /**
  * `/support` in the terminal's frame and language: one form on the engine's inbox (`POST /api/feedback`) —
  * pick what it is, write, send; the one amber action is «Send». On the side, what to read first and, behind one quiet
- * disclosure, what to know before writing.
+ * disclosure, what to know before writing. The head stands where every screen's head stands, with no trail above it, and
+ * the form and the side start on one line (the eyes' pass of 20.11).
  */
 export function HelpView() {
   const lang = useDocsLang();
@@ -88,6 +95,12 @@ export function HelpView() {
   const [outcome, setOutcome] = useState<HelpOutcome | null>(null);
   const draft = { topic, body, contact };
   const ready = helpReady(draft) && !busy;
+
+  // A link may name the topic (About's «Security reports»); the page is built once for everyone, so it is read here.
+  useEffect(() => {
+    const asked = askedTopic(location.search);
+    if (asked) setTopic(asked);
+  }, []);
 
   const send = async () => {
     if (!ready) return;
@@ -104,15 +117,14 @@ export function HelpView() {
 
   const side = (
     <div className={b.sideStack}>
-      <Panel pad="m" label={w.first}>
-        <nav className={b.toc} aria-label={w.first}>
-          <Link href="/docs/help" className={b.tocLink}>
-            {w.questions}
-          </Link>
-          <Link href="/docs/keys" className={b.tocLink}>
-            {w.keys}
-          </Link>
-        </nav>
+      <Panel pad="m">
+        <LinkList
+          title={w.first}
+          links={[
+            { href: "/docs/help", label: w.questions },
+            { href: "/docs/keys", label: w.keys },
+          ]}
+        />
       </Panel>
       <Disclosure title={w.before}>
         <p>{w.never}</p>
@@ -131,11 +143,10 @@ export function HelpView() {
 
   return (
     <Page className={b.page} data-docs="help-form">
-      <DocsBar lang={lang} here={w.title} />
+      <DocsBar lang={lang} />
       <PageHead title={w.title} />
       <ActionBody side={side} sideLabel={w.first}>
         <div className={b.mainStack}>
-          <p className={b.lead}>{w.line}</p>
           <Panel tone="hi" pad="l">
             {outcome?.kind === "sent" ? (
               <div className={b.formStack} role="status">
@@ -151,7 +162,8 @@ export function HelpView() {
                   void send();
                 }}
               >
-                <Segment label={w.topic} value={topic} onChange={setTopic} items={HELP_TOPICS.map((id) => ({ id, label: w[id] }))} />
+                <p className={b.formLine}>{w.line}</p>
+                <Segment label={w.topic} value={topic} onChange={setTopic} items={HELP_TOPICS.map((id) => ({ id, label: w[id] }))} className={b.topics} />
                 <label className={b.formLabel} htmlFor={`${ids}-body`}>
                   {w.message}
                 </label>

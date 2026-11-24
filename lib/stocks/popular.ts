@@ -55,5 +55,6 @@ export function popularCompanies(rows: readonly StockRow[], options: PopularOpti
     change24h: card.change24h,
     volume24h: card.volume24h,
     issuer: card.issuer,
+    catalogued: card.catalogued,
   }));
 }

@@ -15,6 +15,7 @@
 import { randomUUID } from "node:crypto";
 
 import { z } from "zod";
+import { isoDateTime } from "../../zod/iso-datetime.ts";
 
 import type { GuardStore } from "../../guard/store.ts";
 import { TASK_EVERY } from "./schedule.ts";
@@ -26,7 +27,7 @@ const PREFIX = "task:solana:mainnet:";
 
 const Wallet = z.string().regex(/^[1-9A-HJ-NP-Za-km-z]{32,44}$/);
 const Mint = z.string().regex(/^[1-9A-HJ-NP-Za-km-z]{32,44}$/);
-const Iso = z.string().datetime({ offset: true });
+const Iso = isoDateTime({ offset: true });
 
 export const TASK_KINDS = ["question", "news", "move", "portfolio"] as const;
 export type TaskKind = (typeof TASK_KINDS)[number];

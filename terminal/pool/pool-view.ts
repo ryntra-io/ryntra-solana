@@ -73,6 +73,30 @@ export function distributionOf(answer: EarnBinsAnswer, side: 'x' | 'y'): DistVie
   return { columns, price, low: columns[0]!.price, high: columns.at(-1)!.price, herePct: ((at + 0.5) / columns.length) * 100 };
 }
 
+/** A position's range as the pool states it: Y per X, both bounds. */
+export type MineRange = Readonly<{ lower: number; upper: number }>;
+
+/** Where a range stands over «Liquidity by price»: from and to, per cent of the plot's width, cheapest first. */
+export type MineBand = Readonly<{ fromPct: number; toPct: number }>;
+
+/**
+ * The person's own range over the pool's liquidity by price: the columns whose price lies inside it, in the
+ * coin's own terms as the columns run (`side` — the coin's side of the pool; for the coin as Y the range turns over).
+ * A half step of slack on each bound keeps the edge columns a position holds. Null where the range is not a range or
+ * holds none of the columns shown.
+ */
+export function mineBand(view: DistView, range: MineRange, side: 'x' | 'y'): MineBand | null {
+  if (!(range.lower > 0) || !(range.upper >= range.lower) || !view.columns.length) return null;
+  const low = side === 'x' ? range.lower : 1 / range.upper;
+  const high = side === 'x' ? range.upper : 1 / range.lower;
+  const ratio = view.columns.length > 1 ? Math.abs(view.columns[1]!.price / view.columns[0]!.price) : 1;
+  const slack = Number.isFinite(ratio) && ratio > 1 ? Math.sqrt(ratio) : 1.0001;
+  const inside = view.columns.flatMap((column, at) => (column.price >= low / slack && column.price <= high * slack ? [at] : []));
+  if (!inside.length) return null;
+  const count = view.columns.length;
+  return { fromPct: (inside[0]! / count) * 100, toPct: ((inside.at(-1)! + 1) / count) * 100 };
+}
+
 /**
  * A price of one coin in another, short: as many figures as the pool's step needs to tell its neighbouring steps apart
  * — four at least (0.003645, 72.55), five on a step of 0.01 % (1.3108) — and a run of zeros folded as the chart folds
@@ -89,6 +113,26 @@ export function pctOfBps(bps: number): string {
   const places = pct >= 10 ? 1 : pct >= 0.1 ? 2 : 3;
   return `${Number(pct.toFixed(places))}%`;
 }
+
+/**
+ * `there` — that pool's bonus, `here` — this pool's, basis points.
+ */
+export const elsewhereBetter = (there: number, here: number): boolean => Number.isFinite(there) && Number.isFinite(here) && there > here;
+
+/**
+ * A whole thousand stays as written («1,240»).
+ */
+export function evenPlaces(low: string, high: string): Readonly<{ low: string; high: string }> {
+  const places = (text: string) => (/^\d+\.\d+$/.test(text) ? text.length - text.indexOf('.') - 1 : /^\d+$/.test(text) ? 0 : -1);
+  const a = places(low);
+  const b = places(high);
+  if (a < 0 || b < 0 || a === b) return { low, high };
+  const pad = (text: string, have: number, want: number) => (have >= want ? text : `${text}${have === 0 ? '.' : ''}${'0'.repeat(want - have)}`);
+  const want = Math.max(a, b);
+  return { low: pad(low, a, want), high: pad(high, b, want) };
+}
+
+export const unbroken = (part: string | null): string | null => (part === null ? null : part.replace(/ /g, '\u00a0'));
 
 /* ── the list of DLMM Pro's pools ─────────────────────────────────────────────────────────────────────── */
 

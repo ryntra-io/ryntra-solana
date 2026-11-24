@@ -37,8 +37,10 @@ import {
   logoOf,
   mixedRows,
   nextSort,
+  oneTapOk,
   riskFacts,
   statsOf,
+  tableTemplate,
   volumeOf,
   type Filters,
   type KindTab,
@@ -48,12 +50,12 @@ import {
   type SortKey,
 } from './depth-view';
 import { useDayMove } from './day-move';
-import { readKey, setFilters, setList, setTab, setWindow, startPrefs, targetOf, useDepth, useDepthAhead, useDepthRead } from './depth';
+import { readDepthAgain, readKey, setFilters, setList, setTab, setWindow, startPrefs, targetOf, useDepth, useDepthAhead, useDepthRead } from './depth';
 import { DEPTH, UNIT_WORD } from './depth-words';
 import { FiltersPanel } from './FiltersPanel';
 import { Shield, Sliders, Warn } from './glyphs';
 import { usePulse } from './pulse-store';
-import { padWord } from './pulse-view';
+import { cardName, padWord } from './pulse-view';
 import { ZapButton, type QuickCoin } from './QuickBuy';
 import { startSaved, toggleSaved, useSaved } from './saved';
 import d from './depth.module.css';
@@ -232,15 +234,21 @@ export function DepthMarket() {
   };
   const kind: DepthKind = tab === 'saved' ? 'all' : tab;
 
+  // A list that did not answer says so, with «Try again» — never a bare head over nothing.
+  const down = read.status === 'failed' && !rows.length;
+  const again = () => readDepthAgain(tab === 'all' ? (['all', 'meme', 'crypto'] as const).map((id) => targetOf(id, list)) : [target], window, tab === 'saved' ? savedList : []);
   const none =
     read.status === 'reading' && !read.coins.length
       ? w.reading
-      : read.status === 'failed'
+      : down
         ? w.failed
         : !rows.length
           ? tab === 'saved' && !savedList.length
             ? w.noSaved
-            : w.none
+            : // A list with nothing in it is a quiet market, not the person's filters (flaw 10: the two never look alike).
+              tab !== 'saved' && !(tab === 'all' ? everyCoin.length : read.coins.length)
+              ? w.noCoins
+              : w.none
           : null;
 
   const tabs = [
@@ -301,11 +309,16 @@ export function DepthMarket() {
       </div>
 
       <div className={d.tableBox}>
-        {narrow ? <PhoneRows rows={visible} window={window} now={now} kind={kind} /> : <DeskTable rows={visible} window={window} now={now} all={all} kind={kind} moving={list === 'gainers' || list === 'losers'} sort={sort} onSort={setSort} />}
+        {narrow || down ? null : <DeskTable rows={visible} window={window} now={now} all={all} kind={kind} moving={list === 'gainers' || list === 'losers'} sort={sort} onSort={setSort} />}
+        {narrow && !down ? <PhoneRows rows={visible} window={window} now={now} kind={kind} /> : null}
         {none ? (
-          <div className={d.none} role="status">
+          <div className={d.none} role="status" data-down={down ? '' : undefined}>
             <span>{none}</span>
-            {tab !== 'saved' && on && read.coins.length ? (
+            {down ? (
+              <Quiet size="s" onClick={again}>
+                {w.again}
+              </Quiet>
+            ) : tab !== 'saved' && on && read.coins.length ? (
               <Quiet size="s" onClick={() => setFilters(DEFAULT_FILTERS)}>
                 {w.reset}
               </Quiet>
@@ -436,7 +449,7 @@ function Star({ coin }: { coin: DepthCoin }) {
  * A coin's logo, ticker, a copy's mark, and its age under it (or `sub`, with `aside` beside the ticker). A company's
  * token is named by its company, its ticker under it; a meme carries its launchpad.
  */
-function CoinWords({ coin, now, sub, aside }: { coin: DepthCoin; now: number; sub?: ReactNode; aside?: ReactNode }) {
+function CoinWords({ coin, now, sub, aside, named = false }: { coin: DepthCoin; now: number; sub?: ReactNode; aside?: ReactNode; named?: boolean }) {
   const w = useWords(DEPTH);
   const age = ageMs(coin, now);
   const company = coin.kind === 'stock' || coin.kind === 'preipo';
@@ -454,7 +467,8 @@ function CoinWords({ coin, now, sub, aside }: { coin: DepthCoin; now: number; su
           ) : null}
           {aside}
         </span>
-        <span className={d.coinSub}>{sub ?? (company ? coin.symbol : age === null ? null : <AgeText ms={age} />)}</span>
+        {/* With its own age column the table names the coin under its ticker instead of repeating the age. */}
+        <span className={d.coinSub}>{sub ?? (company ? coin.symbol : named ? cardName(coin) : age === null ? null : <AgeText ms={age} />)}</span>
       </span>
     </span>
   );
@@ -499,6 +513,8 @@ function DeskTable({ rows, window, now, all: every, kind, moving, sort, onSort }
   const lang = useLang();
   const router = useRouter();
   const [box, width] = useWidth<HTMLDivElement>();
+  // Set once the columns are fitted below; the coin's cell reads it when the rows are drawn.
+  let ageShown = false;
   const move = (win: DepthWindow, rank: number): Column => ({
     id: `move-${win}`,
     group: win === '24h' ? 'day' : win === window ? 'move' : 'other',
@@ -532,7 +548,7 @@ function DeskTable({ rows, window, now, all: every, kind, moving, sort, onSort }
       rank: 0,
       cell: (coin) => (
         <Link className={d.rowLink} href={coinHref(coin.id, 'live')} onClick={(event) => event.stopPropagation()}>
-          <CoinWords coin={coin} now={now} />
+          <CoinWords coin={coin} now={now} named={ageShown} />
         </Link>
       ),
     },
@@ -542,23 +558,37 @@ function DeskTable({ rows, window, now, all: every, kind, moving, sort, onSort }
     { id: 'mcap', key: 'mcap', head: w.mcap, min: 80, grow: 0.85, rank: 5, end: true, cell: (coin) => moneyOr(coin.mcap, lang) },
     { id: 'liquidity', key: 'liquidity', head: w.liquidity, min: 86, grow: 0.85, rank: 7, end: true, cell: (coin) => moneyOr(coin.liquidity, lang) },
     { id: 'holders', key: 'holders', head: w.holders, min: 76, grow: 0.8, rank: 6, end: true, cell: (coin) => countText(coin.holders, lang) },
+    {
+      id: 'age',
+      key: 'age',
+      head: w.age,
+      min: 56,
+      grow: 0.5,
+      rank: 6.8,
+      end: true,
+      cell: (coin) => {
+        const age = ageMs(coin, now);
+        return age === null ? '—' : <AgeText ms={age} />;
+      },
+    },
     ...(kind === 'meme' ? [{ id: 'top', key: null, head: w.top10, min: 64, grow: 0.6, rank: 6.5, end: true, cell: (coin: DepthCoin) => (coin.topHolders === null ? '—' : digits(`${Math.round(coin.topHolders)}%`, lang)) }] : []),
     { id: 'bs', key: 'trades', head: w.buysSells, min: 124, grow: 1.2, rank: 8, end: true, cell: (coin) => <BuysSells coin={coin} window={window} /> },
     ...(every ? [{ id: 'traders', key: 'traders' as SortKey, head: w.traders, min: 76, grow: 0.7, rank: 14, end: true, cell: (coin: DepthCoin) => countText(statsOf(coin, window)?.traders ?? null, lang) }] : []),
     { id: 'risk', key: null, head: w.risk, min: 60, grow: 0, rank: 1.5, mid: true, cell: (coin) => <RiskSign coin={coin} /> },
-    { id: 'quick', key: null, head: '', min: 72, grow: 0, rank: 0.5, end: true, cell: (coin) => <ZapButton coin={quickOf(coin)} /> },
+    { id: 'quick', key: null, head: '', min: 72, grow: 0, rank: 0.5, end: true, cell: (coin) => (oneTapOk(coin) ? <ZapButton coin={quickOf(coin)} /> : null) },
     { id: 'star', key: null, head: '', min: 28, grow: 0, rank: 1.2, cell: (coin) => <Star coin={coin} /> },
   ];
   // Each kind's main set shows its own columns; «All» shows every one.
   // Rising and falling are ranked by the window's move: that column always stands.
   const kept = every ? table : table.filter((c) => MAIN_COLUMNS[kind].includes(c.group ?? c.id) || (c.id === `move-${window}` && (moving || MAIN_COLUMNS[kind].includes('move'))));
   const columns = width ? fitColumns(kept, width) : kept.filter((c) => c.rank <= 5);
+  ageShown = columns.some((c) => c.id === 'age');
   // The order by a column that left the table goes back to the list's own.
   const sortShown = sort.key === DEFAULT_SORT.key || columns.some((c) => c.key === sort.key);
   useEffect(() => {
     if (width && !sortShown) onSort(DEFAULT_SORT);
   }, [width, sortShown, onSort]);
-  const template = columns.map((c) => (c.grow ? `minmax(${c.min}px, ${c.grow}fr)` : `${c.min}px`)).join(' ');
+  const template = tableTemplate(columns);
   const open = useCallback((coin: DepthCoin) => router.push(coinHref(coin.id, 'live')), [router]);
   return (
     <div className={d.scroll} ref={box}>
@@ -670,7 +700,7 @@ function PhoneRows({ rows, window, now, kind }: { rows: readonly DepthCoin[]; wi
               <b className={d.price}>{coin.price === null ? '—' : priceText(coin.price, lang)}</b>
               {window === '24h' ? <DayCell coin={coin} /> : <span data-tone={change === null ? undefined : changeTone(change)}>{moveOr(change, lang)}</span>}
             </span>
-            <ZapButton coin={quickOf(coin)} />
+            {oneTapOk(coin) ? <ZapButton coin={quickOf(coin)} /> : null}
           </div>
         );
       })}

@@ -1,4 +1,4 @@
-import { planFrom, type StrategyPlan } from '../../../lib/mandate/plans.ts';
+import { planFrom, type SignalTrigger, type StrategyPlan } from '../../../lib/mandate/plans.ts';
 import { solText } from './plan.ts';
 import type { AUTOPILOT } from './words.ts';
 
@@ -15,10 +15,27 @@ export function pctText(bps: number, lang: 'en' | 'uk'): string {
   return lang === 'uk' ? text.replace('.', ',') : text;
 }
 
+/** A signal in one line, by its condition. */
+function signalLine(trigger: SignalTrigger, w: W, lang: 'en' | 'uk'): string {
+  switch (trigger.kind) {
+    case 'cross':
+      return w.planCross;
+    case 'above':
+      return w.planAbove(pctText(trigger.bps, lang));
+    case 'below':
+      return w.planBelow(pctText(trigger.bps, lang));
+    case 'move':
+      return w.planMove(pctText(trigger.bps, lang));
+    case 'volume':
+      return w.planVolume(pctText(trigger.pct, lang));
+  }
+}
+
 /** The plan in one line — «Buys on dips of 8% · takes +20%»; null for the plain steady one, whose rhythm says it all. */
 export function planLine(plan: StrategyPlan | null, w: W, lang: 'en' | 'uk'): string | null {
   if (!plan) return null;
-  const head = plan.id === 'dip' ? w.planDip(pctText(plan.dropBps, lang)) : plan.id === 'grid' ? w.planGrid(plan.levels, pctText(plan.stepBps, lang)) : plan.id === 'early' ? w.planEarly : plan.exit ? w.planSteady : null;
+  const grid = plan.id === 'grid' ? (plan.sell ? w.planGridSell : w.planGrid)(plan.levels, pctText(plan.stepBps, lang)) : null;
+  const head = plan.id === 'dip' ? w.planDip(pctText(plan.dropBps, lang)) : grid ? grid : plan.id === 'early' ? w.planEarly : plan.id === 'signal' ? signalLine(plan.trigger, w, lang) : plan.exit ? w.planSteady : null;
   if (!head) return null;
   const exit = [plan.exit?.takeBps ? w.planTake(pctText(plan.exit.takeBps, lang)) : null, plan.exit?.stopBps ? w.planStop(pctText(plan.exit.stopBps, lang)) : null].filter(Boolean);
   return [head, ...exit].join(' · ');
@@ -42,6 +59,8 @@ export function planRules(plan: StrategyPlan | null, w: W, lang: 'en' | 'uk', rh
   const lines: string[] = [];
   if (plan.id === 'dip') lines.push(w.ruleDip(pctText(plan.dropBps, lang)));
   if (plan.id === 'grid') lines.push(w.ruleGrid(plan.levels, pctText(plan.stepBps, lang)));
+  if (plan.id === 'grid' && plan.sell) lines.push(w.ruleGridSell);
+  if (plan.id === 'signal') lines.push(w.ruleSignal(plan.trigger.kind === 'cross'));
   if (plan.id === 'early') lines.push(w.ruleEarly);
   if (plan.id !== 'steady' && rhythm) lines.push(w.ruleCeiling(rhythm.buys, rhythm.perTrade));
   if (plan.exit) lines.push(w.ruleExit(sells));

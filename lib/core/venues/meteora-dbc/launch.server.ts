@@ -158,6 +158,11 @@ export type MeteoraDbcLaunchVenue = LaunchVenue &
       configKey?: Keypair;
       /** «Розширений» only: the preset the creator's choice makes (`advancedPreset`) — its numbers, not the template's. */
       custom?: LaunchPreset;
+      /**
+       * Meteora's token badge of the pair currency, which the program needs as the first remaining account of a
+       * config on a mint it takes only with one; absent — none is passed, as before.
+       */
+      tokenBadge?: Address;
     }>): Promise<ConfigBuild>;
     /**
      * The token and the creator's first purchase. With `creatorCoversPayer`
@@ -167,7 +172,16 @@ export type MeteoraDbcLaunchVenue = LaunchVenue &
      */
     create(
       params: LaunchParams,
-      options?: Readonly<{ creatorCoversPayer?: boolean; feeShares?: readonly FeeShare[]; /** MC-2: the rows are a crew's — Classic and Protected share too. */ crew?: boolean; /** «Розширений»: its own terms' preset (SOL-L5). */ custom?: LaunchPreset }>,
+      options?: Readonly<{
+        creatorCoversPayer?: boolean;
+        feeShares?: readonly FeeShare[];
+        /** MC-2: the rows are a crew's — Classic and Protected share too. */
+        crew?: boolean;
+        /** «Розширений»: its own terms' preset (SOL-L5). */
+        custom?: LaunchPreset;
+        /** The pair currency's token badge, which the pool's creation needs as the config's did; absent — none. */
+        tokenBadge?: Address;
+      }>,
     ): Promise<LaunchBuild>;
     /** `custom` — «Розширений»: the preset its launch's own terms make, whose first-purchase cap binds (SOL-L5). */
     firstBuyQuote(preset: LaunchPresetId, amountInRaw: string, pairMint?: Address, custom?: LaunchPreset): Promise<FirstBuyQuote>;
@@ -664,7 +678,7 @@ export function createMeteoraDbcLaunchVenue(args: Readonly<{
   const venue: MeteoraDbcLaunchVenue = {
     venue: "meteora-dbc",
 
-    async buildConfig({ preset: presetId, quote, feeClaimer, leftoverReceiver, payer, configKey, custom }) {
+    async buildConfig({ preset: presetId, quote, feeClaimer, leftoverReceiver, payer, configKey, custom, tokenBadge }) {
       if (custom && (presetId !== "advanced" || custom.id !== "advanced")) throw new LaunchRefusal("UNKNOWN_PRESET", "Only «Розширений» is built from a creator's own numbers.");
       const preset = custom ?? launchPreset(presetId);
       if (!preset) throw new LaunchRefusal("UNKNOWN_PRESET", `No preset «${presetId}».`);
@@ -715,12 +729,13 @@ export function createMeteoraDbcLaunchVenue(args: Readonly<{
         quoteMint: new PublicKey(quote.mint),
         ...curve,
         ...(transferFee ? { transferFeeParameters: transferFee } : {}),
+        ...(tokenBadge ? { tokenBadge: new PublicKey(tokenBadge) } : {}),
       });
       const sealed = await seal(tx, new PublicKey(payer), [config]);
       return { ...sealed, config: config.publicKey.toBase58(), migrationQuoteThresholdRaw: curve.migrationQuoteThreshold.toString(), fields };
     },
 
-    async create(params: LaunchParams, options: Readonly<{ creatorCoversPayer?: boolean; feeShares?: readonly FeeShare[]; crew?: boolean; custom?: LaunchPreset }> = {}): Promise<LaunchBuild> {
+    async create(params: LaunchParams, options: Readonly<{ creatorCoversPayer?: boolean; feeShares?: readonly FeeShare[]; crew?: boolean; custom?: LaunchPreset; tokenBadge?: Address }> = {}): Promise<LaunchBuild> {
       const preset = customOr(params.preset, options.custom);
       if (!preset) throw new LaunchRefusal("UNKNOWN_PRESET", `No preset «${params.preset}».`);
       /* Ryntra's pool payer pays and signs every Ryntra launch: that signature is what makes a pool on a public config Ryntra's. */
@@ -754,7 +769,16 @@ export function createMeteoraDbcLaunchVenue(args: Readonly<{
           throw new LaunchRefusal("CREATOR_BUY_ABOVE_CAP", `The creator's first purchase would receive ${outRaw.toString()} of a cap of ${cap.toString()}.`);
         }
       }
-      const createPoolParam = { name: params.name, symbol: params.symbol, uri: params.metadataUri, payer, poolCreator: creator, config, baseMint: mint.publicKey };
+      const createPoolParam = {
+        name: params.name,
+        symbol: params.symbol,
+        uri: params.metadataUri,
+        payer,
+        poolCreator: creator,
+        config,
+        baseMint: mint.publicKey,
+        ...(options.tokenBadge ? { tokenBadge: new PublicKey(options.tokenBadge) } : {}),
+      };
       const tx = buyRaw.gtn(0)
         ? await client.creator.createPoolWithFirstBuy({
             createPoolParam,

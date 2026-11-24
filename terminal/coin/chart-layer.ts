@@ -24,7 +24,15 @@ export type LineTone = 'draft' | 'resting' | 'held' | 'depth';
  * A line across the chart at a price in US dollars; `tag` is the price as the axis' tag says it, null — the line alone.
  * `weight` (0…1) makes it a strip by the price scale instead, as long as its weight (liquidity by price).
  */
-export type LayerLine = Readonly<{ id: string; price: number; tone: LineTone; tag: string | null; weight?: number }>;
+export type LayerLine = Readonly<{
+  id: string;
+  price: number;
+  tone: LineTone;
+  tag: string | null;
+  weight?: number;
+  /** A line's own name, said at its left in its colour (the person's average entry): the price's tag stays at the right. */
+  name?: string;
+}>;
 
 /** What one slot draws: its lines, and a short badge for the chart's head (the ticket's «Ladder · 8 prices»). */
 export type Layer = Readonly<{ lines: readonly LayerLine[]; badge: string | null }>;

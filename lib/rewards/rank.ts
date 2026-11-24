@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { isoDateTime } from "../zod/iso-datetime.ts";
 
 import { formatPoints } from "../points/model.ts";
 import { JUPITER_REFERRAL_PROVIDER_SHARE_PERCENT } from "../solana/quotes.ts";
@@ -55,12 +56,12 @@ export const RankEventSchema = z
      * `PARTNER_POOL` decreases only: the moment the base it takes back began to count. A decrease counts exactly
      * while that base is still in the window — it never outlives what it cancels, and never takes from another pool.
      */
-    cancelsAt: z.string().datetime({ offset: true }).optional(),
+    cancelsAt: isoDateTime({ offset: true }).optional(),
     /** The traders' rules for a launch; the Network's version for a partner. */
     rulesVersion: z.string().min(1).max(40),
     /** When it happened. The window reads this. */
-    at: z.string().datetime({ offset: true }),
-    createdAt: z.string().datetime({ offset: true }),
+    at: isoDateTime({ offset: true }),
+    createdAt: isoDateTime({ offset: true }),
   })
   .strict()
   .superRefine((event, context) => {

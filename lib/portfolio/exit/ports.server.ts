@@ -10,6 +10,7 @@
  * | `stake` | the stake program's withdraw and deactivate (`./stake.ts`) | — |
  * | `swap` | the swap engine's order: its venue, fee policy and lane, referral, the taker's discount, its pre-sign check | the SWAP lane |
  * | `sweep` | Meteora's Zap Out over Jupiter's `/build` route (the SDK the Zap already uses), Ryntra's fee by the same fee policy's `/build` lane | the SWAP lane |
+ * | `exitRoutable` | the Swap card's read-only quote: whether Jupiter carries a coin now, for the overview | the SWAP lane, the Jupiter window |
  *
  * The only file of the exit that reads `process.env` and the network.
  */
@@ -23,7 +24,7 @@ import BN from "bn.js";
 
 import { FEE_POLICY_V2 } from "../../core/fee-policy.ts";
 import { discountedFeeBps, readRefereeDiscountBps } from "../../core/referee-discount.ts";
-import { buildFeeFor, feePolicyInForce, flowOfSwap } from "../../core/solana-swap/fee-route.server.ts";
+import { buildFeeFor, chooseQuote, feePolicyInForce, flowOfSwap } from "../../core/solana-swap/fee-route.server.ts";
 import { askVenueOrder } from "../../core/solana-swap/venue-order.ts";
 import { createJupiterSwapVenue, type JupiterSwapVenue } from "../../core/venues/jupiter.ts";
 import { admitEarn, withinCanary } from "../../earn/gate.ts";
@@ -41,6 +42,7 @@ import { admitLiquidityAction } from "../../liquidity/studio/gate.ts";
 import { liquidityVenues } from "../../liquidity/studio/venues.server.ts";
 import { againstReference, ZAP_PROGRAM } from "../../liquidity/studio/zap-check.ts";
 import { BLOCKHASH_SUBMIT_MARGIN_MS, readBlockhashLife, signableWindowMs, web3ChainReader } from "../../solana/blockhash-life.ts";
+import { jupiterBackgroundAllowed } from "../../solana/jupiter-budget.ts";
 import { resolveSolanaLaneState } from "../../solana/lane-state.ts";
 import { resolveJupiterSwapEndpoint } from "../../solana/quotes.ts";
 import { verifiedJupiterReferral } from "../../solana/referral-account.server.ts";
@@ -51,7 +53,7 @@ import { cleanConnection, within } from "../../wallet-clean/read.server.ts";
 import { NATIVE_SOL_MINT, STAKE_PROGRAM, USDC_MINT } from "../model.ts";
 import { forgetPortfolio } from "../service.ts";
 import { zapOutCounts } from "./checks.ts";
-import type { ExitChain, ExitPorts, UnitBuilt } from "./ports.ts";
+import type { ExitChain, ExitPorts, ExitRoutable, UnitBuilt } from "./ports.ts";
 import { stakeWire } from "./stake.ts";
 import type { Bring } from "./sweeps.ts";
 import { lookupsOf } from "./ticket.ts";
@@ -393,6 +395,39 @@ function sweepPort(connection: Connection): ExitPorts["sweep"] {
       rentLamports: 0n,
       feeBps: fee?.bps ?? null,
     };
+  };
+}
+
+/* ── whether Jupiter carries a coin ────────────────────────── */
+
+/** A coin's answer is kept this long: whether Jupiter carries a coin moves slowly, and the overview is read on every visit. */
+const ROUTE_KEEP_MS = 120_000;
+const ROUTE_KEPT_MOST = 2_000;
+/** One coin's ask waits this long, then says nothing: the overview is a read. */
+const ROUTE_ASK_MS = 6_000;
+const routeAnswers = new Map<string, Readonly<{ at: number; routed: boolean }>>();
+
+/**
+ * The Swap card's own read-only quote for a coin into the target (`chooseQuote`: the same lanes, the same routers, no
+ * wallet, nothing built) — the same answer «Обмін» gives for that coin now. Asked only while swapping is open and the
+ * site's Jupiter window has room for more than people's own requests (`jupiterBackgroundAllowed`); a clear answer is
+ * kept two minutes. Nothing here changes a route, a fee or a check: it only asks.
+ */
+export function exitRoutable(): ExitRoutable {
+  return async ({ mint, amountRaw, outMint }) => {
+    const key = `${mint}:${outMint}:${amountRaw}`;
+    const kept = routeAnswers.get(key);
+    if (kept && Date.now() - kept.at < ROUTE_KEEP_MS) return kept.routed;
+    if (resolveSolanaLaneState("SWAP") !== "OPEN" || !jupiterBackgroundAllowed()) return null;
+    const selection = resolveJupiterSwapEndpoint({ access: "production" });
+    if (!selection.ok) return null;
+    const choice = await within(chooseQuote({ inputMint: mint, outputMint: outMint, amountRaw, selection, handle: createSolanaRpcHandle({ network: "mainnet" }), config: resolveServiceFeeConfig() }), ROUTE_ASK_MS).catch(() => null);
+    const routed = !choice ? null : choice.ok ? true : choice.failure.code === "NO_ROUTE" ? false : null;
+    if (routed !== null) {
+      if (routeAnswers.size >= ROUTE_KEPT_MOST) routeAnswers.clear();
+      routeAnswers.set(key, { at: Date.now(), routed });
+    }
+    return routed;
   };
 }
 

@@ -55,14 +55,25 @@ export function Sign({ name }: { name: keyof typeof SIGNS }) {
   );
 }
 
-/** The one line before a signature — the fee and the band — with everything else behind its «i», opened in place. */
-export function OneLine({ line, label, children }: { line: ReactNode; label: string; children: ReactNode }) {
+/**
+ * The one line before a signature — the fee and the band — with everything else behind its «i», opened in place.
+ * `tone="warn"` — a line of honesty the person must read before signing (a stock's issuer and hours): the ticket's own
+ * text with a quiet sign of attention ahead of it, never the dim of a detail.
+ */
+export function OneLine({ line, label, tone, children }: { line: ReactNode; label: string; tone?: 'warn'; children: ReactNode }) {
   const [open, setOpen] = useState(false);
   const id = useId();
   return (
     <>
-      <div className={e.oneLine}>
-        <span>{line}</span>
+      <div className={e.oneLine} data-tone={tone}>
+        <span>
+          {tone === 'warn' ? (
+            <svg className={e.oneLineSign} viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M12 4 2.8 19.5h18.4zM12 10v4.2M12 17h.01" />
+            </svg>
+          ) : null}
+          {line}
+        </span>
         <button type="button" className={e.infoBtn} aria-label={label} aria-expanded={open} aria-controls={open ? id : undefined} onClick={() => setOpen((was) => !was)}>
           <Icon name="info" size="s" />
         </button>

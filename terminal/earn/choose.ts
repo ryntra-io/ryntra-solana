@@ -1,10 +1,10 @@
-import type { EarnLendRate, EarnPool } from '../../lib/earn-pools/model.ts';
+import { EARN_PERIODS, type EarnLendRate, type EarnPeriod, type EarnPeriodFigures, type EarnPool } from '../../lib/earn-pools/model.ts';
 import type { HarborPool } from '../../city/lib/districts/harbor/pools.ts';
 import { LSTS, SOL_MINT } from '../../city/lib/earn/lst.ts';
 import { proReward, type ProPier } from '../../city/lib/earn/pro.ts';
 import { digits } from '../../city/lib/i18n/dict.ts';
 import type { Lang } from '../../city/lib/i18n/langs.ts';
-import type { Coin, PoolRow, StakeRow } from './rows.ts';
+import { shortUsd, type Coin, type PoolRow, type StakeRow } from './rows.ts';
 
 /**
  * Choosing a pool: every Meteora pool the engine reads (DLMM and DAMM v2, and DLMM Pro where the server
@@ -40,6 +40,10 @@ export type ChooseRow = Readonly<{
   act: RowAct;
   /** The pool's own reward, a second line of income beside its fees: so much a day of a coin of its own (DLMM Pro's liquidity mining). */
   reward?: Readonly<{ perDay: string; symbol: string }> | null;
+  /** A DLMM Pro pool whose day was read only in part: its volume and fees are a floor of the day's, said with «≥». */
+  dayFloor?: boolean;
+  /** The venue's shorter windows: volume and fees over the last 30 minutes, hour and two hours, where read. */
+  periods?: Readonly<Partial<Record<EarnPeriod, EarnPeriodFigures>>>;
 }>;
 
 const pairName = (x: Readonly<{ symbol: string }>, y: Readonly<{ symbol: string }>) => `${x.symbol} · ${y.symbol}`;
@@ -131,6 +135,23 @@ function fromPro(pier: ProPier, row: PoolRow | undefined): ChooseRow {
   };
 }
 
+/** What a DLMM Pro pool's day says, from the program's own trades (`terminal/pool/pro-tape.ts`). */
+export type ProDayFigures = Readonly<{ volumeUsd: number | null; lpFeesUsd: number | null; whole: boolean }>;
+
+/**
+ * DLMM Pro's rows with their day, where it was read: the volume, what the swaps paid the pool's liquidity — the figure a
+ * depositor earns from, as the other pools' «Fees 24h» —, and the day's fees over the depth only for a whole day. A pool
+ * whose day was not read keeps its places empty.
+ */
+export function withProDays(rows: readonly ChooseRow[], days: ReadonlyMap<string, ProDayFigures>): ChooseRow[] {
+  return rows.map((row) => {
+    const day = row.type === 'pro' ? days.get(row.address) : undefined;
+    if (!day) return row;
+    const feeTvlPct = day.whole && row.tvlUsd !== null ? feeTvlOf(day.lpFeesUsd, row.tvlUsd) : null;
+    return { ...row, volume24hUsd: day.volumeUsd, fees24hUsd: day.lpFeesUsd, feeTvlPct, dayFloor: !day.whole };
+  });
+}
+
 export type ChooseInput = Readonly<{
   /** The engine's catalogue, as `/api/v1/earn/pools` answered; empty when it did not. */
   catalog: readonly EarnPool[];
@@ -154,6 +175,46 @@ export function chooseRows(input: ChooseInput): ChooseRow[] {
   for (const pool of input.harbor) if (!listed.has(pool.address)) out.push(input.addOpen ? fromHarbor(pool) : { ...fromHarbor(pool), act: 'view' });
   for (const pier of input.proPiers) out.push(fromPro(pier, input.rows.find((row) => row.kind === 'pro' && row.address === pier.address)));
   return out;
+}
+
+/* ── the window the table reads ───────────────────────────────────────────────────────────────────────── */
+
+/** The windows of the pools' table: the venue's own, the shortest half an hour; a day is where the table starts. */
+export const PERIODS = EARN_PERIODS;
+export type Period = EarnPeriod;
+export const START_PERIOD: Period = '24h';
+
+/** What a row says in a window: volume, fees, and those fees over what the pool holds now (per cent of the window). */
+export type PeriodFigures = Readonly<{ volumeUsd: number | null; feesUsd: number | null; feeTvlPct: number | null; floor: boolean }>;
+
+/**
+ * A row's figures in a window. The day is the row's own (the catalogue's, the city's read, DLMM Pro's from its trades);
+ * a shorter window is the venue's where it stated one, else empty — DLMM Pro's pools are counted by the day alone, and
+ * an empty place is never a zero. Fees over the depth are those fees over what the pool holds now: a fact of the window
+ * gone, never a rate promised.
+ */
+export function figuresOf(row: ChooseRow, period: Period): PeriodFigures {
+  if (period === '24h') return { volumeUsd: row.volume24hUsd, feesUsd: row.fees24hUsd, feeTvlPct: row.feeTvlPct, floor: row.dayFloor === true };
+  const read = row.type === 'pro' ? undefined : row.periods?.[period];
+  const feesUsd = read?.feesUsd ?? null;
+  return { volumeUsd: read?.volumeUsd ?? null, feesUsd, feeTvlPct: row.tvlUsd !== null ? feeTvlOf(feesUsd, row.tvlUsd) : null, floor: false };
+}
+
+/** The rows with the venue's windows, by pool; a pool the answer did not carry keeps its day alone. */
+export function withPeriods(rows: readonly ChooseRow[], periods: ReadonlyMap<string, Readonly<Partial<Record<Period, EarnPeriodFigures>>>>): ChooseRow[] {
+  if (!periods.size) return [...rows];
+  return rows.map((row) => {
+    const read = row.type === 'pro' ? undefined : periods.get(row.address);
+    return read ? { ...row, periods: read } : row;
+  });
+}
+
+/* ── the person's own pools ───────────────────────────────────────────────────────────────────────────── */
+
+/** «Saved»: the pools a person starred, every one of them — the person chose them, no filter hides one. */
+export function savedRows(rows: readonly ChooseRow[], saved: readonly string[]): ChooseRow[] {
+  const kept = new Set(saved);
+  return rows.filter((row) => kept.has(row.address));
 }
 
 /* ── filters ─────────────────────────────────────────────────────────────────────────────────────────────────────── */
@@ -217,10 +278,11 @@ export const HIGH_MIN_TVL_USD = 100_000;
 const atLeast = (row: ChooseRow, value: number | null, floor: number) => floor <= 0 || (value === null ? row.act !== 'view' : value >= floor);
 const inBand = (value: number | null, band: readonly [number, number]) => value !== null && value >= band[0] && value <= band[1];
 
-/** Whether a coin's words match: a mint exactly, or a symbol from its start. */
+/** Whether a search matches: a coin's address or the pool's own exactly, or a coin's symbol from its start. */
 export function coinMatch(row: ChooseRow, coin: string): boolean {
   const needle = coin.trim().toLowerCase();
   if (!needle) return true;
+  if (row.address.toLowerCase() === needle) return true;
   return row.coins.some((entry) => entry.mint.toLowerCase() === needle || entry.symbol.toLowerCase().startsWith(needle));
 }
 
@@ -248,16 +310,16 @@ export type SortKey = (typeof SORT_KEYS)[number];
 export type Sort = Readonly<{ key: SortKey; dir: 'desc' | 'asc' }>;
 export const START_SORT: Sort = { key: 'fees', dir: 'desc' };
 
-const sortValue = (row: ChooseRow, key: SortKey): number | null => {
+const sortValue = (row: ChooseRow, key: SortKey, period: Period): number | null => {
   switch (key) {
     case 'fees':
-      return row.fees24hUsd;
+      return figuresOf(row, period).feesUsd;
     case 'feeTvl':
-      return row.feeTvlPct;
+      return figuresOf(row, period).feeTvlPct;
     case 'tvl':
       return row.tvlUsd;
     case 'volume':
-      return row.volume24hUsd;
+      return figuresOf(row, period).volumeUsd;
     case 'age': {
       const at = row.createdAt ? Date.parse(row.createdAt) : NaN;
       // Newest first reads «desc»: a later date is a younger pool.
@@ -270,12 +332,15 @@ const sortValue = (row: ChooseRow, key: SortKey): number | null => {
   }
 };
 
-/** Rows in an order; a figure nobody stated goes last either way; ties fall to the depth, then to the address. */
-export function sortRows(rows: readonly ChooseRow[], sort: Sort): ChooseRow[] {
+/**
+ * Rows in an order, by the window the table reads (the day by default); a figure nobody stated goes last either way; ties
+ * fall to the depth, then to the address.
+ */
+export function sortRows(rows: readonly ChooseRow[], sort: Sort, period: Period = START_PERIOD): ChooseRow[] {
   const sign = sort.dir === 'asc' ? 1 : -1;
   return rows.slice().sort((a, b) => {
-    const va = sortValue(a, sort.key);
-    const vb = sortValue(b, sort.key);
+    const va = sortValue(a, sort.key, period);
+    const vb = sortValue(b, sort.key, period);
     if (va === null || vb === null) {
       if (va !== vb) return va === null ? 1 : -1;
     } else if (va !== vb) return sign * (va - vb);
@@ -339,6 +404,15 @@ export function ageText(createdAt: string | null, lang: Lang, nowMs: number): st
   if (days < 60) return digits(`${days} ${w.d}`, lang);
   if (days < 730) return digits(`${Math.floor(days / 30.44)} ${w.m}`, lang);
   return digits(`${Math.floor(days / 365.25)} ${w.y}`, lang);
+}
+
+/**
+ * A day's dollars as a row of the pools says them: a DLMM Pro pool whose day was not read stays empty — the read is
+ * that pool's own and never a zero — and a day read only in part is a floor, «≥ $1.2K».
+ */
+export function dayUsdText(row: Pick<ChooseRow, 'type' | 'dayFloor'>, usd: number | null, lang: Lang): string {
+  if (usd === null) return row.type === 'pro' ? '' : shortUsd(null, lang);
+  return row.dayFloor ? `≥ ${shortUsd(usd, lang)}` : shortUsd(usd, lang);
 }
 
 /** A floor as the chip says it: «> $50K», «> 0.1%». */

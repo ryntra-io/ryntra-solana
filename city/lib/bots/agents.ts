@@ -6,6 +6,9 @@ import { isMandateRecord, MANDATE_NET, useMandate, type MandateNetwork, type Man
  * `POST /api/bots/agents` answers from the agent's book and the chain — the mandates, mainnet and devnet apart, the
  * autopilot on one of them, the piers it looks after. The book is the truth; the note this browser keeps
  * (`mandate.ts`) stays only as a cache, written over by the engine's answer.
+ *
+ * The engine answers only for the wallet this browser proved (`lib/bots/agents-door.server.ts`); without the proof it
+ * says 401, and the browser stays as it was. This file never asks the wallet for a proof: an action that needs one asks.
  */
 
 export type EngineMandate = Readonly<{
@@ -95,26 +98,46 @@ export function cacheFrom(network: EngineNetwork, local: MandateRecord | undefin
 
 export type Fetcher = (url: string, init?: RequestInit) => Promise<Response>;
 
-/** One read of the engine; null — it did not answer (closed here, refused, unreachable). */
-export async function readAgents(owner: string, fetcher: Fetcher = (url, init) => fetch(url, init)): Promise<EngineAgents | null> {
+/** One read of the engine; `locked` — this browser holds no proof of the wallet (401), so the engine said nothing. */
+async function askAgents(owner: string, fetcher: Fetcher): Promise<Readonly<{ agents: EngineAgents | null; locked: boolean }>> {
   try {
     const response = await fetcher('/api/bots/agents', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ owner }), credentials: 'same-origin', cache: 'no-store' });
-    if (!response.ok) return null;
-    return parseAgents(await response.json(), owner);
+    if (!response.ok) return { agents: null, locked: response.status === 401 };
+    return { agents: parseAgents(await response.json(), owner), locked: false };
   } catch {
-    return null;
+    return { agents: null, locked: false };
   }
+}
+
+/** One read of the engine; null — it did not answer (closed here, refused, not proven, unreachable). */
+export async function readAgents(owner: string, fetcher: Fetcher = (url, init) => fetch(url, init)): Promise<EngineAgents | null> {
+  return (await askAgents(owner, fetcher)).agents;
 }
 
 type AgentsState = {
   /** The engine's last answer per wallet. */
   byOwner: Readonly<Record<string, EngineAgents>>;
+  /**
+   * The wallets the engine last refused for want of this browser's proof (401): a screen with nothing of them
+   * says «sign once» instead of an empty list. Cleared by the next answer.
+   */
+  locked: Readonly<Record<string, true>>;
   keep: (agents: EngineAgents) => void;
+  lock: (owner: string, locked: boolean) => void;
 };
 
 export const useAgents = create<AgentsState>((set, get) => ({
   byOwner: {},
+  locked: {},
   keep: (agents) => set({ byOwner: { ...get().byOwner, [agents.owner]: agents } }),
+  lock: (owner, locked) => {
+    const was = Boolean(get().locked[owner]);
+    if (was === locked) return;
+    const next = { ...get().locked };
+    if (locked) next[owner] = true;
+    else delete next[owner];
+    set({ locked: next });
+  },
 }));
 
 /** A fresh answer is not asked again this soon: the portfolio, «Your agents» and the budget card open together. */
@@ -130,11 +153,15 @@ export function syncAgents(owner: string, deps: Readonly<{ fetch?: Fetcher; now?
   const kept = asked.get(owner);
   if (kept && now - kept.at < SYNC_FRESH_MS) return kept.promise;
   const network = deps.network === undefined ? MANDATE_NET : deps.network;
-  const promise = readAgents(owner, deps.fetch).then((agents) => {
+  const promise = askAgents(owner, deps.fetch ?? ((url, init) => fetch(url, init))).then(({ agents, locked }) => {
     if (!agents) {
-      asked.delete(owner);
+      /* Not proven here: the same answer for a while — the readers that open together share it, and none of them spends
+         the pool actions' rate on a refusal. Closed or unreachable: asked again next time. */
+      if (locked) useAgents.getState().lock(owner, true);
+      else asked.delete(owner);
       return null;
     }
+    useAgents.getState().lock(owner, false);
     useAgents.getState().keep(agents);
     if (network) {
       const mandate = useMandate.getState();

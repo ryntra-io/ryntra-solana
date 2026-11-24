@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 
 import { z } from "zod";
+import { isoDateTime } from "../zod/iso-datetime.ts";
 
 import { withBoundedCasRetry, type GuardStore } from "../guard/store.ts";
 
@@ -52,14 +53,14 @@ export const RewardClaimSchema = z
     /** The USDC token account the payout targets. */
     destination: z.string().min(32).max(64).nullable(),
     signature: z.string().min(1).max(120).nullable(),
-    openedAt: z.string().datetime({ offset: true }),
-    resolvedAt: z.string().datetime({ offset: true }).nullable(),
+    openedAt: isoDateTime({ offset: true }),
+    resolvedAt: isoDateTime({ offset: true }).nullable(),
     /** Operator-facing. Never rendered to a customer as-is. */
     note: z.string().max(400).nullable(),
     version: z.number().int().min(0),
     /** v2 persists the exact signature before any broadcast is allowed. */
     protocolVersion: z.literal(2).optional(),
-    preparationExpiresAt: z.string().datetime({ offset: true }).optional(),
+    preparationExpiresAt: isoDateTime({ offset: true }).optional(),
     blockhash: z.string().min(32).max(64).optional(),
     lastValidBlockHeight: z.string().regex(/^[0-9]+$/).optional(),
   })

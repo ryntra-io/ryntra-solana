@@ -119,7 +119,9 @@ export function RewardsScreen() {
           }
         >
           <PointsMain screen={screen} view={view} solUsd={solUsd} busy={status === 'proving'} message={message} onConnect={connect} onProve={prove} onAgain={again} onTrade={() => router.push(shelfHref('swap', 'live'))} />
-          {screen === 'ready' && view?.points ? <ActivityPanel trades={view.points.trades} days={view.points.activeDays} friends={view.friends.friends} /> : null}
+          {/* «Activity» stands in every state, «—» until the figures come: the main column ends on the side column's line
+              before a wallet as after it (the eyes' pass of 20.11, flaw 131: a 720×340 hole under «Your points» on 1920). */}
+          <ActivityPanel figures={screen === 'ready' && view?.points ? { trades: view.points.trades, days: view.points.activeDays, friends: view.friends.friends } : null} />
         </ActionBody>
       ) : tab === 'invite' ? (
         <ActionBody
@@ -152,20 +154,26 @@ type MainProps = Readonly<{
   onAgain: () => void;
 }>;
 
-/** «Points»: the total, the level's span, the place, the cashback and the volume, and the one action — trade. */
+/**
+ * «Points»: the total, the level's span, the place, the cashback and the volume, and the one action — trade. Before a
+ * wallet, and before its one signature, the same panel with «—» where the figures will stand (the eyes' pass of 20.11,
+ * flaw 99: «Your points» with no figure at all), one line of what it will hold, and the one action — connect, or sign:
+ * the panel keeps its height when the figures come.
+ */
 function PointsMain({ screen, view, solUsd, busy, message, onConnect, onProve, onAgain, onTrade }: MainProps & { onTrade: () => void }) {
   const w = useWords(REWARDS);
   const lang = useLang();
-  if (screen === 'connect') return <Ask label={w.yourPoints} line={w.pointsPitch} action={w.connect} onAct={onConnect} />;
-  if (screen === 'prove') return <Ask label={w.yourPoints} line={w.proveLine} action={w.showPoints} busy={busy} message={message} onAct={onProve} />;
   if (screen === 'failed' || (screen === 'ready' && !view)) return <Failed label={w.yourPoints} onAgain={onAgain} />;
-  if (screen === 'reading' || !view) return <Reading label={w.yourPoints} />;
+  if (screen === 'reading') return <Reading label={w.yourPoints} />;
 
-  const points = view.points;
-  const cashbackSol = solShown(view.friends.cashback, solUsd, lang);
+  const ready = screen === 'ready' && view ? view : null;
+  const points = ready?.points ?? null;
+  const cashbackSol = ready ? solShown(ready.friends.cashback, solUsd, lang) : null;
   const next = points?.nextAt ?? null;
+  // Before the figures: the one press asks for a wallet, or for the one signature that shows them.
+  const ask = screen === 'connect' ? { line: w.pointsPitch, label: w.connect, act: onConnect } : screen === 'prove' ? { line: w.proveLine, label: w.showPoints, act: onProve } : null;
   return (
-    <Panel tone="hi" pad="l" gap={24} edge label={w.yourPoints}>
+    <Panel tone="hi" pad="l" gap={24} label={w.yourPoints}>
       <Top label={w.yourPoints}>
         <Info label={w.howPoints}>{w.pointsRules}</Info>
       </Top>
@@ -182,28 +190,36 @@ function PointsMain({ screen, view, solUsd, busy, message, onConnect, onProve, o
             <span className={r.fill} style={{ transform: `scaleX(${along(points.total, points.levelFrom, next)})` }} />
           </div>
         </div>
+      ) : ask ? (
+        <p className={r.pitch}>{ask.line}</p>
       ) : null}
       <div className={r.tiles}>
         <Tile label={points?.ranked ? w.place(countShown(points.ranked, lang)) : w.placeAlone} value={points?.place ? `#${countShown(points.place, lang)}` : '—'} />
-        <Tile label={w.cashback} value={cashbackSol ?? usdShown(view.friends.cashback, lang)} unit={cashbackSol ? 'SOL' : undefined} />
+        <Tile label={w.cashback} value={ready ? (cashbackSol ?? usdShown(ready.friends.cashback, lang)) : '—'} unit={cashbackSol ? 'SOL' : undefined} />
         <Tile label={w.volume} value={points?.volume !== null && points?.volume !== undefined ? usdShown(points.volume.toFixed(2), lang) : '—'} />
       </div>
-      <Action onClick={onTrade}>{w.trade}</Action>
+      {ask && message ? <p className={r.bad}>{message}</p> : null}
+      <Action busy={ask ? busy : false} disabled={ask ? busy : false} onClick={ask ? ask.act : onTrade}>
+        {ask ? ask.label : w.trade}
+      </Action>
     </Panel>
   );
 }
 
-/** What the points came from: the trades, the days traded, the friends who came. */
-function ActivityPanel({ trades, days, friends }: { trades: number; days: number; friends: number }) {
+type Activity = Readonly<{ trades: number; days: number; friends: number }>;
+
+/** What the points came from: the trades, the days traded, the friends who came — «—» until the figures are read. */
+function ActivityPanel({ figures }: { figures: Activity | null }) {
   const w = useWords(REWARDS);
   const lang = useLang();
+  const shown = (value: number | undefined) => (value === undefined ? '—' : countShown(value, lang));
   return (
-    <Panel gap={16} edge label={w.activity}>
+    <Panel gap={16} label={w.activity}>
       <Top label={w.activity} />
       <div className={r.tiles}>
-        <Tile label={w.trades} value={countShown(trades, lang)} />
-        <Tile label={w.activeDays} value={countShown(days, lang)} />
-        <Tile label={w.came} value={countShown(friends, lang)} />
+        <Tile label={w.trades} value={shown(figures?.trades)} />
+        <Tile label={w.activeDays} value={shown(figures?.days)} />
+        <Tile label={w.came} value={shown(figures?.friends)} />
       </div>
     </Panel>
   );
@@ -249,7 +265,7 @@ function InviteMain({ screen, view, solUsd, busy, message, phone, onConnect, onP
     }
   };
   return (
-    <Panel tone="hi" pad="l" gap={24} edge label={menu.invite}>
+    <Panel tone="hi" pad="l" gap={24} label={menu.invite}>
       <div className={r.pair}>
         <div className={r.fact}>
           <Kick>{w.came}</Kick>
@@ -289,7 +305,7 @@ function PartnersMain({ onJoin }: { onJoin: () => void }) {
   const offer = PARTNERS_OFFER;
   if (!offer) return null;
   return (
-    <Panel tone="hi" pad="l" gap={24} edge label={menu.partners}>
+    <Panel tone="hi" pad="l" gap={24} label={menu.partners}>
       <Top label={w.partnerShare} />
       <div className={r.pair}>
         <div className={r.fact}>

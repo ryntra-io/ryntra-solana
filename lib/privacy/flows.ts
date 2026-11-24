@@ -19,6 +19,7 @@
  * (`exposure.ts`).
  */
 
+import { checkMove, defaultGate, type Gate, type GateCode, type GateMove } from './gate/client.ts';
 import { LINK_FEE_LAMPORTS, LINK_MIN_LAMPORTS } from './network.ts';
 
 /* eslint-disable @typescript-eslint/no-explicit-any -- the SDK bundle is loaded at run time and typed here by use. */
@@ -35,7 +36,8 @@ export type PrivateSigner = Readonly<{
   signWire(wire: Uint8Array): Promise<Uint8Array>;
 }>;
 
-export type Ctx = Readonly<{ sdk: Spr; client: SprClient }>;
+/** `gate` — the rules before money (`gate/`); when absent, the page's own server, or the rules in place in a script. */
+export type Ctx = Readonly<{ sdk: Spr; client: SprClient; gate?: Gate }>;
 export type Landed = Readonly<{ signature: string; slot: bigint }>;
 
 export type PrivateErrorCode =
@@ -47,7 +49,8 @@ export type PrivateErrorCode =
   | 'LINK_TAKEN'
   | 'TOO_MUCH'
   | 'TOO_SMALL'
-  | 'SEND_FAILED';
+  | 'SEND_FAILED'
+  | GateCode;
 
 export class PrivateError extends Error {
   readonly code: PrivateErrorCode;
@@ -104,6 +107,17 @@ export async function submit(ctx: Ctx, tx: unknown, opts: Readonly<{ wallet?: Pr
   }
   const slot = (await client.confirmTransaction(signature)) as bigint;
   return { signature, slot };
+}
+
+/**
+ * The rules before money (`gate/core.ts`), asked before anything is built or signed: a move they do not pass throws,
+ * with the code the screen turns into one line. Gives back the gate, so a landed step is counted in «in — out».
+ */
+export async function passGate(ctx: Ctx, move: GateMove, held?: () => Promise<bigint>): Promise<Gate> {
+  const gate = ctx.gate ?? defaultGate();
+  const decision = await checkMove(gate, move, held);
+  if (decision.verdict !== 'pass') throw new PrivateError(decision.code, decision.room === undefined ? undefined : solText(decision.room));
+  return gate;
 }
 
 /* ---------------- keys ---------------- */
@@ -181,14 +195,22 @@ export async function enable(ctx: Ctx, wallet: PrivateSigner, keys: WalletKeys):
 
 /** «Hide»: SOL from the wallet into its private balance. */
 export async function hide(ctx: Ctx, wallet: PrivateSigner, book: Book, lamports: bigint): Promise<Landed> {
+  const solHeld = async () => (await sync(ctx, book)).find((h) => h.mint === String(ctx.sdk.SOL_MINT))?.amount ?? 0n;
+  const gate = await passGate(ctx, { kind: 'hide', owner: wallet.address, amount: lamports }, solHeld);
   const tx = await ctx.sdk.buildDepositTransaction({ client: ctx.client, feePayer: wallet.address, recipient: book.keys.address(), amount: lamports });
-  return submit(ctx, tx, { wallet });
+  const landed = await submit(ctx, tx, { wallet });
+  gate.landed('in', lamports);
+  return landed;
 }
 
 /** «Return»: SOL from the private balance back to the wallet. */
 export async function giveBack(ctx: Ctx, wallet: PrivateSigner, book: Book, lamports: bigint): Promise<Landed> {
+  // Back to the wallet's own address: the gate asks nothing and always lets it through — paused, flagged or unanswered.
+  const gate = await passGate(ctx, { kind: 'return', owner: wallet.address, to: wallet.address });
   const tx = await ctx.sdk.buildWithdrawalTransaction({ client: ctx.client, wallet: book.wallet, keys: book.keys, feePayer: wallet.address, recipient: wallet.address, amount: lamports });
-  return submit(ctx, tx, { wallet });
+  const landed = await submit(ctx, tx, { wallet });
+  gate.landed('out', lamports);
+  return landed;
 }
 
 /** Is this address ready to receive privately? */
@@ -200,6 +222,7 @@ export async function canReceive(ctx: Ctx, to: string): Promise<boolean> {
 /** «Send privately» to a wallet with a private balance: only the sender is seen. */
 export async function send(ctx: Ctx, wallet: PrivateSigner, book: Book, to: string, lamports: bigint): Promise<Landed> {
   if (!(await canReceive(ctx, to))) throw new PrivateError('NOT_REGISTERED');
+  await passGate(ctx, { kind: 'send', owner: wallet.address, to });
   const tx = await ctx.sdk.buildTransferTransaction({ client: ctx.client, wallet: book.wallet, keys: book.keys, feePayer: wallet.address, recipient: to, amount: lamports });
   return submit(ctx, tx, { wallet });
 }
@@ -251,6 +274,7 @@ export async function makeLink(
   remember: (address: string) => Promise<void>,
 ): Promise<LinkMade> {
   if (lamports < LINK_MIN_LAMPORTS) throw new PrivateError('TOO_SMALL');
+  await passGate(ctx, { kind: 'send', owner: wallet.address, to: null });
   const link = await linkWallet(ctx, seed);
   await remember(link.address);
   const steps: Landed[] = [];
@@ -288,7 +312,9 @@ export async function takeLink(ctx: Ctx, state: LinkState, to: string, into: 'pr
   if (state.held <= 0n) throw new PrivateError('LINK_EMPTY');
   const base = { client: ctx.client, wallet: state.book.wallet, keys: state.link.keys, feePayer: state.link.address, recipient: to, amount: state.held };
   const tx = into === 'private' ? await ctx.sdk.buildTransferTransaction(base) : await ctx.sdk.buildWithdrawalTransaction(base);
-  return submit(ctx, tx, { extra: [state.link.signer] });
+  const landed = await submit(ctx, tx, { extra: [state.link.signer] });
+  if (into === 'wallet') (ctx.gate ?? defaultGate()).landed('out', state.held);
+  return landed;
 }
 
 /** Lamports as SOL text, without rounding away what is there: 0.05, 1.234567891. */

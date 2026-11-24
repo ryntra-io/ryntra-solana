@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 
 import { z } from "zod";
+import { isoDateTime } from "../../zod/iso-datetime.ts";
 
 import type { GuardStore } from "../../guard/store.ts";
 import { AGENT_CONTROL_SCOPES, type AgentControlScope } from "../tenancy.ts";
@@ -123,7 +124,7 @@ export function hostedRefusalMessage(admission: Extract<HostedAdmission, { admit
 
 /* ── the receipt every accepted call leaves ────────────────────────────── */
 
-const timestamp = z.string().datetime({ offset: true });
+const timestamp = isoDateTime({ offset: true });
 
 export const HostedCallReceiptSchema = z
   .object({

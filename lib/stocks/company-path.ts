@@ -21,6 +21,7 @@
 
 import type { StockIssuerId } from "./representations.ts";
 import { eventStateAt, type LifecycleEvent } from "./instrument.ts";
+import { COMPANY_LISTINGS, type CompanyListingRecord } from "./company-listings.ts";
 import { COMPANY_PATHS, LIFECYCLE_EVENTS_VERSION, PRESTOCKS_SWAP_RULE, PRIVATE_SINCE, companyPathRecordFor, lifecycleEventFor, privateSinceSource, type CompanyPathRecord, type PathSource } from "./lifecycle-events.ts";
 
 export const COMPANY_PATH_STEPS = ["private", "ipo", "exchange", "solana"] as const;
@@ -71,9 +72,11 @@ export type CompanyPathRegistry = Readonly<{
   paths: readonly CompanyPathRecord[];
   eventFor: (mint: string) => LifecycleEvent | null;
   privateSince: Readonly<Record<string, string>>;
+  /** Companies listed before their whole path is read; absent — none. */
+  listings?: readonly CompanyListingRecord[];
 }>;
 
-const REGISTRY: CompanyPathRegistry = { paths: COMPANY_PATHS, eventFor: (mint) => lifecycleEventFor(mint), privateSince: PRIVATE_SINCE };
+const REGISTRY: CompanyPathRegistry = { paths: COMPANY_PATHS, eventFor: (mint) => lifecycleEventFor(mint), privateSince: PRIVATE_SINCE, listings: COMPANY_LISTINGS };
 
 function step(id: CompanyPathStepId, state: CompanyPathStepState, fields: Partial<Omit<CompanyPathStep, "step" | "state">> = {}): CompanyPathStep {
   return { step: id, state, date: fields.date ?? null, priceUsd: fields.priceUsd ?? null, exchange: fields.exchange ?? null, ticker: fields.ticker ?? null, token: fields.token ?? null };
@@ -87,6 +90,8 @@ function step(id: CompanyPathStepId, state: CompanyPathStepState, fields: Partia
 export function companyPathFor(input: CompanyPathInput, nowMs: number, registry: CompanyPathRegistry = REGISTRY): CompanyPath | null {
   const record = companyPathRecordFor(input.mint, registry.paths);
   if (record) return listedPath(record, input.mint === record.privateMint ? "private" : "solana", nowMs, registry);
+  const listing = registry.listings?.find((entry) => entry.privateMint === input.mint || entry.solana.mint === input.mint);
+  if (listing) return listingPath(listing, input.mint === listing.privateMint ? { mint: input.mint, symbol: input.symbol } : null, input.mint === listing.privateMint ? "private" : "solana", registry);
   if (input.issuerId !== "prestocks" || input.instrumentClass !== "pre-ipo") return null;
   /* A private token with an event of its own that is not an IPO on record (an acquisition, a window closed) has no path to draw. */
   if (registry.eventFor(input.mint)) return null;
@@ -97,6 +102,28 @@ export function companyPathFor(input: CompanyPathInput, nowMs: number, registry:
     swap: null,
     swapMonths: PRESTOCKS_SWAP_RULE.months,
     sources: since ? [PRESTOCKS_SWAP_RULE.source, privateSinceSource(input.mint)] : [PRESTOCKS_SWAP_RULE.source],
+    version: LIFECYCLE_EVENTS_VERSION,
+  };
+}
+
+/**
+ * A company listed before its whole path is read: every step but the last is passed, the last current, and a
+ * step's day, price or exchange the registry has not read stays empty — never guessed. No swap window: the issuer has
+ * stated none, so none is drawn.
+ */
+function listingPath(listing: CompanyListingRecord, privateToken: Token | null, at: "private" | "solana", registry: CompanyPathRegistry): CompanyPath {
+  const since = registry.privateSince[listing.privateMint] ?? null;
+  return {
+    at,
+    steps: [
+      step("private", "passed", { date: since, token: privateToken }),
+      step("ipo", "passed"),
+      step("exchange", "passed", { exchange: listing.exchange.name, ticker: listing.exchange.ticker }),
+      step("solana", "current", { token: { mint: listing.solana.mint, symbol: listing.solana.symbol } }),
+    ],
+    swap: null,
+    swapMonths: null,
+    sources: since ? [...listing.sources, privateSinceSource(listing.privateMint)] : listing.sources,
     version: LIFECYCLE_EVENTS_VERSION,
   };
 }

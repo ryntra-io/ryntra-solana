@@ -21,12 +21,15 @@ import { Keypair, PublicKey, Transaction, VersionedTransaction } from "@solana/w
 
 import { advancedChoiceOf, advancedPreset, advancedProblems, advancedTermsOf, type AdvancedChoice, type AdvancedTerms } from "../core/launch/advanced.ts";
 import { quoteAssetRefusalWords, quoteLaunchFigures, type QuoteLaunchFigures } from "../core/launch/quote-asset.ts";
+import { stockPairOpen } from "../core/launch/stock-pair.ts";
 import { LaunchRefusal, createMeteoraDbcLaunchVenue } from "../core/venues/meteora-dbc/launch.server.ts";
+import type { LaunchPreset, PresetQuote } from "../core/venues/meteora-dbc/presets.ts";
+import { dbcSdkOf, dbcTokenBadgeAddress } from "../core/venues/meteora-dbc/sdk.server.ts";
 import { openCosigners, reviewedDigest, sealCosigners, ticketKeyConfigured, withoutSignaturesOf } from "../liquidity/studio/ticket.ts";
 import { readBuildWindows, web3ChainReader } from "../solana/blockhash-life.ts";
 import { launchPair } from "./config.server.ts";
 import { CREATION_BUDGET, sendOnce, signedAsBuilt, type LaunchDeps, type LaunchFailure } from "./flow.server.ts";
-import { quoteAssetFor } from "./quote-asset.server.ts";
+import { quoteAssetFor, type QuoteAssetState } from "./quote-asset.server.ts";
 import { quotePaused } from "./quote-watch.server.ts";
 
 /** How long a config's build may wait for the creator's signature. */
@@ -101,7 +104,7 @@ export async function prepareAdvancedConfig(deps: LaunchDeps, input: Readonly<{ 
    * difference from what was checked closes the launch here, before any byte is built: the creator pays no rent for a
    * config no launch could follow, and a figure of a fee that moved is not a figure to sign on.
    */
-  const asset = choice.quoteMint === undefined ? null : await quoteAssetFor({ cluster: deps.network.cluster, connection: deps.connection, env, now: deps.now, price: deps.quotePrice }, choice.quoteMint);
+  const asset = choice.quoteMint === undefined ? null : await quoteAssetFor({ cluster: deps.network.cluster, connection: deps.connection, env, now: deps.now, price: deps.quotePrice, shelf: deps.stockShelf }, choice.quoteMint);
   if (choice.quoteMint !== undefined && !asset) return fail("ADVANCED_INVALID", "This pair currency is not one Ryntra checked on this network.");
   if (asset && (asset.state !== "OPEN" || asset.priceUsd === null)) {
     const why = quoteAssetRefusalWords(asset.problems) || "the pair currency could not be checked now";
@@ -110,26 +113,45 @@ export async function prepareAdvancedConfig(deps: LaunchDeps, input: Readonly<{ 
   const pair = asset ? { mint: asset.record.mint, decimals: asset.record.decimals, usdPrice: asset.priceUsd! } : launchPair(deps.network, "advanced");
   /* SOL-L12: a config on a pair whose issuer changed its mint would serve no launch: the creator pays no rent for it. */
   if (await quotePaused(deps.store, deps.network.cluster, pair.mint)) return fail("QUOTE_PAUSED", "The pair currency's issuer changed its token's rules; launches on it wait for Ryntra's check. Nothing was built.");
+  return buildOneLaunchConfig(deps, { creator: input.creator, terms: advancedTermsOf(choice, advanced.bounds), preset: advancedPreset(choice, advanced.bounds), quote: pair, asset });
+}
+
+/**
+ * The config of one launch, built from terms already checked: the bytes the creator signs first, its fresh key sealed until
+ * then, and the build kept for `submitAdvancedConfig`. With a checked pair currency the figures of its curve come back
+ * beside it, and — while a stock-paired launch is open — Meteora's token badge of the pair is named in the config's
+ * creation, as the program asks of a mint it takes only with one.
+ */
+export async function buildOneLaunchConfig(
+  deps: LaunchDeps,
+  args: Readonly<{ creator: string; terms: AdvancedTerms; preset: LaunchPreset; quote: PresetQuote; asset: QuoteAssetState | null }>,
+): Promise<PreparedAdvancedConfig | LaunchFailure> {
+  const advanced = deps.network.advanced;
+  if (!advanced) return fail("PRESET_UNAVAILABLE", "«Розширений» is not offered on this network.");
+  const env = deps.env ?? {};
+  const { asset, terms } = args;
   const venue = createMeteoraDbcLaunchVenue({ connection: deps.connection, configs: deps.network.configs, advancedFeeClaimer: advanced.feeClaimer });
   const key = Keypair.generate();
-  const terms = advancedTermsOf(choice, advanced.bounds);
+  /* The badge is named only for a stock of the shelf — the one mint a stock-paired launch adds; every other pair builds as before. */
+  const tokenBadge = asset?.shelf && stockPairOpen(env) ? dbcTokenBadgeAddress(asset.record.mint, dbcSdkOf(env)).toBase58() : undefined;
   let built;
   try {
     built = await venue.buildConfig({
       preset: "advanced",
-      custom: advancedPreset(choice, advanced.bounds),
-      quote: pair,
+      custom: args.preset,
+      quote: args.quote,
       feeClaimer: advanced.feeClaimer,
       leftoverReceiver: advanced.feeClaimer,
-      payer: input.creator,
+      payer: args.creator,
       configKey: key,
+      ...(tokenBadge ? { tokenBadge } : {}),
     });
   } catch (error) {
     if (error instanceof LaunchRefusal) return fail("ADVANCED_INVALID", error.message);
     return fail("BUILD_FAILED", error instanceof Error ? error.message : "The config could not be built.");
   }
   const tx = Transaction.from(Buffer.from(built.wireBase64, "base64"));
-  const creatorCostLamports = await creatorSpend(deps, tx, input.creator);
+  const creatorCostLamports = await creatorSpend(deps, tx, args.creator);
   const cosign = sealCosigners([{ index: 0, key }], env);
   if (!cosign) return fail("BUILD_FAILED", "Launching is paused; nothing was built.");
   const windows = await readBuildWindows(web3ChainReader(deps.connection), built.validUntil ?? "0", { capMs: CONFIG_BUILD_TTL_MS });
@@ -137,7 +159,7 @@ export async function prepareAdvancedConfig(deps: LaunchDeps, input: Readonly<{ 
   const record: AdvancedConfigBuild = {
     id: randomBytes(16).toString("hex"),
     cluster: deps.network.cluster,
-    creator: input.creator,
+    creator: args.creator,
     config: built.config,
     terms,
     messageSha256: sha256(tx.serializeMessage()),

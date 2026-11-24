@@ -156,9 +156,19 @@ test("no rule rounds a box by another name, and no second look stands behind an 
   }
 });
 
+/* The share cards (`terminal/share/`) are pictures drawn by next/og, where a style attribute is the only style there is:
+   they round only by the form's two named corners — the action's 4 px and a circle for a logo or a status dot. */
+const DRAWN_BY_OG = /^terminal\/share\//;
+
 test("no screen writes a corner into its markup", () => {
   for (const path of FILES.filter((file) => /\.tsx$/.test(file))) {
     const source = readFileSync(path, "utf8");
+    if (DRAWN_BY_OG.test(name(path))) {
+      const corners = [...source.matchAll(/border\w*Radius:\s*([^,}]+)/g)].map((m) => m[1].trim());
+      for (const corner of corners) assert.match(corner, /^(CONTROL_CORNER|circle\([^)]*\))$/, `${name(path)}: «${corner}» is not the form's`);
+      assert.ok(!/clipPath\s*:/.test(source), `${name(path)}: a cut in a style attribute`);
+      continue;
+    }
     assert.ok(!/border\w*Radius|clipPath\s*:/.test(source), `${name(path)}: a corner in a style attribute`);
     assert.ok(!/data-pro/.test(source), `${name(path)}: no mark of a second look`);
   }

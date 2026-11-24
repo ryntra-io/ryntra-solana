@@ -26,7 +26,7 @@
  */
 
 export const API_MAJOR = 1 as const;
-export const API_CONTRACT_VERSION = "1.103.0" as const;
+export const API_CONTRACT_VERSION = "1.108.0" as const;
 export const API_HEADER = "X-Ryntra-API" as const;
 export const API_VERSION_HEADER = "X-Ryntra-API-Version" as const;
 export const NETWORK = "solana:mainnet" as const;
@@ -2106,6 +2106,8 @@ export type PopularCompany = Readonly<{
   change24h: number | null;
   volume24h: number;
   issuer: "xstocks" | "backpack" | "ondo" | "prestocks";
+  /** 1.107.0: the issuer's own catalogue names the token, not only the venue's tag — a bot's recurring buys take only these. */
+  catalogued: boolean;
 }>;
 
 /** 1.20.0: `GET /api/v1/stocks/popular[?limit=][&exclude=<mint>]` — public; the listed companies by the day's trading, the same for everyone. */

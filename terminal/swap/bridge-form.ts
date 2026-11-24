@@ -32,6 +32,38 @@ export function chainLogo(chainId: number): string {
   return `/api/swap/bridge/icon?chain=${chainId}`;
 }
 
+/** The networks the popular ways into Solana start from, in the order people bridge from them: Ethereum, Base, Arbitrum, BNB Chain, Polygon. */
+export const POPULAR_FROM: readonly number[] = [1, 8453, 42161, 56, 137];
+
+/** At most this many ways stand beside the form. */
+const ROUTES_SHOWN = 4;
+
+/** A way into Solana a tap puts on the form: a network's own coin there, Solana's own coin here. */
+export type Route = Readonly<{ from: BridgeTokenView; network: string; to: BridgeTokenView }>;
+
+/**
+ * The popular ways into Solana beside the form (eyes pass 20.11, №19: «My transfers» alone over an empty column): from
+ * each of `ids` that Relay carries and money can leave, its own coin into SOL — the way already on the form left out.
+ * None while the networks are not read.
+ */
+export function popularRoutes(
+  chains: readonly BridgeChainView[] | null,
+  onForm: Readonly<{ from: Pick<BridgeCoin, 'chainId' | 'address'>; to: Pick<BridgeCoin, 'chainId' | 'address'> }>,
+  solanaId: number,
+  ids: readonly number[] = POPULAR_FROM,
+): Route[] {
+  const solana = chains?.find((chain) => chain.id === solanaId);
+  if (!chains || !solana) return [];
+  const routes: Route[] = [];
+  for (const id of ids) {
+    const chain = chains.find((entry) => entry.id === id);
+    if (!chain || !chain.send || chain.id === solanaId) continue;
+    if (sameCoin(chain.native, onForm.from) && sameCoin(solana.native, onForm.to)) continue;
+    routes.push({ from: chain.native, network: chain.label, to: solana.native });
+  }
+  return routes.slice(0, ROUTES_SHOWN);
+}
+
 /** A typed decimal in a coin's raw units; null when it is not a positive amount the coin can hold. */
 export function toRaw(typed: string, decimals: number): string | null {
   const value = typed.trim();

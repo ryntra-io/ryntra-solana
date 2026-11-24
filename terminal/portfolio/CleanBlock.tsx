@@ -6,6 +6,7 @@ import { useLang } from '@/city/lib/i18n/lang';
 import type { Lang } from '@/city/lib/i18n/langs';
 import { ExplainBox, ExplainButton } from '@/terminal/coin/parts';
 import { Action, CoinLogo, Figure, Icon, Kick, Panel, Quiet, Switch, Title, cx } from '@/terminal/ui';
+import { FEE } from '@/terminal/ui/words';
 import { buildClean, readClean, runClean, setIncluded, useClean } from './clean';
 import { estimateSol, feeText, groupsOf, inClean, reviewedSol, solFigure, unwrapOf, type CleanItem, type RiskReason } from './clean-view';
 import { CLEAN } from './clean-words';
@@ -22,6 +23,7 @@ const solText = (sol: number, lang: Lang) => digits(solFigure(sol), lang);
  */
 export function CleanPanel({ onClose }: { onClose: () => void }) {
   const w = useWords(CLEAN);
+  const fw = useWords(FEE);
   const lang = useLang();
   const read = useClean((st) => st.read);
   const choice = useClean((st) => st.choice);
@@ -87,7 +89,7 @@ export function CleanPanel({ onClose }: { onClose: () => void }) {
       {phase !== 'done' ? (
         <>
           <p className={p.cleanFee}>
-            {review ? (fee ? w.lineFee(digits(fee, lang)) : w.lineFree) : estimate === null || phase === 'empty' ? w.nothing : ' '}
+            {review ? (fee ? w.lineFee(fw.ryntra(digits(fee, lang))) : w.lineFree) : estimate === null || phase === 'empty' ? w.nothing : ' '}
             {review?.summary.skipped.length ? <span className={p.cleanSkip}>{` · ${w.skipped(review.summary.skipped.length)}`}</span> : null}
             {review?.summary.left ? <span className={p.cleanSkip}>{` · ${w.left(review.summary.left)}`}</span> : null}
           </p>
@@ -191,7 +193,7 @@ export function RiskMark({ symbol, risk, wide = false }: { symbol: string; risk:
     <span className={cx(p.riskMark, wide && p.riskWide)}>
       <button type="button" className={p.riskChip} aria-expanded={why} aria-controls={whyId} aria-label={w.why(symbol)} onClick={() => setWhy((was) => !was)}>
         {w.dontTouch}
-        <Icon name="info" size="s" />
+        <Icon name="info" size={wide ? 'm' : 's'} />
       </button>
       {why ? <RiskReasons id={whyId} risk={risk} /> : null}
     </span>

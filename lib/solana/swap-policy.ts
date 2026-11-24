@@ -22,6 +22,7 @@
 import { createHash } from "node:crypto";
 
 import { z } from "zod";
+import { isoDateTime } from "../zod/iso-datetime.ts";
 
 import { canonicalJson } from "../guard/canonical-json.ts";
 import {
@@ -78,7 +79,7 @@ export const SwapPolicyIntentSchema = z
       })
       .strict()
       .nullable(),
-    reviewExpiresAt: z.string().datetime({ offset: true }),
+    reviewExpiresAt: isoDateTime({ offset: true }),
   })
   .strict()
   .superRefine((value, context) => {
@@ -115,7 +116,7 @@ export const SwapPolicyVerdictSchema = z
     policyDigest: z.string().regex(/^0x[0-9a-f]{64}$/),
     intentDigest: z.string().regex(/^0x[0-9a-f]{64}$/),
     findings: z.array(FindingSchema).length(SWAP_POLICY_RULES.length),
-    evaluatedAt: z.string().datetime({ offset: true }),
+    evaluatedAt: isoDateTime({ offset: true }),
   })
   .strict();
 

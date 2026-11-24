@@ -20,6 +20,7 @@
  */
 
 import { z } from "zod";
+import { isoDateTime } from "../../zod/iso-datetime.ts";
 
 /**
  * CAIP-2 chain reference. The `eip155` namespace identifies a chain by its
@@ -153,7 +154,7 @@ export const Erc20TransferObservationSchema = z
      * invent a time in order to be representable would be a worse record than one
      * that says plainly it does not know yet.
      */
-    blockTime: z.string().datetime({ offset: true }).nullable(),
+    blockTime: isoDateTime({ offset: true }).nullable(),
     /** Gas is metered in units and priced in wei; both are raw decimal strings
      * for the same reason amounts are — a wei price overflows a JS number. */
     gasUsed: z.string().regex(RAW_AMOUNT),
@@ -189,7 +190,7 @@ export const Erc20TransferObservationSchema = z
       .array(z.object({ ref: z.string().min(1).max(256), label: z.string().min(1).max(128) }).strict())
       .min(1)
       .max(8),
-    observedAt: z.string().datetime({ offset: true }),
+    observedAt: isoDateTime({ offset: true }),
   })
   .strict();
 

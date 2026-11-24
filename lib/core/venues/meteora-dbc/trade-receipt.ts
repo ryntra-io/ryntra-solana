@@ -19,6 +19,7 @@
  */
 
 import { z } from "zod";
+import { isoDateTime } from "../../../zod/iso-datetime.ts";
 
 export const LAUNCH_TRADE_RECEIPT_FACTS_SOURCE = "ryntra.solana.launch-trade-receipt.facts@1";
 export const LAUNCH_TRADE_RECEIPT_FACTS_SCHEMA = "ryntra.solana.launch-trade-receipt-facts";
@@ -34,7 +35,7 @@ export const LaunchTradeReceiptFactsSchema = z
     signature: Signature,
     slot: z.number().int().min(0),
     /** The program's own clock in the swap event, ISO. */
-    at: z.string().datetime({ offset: true }),
+    at: isoDateTime({ offset: true }),
     /** The wallet that signed and whose tokens moved. */
     wallet: Base58,
     side: z.enum(["buy", "sell"]),

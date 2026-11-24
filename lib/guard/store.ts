@@ -722,6 +722,18 @@ export const GUARD_COLLECTIONS = [
      sign, what the agent did (`open`, `claim`, `reinvest`, `rebalance`, `exit`) with its signature. Public data only; a
      value in the same column; no DDL. */
   "agentCare",
+  /* The Scout (`lib/scout/`): its paper desk (`desk:<network>`, versioned), its journal by the hour
+     (`journal:<network>:<hour>`, versioned) and one claim per pass slot (`pass:<network>:<slot>`). Public data only; a
+     value in the same column; no DDL. */
+  "agentScout",
+  /* Ryntra Private's relay to Helius (`lib/privacy/relay-limit.server.ts`): one row per network, minute and
+     subject (an address by its /64, a wallet, the prover's ceiling of either), keyed
+     `<network>:<window start>:<sha256 of the subject>` — how many calls the subject used in that minute, stepped by the
+     store in one atomic operation (`countStep`), so every instance counts the same window and parallel calls never race. A ledger row per minute, `<network>:minute:<window start>`, written once, names the minutes that hold
+     rows; a minute's rows go in one step by their prefix (`deleteWithPrefix`) once it has been over a minute, so no sweep
+     reads a count or a minute that holds none. The only collection those two methods serve
+     (`RATE_COUNT_COLLECTIONS`). No address or wallet is kept in the clear; a value in the same column; no DDL. */
+  "privacyRelayQuotas",
 ] as const;
 
 export type GuardCollectionName = (typeof GUARD_COLLECTIONS)[number];
@@ -755,6 +767,27 @@ export type GuardCollection<T> = {
    * idempotency key would make a corrected retry impossible forever.
    */
   delete(key: string): Promise<void>;
+  /**
+   * Rate counts only (`RATE_COUNT_COLLECTIONS`; any other collection throws):
+   * remove every row whose key starts with `keyPrefix`, in one step, and say
+   * how many went — a minute's counts once the minute is over. An empty prefix
+   * is refused: it would be the whole collection. Two callers removing the
+   * same prefix at once remove each row once between them.
+   */
+  deleteWithPrefix(keyPrefix: string): Promise<number>;
+  /**
+   * Rate counts only (`RATE_COUNT_COLLECTIONS`; any other collection throws):
+   * one step of the count at `key` — a record `{ version, windowStartMs, used,
+   * key }` — decided by the store in one atomic operation, so callers in
+   * parallel never race and never retry:
+   * - `by: 1` — one more when below `limit`; a record that is absent or names
+   *   another window starts at one. The count after, or null: it stood at
+   *   `limit` and nothing was written;
+   * - `by: -1` — one less when above zero in `windowStartMs`. The count
+   *   after, or null: there was nothing to take back.
+   * A record that cannot be read as a count throws.
+   */
+  countStep(key: string, step: GuardCountStep): Promise<number | null>;
   has(key: string): Promise<boolean>;
   /**
    * Every stored value whose key starts with `keyPrefix`.
@@ -762,9 +795,82 @@ export type GuardCollection<T> = {
    * Keys are `${tenantId}:${objectId}`, so the prefix is what keeps a tenant
    * scan from reading another tenant's rows — on a shared table that is a
    * tenancy boundary, not an optimization.
+   *
+   * `limit` — at most that many, the oldest first: a caller that removes rows
+   * a batch at a time reads only the batch. A wrapper may ignore it, so a
+   * caller that passes it still takes no more than it asked for.
    */
-  valuesWithPrefix(keyPrefix: string): Promise<readonly T[]>;
+  valuesWithPrefix(keyPrefix: string, options?: GuardPrefixOptions): Promise<readonly T[]>;
 };
+
+export type GuardPrefixOptions = Readonly<{ limit?: number }>;
+
+/** One step of a rate count (`countStep`). */
+export type GuardCountStep =
+  | Readonly<{ by: 1; windowStartMs: number; limit: number }>
+  | Readonly<{ by: -1; windowStartMs: number }>;
+
+/** A rate count's record. */
+export type GuardCount = Readonly<{ version: number; windowStartMs: number; used: number; key: string }>;
+
+/**
+ * The collections whose rows are rate counts — disposable, counted one at a time, removed a window at a time: the
+ * relay's `privacyRelayQuotas` and nothing else. `countStep` and `deleteWithPrefix` refuse every other collection: a payout, a claim, a ledger row is never counted this way, nor removed by a prefix.
+ */
+export const RATE_COUNT_COLLECTIONS: ReadonlySet<string> = new Set(["privacyRelayQuotas"]);
+
+/** Throws unless `name` is a rate-count collection. */
+export function assertRateCounts(name: string): void {
+  if (!RATE_COUNT_COLLECTIONS.has(name)) {
+    throw new TypeError(`${name} holds no rate counts: no prefix delete and no count step here.`);
+  }
+}
+
+/**
+ * The record a count step leaves, or null when it writes nothing — the same rule for every adapter that steps a count
+ * in memory (Postgres decides the same in SQL). Throws on a record that is no count.
+ */
+export function nextCount(current: unknown, key: string, step: GuardCountStep): GuardCount | null {
+  if (!Number.isSafeInteger(step.windowStartMs)) throw new TypeError("A count step needs a whole window start.");
+  let held: GuardCount | null = null;
+  if (current !== undefined) {
+    const record = current as Partial<GuardCount> | null;
+    const version = record?.version ?? 0;
+    if (
+      !record ||
+      !Number.isSafeInteger(version) ||
+      version < 0 ||
+      !Number.isSafeInteger(record.used) ||
+      (record.used as number) < 0 ||
+      !Number.isSafeInteger(record.windowStartMs)
+    ) {
+      throw new Error("A rate count is unreadable.");
+    }
+    held = { version, windowStartMs: record.windowStartMs as number, used: record.used as number, key };
+  }
+  const same = held !== null && held.windowStartMs === step.windowStartMs;
+  if (step.by === 1) {
+    if (!Number.isSafeInteger(step.limit) || step.limit < 1) return null;
+    if (same && held!.used >= step.limit) return null;
+    return { version: held ? held.version + 1 : 0, windowStartMs: step.windowStartMs, used: same ? held!.used + 1 : 1, key };
+  }
+  if (!same || held!.used <= 0) return null;
+  return { version: held!.version + 1, windowStartMs: step.windowStartMs, used: held!.used - 1, key };
+}
+
+/** The prefix a `deleteWithPrefix` removes by: never empty, so never a whole collection. */
+export function deletablePrefix(keyPrefix: string): string {
+  if (typeof keyPrefix !== "string" || keyPrefix.length === 0) {
+    throw new TypeError("A prefix delete needs a non-empty prefix.");
+  }
+  return keyPrefix;
+}
+
+/** The row ceiling a prefix read asks for: a positive whole number, or none. */
+export function prefixLimit(options: GuardPrefixOptions | undefined): number | null {
+  const limit = options?.limit;
+  return typeof limit === "number" && Number.isSafeInteger(limit) && limit > 0 ? limit : null;
+}
 
 /**
  * A record whose updates are serialized by an explicit version counter.
@@ -924,12 +1030,33 @@ export function createMemoryGuardStore(): GuardStore {
         async delete(key) {
           mapFor(name).delete(key);
         },
+        async deleteWithPrefix(keyPrefix) {
+          assertRateCounts(name);
+          const prefix = deletablePrefix(keyPrefix);
+          const map = mapFor(name);
+          let removed = 0;
+          for (const key of [...map.keys()]) {
+            if (key.startsWith(prefix) && map.delete(key)) removed += 1;
+          }
+          return removed;
+        },
+        async countStep(key, step) {
+          /* No await between the read and the write: atomic in this process. */
+          assertRateCounts(name);
+          const map = mapFor(name);
+          const next = nextCount(map.get(key), key, step);
+          if (next === null) return null;
+          map.set(key, next);
+          return next.used;
+        },
         async has(key) {
           return mapFor(name).has(key);
         },
-        async valuesWithPrefix(keyPrefix) {
+        async valuesWithPrefix(keyPrefix, options) {
+          const limit = prefixLimit(options);
           const out: T[] = [];
           for (const [key, value] of mapFor(name)) {
+            if (limit !== null && out.length >= limit) break;
             if (key.startsWith(keyPrefix)) out.push(value as T);
           }
           return out;
@@ -1118,12 +1245,37 @@ export function createFileGuardStore(options: { directory: string }): GuardStore
           writeCollectionFile(options.directory, file, next);
           loaded.set(name, next);
         },
+        async deleteWithPrefix(keyPrefix) {
+          assertRateCounts(name);
+          const prefix = deletablePrefix(keyPrefix);
+          const current = snapshot(name);
+          const next = new Map([...current].filter(([key]) => !key.startsWith(prefix)));
+          const removed = current.size - next.size;
+          if (removed === 0) return 0;
+          writeCollectionFile(options.directory, file, next);
+          loaded.set(name, next);
+          return removed;
+        },
+        async countStep(key, step) {
+          /* Atomic against this process only, which is what DURABLE_SINGLE_WRITER promises. */
+          assertRateCounts(name);
+          const current = snapshot(name);
+          const counted = nextCount(current.get(key), key, step);
+          if (counted === null) return null;
+          const next = new Map(current);
+          next.set(key, counted);
+          writeCollectionFile(options.directory, file, next);
+          loaded.set(name, next);
+          return counted.used;
+        },
         async has(key) {
           return snapshot(name).has(key);
         },
-        async valuesWithPrefix(keyPrefix) {
+        async valuesWithPrefix(keyPrefix, options) {
+          const limit = prefixLimit(options);
           const out: T[] = [];
           for (const [entryKey, value] of snapshot(name)) {
+            if (limit !== null && out.length >= limit) break;
             if (entryKey.startsWith(keyPrefix)) out.push(value as T);
           }
           return out;

@@ -1,0 +1,271 @@
+/* The Scout — the agent that finds new coins by itself (terminal/agents/scout/ScoutScreen.tsx) — and its one line in the
+   market's «New» column (ScoutLine.tsx). Colours, faces and sizes are the terminal's tokens; spacing is the scale's steps;
+   corners are the kit's. */
+
+.facts {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* ── the action panel ───────────────────────────────────────────────────── */
+
+.head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.badge {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  color: var(--ice);
+  border: 1px solid var(--glass-edge);
+  background: color-mix(in srgb, var(--violet) 24%, transparent);
+}
+
+.headWords {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.title {
+  font-size: var(--type-action);
+}
+
+.job {
+  font-size: var(--type-small);
+  color: var(--dim);
+}
+
+.result {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-height: 92px;
+}
+
+.resultLine {
+  font-size: var(--type-small);
+  color: var(--soft);
+}
+
+.fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 56px;
+}
+
+.grow {
+  flex: 1 1 0;
+}
+
+.paperLine {
+  font-size: var(--type-caption);
+  color: var(--dim);
+}
+
+/* ── what it bought ─────────────────────────────────────────────────────── */
+
+.empty {
+  margin: 0;
+  padding: 18px 0;
+  font-size: var(--type-body);
+  color: var(--soft);
+}
+
+.bones {
+  display: block;
+  height: 120px;
+  background: linear-gradient(90deg, var(--panel) 0%, var(--panel-up) 50%, var(--panel) 100%);
+  background-size: 200% 100%;
+  animation: bones 1.4s linear infinite;
+}
+
+@keyframes bones {
+  to {
+    background-position: -200% 0;
+  }
+}
+
+.coinCell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.sym {
+  font-family: var(--display);
+  font-weight: 800;
+  font-stretch: 125%;
+  font-size: var(--type-body);
+  color: var(--ice);
+  text-decoration: none;
+}
+
+.sym:hover {
+  color: var(--lilac);
+}
+
+.stack {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  font-variant-numeric: tabular-nums;
+}
+
+.dim {
+  font-size: var(--type-caption);
+  color: var(--dim);
+}
+
+.infoCell {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+}
+
+.listRow {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 12px;
+  min-height: 56px;
+  border-bottom: 1px solid var(--line);
+}
+
+.listRow:last-child {
+  border-bottom: 0;
+}
+
+.listWords,
+.listFigures {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.listWords > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.listFigures {
+  align-items: flex-end;
+  font-family: var(--display);
+  font-variant-numeric: tabular-nums;
+}
+
+.listFigures [data-tone='up'] {
+  color: var(--mint);
+}
+
+.listFigures [data-tone='down'] {
+  color: var(--flare);
+}
+
+/* ── the side ───────────────────────────────────────────────────────────── */
+
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.cut {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.cutRow {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: var(--type-small);
+  color: var(--soft);
+}
+
+.count {
+  font-family: var(--display);
+  font-variant-numeric: tabular-nums;
+  color: var(--ice);
+}
+
+.failed {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: var(--type-small);
+  color: var(--flare);
+}
+
+.decisions {
+  display: flex;
+  flex-direction: column;
+}
+
+.decision {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-height: 44px;
+  justify-content: center;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--line);
+  text-decoration: none;
+  transition: background-color 0.15s;
+}
+
+.decision:last-child {
+  border-bottom: 0;
+}
+
+.decision:hover {
+  background: var(--chosen);
+}
+
+.decision[data-outcome='took'] .dim {
+  color: var(--mint);
+}
+
+/* ── the line in «New» ──────────────────────────────────────────────────── */
+
+.checkLine {
+  grid-column: 1 / -1;
+  display: block;
+  min-height: 16px;
+  overflow: hidden;
+  font-size: var(--type-micro);
+  line-height: 16px;
+  color: var(--dim);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.checkLine[data-tone='up'] {
+  color: var(--mint);
+}

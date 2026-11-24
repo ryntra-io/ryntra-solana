@@ -36,14 +36,14 @@ test("the bots are the menu's, in its order, each at its own page", () => {
     assert.match(readFileSync(page(item.href), "utf8"), new RegExp(`botOpen\\("${item.id}", botDoors\\(\\)\\)`), `${item.id}: its page answers only where the bot stands`);
   }
   assert.ok(existsSync(page(BOTS_PATH)), "the section's own address");
-  for (const id of ["copy", "keeper"]) assert.equal(MENU.find((group) => group.id === "bots").items.find((item) => item.id === id).ready, false, `${id}: no screen yet, no item`);
+  assert.equal(MENU.find((group) => group.id === "bots").items.find((item) => item.id === "keeper").ready, false, "keeper: no screen yet, no item");
   assert.equal(isBotId("grid"), true);
   assert.equal(isBotId("keeper"), false);
 });
 
 test("a bot stands where its engine runs; the paper ones everywhere", () => {
-  assert.deepEqual(botsOpen(EVERY_BOT_DOOR), ["recurring", "grid", "ladder", "signals", "autopilot"]);
-  assert.deepEqual(botsOpen({ trader: false, ladder: false, pilot: false }), ["grid", "signals"]);
+  assert.deepEqual(botsOpen(EVERY_BOT_DOOR), ["recurring", "grid", "ladder", "copy", "signals", "autopilot"]);
+  assert.deepEqual(botsOpen({ trader: false, ladder: false, pilot: false }), ["grid", "copy", "signals"], "the copy stands on paper everywhere");
   assert.equal(botOpen("recurring", { trader: true, ladder: false, pilot: false }), true);
   assert.equal(botOpen("ladder", { trader: true, ladder: false, pilot: true }), false);
   assert.equal(botOpen("autopilot", { trader: true, ladder: true, pilot: false }), false, "the money autopilot opens with its engine");
@@ -117,7 +117,7 @@ test("a coin's venue: DLMM Pro first, the classic pool next, «no pool» only on
 });
 
 test("each bot stands on the page of its category: every bot a terminal with a chart", () => {
-  assert.deepEqual(BOT_PAGE, { recurring: "chart", grid: "chart", ladder: "chart", signals: "chart", autopilot: "chart" });
+  assert.deepEqual(BOT_PAGE, { recurring: "chart", grid: "chart", ladder: "chart", copy: "chart", signals: "chart", autopilot: "chart" });
   const grid = source("./Grid.tsx");
   assert.match(grid, /const MET = MET_MINT/, "MET opens the grid where DLMM Pro is open: its pool is Pro's");
   /** The props a screen gives its one coin field, however the line wraps. */
@@ -228,7 +228,7 @@ test("a paper bot never touches a wallet or the network's money", () => {
 
 test("Recurring buys is the card that was the Agents screen's «Trader», its engine as it is", () => {
   const budget = source("./Budget.tsx");
-  assert.match(budget, /import \{ Note, noteWords, PilotPropose, Split, Trader \} from '@\/terminal\/agents\/NewAgent';/u);
+  assert.match(budget, /import \{ Note, noteWords, PilotPropose, Split, Trader, type TraderParts \} from '@\/terminal\/agents\/NewAgent';/u);
   assert.match(budget, /const form = <Trader /u);
   assert.match(budget, /row\.role === 'trader'/u, "its rows are the traders at work — every one of them");
   // The section's mark and the tabs say how many work; the Agents screen no longer draws the trader.

@@ -8,6 +8,7 @@ import type { LstHolding } from '../../city/lib/earn/mine.ts';
 import { rangeMark, solPiers, solShort, solUsd, STYLE_RISK, type Pier, type PierStyle } from '../../city/lib/earn/pier.ts';
 import { proName, proOther, proSol, proStaked, type ProBoat, type ProPier } from '../../city/lib/earn/pro.ts';
 import { digits } from '../../city/lib/i18n/dict.ts';
+import { proResult, solUsd as resultUsd, type PoolResult, type ProLedger } from '../../lib/portfolio/pool-result.ts';
 import type { Lang } from '../../city/lib/i18n/langs.ts';
 
 /**
@@ -147,6 +148,13 @@ export type PositionRow = Readonly<{
   inRange: boolean | null;
   /** A pool position's range, English digits: what tells two positions of one pair apart. */
   mark: string | null;
+  /**
+   * A pool position against simply holding the coins that went in — the price's move, the fees, the costs — dollars;
+   * null where what went in was not seen here, or no longer matches. Never a zero for an unknown.
+   */
+  vsHoldUsd?: number | null;
+  /** A DLMM Pro position's whole result, in SOL (`lib/portfolio/pool-result.ts`). */
+  result?: PoolResult | null;
 }>;
 
 /** A pool position: its worth and fees are the venue's dollars; what went in is the entry Ryntra kept when it opened here. */
@@ -166,6 +174,7 @@ export function poolPositionRow(view: PositionView, entry: PositionEntry | null)
     earnedUsd: result ? result.fees : view.unclaimedUsd,
     inRange: view.rangeState === 'in_range',
     mark: rangeMark(view.lower, view.upper),
+    vsHoldUsd: result ? result.net : null,
   };
 }
 
@@ -209,21 +218,28 @@ export function lendPositionRow(position: DollarPosition, market: DollarMarket |
   };
 }
 
-/** A Pro position: the chain states its worth and fees in SOL; dollars at today's SOL price. */
-export function proPositionRow(boat: ProBoat, pier: ProPier, solPriceUsd: number | null): PositionRow {
+/**
+ * A Pro position: the chain states its worth and fees in SOL; what went in, and the result against holding, only where
+ * this device saw the opening (`ledger`). Dollars at today's SOL price.
+ */
+export function proPositionRow(boat: ProBoat, pier: ProPier, solPriceUsd: number | null, ledger: ProLedger | null = null): PositionRow {
   const sol = { mint: proSol(pier).mint, symbol: 'SOL' };
   const other = { mint: proOther(pier).mint, symbol: proOther(pier).symbol };
+  const result = proResult(ledger, boat, pier);
   return {
     key: `pro:${boat.nftMint}`,
     kind: 'pro',
     ref: boat.nftMint,
     name: proName(pier),
     coins: proStaked(pier) ? [other, sol] : [sol, other],
-    investedUsd: null,
+    investedUsd: result.unknown === 'entry' ? null : resultUsd(result.invested, solPriceUsd),
     nowUsd: lamportsUsd(BigInt(boat.worth.lamports), solPriceUsd),
-    earnedUsd: lamportsUsd(BigInt(boat.fees.lamports), solPriceUsd),
+    // Everything it earned where the entry is known — still in it, taken, put back — else what it holds to take now.
+    earnedUsd: result.fees !== null ? resultUsd(result.fees, solPriceUsd) : lamportsUsd(BigInt(boat.fees.lamports), solPriceUsd),
     inRange: boat.empty ? null : boat.inRange,
     mark: boat.empty ? null : rangeMark(boat.lowerPrice, boat.upperPrice),
+    vsHoldUsd: resultUsd(result.net, solPriceUsd),
+    result,
   };
 }
 
@@ -236,13 +252,15 @@ export type PositionsInput = Readonly<{
   proBoats: readonly ProBoat[];
   proPiers: readonly ProPier[];
   solPriceUsd: number | null;
+  /** What this device saw go into its DLMM Pro positions, by the position's NFT. */
+  ledgers?: ReadonlyMap<string, ProLedger>;
 }>;
 
 /** Everything the wallet has at work, in the table's order: pools, then staking, then lending. */
 export function positionRows(input: PositionsInput): PositionRow[] {
   const pro = input.proBoats.flatMap((boat) => {
     const pier = input.proPiers.find((entry) => entry.address === boat.pool);
-    return pier ? [proPositionRow(boat, pier, input.solPriceUsd)] : [];
+    return pier ? [proPositionRow(boat, pier, input.solPriceUsd, input.ledgers?.get(boat.nftMint) ?? null)] : [];
   });
   return [
     ...input.views.map((view) => poolPositionRow(view, input.entries.get(view.address) ?? null)),
@@ -281,6 +299,20 @@ export function shortUsd(usd: number | null, lang: Lang): string {
   if (usd >= 999_950) return digits(`$${(usd / 1e6).toFixed(1)}`, lang) + m;
   if (usd >= 999.995) return digits(`$${(usd / 1e3).toFixed(1)}`, lang) + k;
   return sumText(usd, lang);
+}
+
+/**
+ * Dollars in a phone's narrow column (G6, fault 39): two significant figures under ten of a unit, three above, the
+ * language's own unit, never a trailing «,0» — «$780 тис.», «$2,1 млн», «$19,6 тис.», «$1,8 тис.», «$960».
+ */
+export function tightUsd(usd: number | null, lang: Lang): string {
+  if (usd === null || !Number.isFinite(usd)) return '—';
+  const [k, m, b] = SHORT_UNITS[lang] ?? SHORT_UNITS.en;
+  const tight = (value: number) => String(Number(value.toPrecision(value < 9.95 ? 2 : 3)));
+  if (usd >= 999_500_000) return digits(`$${tight(usd / 1e9)}`, lang) + b;
+  if (usd >= 999_500) return digits(`$${tight(usd / 1e6)}`, lang) + m;
+  if (usd >= 999.5) return digits(`$${tight(usd / 1e3)}`, lang) + k;
+  return digits(`$${Math.round(usd)}`, lang);
 }
 
 /** A pool's trade fee: «0.04%», «0.10%», and a third place under a hundredth of a per cent. */

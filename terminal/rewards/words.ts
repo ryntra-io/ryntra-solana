@@ -22,7 +22,8 @@ export const REWARDS = words(
     trades: 'Trades',
     activeDays: 'Days you traded',
     trade: 'Trade and earn points',
-    pointsPitch: 'Points come from your trades, the days you trade and friends who trade. Your rank lifts your share of their fees.',
+    // Before a wallet, one line of what this panel will hold: how points come stands beside it, in «How to earn» (QA 19.11, eyes 32).
+    pointsPitch: 'Your level, rank and cashback — at a glance.',
     proveLine: 'One signature, no transaction — and your points are here.',
     showPoints: 'Show my points',
     // Rank
@@ -53,7 +54,8 @@ export const REWARDS = words(
     copied: 'Copied',
     share: 'Share',
     post: 'Trade on Solana with me on Ryntra',
-    invitePitch: 'Share your link: you get a share of Ryntra’s fee on every trade your friends make, paid in SOL.',
+    // The same on «Invite a friend»: what each friend's trade gives stands beside it, in «Your share».
+    invitePitch: 'Your link, and what your friends bring you in SOL.',
     proveLink: 'One signature, no transaction — and your link is here.',
     showLink: 'Show my link',
     yourShare: 'Your share',
@@ -102,7 +104,7 @@ export const REWARDS = words(
     trades: 'Угоди',
     activeDays: 'Дні з угодами',
     trade: 'Торгувати й заробляти бали',
-    pointsPitch: 'Бали дають твої угоди, дні, коли ти торгуєш, і друзі, які торгують. Ранг піднімає твою частку з їхніх комісій.',
+    pointsPitch: 'Твій рівень, ранг і кешбек — одним поглядом.',
     proveLine: 'Один підпис без транзакції — і твої бали тут.',
     showPoints: 'Показати мої бали',
     rank: 'Ранг · 30 днів',
@@ -130,7 +132,7 @@ export const REWARDS = words(
     copied: 'Скопійовано',
     share: 'Поділитися',
     post: 'Торгуй на Solana разом зі мною на Ryntra',
-    invitePitch: 'Ділися посиланням: з кожної угоди друзів отримуєш частку комісії Ryntra, виплату — в SOL.',
+    invitePitch: 'Твоє посилання й те, що друзі приносять тобі в SOL.',
     proveLink: 'Один підпис без транзакції — і твоє посилання тут.',
     showLink: 'Показати моє посилання',
     yourShare: 'Твоя частка',

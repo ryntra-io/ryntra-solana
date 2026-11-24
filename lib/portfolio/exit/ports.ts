@@ -54,6 +54,14 @@ export type ExitPorts = Readonly<{
   sweep(request: Readonly<{ owner: string; spec: SweepSpec; inUsd: number | null; outUsd: number | null }>): Promise<UnitBuilt>;
 }>;
 
+/**
+ * Whether Jupiter carries a coin into `outMint` now, at this amount — the Swap card's own read-only quote, nothing
+ * built: `true` — it quotes a route; `false` — it says it has none; `null` — no clear answer (a full window, a venue
+ * that did not answer, swapping paused). The overview asks it so that a coin with no route is not offered as one that
+ * sells.
+ */
+export type ExitRoutable = (request: Readonly<{ mint: string; amountRaw: string; outMint: string }>) => Promise<boolean | null>;
+
 /** The chain as the service needs it: narrow, so a test stands in for it. */
 export type ExitChain = Readonly<{
   /** Whether the network takes the transaction as built, now. */

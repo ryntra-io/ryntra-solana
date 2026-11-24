@@ -1,0 +1,226 @@
+/* «Start from a set» on the Launch form: a row, what the chosen set changes, the ready sets as rows of a list,
+   and saving one's own. Colours and sizes are the terminal's variables; corners are the kit's — nothing here writes one. */
+
+.sets {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.name {
+  font-size: var(--type-small);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.grow {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.pick {
+  min-width: 0;
+  max-width: 60%;
+}
+
+.pickName {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.chevron {
+  flex: none;
+  color: var(--soft);
+  transition: transform 0.15s;
+}
+
+.chevronOpen {
+  transform: rotate(180deg);
+}
+
+/* What the chosen set changes from the launch the form opens with: each number from and to. */
+.changes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  margin: 0;
+  font-size: var(--type-caption);
+  color: var(--soft);
+}
+
+.change {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px;
+  min-width: 0;
+}
+
+.change > b {
+  font-family: var(--display);
+  font-weight: 700;
+  color: var(--ice);
+  font-variant-numeric: tabular-nums;
+}
+
+.same {
+  color: var(--soft);
+}
+
+/* The ready sets: rows of one list, the chosen one light. */
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px;
+  background: var(--well);
+  border: 1px solid var(--line);
+}
+
+.options {
+  display: flex;
+  flex-direction: column;
+}
+
+.option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 56px;
+  padding: 8px 12px;
+  text-align: left;
+  color: var(--ice);
+  border: 1px solid transparent;
+  background: transparent;
+  transition: background-color 0.15s, border-color 0.15s;
+}
+
+.option + .option {
+  border-top-color: var(--line);
+}
+
+.option:hover:not(:disabled) {
+  background: var(--chosen);
+}
+
+.option[aria-selected='true'] {
+  background: var(--chosen);
+  border-color: var(--chosen-edge);
+}
+
+.option:focus-visible {
+  outline: 2px solid var(--lilac);
+  outline-offset: -2px;
+}
+
+.option:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.optionWords {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.optionHead {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+  font-size: var(--type-body);
+}
+
+.optionHead > b {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.by {
+  flex: none;
+  font-size: var(--type-micro);
+  font-weight: 600;
+  color: var(--dim);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.optionLine {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  font-size: var(--type-caption);
+  color: var(--soft);
+}
+
+.optionLine > b {
+  font-family: var(--display);
+  font-weight: 700;
+  color: var(--ice);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.uses {
+  flex: none;
+  align-self: center;
+  font-size: var(--type-caption);
+  color: var(--soft);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.check {
+  display: inline-flex;
+  flex: none;
+  width: 16px;
+  color: var(--lilac);
+}
+
+/* Keeping the form's settings as one's own set. */
+.save {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.saveRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.note {
+  margin: 0;
+  font-size: var(--type-caption);
+  color: var(--soft);
+}
+
+.refused {
+  font-weight: 600;
+  color: var(--warm);
+}
+
+@media (max-width: 767px) {
+  .pick {
+    max-width: 52%;
+  }
+
+  .option {
+    align-items: flex-start;
+  }
+}

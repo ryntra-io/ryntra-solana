@@ -57,7 +57,8 @@ export function Transfers() {
   const pillOf = (row: RecentRow): string => (row.outcome === 'DONE' ? rw.done : row.outcome === 'FAILED' ? rw.failedPill : row.outcome === 'NEEDS_YOU' ? rw.needsYouPill : rw.movingPill);
 
   let body;
-  if (!owner) body = <p className={r.recentLine}>{w.transfersConnect}</p>;
+  // No wallet: the list is simply empty — «Connect wallet» is the form's own press, said once (QA 19.11, eyes 31).
+  if (!owner) body = <p className={r.recentLine}>{w.noTransfers}</p>;
   else if (!activity.read && activity.status === 'failed')
     body = (
       <div className={r.recentBlank}>
@@ -99,7 +100,7 @@ export function Transfers() {
     );
 
   return (
-    <Panel pad="none" edge label={w.recent} className={r.recent}>
+    <Panel pad="none" label={w.recent} className={r.recent}>
       <div className={r.recentHead}>
         <Kick className={r.recentKick}>{w.recent}</Kick>
         {rows.length > SHOWN ? (

@@ -1,0 +1,59 @@
+/*
+ * The stock pool's keeper on a position. The ticket's own parts carry the look (`../earn.module.css`); here
+ * only the quiet line under the position and the lists behind the «i». Colours are the root's tokens, spacings steps of
+ * the scale (docs/terminal/DESIGN.md).
+ */
+
+/* The quiet line under the position: the agent's state on the left, the way to its bounds on the right. A hairline
+   above it keeps it apart from the ticket's own action. */
+.door {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+
+.doorWords {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.doorHead {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* In the phone's sheet — a column of capped height that scrolls — the bounds and the line before the signature keep
+   their own height: shrunk, the line's words would spill over the bounds above it. */
+.keep {
+  flex-shrink: 0;
+}
+
+.line {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+/* Behind the «i»: two short lists and the honest lines. */
+.detailsHead {
+  font-weight: 600;
+  color: var(--ice);
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0;
+  padding-left: 16px;
+  color: var(--soft);
+}

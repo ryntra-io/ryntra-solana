@@ -48,6 +48,7 @@ export async function POST(request: Request) {
     fee: { ...prepared.fee },
     split: prepared.split ? { ...prepared.split } : null,
     ladder: prepared.ladder ? { ...prepared.ladder } : null,
+    reward: prepared.reward ? { ...prepared.reward } : null,
     expiresAt: prepared.expiresAt,
     signableMs: prepared.signableMs,
   } satisfies LaunchPoolBuildResponse);

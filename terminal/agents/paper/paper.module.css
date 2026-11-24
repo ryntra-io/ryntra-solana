@@ -1,0 +1,23 @@
+/* The paper week's card: the agent card's own parts (`../agents.module.css`), and two of its own. */
+
+/* «Paper» on the card's head: always there, never squeezed out by a long name. */
+.mark {
+  display: flex;
+  flex: none;
+  align-items: center;
+}
+
+/* The paper result: its label, the bot's figure beside plain holding, and the line under them. */
+.result {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* The start's line: what the wallet is asked, or why it did not start — and its «i» at the line's end, as on the card's head. */
+.line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}

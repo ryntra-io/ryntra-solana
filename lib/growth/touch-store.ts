@@ -1,5 +1,6 @@
 import { randomInt } from "node:crypto";
 import { z } from "zod";
+import { isoDateTime } from "../zod/iso-datetime.ts";
 
 import { withBoundedCasRetry, type GuardStore } from "../guard/store.ts";
 import { REFERRAL_CODE_ALPHABET } from "../rewards/referral-code.ts";
@@ -97,7 +98,7 @@ export const PostCodeSchema = z
     title: z.string().min(1).max(80),
     /** Where the link lands: a page of the Solana product or its site. */
     landing: z.string().min(1).max(300),
-    createdAt: z.string().datetime({ offset: true }),
+    createdAt: isoDateTime({ offset: true }),
     createdBy: z.string().min(1).max(120),
   })
   .strict();
@@ -164,9 +165,9 @@ export const TouchWalletSchema = z
     channel: z.enum(["post", "contest", "friend", "utm"]),
     source: z.string().min(1).max(120),
     /** The first tagged visit of the browser that brought this wallet. */
-    touchAt: z.string().datetime({ offset: true }),
+    touchAt: isoDateTime({ offset: true }),
     /** The moment the wallet appeared in that browser. */
-    boundAt: z.string().datetime({ offset: true }),
+    boundAt: isoDateTime({ offset: true }),
     /** The browser had also proven the wallet by signing in. */
     proven: z.boolean(),
   })

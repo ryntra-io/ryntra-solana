@@ -1,0 +1,691 @@
+/* «Watch» and a wallet's own page: the page, its head and its columns are the kit's (Page, PageHead, ActionBody); the
+   panels, buttons, tables, tiles and fields are the kit's parts. Here only how this screen lays them out. Every colour,
+   face and size is a token of docs/terminal/DESIGN.md; every spacing a step of its scale; no corner of its own. */
+
+.grow {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.pad {
+  padding: 16px;
+}
+
+.dim {
+  font-size: var(--type-small);
+  font-weight: 500;
+  color: var(--dim);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* One plain line; a fall or a refusal in flare. */
+.line {
+  margin: 0;
+  font-size: var(--type-body);
+  line-height: 1.45;
+  color: var(--soft);
+}
+
+.line[data-tone='down'] {
+  color: var(--flare);
+}
+
+/* A form's one line under it: its place is kept, so a refusal never pushes the press. */
+.note {
+  min-height: 20px;
+  margin: 0;
+  font-size: var(--type-small);
+  line-height: 1.45;
+  color: var(--soft);
+}
+
+.note[data-tone='down'] {
+  color: var(--flare);
+}
+
+.note[data-tone='up'] {
+  color: var(--mint);
+}
+
+/* What only a screen reader reads. */
+.hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* ── panels ─────────────────────────────────────────────────────────────── */
+
+.panelTop,
+.panelHead,
+.panelFoot {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.panelHead {
+  min-height: 56px;
+  padding: 0 16px;
+  border-bottom: 1px solid var(--line);
+}
+
+.panelFoot {
+  flex-wrap: wrap;
+}
+
+.panelTitle {
+  margin: 0;
+  font-size: var(--type-lead);
+}
+
+.feedPanel,
+.tradesPanel {
+  min-width: 0;
+}
+
+/* ── a trade's facts ────────────────────────────────────────────────────── */
+
+/* Over the row's own link: a coin's ticker and «Buy» answer their own tap. */
+.over {
+  position: relative;
+  z-index: 1;
+}
+
+.coin {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.coinLink {
+  font-weight: 700;
+  color: var(--ice);
+  text-decoration: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.coinLink:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.side {
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.side[data-side='buy'] {
+  color: var(--mint);
+}
+
+.side[data-side='sell'] {
+  color: var(--flare);
+}
+
+.whoCell {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.whoLink {
+  color: var(--soft);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.buy {
+  min-width: 72px;
+}
+
+.address {
+  font-variant-numeric: tabular-nums;
+}
+
+.addressText {
+  font-family: var(--display);
+  letter-spacing: 0.02em;
+}
+
+/* ── a phone's trade rows ───────────────────────────────────────────────── */
+
+.phoneRows {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.phoneRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 64px;
+  padding: 8px 16px;
+  border-top: 1px solid var(--line);
+}
+
+.phoneRow:first-child {
+  border-top: 0;
+}
+
+.phoneMain {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.phoneTop {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  font-size: var(--type-base);
+  min-width: 0;
+}
+
+.phoneSub {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 10px;
+  font-size: var(--type-small);
+  color: var(--dim);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── bones ──────────────────────────────────────────────────────────────── */
+
+.bones {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.boneRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 40px;
+}
+
+.boneDisc {
+  flex: 0 0 auto;
+  width: 28px;
+  height: 28px;
+  background: color-mix(in srgb, var(--violet) 12%, transparent);
+}
+
+.bone {
+  display: block;
+  flex: 0 1 180px;
+  height: 14px;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--violet) 7%, transparent), color-mix(in srgb, var(--violet) 16%, transparent), color-mix(in srgb, var(--violet) 7%, transparent));
+  background-size: 200% 100%;
+}
+
+.boneShort {
+  flex-basis: 64px;
+}
+
+.boneTall {
+  height: 240px;
+}
+
+[aria-busy='true'] .bone {
+  animation: glide 1.4s linear infinite;
+}
+
+@keyframes glide {
+  from {
+    background-position: 200% 0;
+  }
+
+  to {
+    background-position: -200% 0;
+  }
+}
+
+/* ── adding a wallet ────────────────────────────────────────────────────── */
+
+.add {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
+/* The field and its press, one under the other; the kit's field (`Search`) takes its place's width. */
+.addRow {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
+.addRow > label {
+  flex: 1 1 auto;
+  width: auto;
+  min-width: 0;
+}
+
+.add[data-bad] .addRow > label {
+  border-color: var(--flare);
+}
+
+.nameField {
+  padding-top: 12px;
+}
+
+/* ── the list of watched wallets ────────────────────────────────────────── */
+
+.listPanel,
+.alertsPanel {
+  min-width: 0;
+}
+
+.walletRows,
+.alerts,
+.holdRows {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.walletRow,
+.alert {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 56px;
+  padding: 8px 0;
+  border-top: 1px solid var(--line);
+}
+
+.walletMain,
+.alertMain {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.walletName {
+  font-size: var(--type-base);
+  font-weight: 700;
+  color: var(--ice);
+  text-decoration: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.walletName:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.walletSub,
+.alertRule {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 10px;
+  font-size: var(--type-small);
+  color: var(--dim);
+  font-variant-numeric: tabular-nums;
+  min-width: 0;
+}
+
+.iconButton {
+  flex: 0 0 auto;
+  width: 44px;
+  padding: 0;
+  justify-content: center;
+}
+
+/* ── the empty screen ───────────────────────────────────────────────────── */
+
+/* Nothing watched yet: one card the height of what it holds — on the left the sign, the name with its «i» beside it and one
+   line; on the right the field and its press. No tall box with a small middle, no «i» left alone in a corner. */
+.emptyBody {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: center;
+  gap: 24px;
+}
+
+.emptyLead {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  min-width: 0;
+}
+
+.emptyWords {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.emptyName {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.emptySign {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  color: var(--amber);
+  background:
+    radial-gradient(circle at 50% 40%, color-mix(in srgb, var(--amber) 22%, transparent), transparent 70%),
+    var(--well);
+  border: 1px solid var(--edge);
+}
+
+/* ── a wallet's page ────────────────────────────────────────────────────── */
+
+.hero {
+  min-width: 0;
+}
+
+.heroTop {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.result {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.resultHead {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.resultFigure {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 12px;
+}
+
+/* «of» between two figures of a tile: the words' face, quiet, so «1 з 6» never reads as «136». */
+.of {
+  margin: 0 6px;
+  font-family: var(--ui);
+  font-size: var(--type-body);
+  font-weight: 500;
+  color: var(--dim);
+}
+
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.follow {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.followRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.nameRow {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+.nameRow > label {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.failRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.holds {
+  min-width: 0;
+}
+
+/* A desk: what the wallet holds — and on «Watch» the list of wallets — stays in sight while the trades scroll by, under
+   the frame's header: never a column that ends halfway down a long list. */
+@media (min-width: 1100px) {
+  .walletBody > [data-page-side],
+  .feedBody > [data-page-side] {
+    position: sticky;
+    top: calc(var(--top) + 16px);
+  }
+}
+
+/* «Show more trades» under a phone's first rows. */
+.more {
+  padding: 12px 16px 16px;
+  border-top: 1px solid var(--line);
+}
+
+.holdRow {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  border-top: 1px solid var(--line);
+}
+
+.holdName {
+  font-weight: 700;
+  color: var(--ice);
+  text-decoration: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.holdUsd {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.statePanel {
+  min-width: 0;
+}
+
+.coinHead {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.stateActs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+/* ── alerts ─────────────────────────────────────────────────────────────── */
+
+.formPanel {
+  min-width: 0;
+}
+
+.alertForm {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+
+.formFoot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.coinField {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.picks {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--line);
+}
+
+.pick {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 44px;
+  padding: 0 12px;
+  color: var(--ice);
+  font: inherit;
+  text-align: left;
+  background: transparent;
+  border: 0;
+  border-top: 1px solid var(--line);
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.picks > li:first-child .pick {
+  border-top: 0;
+}
+
+.pick:hover,
+.pick:focus-visible {
+  background: var(--chosen);
+  outline: none;
+}
+
+.pickSymbol {
+  font-weight: 700;
+}
+
+.pickName {
+  font-size: var(--type-small);
+  color: var(--dim);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chosen {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+}
+
+.chosenSymbol {
+  font-size: var(--type-base);
+  font-weight: 700;
+}
+
+.proof {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+/* The coin page's own alert: a quiet press, and the form opening under it, whole — nothing clips it. */
+.coinAlert {
+  position: relative;
+  display: inline-flex;
+}
+
+.pop {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 8px);
+  z-index: 30;
+  width: min(360px, calc(100vw - 32px));
+  box-shadow: 0 18px 40px color-mix(in srgb, var(--ink-deep) 80%, transparent);
+}
+
+.popTitle {
+  margin: 0;
+  font-size: var(--type-base);
+}
+
+/* ── a phone ────────────────────────────────────────────────────────────── */
+
+@media (max-width: 1099px) {
+  .emptyBody {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 767px) {
+  .tiles {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  /* A phone: what the wallet holds — its biggest figure — comes right after the result, its trades last; the main
+     column gives its two panels to the page's one column so the side stands between them. */
+  .walletBody > [data-page-main] {
+    display: contents;
+  }
+
+  .walletBody .tradesPanel {
+    order: 1;
+  }
+
+  .pop {
+    position: fixed;
+    left: 16px;
+    right: 16px;
+    top: auto;
+    bottom: calc(var(--tabbar) + 16px);
+    width: auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [aria-busy='true'] .bone {
+    animation: none;
+  }
+}

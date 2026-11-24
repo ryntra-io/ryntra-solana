@@ -93,3 +93,22 @@ export function mayClose(input: Readonly<{ trade: boolean; phase: CardPhase; hel
   if (!input.trade) return true;
   return !input.held && (input.phase === 'idle' || input.phase === 'done' || input.phase === 'failed');
 }
+
+/** Where the wallet's proof stands for one address, as the shared store says it (`proofStatusFor`). */
+export type ProofSeen = 'idle' | 'checking' | 'proven' | 'unproven';
+
+/**
+ * Whether «Show my agents» stands where the agents would: the engine reads a wallet's agents only for the wallet this
+ * browser proved (`/api/bots/agents`), so on a new device «Agents» would simply be missing. The quiet action stands
+ * only on the person's own wallet, where agents are served here, while the engine has not answered for it, the store
+ * knows the wallet is not proven (never while it is still checking), no agent row stands from this browser's own note,
+ * and the person has not put it away for this wallet. Nothing here asks the wallet: the action does, on a tap.
+ *
+ * `locked` — the engine itself refused the wallet for want of this device's proof (401). Then the action stands
+ * whatever the store believes of the proof (a proof this tab remembers may have run out) and beside the rows that do stand
+ * (a pool the keeper looks after reads without the proof; the bots do not).
+ */
+export function agentsAsk(at: Readonly<{ own: boolean; served: boolean; answered: boolean; proof: ProofSeen; rows: number; hidden: boolean; locked?: boolean }>): boolean {
+  if (!at.own || !at.served || at.answered || at.hidden) return false;
+  return at.locked === true || (at.proof === 'unproven' && at.rows === 0);
+}

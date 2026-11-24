@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 
 import { z } from "zod";
+import { isoDateTime } from "../zod/iso-datetime.ts";
 
 import { canonicalJson, compareCanonicalStrings } from "../guard/canonical-json.ts";
 
@@ -44,7 +45,7 @@ class ChecksummedAgentverseAddressPattern extends RegExp {
 }
 
 export const AGENTVERSE_ADDRESS_PATTERN = new ChecksummedAgentverseAddressPattern(AGENTVERSE_ADDRESS_SHAPE);
-const timestamp = z.string().datetime({ offset: true });
+const timestamp = isoDateTime({ offset: true });
 
 export const AGENTVERSE_SOURCE_KINDS = ["REGISTRY", "SEARCH", "MANIFESTS"] as const;
 

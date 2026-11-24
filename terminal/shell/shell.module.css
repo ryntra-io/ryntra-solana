@@ -18,8 +18,8 @@
 .rail {
   position: sticky;
   top: 0;
-  /* Over the header: they meet only where the arrow that hides the rail stands on its edge. */
-  z-index: 5;
+  /* Over the header (one step over it): they meet only where the arrow that hides the rail stands on its edge. */
+  z-index: 21;
   flex: 0 0 var(--rail);
   display: flex;
   flex-direction: column;
@@ -450,18 +450,22 @@
 .top {
   position: sticky;
   top: 0;
-  z-index: 4;
+  /* Over every layer of a screen's own page (flaw 9 and the coin's flaw 63: the coin's head, a layer of its
+     page, slid over the header on a phone's scroll); a screen's sheets and the frame's menu stand over it still. */
+  z-index: 20;
   display: flex;
   align-items: center;
   gap: 12px;
   height: var(--top);
   padding: 0 28px;
-  transition: background-color 0.2s, box-shadow 0.2s;
+  transition: box-shadow 0.2s;
 }
 
 .top[data-stuck] {
-  /* No backdrop filter: it would make the header the box of the sign-in sheet fixed inside it. */
-  background: rgba(8, 7, 14, 0.94);
+  /* A solid ground the moment the page moves under it, on every screen (flaw 9: rows showed through the
+     header while it faded in). No backdrop filter: it would make the header the box of the sign-in sheet fixed inside
+     it. */
+  background: var(--ground);
   box-shadow: 0 1px 0 var(--line);
 }
 
@@ -705,7 +709,8 @@
   cursor: default;
 }
 
-.walletIcon {
+.walletIcon,
+.walletShort {
   display: none;
 }
 
@@ -722,6 +727,50 @@
 }
 
 /* ── the panels that open from the frame ───────────────────────────────── */
+/* The quiet list of keys («?»): a small panel at the desk's lower right, over every screen. */
+.pop.keys {
+  position: fixed;
+  top: auto;
+  right: 24px;
+  bottom: 24px;
+  width: 260px;
+}
+
+.keyList {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 10px 14px;
+  margin: 0;
+  font-size: var(--type-small);
+}
+
+.keyList dt {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.keyList dd {
+  margin: 0;
+  color: var(--dim);
+}
+
+.keyCap {
+  min-width: 26px;
+  padding: 2px 6px;
+  font-family: inherit;
+  font-size: var(--type-caption);
+  font-weight: 600;
+  text-align: center;
+  color: var(--ice);
+  border: 1px solid var(--glass-edge);
+}
+
+.keyDash {
+  color: var(--dim);
+}
+
 
 .pop {
   position: absolute;
@@ -825,6 +874,20 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
+}
+
+/* The window's name and its «×» on one line (flaw 4: the phone's menu closes so, the wallet's did not). */
+.loginTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.loginTop > .closeBtn {
+  flex: none;
+  margin-right: -6px;
+  color: var(--soft);
 }
 
 .loginTitle {
@@ -1119,7 +1182,8 @@
   color: var(--amber);
 }
 
-/* The agent's tab: an amber square with the brand's cut corner, standing out of the bar. */
+/* The agent's tab: an amber square with the brand's cut corner, standing out of the bar — one look on every page,
+   the home page too: it is the frame's, not a screen's action. */
 .gem {
   display: flex;
   align-items: center;
@@ -1769,6 +1833,7 @@
   /* A wallet not yet connected: an icon beside the bell, the list of wallets under it. Connected, it lives in the sheet. */
   .wallet[data-connect] {
     justify-content: center;
+    gap: 8px;
     width: 44px;
     padding: 0;
     color: var(--ice);
@@ -1776,6 +1841,18 @@
 
   .walletIcon {
     display: block;
+    flex: none;
+  }
+
+  /* Elsewhere the header's agent's line keeps that room. */
+  .app:has([data-terminal='hero']) .wallet[data-connect] {
+    width: auto;
+    min-width: 44px;
+    padding: 0 12px;
+  }
+
+  .app:has([data-terminal='hero']) .walletShort {
+    display: inline;
   }
 
   .walletText {
@@ -1834,9 +1911,31 @@
     display: none;
   }
 
+  /* A screen's «i» in the header stands as the header's own buttons do — the bell, the wallet: 44 px. */
+  .phoneHead [data-info] {
+    width: 44px;
+    height: 44px;
+  }
+
+  .phoneHead [data-info] > svg {
+    width: 24px;
+    height: 24px;
+  }
+
+  .phoneHead [data-info]::after {
+    inset: 0;
+  }
+
   /* 16 px: a phone's browser zooms into a smaller field on focus. */
   .sayInput {
     font-size: 16px;
+  }
+
+  /* The sign-in sheet behaves as the phone's menu does: from the screen's foot over the tabs, under the
+     header's strip, the shade over all of it, its «×» a thumb's target. Its header is lifted over the tabs while it is
+     open: the sheet and its shade live inside it. */
+  .top:has(.pop[data-login]) {
+    z-index: 41;
   }
 
   .pop[data-login] {
@@ -1844,17 +1943,23 @@
     top: auto;
     left: 0;
     right: 0;
-    bottom: calc(var(--tabbar) + env(safe-area-inset-bottom));
+    bottom: 0;
     width: auto;
     max-width: none;
-    max-height: calc(100dvh - var(--tabbar) - env(safe-area-inset-bottom) - 80px);
+    max-height: calc(100dvh - 64px);
     overflow-y: auto;
-    padding: 28px 16px 20px;
+    padding: 20px 16px calc(20px + env(safe-area-inset-bottom));
     background: linear-gradient(180deg, rgb(28, 22, 48), rgb(14, 11, 26));
     border: 0;
     border-top: 1px solid rgba(201, 162, 255, 0.34);
     box-shadow: 0 -30px 60px -10px rgba(0, 0, 0, 0.8);
     animation: up 0.2s ease-out;
+  }
+
+  .loginTop > .closeBtn {
+    width: 44px;
+    height: 44px;
+    margin-right: -10px;
   }
 
   .pop[data-login]::before {

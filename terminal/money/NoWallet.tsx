@@ -3,6 +3,8 @@
 import { useWords } from '@/city/lib/i18n/dict';
 import { MenuIcon } from '@/terminal/shell/menu-icons';
 import { Action } from '@/terminal/ui';
+import { AUTOPAY_WORDS } from './autopay/words';
+import { CONTACTS_WORDS } from './contacts/words';
 import type { MoneyTab } from './money-view';
 import { MONEY_WORDS } from './words';
 import m from './money.module.css';
@@ -12,12 +14,16 @@ import m from './money.module.css';
  * middle of the panel — and the panel's one amber press, «Connect wallet», where the tab's own press stands once a
  * wallet is here. Nothing is read, drawn or asked before that.
  */
-export function NoWallet({ tab, onConnect }: { tab: MoneyTab; onConnect: () => void }) {
+export function NoWallet({ tab, onConnect }: { tab: Exclude<MoneyTab, 'payouts'>; onConnect: () => void }) {
   const w = useWords(MONEY_WORDS);
+  const wc = useWords(CONTACTS_WORDS);
+  const wa = useWords(AUTOPAY_WORDS);
   const said = {
     send: [w.sendBlankTitle, w.sendBlankLine],
     receive: [w.receiveBlankTitle, w.receiveBlankLine],
     invoices: [w.invoicesBlankTitle, w.invoicesBlankLine],
+    contacts: [wc.blankTitle, wc.blankLine],
+    autopay: [wa.blankTitle, wa.blankLine],
   } as const;
   const [title, line] = said[tab];
   return (

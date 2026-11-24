@@ -26,6 +26,7 @@ import { createDbcClient, type DbcClient } from "../core/venues/meteora-dbc/sdk.
 import { readLaunchMarkets } from "../launch/markets.server.ts";
 import { launchHealthDeps } from "../launch/runtime.server.ts";
 import { createSolanaRpcHandle, resolveEndpoint } from "../solana/rpc.ts";
+import { stockBookNow } from "../stocks/stock-book.server.ts";
 import { GECKO_SOLANA_BASE, getJson } from "./candles.server.ts";
 import { readJupiterList, type SpotSourceFailure } from "./markets.server.ts";
 import {
@@ -337,7 +338,8 @@ export function ryntraRowOf(market: LaunchMarketRow, listed: PulseRow | null): P
   const graduated = market.progress?.migrated === true || (listed?.graduated ?? false);
   if (listed) {
     const own = listed.holders === null;
-    return { ...listed, curve: curve ?? listed.curve, ryntra, holders: own ? market.holders : listed.holders, holdersAtLeast: own && market.holdersAtLeast, launchpad: "Ryntra", venue: "meteora-dbc", graduated };
+    /* A launch on Ryntra passed the launch's own name check (it passes for no stock here). */
+    return { ...listed, curve: curve ?? listed.curve, ryntra, holders: own ? market.holders : listed.holders, holdersAtLeast: own && market.holdersAtLeast, launchpad: "Ryntra", venue: "meteora-dbc", graduated, passesFor: null };
   }
   const empty = { changePct: null, volumeUsd: null, holdersChangePct: null };
   return {
@@ -367,6 +369,7 @@ export function ryntraRowOf(market: LaunchMarketRow, listed: PulseRow | null): P
     notices: [],
     curve,
     ryntra,
+    passesFor: null,
   };
 }
 
@@ -398,6 +401,8 @@ export function readPulse(feed: PulseFeed, window: TokenWindow, ask: PulseAsk = 
 
 async function assemble(feed: PulseFeed, window: TokenWindow, mode: PulseMode): Promise<PulseRead | SpotSourceFailure> {
   const now = Date.now();
+  /* The stocks a coin may pass for: the universe's whole list when it is warm here, else the static book. */
+  const book = stockBookNow();
   const [{ lists, failed, failure }, ryntraRead, gecko] = await Promise.all([
     readLists(listsOf(feed, window)),
     readRyntraMarkets(),
@@ -415,7 +420,7 @@ async function assemble(feed: PulseFeed, window: TokenWindow, mode: PulseMode): 
   const rows: PulseRow[] = [];
   for (const list of lists) {
     for (const raw of list.raw) {
-      const row = pulseRowOf(raw, now);
+      const row = pulseRowOf(raw, now, book);
       if (!row || rawByMint.has(row.mint)) continue;
       rawByMint.set(row.mint, raw);
       rows.push(row);
@@ -431,7 +436,7 @@ async function assemble(feed: PulseFeed, window: TokenWindow, mode: PulseMode): 
     for (const [mint, raw] of searched) rawByMint.set(mint, raw);
     for (const market of ryntraMarkets) {
       const raw = rawByMint.get(market.token);
-      ryntraRows.push(ryntraRowOf(market, raw ? pulseRowOf(raw, now) : null));
+      ryntraRows.push(ryntraRowOf(market, raw ? pulseRowOf(raw, now, book) : null));
     }
   }
 
@@ -443,7 +448,7 @@ async function assemble(feed: PulseFeed, window: TokenWindow, mode: PulseMode): 
     const { out: searched } = await searchByMints(geckoOnly);
     for (const [mint, raw] of searched) {
       rawByMint.set(mint, raw);
-      const row = pulseRowOf(raw, now);
+      const row = pulseRowOf(raw, now, book);
       if (row) rows.push(row);
     }
     const onCurve = rows.filter((row) => !graduatedOf(rawByMint.get(row.mint)));
@@ -502,6 +507,7 @@ async function assemble(feed: PulseFeed, window: TokenWindow, mode: PulseMode): 
  */
 async function assembleWatchlist(window: TokenWindow, mode: PulseMode, mints: readonly string[]): Promise<PulseRead | SpotSourceFailure> {
   const now = Date.now();
+  const book = stockBookNow();
   const observedAt = new Date().toISOString();
   if (mints.length === 0) return { ok: true, feed: "watchlist", window, mode, rows: [], unlisted: 0, observedAt, stale: false, partial: false, sources: ["jupiter"] };
   const [{ out, failure, readAt, held }, ryntraRead] = await Promise.all([searchByMints(mints), readRyntraMarkets()]);
@@ -511,7 +517,7 @@ async function assembleWatchlist(window: TokenWindow, mode: PulseMode, mints: re
   const rows: PulseRow[] = [];
   for (const mint of mints) {
     const raw = out.get(mint);
-    const listed = raw ? pulseRowOf(raw, now) : null;
+    const listed = raw ? pulseRowOf(raw, now, book) : null;
     const market = ryntraBy.get(mint);
     if (market) {
       if (!sources.includes("ryntra")) sources.push("ryntra");

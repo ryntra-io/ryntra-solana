@@ -15,6 +15,7 @@
  */
 
 import { z } from "zod";
+import { isoDateTime } from "../../zod/iso-datetime.ts";
 
 import type { GuardStore } from "../../guard/store.ts";
 import { NEWS_TOPICS, safeFollowedTerms, TOKEN_TERMS, type NewsTopic, type TokenTerm } from "./tagging.ts";
@@ -30,7 +31,7 @@ export const DIGEST_STORIES_MAX = 20;
 export const LOCK_SLOT_MS = 8 * 60_000;
 
 const Mint = z.string().regex(/^[1-9A-HJ-NP-Za-km-z]{32,44}$/);
-const Iso = z.string().datetime({ offset: true });
+const Iso = isoDateTime({ offset: true });
 const Id = z.string().regex(/^nw_[0-9a-f]{24}$/);
 
 export const NewsRecordSchema = z

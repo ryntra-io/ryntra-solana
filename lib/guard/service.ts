@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { isoDateTime } from "../zod/iso-datetime.ts";
 
 import {
   hashCanonical as hashCanonicalValue,
@@ -150,7 +151,7 @@ const StoredFinancialPlanEvidenceSchema = EvidenceItemSchema.and(
 );
 
 const STORED_HEX_HASH = /^0x[0-9a-fA-F]{64}$/;
-const storedTimestamp = z.string().datetime({ offset: true });
+const storedTimestamp = isoDateTime({ offset: true });
 const StoredExpectedEffectsSchema = z
   .object({
     amountIn: z.string().min(1).max(128),

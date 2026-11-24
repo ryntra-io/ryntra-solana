@@ -53,8 +53,14 @@ export const SITE_DOC_PATHS: Readonly<Record<SiteDocId, string>> = {
   roadmap: '/roadmap',
 };
 
+/**
+ * The documents that stand at their own address today. «What we're building» leads to the terminal's documentation
+ * since 21.11 (`lib/site/retired-pages.ts`: it described the city), so no menu and no page's foot offers it.
+ */
+export const LIVE_SITE_DOCS: readonly SiteDocId[] = ['partners', 'roadmap'];
+
 /** The menu's documents that leave the city for their own page; «Partners» is the menu's own window above them. */
-export const MENU_SITE_DOCS: readonly SiteDocId[] = ['build', 'roadmap'];
+export const MENU_SITE_DOCS: readonly SiteDocId[] = ['roadmap'];
 
 /** The menu's rows that open a page, in the menu's order: the five doors, then the two documents in its foot. */
 export const MENU_PAGES: readonly PageId[] = ['docs', 'developers', 'connector', 'help', 'about'];

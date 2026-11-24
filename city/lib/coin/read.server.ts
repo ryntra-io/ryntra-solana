@@ -25,6 +25,9 @@ export type CoinCard = CoinFacts &
     launchImage: string | null;
     price: number | null;
     change24h: number | null;
+    /** The market's capitalisation and the day's volume, dollars, as Jupiter states them; null when not read. */
+    marketCapUsd: number | null;
+    volume24hUsd: number | null;
     /** It stands in the city's bundled skyline (the live city may hold more). */
     inCity: boolean;
   }>;
@@ -78,6 +81,8 @@ export const readCoinCard = cache(async (mint: string): Promise<CoinCard | null>
     launchImage,
     price: finite(market?.price),
     change24h: finite(market?.change24hPct),
+    marketCapUsd: finite(market?.marketCapUsd),
+    volume24hUsd: finite(market?.volume24hUsd),
     inCity: tower !== null,
   };
 });

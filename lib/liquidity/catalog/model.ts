@@ -35,6 +35,14 @@ export type CatalogToken = Readonly<{
   priceUsd: number | null;
 }>;
 
+/**
+ * The windows the Data APIs state a pool's volume and fees for, as a person picks them on the pools' table:
+ * the venue's shortest is half an hour (it also states 4 h and 12 h, which the table does not offer).
+ */
+export const CATALOG_PERIODS = ["30m", "1h", "2h", "24h"] as const;
+export type CatalogPeriod = (typeof CATALOG_PERIODS)[number];
+export type CatalogPeriodFigures = Readonly<{ volumeUsd: number | null; feesUsd: number | null }>;
+
 /** DAMM v2's one range for every position in the pool; null bounds — the plain curve. */
 export type CatalogRange = Readonly<{ minPrice: number | null; maxPrice: number | null; concentrated: boolean }>;
 
@@ -50,6 +58,8 @@ export type CatalogPool = Readonly<{
   tvlUsd: number | null;
   volume24hUsd: number | null;
   fees24hUsd: number | null;
+  /** Volume and fees by the venue's own windows; absent on a pool read from elsewhere than a Data API list. */
+  periods?: Readonly<Record<CatalogPeriod, CatalogPeriodFigures>>;
   /** The base fee a trade pays, percent (0.25 = 0.25 %). */
   baseFeePct: number | null;
   /**
@@ -105,6 +115,15 @@ function catalogToken(raw: unknown): CatalogToken | null {
 
 const window24h = (raw: unknown): number | null => finite(record(raw)["24h"]);
 
+/** A pool's volume and fees by window, each as read: a window the venue did not state is null, never a zero. */
+function periodsOf(volume: unknown, fees: unknown): Record<CatalogPeriod, CatalogPeriodFigures> {
+  const v = record(volume);
+  const f = record(fees);
+  const out = {} as Record<CatalogPeriod, CatalogPeriodFigures>;
+  for (const period of CATALOG_PERIODS) out[period] = { volumeUsd: finite(v[period]), feesUsd: finite(f[period]) };
+  return out;
+}
+
 const epochToIso = (value: unknown): string | null => {
   if (typeof value !== "number" || !Number.isFinite(value) || value <= 0) return null;
   /* The Data APIs state milliseconds; a value that reads as seconds is treated as such. */
@@ -148,6 +167,7 @@ export function mapCatalogPool(raw: unknown, kind: LiquidityPoolKind): CatalogPo
     tvlUsd: finite(node.tvl),
     volume24hUsd: window24h(node.volume),
     fees24hUsd: window24h(node.fees),
+    periods: periodsOf(node.volume, node.fees),
     baseFeePct: baseFee,
     dynamicFeePct: baseFee !== null && variableFee !== null ? baseFee + variableFee : null,
     /* DLMM states 0 for a pool with no stated ceiling. */

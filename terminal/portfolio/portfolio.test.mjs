@@ -6,7 +6,7 @@ import { bookOf, parse } from "../../city/lib/command/parse.ts";
 import { targetOf } from "../shell/ask-route.ts";
 import { SHELVES, shelfOn, takenByTerminal } from "../shell/shelves.ts";
 import { digits } from "../../city/lib/i18n/dict.ts";
-import { agentsHeld, mayClose, tinyPrice, unitsFigure } from "./portfolio-view.ts";
+import { agentsAsk, agentsHeld, mayClose, tinyPrice, unitsFigure } from "./portfolio-view.ts";
 import { PORTFOLIO } from "./words.ts";
 
 /* The Portfolio's older rules the new screen still stands on — what the agents hold, a coin amount for the eye, when a
@@ -98,4 +98,37 @@ test("both languages say the same things, and the screen writes no words of its 
   assert.doesNotMatch(said, /причал|вежа|pier|tower/i);
   const page = readFileSync(new URL("../../app/(terminal)/portfolio/page.tsx", import.meta.url), "utf8");
   assert.match(page, /shelfOn\("portfolio"\)/, "the page answers 404 while the shelf is off");
+});
+
+test("«Show my agents» stands only for the person's own unproven wallet the engine did not answer — never while it checks, never twice", () => {
+  const at = { own: true, served: true, answered: false, proof: "unproven", rows: 0, hidden: false };
+  assert.equal(agentsAsk(at), true, "a new device: the engine said nothing, the wallet is not proven");
+  assert.equal(agentsAsk({ ...at, own: false }), false, "a wallet only looked at: its agents are its owner's");
+  assert.equal(agentsAsk({ ...at, served: false }), false, "agents not served here");
+  assert.equal(agentsAsk({ ...at, answered: true }), false, "the engine answered: its rows, or none, are the truth");
+  assert.equal(agentsAsk({ ...at, proof: "checking" }), false, "the store is still asking: no action flashes on");
+  assert.equal(agentsAsk({ ...at, proof: "proven" }), false, "proven: the read follows by itself");
+  assert.equal(agentsAsk({ ...at, rows: 1 }), false, "an agent this browser knows already stands");
+  assert.equal(agentsAsk({ ...at, hidden: true }), false, "put away for this wallet: not asked at every visit");
+});
+
+test("the engine refused the wallet (401) — «Sign once to see your agents» stands whatever the store believes, beside the rows that do", () => {
+  const at = { own: true, served: true, answered: false, proof: "proven", rows: 0, hidden: false, locked: true };
+  assert.equal(agentsAsk(at), true, "a proof this tab remembers ran out: the engine's 401 is the truth");
+  assert.equal(agentsAsk({ ...at, proof: "checking" }), true);
+  assert.equal(agentsAsk({ ...at, rows: 1 }), true, "a pool the keeper looks after stands without the proof; the bots behind it do not");
+  assert.equal(agentsAsk({ ...at, own: false }), false);
+  assert.equal(agentsAsk({ ...at, served: false }), false);
+  assert.equal(agentsAsk({ ...at, answered: true }), false, "answered since: the rows are the truth");
+  assert.equal(agentsAsk({ ...at, hidden: true }), false, "put away for this wallet");
+  assert.equal(agentsAsk({ ...at, locked: false }), false, "not refused, proven: the read follows by itself");
+  assert.equal(PORTFOLIO.en.agentsAskTitle, "Sign once to see your agents");
+  assert.equal(PORTFOLIO.uk.agentsAskTitle, "Підпиши раз, щоб побачити своїх агентів");
+});
+
+test("«Show my agents» speaks both languages with the same keys", () => {
+  for (const key of ["agentsAskTitle", "agentsAsk", "agentsAskInfo", "agentsAskText", "agentsAskHide", "agentsAskNo", "agentsAskFailed"]) {
+    assert.equal(typeof PORTFOLIO.en[key], "string", key);
+    assert.equal(typeof PORTFOLIO.uk[key], "string", key);
+  }
 });

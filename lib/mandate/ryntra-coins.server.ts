@@ -23,6 +23,7 @@ import type { AccountFacts } from "./judge.ts";
 import { tokenAccountOf, type Mandate } from "./human.ts";
 import { agentFeeAccount, agentFeeWallet } from "./fee.ts";
 import { NATIVE_MINT, TOKEN_PROGRAM_ID } from "./ssa.ts";
+import { stocksOf, type StockShelf } from "./stocks.server.ts";
 import { feeMintOf } from "./terms.ts";
 import { TOKEN_2022_PROGRAM_ID, isTokenProgram } from "./token-2022.ts";
 
@@ -34,6 +35,11 @@ export type AgentScreen = Readonly<{
   origin(mint: string): Promise<CoinOrigin>;
   /** Ryntra's own wallets and every agent's vault and budget; throws when not read. */
   ryntra(): Promise<ReadonlySet<string>>;
+  /**
+   * Whether a mint is, by its address, a stock of the shelf of verified companies now (`./stocks.server.ts`);
+   * throws when the shelf is not read. Absent — no coin is a stock. Asked only of a coin the strict rule refused.
+   */
+  stock?: StockShelf;
 }>;
 
 /** The registry's roles whose wallets are keys of Ryntra's that hold or move money — never a counterparty of the agent. */
@@ -75,10 +81,11 @@ export function storeScreen(store: GuardStore, cluster: string, env: Readonly<Re
       }
       return out;
     },
+    stock: stocksOf(cluster),
   };
 }
 
-/** A screen that knows no coin and no key — for a test's own chain only. */
+/** A screen that knows no coin, no key and no stock — for a test's own chain only. */
 export const OPEN_SCREEN: AgentScreen = Object.freeze({ origin: async () => ({ launchedHere: false, creator: null }), ryntra: async () => new Set<string>() });
 
 const MINT_BYTES = 82;
@@ -102,11 +109,15 @@ function tokenRead(read: Readonly<{ owner: PublicKey; data: Uint8Array }> | unde
 
 /**
  * The mandate's own: the agent, the person, her account, vault and budget, their token accounts of the mandate's coins
- * (a sale's budget is the coin, while the book keeps the vault's wSOL), Ryntra's fee wallet and account.
+ * (a sale's budget is the coin, while the book keeps the vault's wSOL), Ryntra's fee wallet and account. `bought` — the
+ * coin this trade buys: her account of it and her vault's are her own too. The book keeps the vault's account of a coin
+ * as the budget of every sale of hers, and Jupiter's route lands each buy there first — without this a person who once
+ * reviewed a sale had every later buy of that coin refused as «another key of Ryntra's» (the mainnet fork).
  */
-function ownOf(mandate: Mandate): ReadonlySet<string> {
+function ownOf(mandate: Mandate, bought?: PublicKey): ReadonlySet<string> {
   const feeMint = feeMintOf(mandate.terms);
-  const mints = [NATIVE_MINT, mandate.terms.budgetMint, feeMint, ...(mandate.terms.fixedBuy ? [mandate.terms.fixedBuy.outputMint] : [])];
+  /* The coin the agent keeps — its vault's account and hers — is the mandate's own too. */
+  const mints = [NATIVE_MINT, mandate.terms.budgetMint, feeMint, ...(mandate.terms.fixedBuy ? [mandate.terms.fixedBuy.outputMint] : []), ...(mandate.terms.heldCoin ? [mandate.terms.heldCoin.mint] : []), ...(bought ? [bought] : [])];
   const accounts = [mandate.vault, mandate.terms.human].flatMap((owner) => mints.flatMap((mint) => [TOKEN_PROGRAM_ID, TOKEN_2022_PROGRAM_ID].map((program) => tokenAccountOf(owner, mint, program))));
   const own = [mandate.terms.agent, mandate.terms.human, mandate.settings, mandate.vault, mandate.budgetAccount, ...accounts].map((key) => key.toBase58());
   return new Set([...own, agentFeeWallet().toBase58(), agentFeeAccount(feeMint).toBase58()]);
@@ -125,9 +136,9 @@ export function coinRefusal(mint: PublicKey, origin: CoinOrigin, mandate: Mandat
   return null;
 }
 
-/** Why an account of the trade is another key of Ryntra's, or one of its token accounts; null when none is. */
-export function ryntraAccountRefusal(accounts: readonly PublicKey[], mandate: Mandate, ryntra: ReadonlySet<string>, facts: AccountFacts): string | null {
-  const own = ownOf(mandate);
+/** Why an account of the trade is another key of Ryntra's, or one of its token accounts; null when none is. `bought` — the coin the trade buys. */
+export function ryntraAccountRefusal(accounts: readonly PublicKey[], mandate: Mandate, ryntra: ReadonlySet<string>, facts: AccountFacts, bought?: PublicKey): string | null {
+  const own = ownOf(mandate, bought);
   for (const account of accounts) {
     const key = account.toBase58();
     if (own.has(key)) continue;

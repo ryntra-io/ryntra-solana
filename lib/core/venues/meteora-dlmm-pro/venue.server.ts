@@ -16,6 +16,7 @@
  * | holdings | `./owned.server.ts` | a wallet's positions and orders; a pool's |
  * | liquidity by price | `./bins.server.ts` | the steps of the tick spacing around the price, each with what lies on it |
  * | earning | `./goals.ts`, `./earn.server.ts` | a position from a goal, paid in one coin or two; its income in two lines; an agent's care |
+ * | a keeper's range | `./range.server.ts` | the person's one approval for a keeper; a move of the range by the agent inside her bounds; the lock on its bytes |
  * | arithmetic | `./fee.ts`, `./activation.ts`, `./orders.ts`, `./ticks.ts` | pure: the fee now, who may act when, how much of an order filled |
  *
  * **Every build is unsigned bytes for the person's wallet**, version 0, with its compute budget (`./tx.server.ts`). The
@@ -42,6 +43,7 @@ import { createDlmmProLimitOrders } from "./limit-orders.server.ts";
 import { createDlmmProHoldings } from "./owned.server.ts";
 import { createDlmmProPools, type DlmmProContext } from "./pools.server.ts";
 import { createDlmmProPositions } from "./positions.server.ts";
+import { createDlmmProRange } from "./range.server.ts";
 import { createDlmmProRewards } from "./rewards.server.ts";
 import { dlmmProClientOf } from "./sdk.server.ts";
 import { createDlmmProSwap } from "./swap.server.ts";
@@ -59,6 +61,7 @@ export function createDlmmProVenue(args: Readonly<{ connection: Connection; refe
     orders: createDlmmProLimitOrders(context),
     positions,
     earn: createDlmmProEarn(context, { pools, swap, positions }),
+    range: createDlmmProRange(context),
     rewards: createDlmmProRewards(context),
     events: createDlmmProEvents(context),
     holdings: createDlmmProHoldings(context),

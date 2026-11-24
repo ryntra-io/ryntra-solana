@@ -237,3 +237,29 @@
 .factNo {
   color: var(--warm);
 }
+
+/* The wallet check: one block a check — its name, one line of result, the button that runs it. */
+.check {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--line);
+}
+
+.result,
+.resultYes,
+.resultNo {
+  margin: 0;
+  font-size: var(--type-body);
+  line-height: 1.4;
+  color: var(--soft);
+}
+
+.resultYes {
+  color: var(--mint);
+}
+
+.resultNo {
+  color: var(--warm);
+}

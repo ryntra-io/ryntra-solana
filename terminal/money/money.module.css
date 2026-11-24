@@ -7,6 +7,11 @@
   min-height: 520px;
 }
 
+/* No wallet yet: the panel is as tall as its sign, its words and its one press (QA 19.11, eyes 31). */
+.form.formBlank {
+  min-height: 0;
+}
+
 .grow {
   flex: 1 1 auto;
   min-height: 0;
@@ -97,6 +102,7 @@
 .blankLine {
   max-width: 400px;
   margin: 0;
+  text-wrap: pretty;
   font-size: var(--type-body);
   line-height: 1.45;
   color: var(--soft);

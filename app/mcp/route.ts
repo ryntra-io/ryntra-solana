@@ -1,8 +1,10 @@
 import { connectorOrigin } from "@/lib/connector/metadata";
-import { serveConnectorMcp } from "@/lib/connector/endpoint";
 import { getGuardRuntime } from "@/lib/guard/runtime";
+import { serveRyntraMcp } from "@/lib/mcp/endpoint";
+import { engineGates } from "@/terminal/shell/engine";
+import { shelfOn } from "@/terminal/shell/shelves";
 
-import { engineReaderFor } from "./engine";
+import { engineReaderAt, ownReaderAt } from "./engine";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -10,13 +12,19 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
 /**
- * `https://ryntra.io/mcp` — Ryntra's Solana connector for AI chats. Streamable HTTP, OAuth 2.1
- * with the person's wallet as the consent (`/connect`), read-only tools over the engine's public routes. The whole
- * argument lives in `lib/connector/endpoint.ts`; this file only wires the store and the engine.
+ * `https://ryntra.io/mcp` — Ryntra for another AI. Streamable HTTP. Without signing in: the public
+ * reads and the tools that prepare a link for the person to open and sign; signed in through the connector's OAuth
+ * (`/connect`): the same tools with the wallet's own window and receipts. The argument lives in `lib/mcp/endpoint.ts`;
+ * this file only wires the store, the engine and the agent's line as this deployment has it.
  */
 async function serve(request: Request): Promise<Response> {
   const origin = connectorOrigin(request);
-  return serveConnectorMcp(request, { store: getGuardRuntime().store, readFor: (wallet) => engineReaderFor(origin, wallet) });
+  return serveRyntraMcp(request, {
+    store: getGuardRuntime().store,
+    readFor: (readKey) => engineReaderAt(origin, readKey),
+    ownFor: (readKey) => ownReaderAt(origin, readKey),
+    plan: { on: (shelf) => shelfOn(shelf), gates: engineGates() },
+  });
 }
 
 export const GET = serve;

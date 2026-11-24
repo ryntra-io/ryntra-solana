@@ -13,10 +13,11 @@ const fromBase64 = (value: string) => Uint8Array.from(atob(value), (character) =
 /**
  * The server's unsigned transactions, read before the wallet sees them: each is the person's alone — she pays, she is
  * the only signer — and calls nothing but her smart account, the token and system programs. The agent's own key is
- * named only inside the policy's data; it signs none of these.
+ * named only inside the policy's data; it signs none of these. `max` — how many one approval may hold: three for a budget;
+ * a copy's start four, its stop the coins of her vault and their accounts too.
  */
-export function checkUnsigned(transactions: readonly string[], owner: string): Readonly<{ ok: true }> | Readonly<{ ok: false; reason: string }> {
-  if (!transactions.length || transactions.length > 3) return { ok: false, reason: 'Unexpected number of transactions.' };
+export function checkUnsigned(transactions: readonly string[], owner: string, max = 3): Readonly<{ ok: true }> | Readonly<{ ok: false; reason: string }> {
+  if (!transactions.length || transactions.length > max) return { ok: false, reason: 'Unexpected number of transactions.' };
   for (const wire of transactions) {
     let tx: VersionedTransaction;
     try {

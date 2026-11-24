@@ -26,6 +26,7 @@
  */
 
 import { z } from "zod";
+import { isoDateTime } from "../../../../lib/zod/iso-datetime.ts";
 
 import { readAgentControlJson } from "../../../../lib/agent-control/http.ts";
 import {
@@ -53,7 +54,7 @@ const RequestSchema = z
     capBaseUnits: z.string().regex(BASE_UNITS).max(32).nullable().default(null),
     maxTimeoutSeconds: z.number().int().positive().max(600),
     nonce: z.string().min(1).max(128),
-    quoteIssuedAt: z.string().datetime({ offset: true }),
+    quoteIssuedAt: isoDateTime({ offset: true }),
     spender: z.string().regex(BASE58),
     /** What this agent has already spent today, in the same base units. */
     spentTodayBaseUnits: z.string().regex(BASE_UNITS).max(32).default("0"),

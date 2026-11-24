@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { isoDateTime } from "../zod/iso-datetime.ts";
 
 import type { ServiceFeeMechanism } from "../swap/service-fee.ts";
 import { REWARD_RANKS } from "./rules.ts";
@@ -112,7 +113,7 @@ export const RewardValuationSchema = z
     price: z.string().regex(DECIMAL_PRICE).nullable(),
     /** Where the price came from, so a figure can be traced rather than trusted. */
     sourceRef: z.string().min(1).max(200).nullable(),
-    observedAt: z.string().datetime({ offset: true }).nullable(),
+    observedAt: isoDateTime({ offset: true }).nullable(),
   })
   .strict();
 
@@ -138,7 +139,7 @@ export const RewardSourceSchema = z
     asset: z.string().min(1).max(80).nullable(),
     symbol: z.string().min(1).max(40).nullable(),
     decimals: z.number().int().min(0).max(24),
-    settledAt: z.string().datetime({ offset: true }),
+    settledAt: isoDateTime({ offset: true }),
   })
   .strict();
 
@@ -187,7 +188,7 @@ export const RewardEntrySchema = z
     usdMicros: z.string().regex(/^-?(?:0|[1-9][0-9]*)$/).nullable(),
     valuation: RewardValuationSchema,
     source: RewardSourceSchema.nullable(),
-    createdAt: z.string().datetime({ offset: true }),
+    createdAt: isoDateTime({ offset: true }),
     /** Set on a claim entry: the claim it belongs to, and its payout signature. */
     claimId: z.string().min(1).max(80).nullable(),
     signature: z.string().min(1).max(120).nullable(),

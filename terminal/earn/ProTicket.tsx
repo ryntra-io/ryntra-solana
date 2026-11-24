@@ -3,9 +3,9 @@
 import { useEffect, useMemo, type ReactNode } from 'react';
 import { spendable } from '@/city/lib/districts/harbor/deposit';
 import { SOL_MINT } from '@/city/lib/earn/lst';
-import { GOAL_SHAPE, PIER_GOALS, PIER_STYLES, STYLE_HALF, solShort, type PierGoal, type PierStyle } from '@/city/lib/earn/pier';
-import { PRO_MIN_LAMPORTS, bandPct, proAmounts, proChoice, proOther, proReward, proShapeFault, proShapeRanges, proSolText, type ProPier } from '@/city/lib/earn/pro';
-import { PRO_LOCKED, proGoal, proNetwork, useProPier } from '@/city/lib/earn/pro-store';
+import { GOAL_SHAPE, PIER_STYLES, STYLE_HALF, solShort, type PierStyle } from '@/city/lib/earn/pier';
+import { PRO_MIN_LAMPORTS, proGoalsShown, bandPct, proAmounts, proChoice, proOther, proReward, proShapeFault, proShapeRanges, proSolText, type ProGoal, type ProPier } from '@/city/lib/earn/pro';
+import { PRO_LOCKED, proGoalOf, proNetwork, useProPier } from '@/city/lib/earn/pro-store';
 import { digits, useWords } from '@/city/lib/i18n/dict';
 import { useLang } from '@/city/lib/i18n/lang';
 import { StockPositionLine } from '@/terminal/stocks/StockPositionLine';
@@ -13,16 +13,17 @@ import { stepBpsOfSpacing } from '@/lib/earn-pools/bins';
 import { useWallet } from '@/city/lib/trade/wallet';
 import { explorerTxUrl } from '@/lib/solana/explorer';
 import { Action, AmountField, Kick, Quiet, Segment } from '@/terminal/ui';
-import { GOAL_PRESET, SHAPE_OPEN, sameColumns, type Columns } from './shape/model';
+import { GOAL_PRESET, SHAPE_OPEN, WAVE_OPEN, sameColumns, type Columns } from './shape/model';
 import { ShapePainter } from './shape/ShapePainter';
 import { useShape } from './shape/store';
 import { SHAPE } from './shape/words';
 import sh from './shape/shape.module.css';
 import { Facts, Note, OneLine, Result, RiskDots, TicketHead, iconOf } from './bits';
 import { noticeKey } from './failures';
+import { watchLedger } from './ledger';
 import { lineOf } from './PoolTicket';
 import { SHAPE_WORD, factRows, gapLine, rangeLine } from './range/facts';
-import { edgeTexts, gapView, pctText, stretchView } from './range/model';
+import { edgeTexts, gapView, pctText, stretchView, type ShapeId } from './range/model';
 import { Names, RangeEditor, RangeLine, useEditorId } from './range/RangeEditor';
 import { useBins, useTune } from './range/useBins';
 import { RANGE } from './range/words';
@@ -34,10 +35,13 @@ import e from './earn.module.css';
 /** With a wallet here, the exact figures follow the form after this pause, once per choice. */
 const AUTO_REVIEW_MS = 450;
 
-const GOAL_WORD = { even: 'goalEven', near: 'goalNear', edges: 'goalEdges' } as const;
-/** The goals of the form, and — where the switch is open — the person's own shape beside them. */
-type FormGoal = PierGoal | 'custom';
-const FORM_GOALS: readonly FormGoal[] = SHAPE_OPEN ? [...PIER_GOALS, 'custom'] : PIER_GOALS;
+const GOAL_WORD = { even: 'goalEven', near: 'goalNear', edges: 'goalEdges', wave: 'goalWave' } as const;
+/** How each goal spreads over the range, for the eye and the facts: the three pier shapes and Meteora's Wave. */
+const PRO_GOAL_SHAPE: Readonly<Record<ProGoal, ShapeId>> = { ...GOAL_SHAPE, wave: 'wave' };
+/** The goals of the form — Meteora's Wave among them — and, where the switch is open, the person's own shape beside them. */
+type FormGoal = ProGoal | 'custom';
+const GOALS = proGoalsShown(WAVE_OPEN);
+const FORM_GOALS: readonly FormGoal[] = SHAPE_OPEN ? [...GOALS, 'custom'] : GOALS;
 const WIDTH_WORD = { calm: 'widthCalm', balanced: 'widthBalanced', dense: 'widthDense' } as const;
 /** A form's change while its figures are still being built: the build is let go, the change stands (nothing is signed yet). */
 function edit(change: () => void): void {
@@ -68,7 +72,7 @@ export function ProTicket({ pier, row, onConnect, bare = false, peek = false, ri
   const editorId = useEditorId();
   const style = useProPier((st) => st.style);
   const picked = useProPier((st) => st.goal);
-  const goal = proGoal(pier, picked);
+  const goal = proGoalOf(pier, picked);
   const shape = useProPier((st) => (SHAPE_OPEN ? st.shape : null));
   const sw = useWords(SHAPE);
   const typed = useProPier((st) => st.typed);
@@ -84,6 +88,8 @@ export function ProTicket({ pier, row, onConnect, bare = false, peek = false, ri
   const shown = reviewed && choice.key && reviewed.key === choice.key ? reviewed : null;
   const summary = shown?.review.summary.action === 'open' ? shown.review.summary : null;
 
+  // An opening that lands here starts the device's entry of the position: its result against holding is counted from it.
+  useEffect(() => watchLedger(), []);
   // The exact figures of what is on the form, while the person reads it.
   useEffect(() => {
     if (soon || !connection || !choice.key || phase !== 'idle' || notice || shown) return;
@@ -122,7 +128,7 @@ export function ProTicket({ pier, row, onConnect, bare = false, peek = false, ri
   const facts = factRows(rw, lang, {
     range,
     steps: 'steps',
-    shape: GOAL_SHAPE[goal],
+    shape: PRO_GOAL_SHAPE[goal],
     goesIn: summary ? proAmounts(pier, summary.goesIn.xRaw, summary.goesIn.yRaw) : null,
     exact: true,
     swap: summary ? (BigInt(summary.swap.lamports) > 0n ? { from: `${proSolText(summary.swap.lamports)} SOL`, to: other.symbol, rate: null, unit: other.symbol } : 'none') : null,
@@ -179,9 +185,9 @@ export function ProTicket({ pier, row, onConnect, bare = false, peek = false, ri
           value={shape ? 'custom' : goal}
           onChange={pickGoal}
           items={FORM_GOALS.map((id) => ({ id, label: id === 'custom' ? sw.goal : w[GOAL_WORD[id]] }))}
-          className={SHAPE_OPEN ? sh.goals : undefined}
+          className={sh.goals}
         />
-        <Names items={FORM_GOALS.map((id) => ({ id, label: id === 'custom' ? sw.name : rw[SHAPE_WORD[GOAL_SHAPE[id]]], on: shape ? id === 'custom' : id === goal }))} />
+        <Names items={FORM_GOALS.map((id) => ({ id, label: id === 'custom' ? sw.name : rw[SHAPE_WORD[PRO_GOAL_SHAPE[id]]], on: shape ? id === 'custom' : id === goal }))} />
       </div>
       <div className={e.choice}>
         <div className={e.choiceHead}>
@@ -199,7 +205,7 @@ export function ProTicket({ pier, row, onConnect, bare = false, peek = false, ri
       ) : (
         <>
           <RangeLine line={rangeLine(rw, lang, range, pier.y.symbol, 'steps', stepBps)} open={tune} onOpen={setTune} controls={editorId} />
-          {tune || peek ? <RangeEditor id={editorId} bins={bins} range={range} price={priceNow} stepBps={stepBps} half={half} shape={GOAL_SHAPE[goal]} unit={pier.y.symbol} facts={facts} compact={!tune} /> : null}
+          {tune || peek ? <RangeEditor id={editorId} bins={bins} range={range} price={priceNow} stepBps={stepBps} half={half} shape={PRO_GOAL_SHAPE[goal]} unit={pier.y.symbol} facts={facts} compact={!tune} /> : null}
         </>
       )}
       </fieldset>

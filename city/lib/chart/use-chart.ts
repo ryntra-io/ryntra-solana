@@ -2,11 +2,12 @@ import { useEffect, useRef, useState } from 'react';
 import type { Tower } from '../market/types.ts';
 import { useMine } from '../trade/mine-store.ts';
 import { useWallet } from '../trade/wallet.ts';
-import { fetchCandles, loading, nextReadMs, settle, TIMEFRAME_KEY, timeframeFrom, type ChartData, type Timeframe } from './candles.ts';
+import { fetchCandles, loading, newerRead, nextReadMs, readsDirect, settle, TIMEFRAME_KEY, timeframeFrom, type ChartData, type Ready, type Timeframe } from './candles.ts';
 import { directFetch, readCandlesDirect } from './direct.ts';
 import { entryPrice, knownBasis, readEntryBasis } from './entry.ts';
 import { kept } from './kept.ts';
-import { fetchMarks } from './marks.ts';
+import { fetchMarks, readTokenMarks } from './marks.ts';
+import type { TokenMark } from '../../../lib/spot/token-page.ts';
 import type { LayerMark } from './layers.ts';
 import type { Basis } from '../trade/mine.ts';
 import { cityInView } from '../window/out.ts';
@@ -39,8 +40,10 @@ export function useTimeframe(): [Timeframe, (next: Timeframe) => void] {
  * failed is tried again quietly, sooner at first and then less often, never before the engine's `Retry-After`; its last
  * good bars stay on screen, stale, and with none the frame keeps waiting for a few tries before it says anything.
  *
- * `price` — the price on screen. Given, a refusal of the engine (429, 503) while the screen holds none of its bars is
- * followed by the same source read from this browser (`direct.ts`), drawn only if its bars agree with it.
+ * `price` — the price on screen. Given, a refusal of the engine (429, 503) while the screen holds none of its bars, or
+ * an answer of held bars that are really behind («Delayed 5h» while the source answered the browser), is
+ * followed by the same source read from this browser (`direct.ts`), drawn only if its bars agree with it and
+ * are newer than the engine's.
  */
 export function useCandles(mint: string, timeframe: Timeframe, price?: number | null): ChartData {
   const [data, setData] = useState<ChartData>(() => loading(mint, timeframe, null));
@@ -52,25 +55,29 @@ export function useCandles(mint: string, timeframe: Timeframe, price?: number | 
     let timer: ReturnType<typeof setTimeout> | undefined;
     // Failed reads in a row, as the state counts them: the pause before the next try grows with them.
     let misses = 0;
-    // Whose bars the screen holds: none yet, the engine's, or this browser's own read of the source.
+    // Whose bars the screen holds: none yet, the engine's, or this browser's own read of the source — and those bars.
     let shown: 'none' | 'engine' | 'direct' = 'none';
+    let held: Ready | null = null;
     setData((before) => loading(mint, timeframe, before));
     const read = async () => {
       const deps = { now: () => Date.now(), signal: controller.signal };
       let answer = await fetchCandles(mint, timeframe, { ...deps, fetch: (url, init) => fetch(url, { ...init, headers: { accept: 'application/json' } }) });
       if (!live) return;
-      // The engine refused (its 429 or 503 — it answers held bars when it has any, so it has none) and the screen holds
-      // none of the engine's: the browser reads the same source, its bars drawn only if they agree with the price.
+      // The engine refused with nothing to give, or gave bars hours old: the browser reads the same source, its bars
+      // drawn only if they agree with the price and are newer than the engine's.
       let direct = false;
-      if (answer.status === 'unavailable' && answer.http !== undefined && shown !== 'engine' && priceRef.current !== undefined) {
-        const own = await readCandlesDirect(mint, timeframe, answer.pool ?? null, priceRef.current, { ...deps, fetch: directFetch });
+      if (priceRef.current !== undefined && readsDirect(answer, shown, held, deps.now())) {
+        const named = answer.status === 'unavailable' ? (answer.pool ?? null) : answer.status === 'ready' ? (answer.ref ?? null) : null;
+        const own = await readCandlesDirect(mint, timeframe, named, priceRef.current, { ...deps, fetch: directFetch });
         if (!live) return;
-        if (own.status === 'ready') {
-          answer = own;
-          direct = true;
-        }
+        const chosen = newerRead(answer, own);
+        direct = chosen === own;
+        answer = chosen;
       }
-      if (answer.status === 'ready') shown = direct ? 'direct' : 'engine';
+      if (answer.status === 'ready') {
+        shown = direct ? 'direct' : 'engine';
+        held = answer;
+      }
       misses = answer.status === 'unavailable' ? misses + 1 : 0;
       setData((before) => settle(before.mint === mint && before.timeframe === timeframe ? before : loading(mint, timeframe, null), answer));
       wait(nextReadMs(answer, misses, timeframe));
@@ -118,6 +125,39 @@ export function useMarketMarks(mint: string): readonly LayerMark[] {
     };
   }, [mint]);
   return marks && marks.mint === mint ? marks.marks : NO_MARKS;
+}
+
+/** No engine marks: one array, so the coin chart's marks are not rebuilt on every render while there are none. */
+const NO_TOKEN_MARKS: readonly TokenMark[] = [];
+
+/**
+ * The engine's own marks of a coin as it found them — the creator's trades, the move to a DEX, the largest trades — read
+ * while `on` and again as the engine renews them; none until read, and the last good ones while a read fails.
+ */
+export function useTokenMarks(mint: string, on = true): readonly TokenMark[] {
+  const [marks, setMarks] = useState<Readonly<{ mint: string; marks: readonly TokenMark[] }> | null>(null);
+  useEffect(() => {
+    if (!on) return;
+    let live = true;
+    const read = async () => {
+      try {
+        const answer = await fetch(`/api/spot/token?${new URLSearchParams({ mint, part: 'overview' })}`, { headers: { accept: 'application/json' } });
+        const got = readTokenMarks(answer.status, await answer.json().catch(() => null));
+        if (live && got) setMarks({ mint, marks: got });
+      } catch {
+        // The next read tries again; the marks on screen stay.
+      }
+    };
+    void read();
+    const timer = setInterval(() => {
+      if (visible()) void read();
+    }, MARKS_MS);
+    return () => {
+      live = false;
+      clearInterval(timer);
+    };
+  }, [mint, on]);
+  return marks && marks.mint === mint ? marks.marks : NO_TOKEN_MARKS;
 }
 
 /**

@@ -259,6 +259,32 @@ test("with the creator's ladder the supply's step is one transaction more, and t
   assert.deepEqual(other.signed, [], "the wallet was never opened");
 });
 
+test("with the reward for the pool's liquidity the supply's step is one transaction more, the city's read lets it through, and the review's terms are held", async () => {
+  const s = stand({ choice: { ladder: true, reward: { shareBps: 200, days: 30 } } });
+  const done = await s.run();
+  assert.equal(done.step, "pooled", JSON.stringify(done));
+  assert.deepEqual(s.signed, [1, 1, 5], "the supply: two positions, the hand-over, the ladder and the reward");
+  const view = await s.pool.view(done.pooled.mint);
+  assert.deepEqual({ share: view.data.reward.shareBps, days: view.data.reward.days, state: view.data.reward.state }, { share: 200, days: 30, state: "WAITING" });
+  assert.equal(view.data.reward.endsAt - view.data.reward.opensAt, 30 * 86_400);
+  /* A reward told on other terms than the review showed is not signed for. */
+  const odd = stand({ choice: { reward: { shareBps: 200, days: 30 } } });
+  const shifted = { ...odd.pool, build: async (body) => odd.pool.build(body).then((answer) => (answer.ok && answer.data.reward ? { ok: true, data: { ...answer.data, reward: { ...answer.data.reward, shareBps: 1_000 } } } : answer)) };
+  assert.equal((await odd.run({ pool: shifted })).failure?.code, "CITY_BUILD_UNEXPECTED");
+  assert.deepEqual(odd.signed, []);
+  /* An engine that builds a reward the review did not show is not signed for. */
+  const other = stand();
+  const pool = { ...other.pool, build: async (body) => other.pool.build({ ...body, ...(body.mint ? {} : { reward: { shareBps: 100, days: 7 } }) }) };
+  assert.equal((await other.run({ pool })).failure?.code, "CITY_BUILD_UNEXPECTED");
+  assert.deepEqual(other.signed, [], "the wallet was never opened");
+  /* Five transactions in the supply's step only where the launch pays a reward. */
+  const five = [wire([poolIx(nft)]), wire([poolIx(nft)]), wire([poolIx()]), wire([poolIx()]), wire([poolIx()])];
+  assert.equal(checkPoolStep({ ...args("SUPPLY", five), reward: true }).ok, true);
+  assert.equal(checkPoolStep(args("SUPPLY", five)).ok, false);
+  assert.equal(checkPoolStep({ ...args("SUPPLY", [...five, wire([poolIx()])]), reward: true }).ok, false, "never six");
+  assert.equal(checkPoolStep({ ...args("POOL", [wire([poolIx()]), wire([poolIx()]), wire([poolIx()]), wire([poolIx()]), wire([poolIx()])]), reward: true }).ok, false, "never in the pool's step");
+});
+
 test("shut doors launch nothing: the city's switch, mainnet's constant, the launch district itself", async () => {
   for (const extra of [{ poolSwitch: false }, { network: "solana:mainnet", poolWord: false }, { switchOpen: false }]) {
     const s = stand();

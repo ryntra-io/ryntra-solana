@@ -1,9 +1,12 @@
 import { z } from "zod";
 
 import { AGENT_SYMBOL_ENV, agentResult, joinBook } from "@/lib/mandate/agent-service.server";
-import { mandateFailure, mandateHeaders, openMandate, readMandateBody } from "@/lib/mandate/http.server";
+import { mandateFailure, mandateHeaders, openMandate, ownerProof, readMandateBody } from "@/lib/mandate/http.server";
+import { exitFrom } from "@/lib/mandate/exit";
+import { AGENT_EXIT_ENV, agentExitOn } from "@/lib/mandate/exit.server";
 import { planFrom } from "@/lib/mandate/plans";
 import { STRATEGIES } from "@/lib/mandate/strategy";
+import { botMoneyOn, botOfPlan } from "@/lib/bots/money/gates";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -15,12 +18,19 @@ export const maxDuration = 30;
  * — what the agent did for her: its state, its trades, what it spent and bought, and what that is worth now; with
  * `&since=<ms>` also what it did since then, and always its last day.
  * Public data only; this route holds no key and signs nothing.
+ *
+ * A budget with the agent's own sale, or a bot's, joins only from her own wallet — the proof of a change
+ * (`ownerProof`: the phone's bearer, or the browser's proof the wallet signed, from this site); the first to join a
+ * budget sets the rules the agent sells by, so no one else may. Regular buys join as before.
  */
 
 const Base58 = z.string().regex(/^[1-9A-HJ-NP-Za-km-z]{32,44}$/);
 const Digits = z.string().regex(/^\d{1,20}$/);
-const RecordSchema = z.object({ owner: Base58, settings: Base58, vault: Base58, policy: Base58, budget: Base58, perTrade: Digits, perDay: Digits, expiresAt: Digits }).strict();
-const BodySchema = z.object({ record: RecordSchema, strategy: z.enum(STRATEGIES), plan: z.string().max(80).nullish(), said: z.string().max(140).nullish(), coin: Base58.nullish() }).strict();
+/* A budget signed with the sale's policy carries it, and the coin the agent keeps; `exit` — her rules' text. */
+const RecordSchema = z
+  .object({ owner: Base58, settings: Base58, vault: Base58, policy: Base58, budget: Base58, perTrade: Digits, perDay: Digits, expiresAt: Digits, salePolicy: Base58.optional(), held: Base58.optional(), heldProgram: Base58.optional(), heldDaily: Digits.optional() })
+  .strict();
+const BodySchema = z.object({ record: RecordSchema, strategy: z.enum(STRATEGIES), plan: z.string().max(80).nullish(), said: z.string().max(140).nullish(), coin: Base58.nullish(), exit: z.string().max(40).nullish() }).strict();
 
 export async function POST(request: Request) {
   const gate = openMandate(request, "agent");
@@ -30,7 +40,20 @@ export async function POST(request: Request) {
   /* The strategy's numbers, as the plan's text; none — the strategy's own defaults are not guessed, steady is. */
   const plan = body.plan ? planFrom(body.plan) : null;
   if ((body.plan && !plan) || (plan && plan.id !== body.strategy) || (!plan && body.strategy !== "steady")) return mandateFailure(422, "REFUSED", "Not a strategy the agent runs.", gate.rate);
-  const joined = await joinBook({ record: body.record, strategy: body.strategy, plan, said: body.said ?? null, coin: body.coin ?? null }, gate);
+  const exit = body.exit ? exitFrom(body.exit) : null;
+  if (body.exit && !exit) return mandateFailure(422, "REFUSED", "Not rules the agent leaves a trade by.", gate.rate);
+  /* The agent's own sale and a bot's rules are hers to set — only her proven wallet joins such a budget. */
+  const { salePolicy, held, heldProgram, heldDaily } = body.record;
+  if (salePolicy !== undefined || held !== undefined || heldProgram !== undefined || heldDaily !== undefined || body.exit || botOfPlan(plan) !== null) {
+    const refused = await ownerProof(request, body.record.owner, gate.rate);
+    if (refused) return refused;
+  }
+  /* A budget with the agent's own sale joins only while the deployment lets it sell. */
+  /* The grid that sells and signals join only while the deployment opens their money (`RYNTRA_BOTS_*_MONEY`). */
+  const joined = await joinBook({ record: body.record, strategy: body.strategy, plan, said: body.said ?? null, coin: body.coin ?? null, exit }, gate, {
+    exitOn: agentExitOn(process.env[AGENT_EXIT_ENV]),
+    botMoneyOn: (bot) => botMoneyOn(bot, process.env),
+  });
   if (!joined.ok) return mandateFailure(joined.code === "UNAVAILABLE" ? 503 : 422, joined.code, joined.reason, gate.rate);
   return Response.json({ network: gate.network, status: joined.entry.status, strategy: joined.entry.strategy, plan: joined.entry.plan ?? "steady" }, { headers: mandateHeaders(gate.rate) });
 }

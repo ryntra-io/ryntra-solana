@@ -12,16 +12,13 @@ import { contactMailto } from '@/lib/site/contacts';
 import { DocumentShell } from '../pages/DocumentPage';
 import { More } from '../pages/parts';
 import { PAGES } from '../pages/words';
-import { artOf, Demo, Status } from './bits';
+import { Demo, Status } from './bits';
 import { Calculator } from './Calculator';
 import { CopyLink } from './CopyLink';
 import { ArrowGlyph } from './glyphs';
 import p from './page.module.css';
 import s from './partners.module.css';
 import { PARTNERS } from './words';
-
-/** The still at the head: the home quarter's lit windows, filmed from our own live city. */
-const ART = artOf('district-home');
 
 /**
  * `/partners`: how partners earn, as one short page of the site — not a deck. On top the one thing: the
@@ -58,9 +55,9 @@ function PartnersBody() {
 
   return (
     <div className={p.page} data-partners-page="">
-      <header className={p.hero}>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img className={p.art} src={ART.src} srcSet={ART.srcSet} sizes="100vw" alt="" decoding="async" fetchPriority="high" />
+      {/* No still at the head since 21.11: the city's district it showed is not the product, and a frame of a screen
+          behind the title reads as buttons that do nothing. */}
+      <header className={p.hero} data-plain="">
         <div className={p.heroBody} data-words="">
           <span className={`${s.display} ${s.kicker}`}>{w.kicker}</span>
           <h1 className={`${s.display} ${p.title}`}>{w.pageTitle}</h1>

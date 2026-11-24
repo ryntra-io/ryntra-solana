@@ -5,7 +5,7 @@ import { digits, useWords } from '@/city/lib/i18n/dict';
 import { useLang } from '@/city/lib/i18n/lang';
 import { Action, Figure, Icon, Kick } from '@/terminal/ui';
 import { Pair } from './bits';
-import { TYPE_NAME, poolPage } from './Chooser';
+import { TYPE_NAME, addsOnPage, poolPage } from './Chooser';
 import { ageText, dayPctText, type ChooseRow } from './choose';
 import { feeText, shortUsd } from './rows';
 import { EARN } from './words';
@@ -14,7 +14,8 @@ import e from './earn.module.css';
 /**
  * A pool shown to compare: its own figures from the venue, and its one action — the pool's own desk here,
  * its chart, trades and swap («Adding — coming» was a line with nothing to do); its page at the venue a quiet
- * link under it. The pools that take one approval from here are a tap away in the same table.
+ * link under it. The pools that take one approval from here are a tap away in the same table. A stock's DLMM pool takes
+ * its two coins on its page's Position tab: its action says so and opens that tab (G6, fault 40).
  */
 export function ViewTicket({ row, nowMs }: { row: ChooseRow; nowMs: number }) {
   const w = useWords(EARN);
@@ -31,9 +32,11 @@ export function ViewTicket({ row, nowMs }: { row: ChooseRow; nowMs: number }) {
           <span className={e.cap}>{caption}</span>
         </span>
       </div>
+      {/* The table's own measure, said the same way: a fact of the day gone, in the text's own colour — never a green
+          promise. */}
       <div className={e.viewDay}>
         <Kick>{w.viewDayPct}</Kick>
-        <Figure value={dayPctText(row.feeTvlPct, lang)} size="l" tone={row.feeTvlPct !== null && row.feeTvlPct > 0 ? 'up' : undefined} />
+        <Figure value={dayPctText(row.feeTvlPct, lang)} size="l" />
       </div>
       <dl className={e.kv}>
         <dt>{w.inPool}</dt>
@@ -45,9 +48,15 @@ export function ViewTicket({ row, nowMs }: { row: ChooseRow; nowMs: number }) {
         <dt>{w.cAge}</dt>
         <dd>{ageText(row.createdAt, lang, nowMs)}</dd>
       </dl>
-      <Action onClick={() => router.push(poolPage(row))} data-earn-act="open-pool">
-        {w.openPool}
-      </Action>
+      {addsOnPage(row) ? (
+        <Action onClick={() => router.push(`${poolPage(row)}?tab=position`)} data-earn-act="add-on-pool">
+          {w.addOnPool}
+        </Action>
+      ) : (
+        <Action onClick={() => router.push(poolPage(row))} data-earn-act="open-pool">
+          {w.openPool}
+        </Action>
+      )}
       {row.page ? (
         <a className={e.venue} href={row.page} target="_blank" rel="noopener noreferrer">
           {w.openVenue}

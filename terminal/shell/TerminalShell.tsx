@@ -7,12 +7,15 @@ import { startCityAccount } from '@/city/lib/quarter/account-live';
 import { closePanel, useWhere } from './frame';
 import { startFunnel } from './funnel';
 import { Header } from './Header';
+import { Keys } from './Keys';
+import { LinkSay } from './LinkSay';
 import { startMarket } from './market';
 import { PhoneBar } from './PhoneBar';
 import { Rail } from './Rail';
 import { forgetMenu, hydrateMenu, MENU_BOOT_SCRIPT } from './menu-fold';
 import { forgetRail, hydrateRail, RAIL_BOOT_SCRIPT } from './rail-fold';
 import { usePlaceOnArrival } from './place';
+import { useTabTitle } from './useTabTitle';
 import { SectionsSheet } from './SectionsSheet';
 import { MarketSeed } from './useMarket';
 import s from './shell.module.css';
@@ -42,6 +45,8 @@ export function TerminalShell({ initial, children }: { initial: CitySnapshot; ch
   }, []);
   // A place on a screen the menu leads to (`#history`): brought into view once the screen has drawn it.
   usePlaceOnArrival();
+  // The browser's tab names the page in the person's language.
+  useTabTitle();
   useEffect(() => startCityAccount(), []);
   useEffect(() => startMarket(initial), [initial]);
   // The first action's funnel: the same moments the city counted, now from the terminal.
@@ -61,6 +66,8 @@ export function TerminalShell({ initial, children }: { initial: CitySnapshot; ch
         </div>
         <PhoneBar />
         <SectionsSheet />
+        <Keys />
+        <LinkSay />
       </div>
     </MarketSeed.Provider>
   );

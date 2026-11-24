@@ -1,6 +1,7 @@
 import { randomBytes } from "node:crypto";
 
 import { z } from "zod";
+import { isoDateTime } from "../zod/iso-datetime.ts";
 
 import { normalizeReferralCode, REFERRAL_CODE_ALPHABET as ALPHABET, REFERRAL_CODE_LENGTH as CODE_LENGTH, REFERRAL_CODE_PATTERN } from "./referral-code.ts";
 import { REFERRAL_SUB_PATTERN } from "./referral-sub.ts";
@@ -59,7 +60,7 @@ export const RewardAccountSchema = z
     code: z.string().regex(REFERRAL_CODE_PATTERN),
     /** Who invited them. Null when nobody did, and it never becomes null again. */
     referrer: z.string().min(32).max(64).nullable(),
-    referredAt: z.string().datetime({ offset: true }).nullable(),
+    referredAt: isoDateTime({ offset: true }).nullable(),
     /**
      * The inviter before the one change a wallet may make, and since when they
      * were it. Kept so an operation that settled before the change — recorded
@@ -67,10 +68,10 @@ export const RewardAccountSchema = z
      * (`referrerAt`). Null until a change happens.
      */
     previousReferrer: z.string().min(32).max(64).nullable().default(null),
-    previousReferredAt: z.string().datetime({ offset: true }).nullable().default(null),
+    previousReferredAt: isoDateTime({ offset: true }).nullable().default(null),
     /** How many times the inviter was changed: 0 or 1, never more. */
     referrerChanges: z.number().int().min(0).max(1).default(0),
-    createdAt: z.string().datetime({ offset: true }),
+    createdAt: isoDateTime({ offset: true }),
     /**
      * True once this wallet has produced or received any eligible reward.
      *
@@ -91,7 +92,7 @@ export const RewardAccountSchema = z
      * somebody asks, never guessed as "now", because "now" would hand a
      * months-old earner a fresh window.
      */
-    earningSince: z.string().datetime({ offset: true }).nullable().default(null),
+    earningSince: isoDateTime({ offset: true }).nullable().default(null),
     /**
      * How many wallets have confirmed this one as their inviter, and how many
      * sit one level below those.
@@ -185,7 +186,7 @@ export const ReferralCodeRecordSchema = z
   .object({
     code: z.string().regex(REFERRAL_CODE_PATTERN),
     wallet: z.string().min(32).max(64),
-    createdAt: z.string().datetime({ offset: true }),
+    createdAt: isoDateTime({ offset: true }),
   })
   .strict();
 

@@ -4,6 +4,9 @@ import { hireFit, readHire, type CrewGates } from '../../city/lib/crew/read.ts';
 import { readDollarAsk } from '../../city/lib/earn/dollar-read.ts';
 import { readPilotAsk } from '../../city/lib/pilot/read.ts';
 import { readLadderAsk } from '../../city/lib/trade/pro-read.ts';
+import type { Coin } from '../../city/lib/command/parse.ts';
+import { SOL_MINT, USDC_MINT, type AgentPlan } from '../../lib/sentence/plan.ts';
+import { readSchedule, type ScheduleCadence } from '../../lib/sentence/schedule.ts';
 
 /**
  * The sentences that are a job for an agent, read the city's own way and in the city's own order: one plan for a whole
@@ -49,6 +52,10 @@ export function agentCommand(input: string, book: Book, context: Context, gates:
   if (ask?.kind === 'trade') return fit({ kind: 'autopilot', ask }, gates);
   // A launch the agent prepares is the Launch shelf's sentence: the plain list reads it.
   if (ask) return null;
+  // «Buy TSLAx every week for $50»: a regular purchase — Recurring buys with its rhythm, sum and coin, never a
+  // one-off buy of the coin. The bot stands where the mandate's engine does.
+  const schedule = gates.agentTrade === true ? readSchedule(input, book.coins) : null;
+  if (schedule) return recurringOf(schedule.said, schedule.coin, schedule.amount?.unit === 'usd' ? schedule.amount.text : null, schedule.cadence);
   const job = readHire(input);
   return job ? { kind: 'hire', ask: hireFit(job, crew) } : null;
 }
@@ -60,3 +67,23 @@ export function agentRow(input: string, book: Book, context: Context, gates: Gat
 }
 
 
+
+/**
+ * A regular purchase as the line carries it to Recurring buys: the instruction's own shape — the sentence, the
+ * coin, the dollars and the rhythm, as said. The bot's page reads the sentence again for a sum in SOL (`readSchedule`)
+ * and fills its card; nothing here signs.
+ */
+function recurringOf(said: string, coin: Coin | null, usd: string | null, cadence: ScheduleCadence | null): Command {
+  return { kind: 'instruct', instruction: { kind: 'recurring', said, coin, usd, cadence, weekday: null, time: null, options: {} } };
+}
+
+/**
+ * The model's plan of a regular purchase (`dca`) as Recurring buys, where the bot stands — its numbers are the
+ * person's own, checked by `readDraft`. A rhythm of buying SOL or USDC themselves is no bot's: null, and the line reads
+ * the sentence as before.
+ */
+export function planRecurring(plan: AgentPlan<Coin>, gates: Gates): Command | null {
+  if (plan.action !== 'dca' || gates.agentTrade !== true) return null;
+  if (plan.coin && (plan.coin.mint === SOL_MINT || plan.coin.mint === USDC_MINT)) return null;
+  return recurringOf(plan.said, plan.coin, plan.usd, plan.cadence);
+}

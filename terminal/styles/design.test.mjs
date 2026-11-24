@@ -161,7 +161,7 @@ const COLOUR_BY_HAND = {
   "terminal/portfolio/all.module.css": 4,
   "terminal/portfolio/portfolio.module.css": 5,
   "terminal/shell/kit/kit.module.css": 1,
-  "terminal/shell/shell.module.css": 63,
+  "terminal/shell/shell.module.css": 62,
   "terminal/shell/split.module.css": 10,
   "terminal/swap/swap.module.css": 10,
   "terminal/ui/ui.module.css": 41,

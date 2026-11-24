@@ -26,7 +26,7 @@ import { signatureStates, type LiquidityRelay, type RelayState } from "../liquid
 import { PRO_CARE_STOP_PCTS, isProCareStopPct, stopBelowOf, watchOf } from "./care.ts";
 import { endProCare, holdProCare, proCareGate, recordProCare, type ProCareDeps, type ProCareHold } from "./care.server.ts";
 import { SOL_MINT, coinKindOf } from "./coins.ts";
-import { EARN_PRO_ACTIONS, earnProGate, earnProShapeOpen, earnProStopped, heldByStop, type EarnProAction, type EarnProNetwork } from "./gate.ts";
+import { EARN_PRO_ACTIONS, earnProGate, earnProShapeOpen, earnProStopped, earnProWaveOpen, heldByStop, type EarnProAction, type EarnProNetwork } from "./gate.ts";
 import { lamportsOf, priceOfTick, readPier, type ProPier } from "./piers.server.ts";
 import type { StockSeats } from "./stocks.ts";
 import { MAX_TICKET_MESSAGES, checkEarnProSigned, digestOf, issueEarnProTicket, openCosigners, readEarnProTicket, sealCosigners, ticketKeyHere, type Cosigner } from "./ticket.ts";
@@ -189,6 +189,7 @@ export async function reviewEarnPro(input: EarnProReviewInput, deps: EarnProDeps
   if (!gate.open) return fail(404, "EARN_PRO_CLOSED", "Earning on DLMM Pro is not served here.");
   if (heldByStop(input.action) && earnProStopped(env)) return fail(403, "EARN_PRO_STOPPED", "New money is stopped for now. Taking out stays open.");
   if (input.action === "open" && input.goal === CUSTOM_GOAL && !earnProShapeOpen(env)) return fail(404, "EARN_PRO_CLOSED", "A shape of one's own is not served here yet.");
+  if (input.action === "open" && input.goal === "wave" && !earnProWaveOpen(env)) return fail(404, "EARN_PRO_CLOSED", "Meteora's Wave is not served here yet.");
   if (!ticketKeyHere(env)) return fail(503, "UNAVAILABLE", "This server cannot seal a Review; nothing was built.");
   const connection = deps.connection ?? earnProConnection(gate.network);
   const venue = deps.venue ?? earnProVenue(gate.network, connection, env);

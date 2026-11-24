@@ -2,6 +2,7 @@ import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
 
 import { isAddress } from "@solana/kit";
 import { z } from "zod";
+import { isoDateTime } from "../zod/iso-datetime.ts";
 
 import type { GuardStore } from "../guard/store.ts";
 import { fetchClientMetadataDocument, isCimdClientId, redirectUriShapeOk, type CimdDeps } from "./cimd.ts";
@@ -71,7 +72,7 @@ export const REFRESH_TOKEN_TTL_SECONDS = 30 * 24 * 60 * 60;
 export const AUTHORIZATION_CODE_TTL_SECONDS = 60;
 export const CONSENT_TTL_SECONDS = 5 * 60;
 
-const timestamp = z.string().datetime({ offset: true });
+const timestamp = isoDateTime({ offset: true });
 const WALLET = z.string().min(32).max(44).refine((value) => isAddress(value), "a Solana address");
 const CLIENT_ID = z.string().min(1).max(512);
 const SCOPES = z.array(z.enum(CONNECTOR_SCOPES)).min(1);

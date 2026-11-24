@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 
 import { z } from "zod";
+import { isoDateTime } from "../zod/iso-datetime.ts";
 
 import { canonicalJson } from "../guard/canonical-json.ts";
 import { ServiceFeeSchema } from "../swap/service-fee.ts";
@@ -83,9 +84,9 @@ const QuoteSnapshotSchema = z
     routeAffectingOptions: z.array(z.string()).max(16),
     taker: z.null(),
     transactionBase64: z.null(),
-    observedAt: z.string().datetime({ offset: true }),
-    providerExpiresAt: z.string().datetime({ offset: true }).nullable(),
-    reviewExpiresAt: z.string().datetime({ offset: true }),
+    observedAt: isoDateTime({ offset: true }),
+    providerExpiresAt: isoDateTime({ offset: true }).nullable(),
+    reviewExpiresAt: isoDateTime({ offset: true }),
     latencyMs: z.number().int().min(0),
     sourceRef: z.string().min(1),
     sourceLabel: z.string().min(1),

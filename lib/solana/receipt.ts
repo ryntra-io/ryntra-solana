@@ -27,6 +27,7 @@
 
 import { createHash, createPublicKey, verify as verifyBytes } from "node:crypto";
 import { z } from "zod";
+import { isoDateTime } from "../zod/iso-datetime.ts";
 
 import {
   SOLANA_CAIP2,
@@ -45,7 +46,7 @@ import { correctionForReceipt, type ReceiptCorrection } from "./receipt-correcti
 
 const HEX_HASH = /^0x[0-9a-f]{64}$/;
 const BASE64 = /^[A-Za-z0-9+/]+={0,2}$/;
-const timestamp = z.string().datetime({ offset: true });
+const timestamp = isoDateTime({ offset: true });
 
 /** Historical v2.0 receipt copy retained so already signed bytes still parse. */
 export const LEGACY_SOLANA_RECEIPT_LIMITATIONS = [

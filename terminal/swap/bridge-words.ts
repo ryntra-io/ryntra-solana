@@ -95,6 +95,8 @@ export const RELAY_BRIDGE = words(
     disconnect: 'Disconnect',
     chainsFailed: 'The networks could not be read',
     moreNetworks: (n: number) => `${n} networks`,
+    routes: 'Into Solana',
+    routeTo: (coin: string, network: string, to: string) => `${coin} from ${network} to ${to}`,
   },
   {
     title: 'Міст',
@@ -186,5 +188,7 @@ export const RELAY_BRIDGE = words(
     disconnect: 'Відключити',
     chainsFailed: 'Мережі не вдалося прочитати',
     moreNetworks: (n: number) => `${n} ${pl(n, 'мережа', 'мережі', 'мереж')}`,
+    routes: 'У Solana',
+    routeTo: (coin: string, network: string, to: string) => `${coin} з ${network} у ${to}`,
   },
 );

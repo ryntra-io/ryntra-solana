@@ -24,8 +24,15 @@ export function askLabel(command: Command, lang: Lang): string {
       return w.buy(sym(command.coin.symbol), n(paid(command.amount, command.pay, command.share)));
     case 'sell':
       return w.sell(sym(command.coin.symbol), n(command.amount ? `${command.amount} ${sym(command.coin.symbol)}` : command.share !== null ? `${command.share}%` : ''));
-    case 'order':
-      return command.mode === 'stop' ? w.stop(sym(command.coin.symbol)) : w.limit(sym(command.coin.symbol), command.side === 'buy');
+    case 'order': {
+      const coin = sym(command.coin.symbol);
+      // A conditional order says its per cent: «Buy ANT 5% lower».
+      if (command.off !== undefined) {
+        const pct = n(String(Math.abs(command.off) / 100));
+        return command.mode === 'stop' ? w.stopOff(coin, pct) : w.limitOff(coin, command.side === 'buy', pct);
+      }
+      return command.mode === 'stop' ? w.stop(coin) : w.limit(coin, command.side === 'buy');
+    }
     case 'ladder':
       return w.ladder(sym(command.ask.coin.symbol), command.ask.action === 'buy');
     case 'chart':
@@ -41,8 +48,14 @@ export function askLabel(command: Command, lang: Lang): string {
       return w.dollar;
     case 'launch':
       return w.launch(command.symbol ? `$${sym(command.symbol)}` : '');
-    case 'instruct':
-      return w.instruct;
+    // A regular purchase opens Recurring buys: the row says the coin and the sum with its rhythm, as said.
+    case 'instruct': {
+      const order = command.instruction;
+      if (order.kind !== 'recurring') return w.instruct;
+      const every = order.cadence === 'daily' ? w.everyDay : order.cadence === 'weekly' ? w.everyWeek : order.cadence === 'monthly' ? w.everyMonth : '';
+      const sum = order.usd ? `${n(`$${order.usd}`)}${every ? ` ${every}` : ''}` : every;
+      return w.recurring([order.coin ? sym(order.coin.symbol) : '', sum].filter(Boolean).join(' · '));
+    }
     case 'instructions':
       return w.instructions;
     // New launches bought early open the market's new coins (`targetOf`), not a budget: the row says where it leads.

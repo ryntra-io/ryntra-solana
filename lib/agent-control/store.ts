@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { isoDateTime } from "../zod/iso-datetime.ts";
 
 import { compareCanonicalStrings } from "../guard/canonical-json.ts";
 import type { GuardStore } from "../guard/store.ts";
@@ -34,7 +35,7 @@ import { AGENT_HASH_DOMAINS_V2, hashAgentPayloadV2 } from "./canonical.ts";
  *    something in flight.
  */
 
-const timestamp = z.string().datetime({ offset: true });
+const timestamp = isoDateTime({ offset: true });
 const HEX_HASH = /^0x[0-9a-f]{64}$/;
 
 /** Where a lifecycle can be, and which of those are final. */

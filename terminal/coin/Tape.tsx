@@ -5,9 +5,10 @@ import { digits, useWords } from '@/city/lib/i18n/dict';
 import { useLang } from '@/city/lib/i18n/lang';
 import type { EarnBinsVenue } from '@/lib/earn-pools/bins';
 import { useBins, type BinsState } from '@/terminal/earn/range/useBins';
-import { Tabs, sumText, usdText } from '@/terminal/ui';
+import { Info, Tabs, sumText, usdText } from '@/terminal/ui';
 import { DESK } from './desk-words';
-import { agoOf, buyShareOf, depthBook, dexName, tapePrice, type DepthRow, type TokenPool } from './tape-view';
+import { agoOf, buyShareOf, depthBook, dexName, marksOf, signsOf, tapePrice, type DepthRow, type TokenPool, type WalletLabel } from './tape-view';
+import { UNDER } from './under-words';
 import { usePools, useNow, type Tape as TapeRead } from './useCoinMarket';
 import { useCoinPool } from './useCoinPool';
 import t from './tape.module.css';
@@ -35,6 +36,12 @@ export function Tape({ mint, tape, usd, tab, onTab, head }: { mint: string; tape
             { id: 'depth', label: d.tapeDepth },
           ]}
         />
+        {/* What the signs by the wallets mean — here, where the «i» opens whole over the desk (flaw 123). */}
+        {tab === 'trades' ? (
+          <span className={t.headInfo}>
+            <MarksInfo marks={signsOf(tape.trades)} />
+          </span>
+        ) : null}
         {head}
       </div>
       {tab === 'trades' ? <Trades tape={tape} /> : <Liquidity mint={mint} usd={usd} />}
@@ -68,7 +75,10 @@ export function Trades({ tape, rows = 60 }: { tape: TapeRead; rows?: number }) {
           return (
             <li key={`${trade.signature}:${trade.side}`} className={t.row} data-side={trade.side} data-fresh={tape.fresh.has(trade.signature) || undefined}>
               <span className={t.price}>{trade.priceUsd !== null ? tapePrice(trade.priceUsd, lang) : '—'}</span>
-              <span className={t.size}>{trade.usd !== null ? sumText(trade.usd, lang) : '—'}</span>
+              <span className={t.size}>
+                <WalletMarks marks={marksOf(trade.labels, 3).filter((mark) => TAPE_MARKS.has(mark)).slice(0, 1)} />
+                {trade.usd !== null ? sumText(trade.usd, lang) : '—'}
+              </span>
               <span className={t.time}>{ago ? digits(agoText(ago, d), lang) : ''}</span>
             </li>
           );
@@ -76,6 +86,83 @@ export function Trades({ tape, rows = 60 }: { tape: TapeRead; rows?: number }) {
       </ol>
       {share !== null ? <Balance share={share} /> : null}
     </>
+  );
+}
+
+/** The marks the narrow column shows: who the wallet is, never the trade's size (the size is written beside it). */
+const TAPE_MARKS: ReadonlySet<WalletLabel> = new Set(['ryntra-agent', 'creator', 'top-holder', 'fresh']);
+
+type MarkWord = 'markCreator' | 'markAgent' | 'markTop' | 'markPool' | 'markVault' | 'markBig' | 'markFresh';
+const MARK_WORD: Readonly<Record<WalletLabel, MarkWord>> = {
+  creator: 'markCreator',
+  'ryntra-agent': 'markAgent',
+  'top-holder': 'markTop',
+  pool: 'markPool',
+  program: 'markVault',
+  big: 'markBig',
+  fresh: 'markFresh',
+};
+
+/** Each mark's sign, drawn with a stroke in its own tone. */
+const MARK_PATH: Readonly<Record<WalletLabel, string>> = {
+  creator: 'M4 17.5 5.5 8l4.5 4 2-6.5 2 6.5 4.5-4 1.5 9.5z',
+  'ryntra-agent': 'M12 3.5l1.9 5.1 5.1 1.9-5.1 1.9L12 17.5l-1.9-5.1L5 10.5l5.1-1.9z',
+  'top-holder': 'M12 3.5 20 12l-8 8.5L4 12z',
+  pool: 'M12 3.5c4 5 6 8 6 11a6 6 0 0 1-12 0c0-3 2-6 6-11z',
+  program: 'M6 11h12v9H6zM9 11V8a3 3 0 0 1 6 0v3',
+  big: 'M13 3 5.5 13.5H11L10 21l7.5-10.5H12z',
+  fresh: 'M12 21v-8.5M12 12.5c0-4.5 3-7.5 8-7.5 0 5-3 7.5-8 7.5zM12 14.5c0-3-2-5.5-6-5.5 0 3.5 2 5.5 6 5.5',
+};
+
+/**
+ * The marks beside a wallet: a small sign each, its one word as the hint and as what a reader hears. Nothing for none —
+ * a wallet without marks reads as it always did.
+ */
+export function WalletMarks({ marks }: { marks: readonly WalletLabel[] }) {
+  const u = useWords(UNDER);
+  if (!marks.length) return null;
+  return (
+    <span className={t.marks}>
+      {marks.map((mark) => (
+        <span key={mark} className={t.mark} data-mark={mark} role="img" aria-label={u[MARK_WORD[mark]]} title={u[MARK_WORD[mark]]}>
+          <svg width="12" height="12" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+            <path d={MARK_PATH[mark]} />
+          </svg>
+        </span>
+      ))}
+    </span>
+  );
+}
+
+type WhyWord = 'whyCreator' | 'whyAgent' | 'whyTop' | 'whyPool' | 'whyVault' | 'whyBig' | 'whyFresh';
+const WHY_WORD: Readonly<Record<WalletLabel, WhyWord>> = {
+  creator: 'whyCreator',
+  'ryntra-agent': 'whyAgent',
+  'top-holder': 'whyTop',
+  pool: 'whyPool',
+  program: 'whyVault',
+  big: 'whyBig',
+  fresh: 'whyFresh',
+};
+
+/**
+ * What the signs beside the wallets mean, behind one «i»: each sign on screen with its sentence (flaw 123 —
+ * «◇» and «⚡» stood by the wallets with a hint only under the pointer). Nothing when no row carries a sign.
+ */
+export function MarksInfo({ marks }: { marks: readonly WalletLabel[] }) {
+  const u = useWords(UNDER);
+  if (!marks.length) return null;
+  return (
+    <Info label={u.marksWhy}>
+      <ul className={t.why}>
+        {marks.map((mark) => (
+          <li key={mark}>
+            <WalletMarks marks={[mark]} />
+            <span>{u[WHY_WORD[mark]]}</span>
+          </li>
+        ))}
+      </ul>
+    </Info>
   );
 }
 

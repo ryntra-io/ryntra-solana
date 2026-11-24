@@ -77,7 +77,7 @@ export const OLD_CHAPTERS: Readonly<Record<string, string>> = {
   '/docs/changelog': '/roadmap',
   '/docs/current-capabilities': '/roadmap',
   '/docs/soon': '/roadmap',
-  '/docs/product-paper': '/build',
+  '/docs/product-paper': HUB,
 
   '/docs/trade/perps': HUB,
   '/docs/trade/predictions': HUB,

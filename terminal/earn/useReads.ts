@@ -14,6 +14,7 @@ import { useProPier } from '../../city/lib/earn/pro-store.ts';
 import { useSaver } from '../../city/lib/earn/saver-store.ts';
 import { useEarnData } from '../../city/lib/earn/store.ts';
 import { useWallet } from '../../city/lib/trade/wallet.ts';
+import { ledgersOf, useLedgerTurn, watchLedger } from './ledger.ts';
 import { mayAdd } from './ticket.ts';
 import { poolRows, positionRows, proPoolRows, stakeRows, totals, venueSolUsd, type PoolRow, type PositionRow, type StakeRow } from './rows.ts';
 
@@ -175,6 +176,8 @@ export function useEarnFigures(owner: string | null): EarnFigures {
   const surface = useDollar((st) => st.surface);
   const proList = useProPier((st) => st.list);
   const proBoatsFor = useProPier((st) => st.boats);
+  const ledgerTurn = useLedgerTurn();
+  useEffect(() => watchLedger(), []);
   const holdings = useWallet((st) => st.holdings);
   const holdingsRead = useWallet((st) => st.holdingsRead);
 
@@ -214,7 +217,7 @@ export function useEarnFigures(owner: string | null): EarnFigures {
     const markets = lend ? lend.markets : NO_MARKETS;
     const proBoats = owner && proAll.length && proBoatsFor?.owner === owner && proBoatsFor.value.status === 'ready' ? proBoatsFor.value.value : [];
     const entries = owner && typeof window !== 'undefined' ? entriesOf(owner) : new Map();
-    const table = positionRows({ views, entries, staked, lent, markets, proBoats, proPiers: proAll, solPriceUsd });
+    const table = positionRows({ views, entries, staked, lent, markets, proBoats, proPiers: proAll, solPriceUsd, ledgers: ledgersOf(owner) });
 
     const viewsRead = positions?.owner === owner ? positions.value.status : 'loading';
     const positionsRead: EarnFigures['positionsRead'] = !owner
@@ -228,5 +231,7 @@ export function useEarnFigures(owner: string | null): EarnFigures {
             : 'reading';
     const sums = totals(table);
     return { pools: rows, poolsRead, stakes, yieldRead, lendRate, addOpen, paused, exitOpen, lendOpen, positions: table, positionsRead, working: sums.workingUsd, earned: sums.earnedUsd, solPriceUsd, views, staked, lent, markets, proPiers, proAll, proBoats };
-  }, [piers, feed, positions, lots, states, surface, proList, proBoatsFor, holdings, holdingsRead, owner]);
+    // `ledgerTurn` — an entry of a DLMM Pro position moved: the result is read again.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [piers, feed, positions, lots, states, surface, proList, proBoatsFor, holdings, holdingsRead, owner, ledgerTurn]);
 }

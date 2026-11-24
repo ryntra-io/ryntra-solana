@@ -22,6 +22,37 @@ export function mintOf(address: string | null | undefined): string | null {
   return isMint(mint) ? mint : null;
 }
 
+/** A read of the engine as the coin's search makes it: the address and the request, the answer. */
+export type ReadFetch = (input: string, init?: RequestInit) => Promise<Response>;
+
+/**
+ * Whether an answer of the engine is an answer: a clean «yes» or «no such thing» (2xx, 404, 400) says what is at the
+ * address; the engine's limit (429) and its failures (5xx) say only that it was not read.
+ */
+export const answered = (status: number): boolean => status !== 429 && status < 500;
+
+/**
+ * A fetch for the coin's search that remembers whether every read was answered: one thrown (the network) or one the
+ * engine failed or limited marks the search «failed» — its «no coin» is then a silent source, never «not found». A read
+ * the screen itself aborted is not a failure.
+ */
+export function answeredReads(base: ReadFetch = (input, init) => fetch(input, init)): Readonly<{ fetch: ReadFetch; failed: () => boolean }> {
+  let failed = false;
+  return {
+    fetch: async (input, init) => {
+      try {
+        const response = await base(input, init);
+        if (!answered(response.status)) failed = true;
+        return response;
+      } catch (error) {
+        if (!init?.signal?.aborted) failed = true;
+        throw error;
+      }
+    },
+    failed: () => failed,
+  };
+}
+
 /** A coin as the engine names it when the market read does not hold it. */
 export type Named = Readonly<{ mint: string; symbol: string; name: string; icon: string | null; verified: boolean | null }>;
 

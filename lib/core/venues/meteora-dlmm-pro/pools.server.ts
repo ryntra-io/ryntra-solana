@@ -130,6 +130,13 @@ export type DlmmProReward = Readonly<{
    * «nothing was earned» can be said of a slot only while this is false and its emission has not started.
    */
   credited: boolean;
+  /**
+   * The seconds of the emission that found no liquidity at the price — the program's own count, as of
+   * `updatedAt` (unix seconds, the slot's last update). What those seconds emitted is the authority's to take back once
+   * the window is over; the rest went to liquidity.
+   */
+  idleSeconds: number;
+  updatedAt: number;
 }>;
 
 export type DlmmProPool = Readonly<{
@@ -717,6 +724,8 @@ export function rewardsOf(extensions: DecodedPoolExtensions, clock: DlmmProClock
         endsAt,
         running: endsAt > 0 && clock.unix >= BigInt(opensAt) && clock.unix < BigInt(endsAt),
         credited: !reward.rewardGrowthGlobal.isZero(),
+        idleSeconds: Number(reward.cumulativeSecondsWithEmptyLiquidityReward.toString()),
+        updatedAt: Number(reward.lastUpdateTime.toString()),
       },
     ];
   });

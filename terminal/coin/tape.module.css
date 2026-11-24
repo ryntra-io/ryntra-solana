@@ -24,6 +24,13 @@
   min-width: 0;
 }
 
+/* The signs' «i» clear of the column's fold button, which stands in the head's right corner. */
+.headInfo {
+  display: inline-flex;
+  flex: none;
+  margin-right: 24px;
+}
+
 .cols,
 .row,
 .depthRow,
@@ -67,6 +74,14 @@
   overscroll-behavior: contain;
   scrollbar-width: thin;
   scrollbar-color: var(--haze) transparent;
+  /* The row the buyers' bar meets fades out instead of standing cut in half: the list scrolls on. */
+  mask-image: linear-gradient(to bottom, var(--ink) calc(100% - 24px), transparent);
+}
+
+/* Scrolled to its end, the last row stands whole. */
+.list:hover,
+.list:focus-within {
+  mask-image: none;
 }
 
 .row,
@@ -311,4 +326,61 @@
   .shimmer {
     animation: none;
   }
+}
+
+/* The marks beside a wallet: a small sign each in its own quiet tone; the size's own colour stays the size's. */
+.marks {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 2px;
+  margin-right: 4px;
+  vertical-align: middle;
+}
+
+.mark {
+  display: inline-grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  color: var(--soft);
+}
+
+.mark[data-mark='creator'] {
+  color: var(--lilac);
+}
+
+.mark[data-mark='ryntra-agent'] {
+  color: var(--violet);
+}
+
+.mark[data-mark='top-holder'] {
+  color: var(--ice);
+}
+
+.mark[data-mark='pool'],
+.mark[data-mark='program'] {
+  color: var(--dim);
+}
+
+.mark[data-mark='big'] {
+  color: var(--warm);
+}
+
+/* What the signs beside the wallets mean, behind the trades' «i»: a sign and its sentence a row. */
+.why {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.why > li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--type-small);
+  color: var(--soft);
 }

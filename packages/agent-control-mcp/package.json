@@ -41,7 +41,7 @@
   "dependencies": {
     "@modelcontextprotocol/server": "2.3.1",
     "@ryntra/action-evidence-sdk": "file:../agent-control-sdk",
-    "zod": "4.4.3"
+    "zod": "4.6.7"
   },
   "devDependencies": {
     "@modelcontextprotocol/client": "2.3.1"

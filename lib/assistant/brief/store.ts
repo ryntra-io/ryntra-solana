@@ -13,6 +13,7 @@
  */
 
 import { z } from "zod";
+import { isoDateTime } from "../../zod/iso-datetime.ts";
 
 import type { GuardStore } from "../../guard/store.ts";
 import { BRIEF_LINE_KINDS } from "./lines.ts";
@@ -20,7 +21,7 @@ import { BRIEF_LINE_KINDS } from "./lines.ts";
 export const BRIEFS_COLLECTION = "assistantBriefs" as const;
 
 const Wallet = z.string().regex(/^[1-9A-HJ-NP-Za-km-z]{32,44}$/);
-const Iso = z.string().datetime({ offset: true });
+const Iso = isoDateTime({ offset: true });
 const Day = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 const Clock = z.string().regex(/^([01]\d|2[0-3]):(00|15|30|45)$/);
 const Locale = z.enum(["en", "uk"]);

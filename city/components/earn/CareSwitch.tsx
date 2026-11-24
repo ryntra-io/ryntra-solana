@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
-import { CARE_MODE, CARE_STOPS, careWords, useCare } from '@/city/lib/earn/care';
+import { CARE_MODE, CARE_STOPS, careShown, careToWithdraw, careWords, useCare } from '@/city/lib/earn/care';
 import { digits } from '@/city/lib/i18n/dict';
 import { useWallet } from '@/city/lib/trade/wallet';
 import { Wallets } from './bits';
@@ -96,7 +96,10 @@ export function CareAction({ words, pool, lamports, width, shape, blocked }: { w
   );
 }
 
-/** «Mine»: the piers the agent looks after, each with its state today and the person's own «Stop and take it back». */
+/**
+ * «Mine»: the piers the agent looks after, each with its state today and the person's own «Stop and take it back»; a pier
+ * stopped but not withdrawn stays with one «Withdraw» — the same stop, for what is left — until all is back.
+ */
 export function CaredPiers({ owner }: { owner: string | null }) {
   const w = careWords();
   const cares = useCare((st) => st.cares);
@@ -106,32 +109,37 @@ export function CaredPiers({ owner }: { owner: string | null }) {
     if (owner && careOpen()) void useCare.getState().load(owner);
   }, [owner]);
   if (!careOpen() || !owner || !cares?.length) return null;
-  const live = cares.filter((row) => row.status === 'working');
+  const live = cares.filter(careShown);
   if (!live.length) return null;
   return (
     <>
       <h4 className={s.label}>{w.mine}</h4>
       <ul className={s.rows}>
-        {live.map((row) => (
-          <li key={row.key} className={s.row}>
-            <span className={`${s.status} ${row.inRange !== false ? s.statusOn : ''}`} aria-hidden="true" />
-            <span className={s.names}>
-              <b>{w.working}</b>
-              <span>{row.inRange === false ? w.outOfRange : w.inRange}</span>
-            </span>
-            <span className={s.figures}>
-              <b className={`${s.figure} ${row.day.claimedInY + row.day.reinvestedInY > 0 ? s.gain : ''} ${s.rowFigure}`}>
-                +{digits((row.day.claimedInY + row.day.reinvestedInY).toLocaleString('en-US', { maximumFractionDigits: 6 }))}
-                <small> SOL</small>
-              </b>
-              {connection ? (
-                <button type="button" className={c.take} onClick={() => void useCare.getState().takeBack(connection, row.key)}>
-                  {w.stopAction}
-                </button>
-              ) : null}
-            </span>
-          </li>
-        ))}
+        {live.map((row) => {
+          const left = careToWithdraw(row);
+          return (
+            <li key={row.key} className={s.row} data-care-left={left ? '' : undefined}>
+              <span className={`${s.status} ${!left && row.inRange !== false ? s.statusOn : ''}`} aria-hidden="true" />
+              <span className={s.names}>
+                <b>{left ? w.notWithdrawn : w.working}</b>
+                {left ? null : <span>{row.inRange === false ? w.outOfRange : w.inRange}</span>}
+              </span>
+              <span className={s.figures}>
+                {left ? null : (
+                  <b className={`${s.figure} ${row.day.claimedInY + row.day.reinvestedInY > 0 ? s.gain : ''} ${s.rowFigure}`}>
+                    +{digits((row.day.claimedInY + row.day.reinvestedInY).toLocaleString('en-US', { maximumFractionDigits: 6 }))}
+                    <small> SOL</small>
+                  </b>
+                )}
+                {connection ? (
+                  <button type="button" className={c.take} onClick={() => void useCare.getState().takeBack(connection, row.key)}>
+                    {left ? w.withdraw : w.stopAction}
+                  </button>
+                ) : null}
+              </span>
+            </li>
+          );
+        })}
       </ul>
       {notice ? <p className={`${s.note} ${s.noteWarn}`}>{notice === 'cancelled' ? w.cancelled : w.failed}</p> : null}
     </>

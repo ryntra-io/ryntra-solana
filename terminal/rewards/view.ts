@@ -170,10 +170,10 @@ export function countShown(value: number, lang: Lang): string {
   return digits(Math.round(value).toLocaleString('en-US'), lang);
 }
 
-/** A share in per cent the language's way: `15%`, `15 %`, `0,5 %`. */
+/** A share in per cent the language's way, straight after its number as the kit writes it (`terminal/ui/figures.ts`): `15%`, `0,5%`. */
 export function shareShown(value: number, lang: Lang): string {
   const text = String(Number(value.toFixed(2)));
-  return lang === 'uk' ? `${text.replace('.', ',')} %` : `${text}%`;
+  return `${lang === 'uk' ? text.replace('.', ',') : text}%`;
 }
 
 /** The link as the screen shows it: no scheme, `ryntra.io/r/K7Q2…`. The whole link is what is copied. */

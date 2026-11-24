@@ -2,6 +2,7 @@ import { consumeSolanaReadRequest } from "@/lib/agent-control/http";
 import { publicCacheHeaders, rateLimitHeaders, type RateLimitDecision } from "@/lib/http-control";
 import { retryAfterHeader } from "@/lib/spot/shared-reads";
 import { readTokenHolders, readTokenOverview, readTokenPools, readTokenRisk, readTokenTrades } from "@/lib/spot/token-page.server";
+import { readTokenTraders } from "@/lib/spot/token-traders.server";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -15,14 +16,16 @@ export const maxDuration = 30;
  * - `trades` — who bought and who sold, how much, and the capitalisation at the trade;
  * - `holders` — the largest holders, their share and how their holding moved;
  * - `risk` — the facts behind «Ризик», each with its source;
- * - `pools` — where the token trades, deepest first.
+ * - `pools` — where the token trades, deepest first;
+ * - `traders` — each wallet of the trades read — bought, sold, average prices, result by the honest
+ *   standard — with the span it is counted over (`basis`).
  *
  * Each answer names its time and whether it is a held copy; a part that could
  * not be read says why with its code, never as an empty list.
  */
 
 const BASE58 = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
-const PARTS = ["overview", "trades", "holders", "risk", "pools"] as const;
+const PARTS = ["overview", "trades", "holders", "risk", "pools", "traders"] as const;
 type Part = (typeof PARTS)[number];
 
 const CACHE: Readonly<Record<Part, readonly [number, number]>> = {
@@ -32,6 +35,7 @@ const CACHE: Readonly<Record<Part, readonly [number, number]>> = {
   holders: [60, 180],
   risk: [60, 180],
   pools: [120, 300],
+  traders: [15, 45],
 };
 
 /* A refused trades read names the pools it would read — their addresses only — so the page can read them from
@@ -53,6 +57,7 @@ export async function GET(request: Request) {
     : part === "trades" ? await readTokenTrades(mint)
     : part === "holders" ? await readTokenHolders(mint)
     : part === "risk" ? await readTokenRisk(mint)
+    : part === "traders" ? await readTokenTraders(mint)
     : await readTokenPools(mint);
   if (!read.ok) {
     /* «Not listed», «no pool» and «not read for this token» are answers about the token, not failures of the page. */

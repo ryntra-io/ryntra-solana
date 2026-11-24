@@ -34,3 +34,20 @@ export function dlmmProLaunchOpenFor(network: ClusterOf, ownerWord: boolean = DL
   if (clusterOf(network) === "devnet") return true;
   return ownerWord === true;
 }
+
+/**
+ * The reward for a launch's pool liquidity — a part of the creator's supply paid to the liquidity at the
+ * price. Closed until the rehearsal of the lead session on a mainnet fork or devnet: a deployment opens it with
+ * `RYNTRA_POOL_LAUNCH_REWARDS=open` (the terminal's step shows with `NEXT_PUBLIC_RYNTRA_POOL_LAUNCH_REWARDS=open`), and
+ * on mainnet it stays closed besides until this constant is true. A launch begun with a reward is finished with it,
+ * whatever the switch says later: its terms are its record's.
+ */
+export const DLMM_PRO_LAUNCH_REWARD_MAINNET = false;
+export const DLMM_PRO_LAUNCH_REWARD_ENV = "RYNTRA_POOL_LAUNCH_REWARDS";
+
+/** Whether a new launch may ask for the reward here: the deployment's switch, and on mainnet the constant too. */
+export function dlmmProLaunchRewardOpenFor(network: ClusterOf, env: Readonly<Record<string, string | undefined>> | null | undefined, mainnetWord: boolean = DLMM_PRO_LAUNCH_REWARD_MAINNET): boolean {
+  if (env?.[DLMM_PRO_LAUNCH_REWARD_ENV] !== "open") return false;
+  if (clusterOf(network) === "devnet") return true;
+  return mainnetWord === true;
+}

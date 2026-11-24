@@ -5,7 +5,7 @@ import test from "node:test";
 import { fileURLToPath } from "node:url";
 
 /* One page for every section.
-   Two kinds of page and nothing else — an action page, one container in the middle of the working area, and a desk,
+   Two kinds of page and nothing else — an action page, one container on the working area's left line, and a desk,
    the whole working width — built from the kit's `Page`, `PageHead` and `ActionBody` (terminal/ui/Page.tsx). This
    file holds it:
 
@@ -35,6 +35,8 @@ const SCREENS = {
   "terminal/launch/LaunchScreen.tsx": "form",
   "terminal/earn/EarnScreen.tsx": "list",
   "terminal/agents/AgentsScreen.tsx": "cabinet",
+  "terminal/agents/scout/ScoutScreen.tsx": "cabinet",
+  "terminal/agents/TraderScreen.tsx": "chart",
   "terminal/bots/BotsScreen.tsx": "chart",
   "terminal/bots/GridScreen.tsx": "chart",
   "terminal/portfolio/PortfolioScreen.tsx": "cabinet",
@@ -42,10 +44,15 @@ const SCREENS = {
   "terminal/rewards/RewardsScreen.tsx": "cabinet",
   "terminal/portfolio/private/ClaimScreen.tsx": "form",
   "terminal/portfolio/private/WalletCheckScreen.tsx": "form",
+  "terminal/money/private/PayScreen.tsx": "form",
   "terminal/market/MarketScreen.tsx": "list",
   "terminal/coin/CoinScreen.tsx": "chart",
   "terminal/pool/ProScreen.tsx": "list",
   "terminal/pool/PoolScreen.tsx": "chart",
+  "terminal/watch/WatchScreen.tsx": "cabinet",
+  "terminal/watch/WalletScreen.tsx": "cabinet",
+  "terminal/agents/drive/PulseScreen.tsx": "form",
+  "terminal/agents/drive/XScreen.tsx": "cabinet",
 };
 
 /* The screens that have not moved onto the template yet. The list only gets shorter: a screen on it that mounts `Page`
@@ -115,9 +122,23 @@ test("a section whose tabs mix a desk and action pages holds its head on the des
   assert.deepEqual(wrong, []);
   const kit = read("terminal/ui/ui.module.css").replace(/\/\*[\s\S]*?\*\//g, "");
   assert.match(kit, /\.page\[data-page='action'\]\[data-head='desk'\] \{\s*max-width: none;\s*margin-inline: 0;\s*\}/, "the page runs the working width as a desk");
-  assert.match(kit, /\.page\[data-head='desk'\] > :not\(\.pageHead\) \{\s*width: 100%;\s*max-width: var\(--page\);\s*margin-inline: 0;\s*\}/, "what is under the head keeps the action's width, on the head's own line");
+  assert.match(kit, /\.page\[data-head='desk'\] > :not\(\.pageHead\) \{\s*width: 100%;\s*max-width: none;\s*margin-inline: 0;\s*\}/, "what is under the head runs the whole width too, on the head's own line (21.11)");
   assert.doesNotMatch(kit, /\.page\[data-head='desk'\][^{]*\{[^}]*margin-inline: auto/, "never in the middle under a head at the left: one axis for the head and the form");
   assert.match(read("terminal/ui/Page.tsx"), /data-head=\{kind === 'action' \? head : undefined\}/);
+});
+
+/* One axis from the menu: an action page stands on the working area's left line on every width, the narrow desk's too;
+   it stays as narrow as it is. Nothing of a page — its own box or what is under its head — is set in the middle. */
+test("an action page stands on the working area's left line, the desk's — never in the middle", () => {
+  const kit = read("terminal/ui/ui.module.css").replace(/\/\*[\s\S]*?\*\//g, "");
+  /* «on a big screen it has to fit the big screen, as it opens on a laptop» — never a corner. */
+  assert.match(kit, /\.page\[data-page='action'\] \{\s*max-width: none;\s*margin-inline: 0;\s*\}/, "the action page on the left line, across the whole working width");
+  const centred = [];
+  for (const [, selector, body] of kit.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+    if (!/\.(page|pageHead|actionBody)\b/.test(selector)) continue;
+    if (/margin(-inline|-left|-right)?\s*:[^;]*\bauto\b|justify-self:\s*center/.test(body)) centred.push(selector.trim());
+  }
+  assert.deepEqual(centred, [], "a page, its head or its body set in the middle");
 });
 
 /** The files a screen draws: its own, and the terminal's files it imports — by `@/terminal/…`, `./` or `../` — as deep as they go. */
@@ -187,7 +208,10 @@ test("the page's measures are the kit's alone, and they add up", () => {
   const kit = read("terminal/ui/ui.module.css").replace(/\/\*[\s\S]*?\*\//g, "");
   const body = kit.match(/\.actionBody \{([^}]*)\}/)?.[1] ?? "";
   const gap = Number(body.match(/gap: (\d+)px/)?.[1]);
-  assert.match(body, /grid-template-columns: minmax\(0, var\(--page-main\)\) var\(--page-side\)/);
+  /* The laptop's measure, grown with the screen: the two columns' ratio is the page's own (720 : 376). */
+  const cols = body.match(/grid-template-columns: minmax\(0, (\d+)fr\) minmax\(var\(--page-side\), (\d+)fr\)/);
+  assert.ok(cols, "the two columns grow with the screen in one ratio, the side never under its own width");
+  assert.deepEqual([Number(cols[1]), Number(cols[2])], [main, side], "the ratio is the laptop's: main to side");
   assert.equal(main + gap + side, page, "the action column, the gap and the side column are the page's width");
 
   const sheets = walk(join(REPO, "terminal"))

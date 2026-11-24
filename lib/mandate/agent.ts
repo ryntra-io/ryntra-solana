@@ -39,9 +39,15 @@ export function agentTradeInstructions(
     setup?: readonly TransactionInstruction[];
     unitPriceMicroLamports?: bigint;
     transferFee?: Readonly<{ coin: Pick<Coin, "transferFee">; epoch: bigint }> | undefined;
+    /** A sale of the coin the agent keeps runs under the mandate's sale policy; absent — a buy. */
+    side?: "buy" | "sell";
+    /** A copy's sale runs under the sales' policy of its coin's group, named here; absent — the mandate's own. */
+    salePolicy?: PublicKey | undefined;
   }>,
 ): readonly TransactionInstruction[] {
   const { mandate, venueInstruction } = input;
+  const policy = input.side === "sell" ? (input.salePolicy ?? mandate.salePolicy) : mandate.policy;
+  if (!policy) throw new Error("The mandate has no policy for a sale.");
   const index = constraintIndexFor(mandate.terms.venue, venueInstruction.programId, venueInstruction.data);
   if (index === null) throw new Error("The venue instruction is not one the mandate allows.");
   const inner = input.fee ? [input.fee, venueInstruction] : [venueInstruction];
@@ -58,7 +64,7 @@ export function agentTradeInstructions(
     ComputeBudgetProgram.requestHeapFrame({ bytes: AGENT_HEAP_BYTES }),
     ...(price > 0n ? [ComputeBudgetProgram.setComputeUnitPrice({ microLamports: price })] : []),
     ...(input.setup ?? []),
-    policyExecuteInstruction({ policy: mandate.policy, signer: mandate.terms.agent, instructions: inner, constraintIndices: indices as number[] }),
+    policyExecuteInstruction({ policy, signer: mandate.terms.agent, instructions: inner, constraintIndices: indices as number[] }),
     receivedAtLeastInstruction(terms.receiver, input.holding + reaches),
   ];
 }

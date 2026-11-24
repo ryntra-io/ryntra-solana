@@ -219,7 +219,9 @@ export function useLaunchModel() {
         // Only for the launch still taken up, and only while nobody touched the form since.
         if (asked !== resumed.current || !view.ok || !now || now.at !== listed.opensAt) return;
         if (useLaunch.getState().phase?.step !== 'failed') return;
-        usePool.getState().setChoice({ ...now, ladder: view.data.ladder !== null });
+        // The reward for the pool's liquidity likewise: the form and the card say what the launch was begun with.
+        const reward = view.data.reward ?? null;
+        usePool.getState().setChoice({ ...now, ladder: view.data.ladder !== null, reward: reward ? { shareBps: reward.shareBps, days: reward.days } : null });
       })
       .catch(() => {});
     setDraft({ name: listed.name, symbol: listed.symbol });

@@ -34,10 +34,13 @@ export function poolDoorOpen(network: Network | null, switchOpen: boolean = CITY
 export type PoolPair = 'SOL' | 'USDC';
 
 /**
- * The creator's choice: how long after the press trading opens — or the exact moment a sentence named —, the pair, and
- * whether the creator's take-profit ladder rests a twentieth of the supply before the opening.
+ * The creator's choice: how long after the press trading opens — or the exact moment a sentence named —, the pair,
+ * whether the creator's take-profit ladder rests a twentieth of the supply before the opening, and
+ * the reward for the pool's liquidity (a share of the supply over days; absent or null — none).
  */
-export type PoolChoice = Readonly<{ after: number; at: number | null; pair: PoolPair; ladder: boolean }>;
+export type PoolChoice = Readonly<{ after: number; at: number | null; pair: PoolPair; ladder: boolean; reward?: PoolReward | null }>;
+/** The reward for the pool's liquidity the creator picks: a share of the supply, basis points, over whole days. */
+export type PoolReward = Readonly<{ shareBps: number; days: number }>;
 
 /** The waits the door offers, seconds. The first is the engine's own default. */
 export const POOL_AFTER = [DLMM_PRO_LAUNCH_TERMS.opening.defaultAfter, 3_600, 6 * 3_600] as const;

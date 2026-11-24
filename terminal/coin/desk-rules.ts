@@ -46,6 +46,13 @@ export const DESK_LIMITS: Readonly<Record<DeskPart, Readonly<{ min: number; max:
  */
 export const DESK_WIDE = 1080;
 
+/**
+ * A desk taller than this gives most of the height above it to the bottom panel, up to `BOTTOM_TALL_MAX`: on a 1920×1080
+ * window the market's trades show five whole rows, not two (EYES 19.11, вада 12), and the chart keeps the larger part.
+ */
+export const BOTTOM_TALL_FROM = 740;
+export const BOTTOM_TALL_MAX = 320;
+
 /** The defaults follow the room: a 1920 window gives the trades 300 and the ticket 380; a 1440 one 252 and 340. */
 export function deskDefault(part: DeskPart, deskWidth: number, deskHeight: number): number {
   const w = Number.isFinite(deskWidth) && deskWidth > 0 ? deskWidth : 1156;
@@ -56,7 +63,7 @@ export function deskDefault(part: DeskPart, deskWidth: number, deskHeight: numbe
     case 'ticket':
       return Math.round(clampTo(w * 0.083 + 244, 330, 400));
     case 'bottom':
-      return Math.round(clampTo(h * 0.24 + 20, 180, 260));
+      return Math.round(h > BOTTOM_TALL_FROM ? clampTo(h * 0.24 + 20 + (h - BOTTOM_TALL_FROM) * 1.6, 180, BOTTOM_TALL_MAX) : clampTo(h * 0.24 + 20, 180, 260));
   }
 }
 

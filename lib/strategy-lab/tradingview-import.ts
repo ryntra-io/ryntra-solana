@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { parse } from "csv-parse/sync";
 import { z } from "zod";
+import { isoDateTime } from "../zod/iso-datetime.ts";
 import type { BacktestImportManifest, NormalizedTrade } from "./types.ts";
 
 export const TRADINGVIEW_FILE_MAX_BYTES = 1_000_000;
@@ -26,7 +27,7 @@ const ManifestSchema: z.ZodType<BacktestImportManifest> = z.object({
   timezone: z.literal("UTC"),
   compileWindow: z.object({ start: DateSchema, end: DateSchema }).strict(),
   initialCapital: z.number().finite().positive().max(1_000_000_000_000),
-  exportedAt: z.string().datetime(),
+  exportedAt: isoDateTime(),
   tradesFileHash: z.string().regex(/^[a-f0-9]{64}$/).optional(),
   metricsFileHash: z.string().regex(/^[a-f0-9]{64}$/).optional(),
 }).strict();

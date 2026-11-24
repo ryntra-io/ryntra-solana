@@ -2,41 +2,77 @@
 
 import Link from "next/link";
 
-import { Page, Panel, QuietLink } from "@/terminal/ui";
+import { Page, PageHead, Panel, QuietLink } from "@/terminal/ui";
 
-import { AHEAD, docHref, GROUP_WORDS, SECTIONS, sectionOf, UI } from "./book";
+import { AHEAD, docHref, GROUP_WORDS, QUICK, quoted, SAY_EXAMPLES, SECTIONS, sectionOf, UI } from "./book";
 import b from "./book.module.css";
-import { DocsBar, OpenLink, Shot, useDocsLang } from "./parts";
+import { DocsBar, OpenLink, Shot, useDocsLang, useDocsTabTitle } from "./parts";
 
 /**
- * `/docs` — the first page a stranger reads: what Ryntra is in one line and one frame, the terminal's sections as
- * cards, Meteora as the wide one, trust, and where we are going.
+ * `/docs` — the first page a stranger reads: what Ryntra is in one line and its one action, how to start in three steps,
+ * sentences the agent understands, the terminal's sections as cards, Meteora as the wide one, trust, and where we are
+ * going.
  */
 export function DocsHub() {
   const lang = useDocsLang();
+  useDocsTabTitle(null, lang);
   const u = UI[lang];
-  const start = sectionOf("start")[lang];
+  const say = sectionOf("say")[lang];
   const meteora = sectionOf("meteora");
   const terminal = SECTIONS.filter((section) => section.group === "terminal");
   const trust = SECTIONS.filter((section) => section.group === "trust");
 
   return (
     <Page className={b.page} data-docs="hub">
+      {/* Named by the page's own head, as every page of the terminal is (the eyes' pass of 19.11); the bar is there only where
+          the terminal is shut, for its language. */}
       <DocsBar lang={lang} />
+      <PageHead title={u.hubTitle} />
 
+      {/* Words and the one action, no frame: a whole screen shrunk into half a card had type too small to read even on 1920
+          and showed a phone's own menu over the phone's (the eyes' pass of 20.11). The frames live in the sections. */}
       <Panel tone="hi" pad="l" className={b.hero}>
-        <div className={b.heroWords}>
-          <p className={b.motto}>{u.motto}</p>
-          <h1 className={b.heroTitle}>{u.hubTitle}</h1>
-          <p className={b.lead}>{u.hubLine}</p>
-          <div className={b.heroActs}>
-            <OpenLink href="/docs/start" className={b.heroAct}>
-              {u.start}
-            </OpenLink>
-          </div>
+        <h2 className={b.heroTitle}>{u.motto}</h2>
+        <p className={b.lead}>{u.hubLine}</p>
+        <div className={b.heroActs}>
+          <OpenLink href="/docs/start" className={b.heroAct}>
+            {u.start}
+          </OpenLink>
         </div>
-        <Shot shot="market" lang={lang} alt={u.shotAlt(start.title)} priority className={b.heroShot} />
       </Panel>
+
+      <section className={b.group} aria-labelledby="group-quick">
+        <h2 id="group-quick" className={b.groupHead}>
+          {u.quick}
+        </h2>
+        <ol className={b.quick}>
+          {QUICK[lang].map((item, at) => (
+            <li key={item.title} className={b.quickItem}>
+              <span className={b.stepNo} aria-hidden="true">
+                {at + 1}
+              </span>
+              <span className={b.cardTitle}>{item.title}</span>
+              <span className={b.cardLine}>{item.line}</span>
+            </li>
+          ))}
+        </ol>
+      </section>
+
+      <section className={b.group} aria-labelledby="group-say">
+        <h2 id="group-say" className={b.groupHead}>
+          {say.title}
+        </h2>
+        <Link href={docHref("say")} className={`${b.card} ${b.sayCard}`}>
+          <span className={b.cardLine}>{say.line}</span>
+          <ul className={b.sayList}>
+            {SAY_EXAMPLES[lang].map((sentence) => (
+              <li key={sentence} className={b.sayChip}>
+                {quoted(sentence, lang)}
+              </li>
+            ))}
+          </ul>
+        </Link>
+      </section>
 
       <section className={b.group} aria-labelledby="group-terminal">
         <h2 id="group-terminal" className={b.groupHead}>

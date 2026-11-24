@@ -48,6 +48,6 @@
     "apps",
     "docs/analytics/defillama/fork",
     "docs/analytics/defillama/live",
-    "docs/analytics/defillama/pending"
+    "docs/analytics/defillama/pending", "docs/defillama-line/pr-no-arc"
   ]
 }

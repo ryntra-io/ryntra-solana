@@ -1,10 +1,16 @@
 /**
- * Where the private balance's secrets live: in this browser only, encrypted. IndexedDB holds an AES-GCM key that cannot
- * be exported (the browser keeps its bytes to itself) and, beside it, each secret sealed with that key — the viewing and
- * nullifier keys of a wallet, and the seeds of links the person made. Nothing here goes to a server.
+ * Where the private balance's secrets live.
  *
- * Clearing the site's data removes it all; the person's way back is the key copy they saved (`codes.ts`). A link's
- * seed is kept until the link is taken, so its sender can take it back.
+ * Keys from the wallet — the only keys a new private balance gets. The wallet's signature over the key request
+ * is turned into the viewing and nullifier keys at once and dropped; the keys stay in this tab's memory only, never in
+ * IndexedDB, `localStorage`, a log or analytics. A reload, another wallet or another tab asks the wallet once again: the
+ * same wallet gives the same keys on any device, so there is nothing to keep and nothing to lose.
+ *
+ * In this browser, encrypted: IndexedDB holds an AES-GCM key that cannot be exported (the browser keeps its bytes to
+ * itself) and, beside it, each secret sealed with that key — the seeds of links the person made, kept until the link is
+ * taken so its sender can take it back, and the older keys of the test network (made at random in the browser
+ * and registered before this rule). Those older keys are only read and copied out now, so test money is not lost; no
+ * new keys are made or sealed. Nothing here goes to a server; clearing the site's data removes it all.
  */
 
 const DB = 'ryntra-private';
@@ -87,13 +93,38 @@ export async function ids(prefix: string): Promise<readonly string[]> {
   return all.map(String).filter((id) => id.startsWith(prefix));
 }
 
-/* The two kinds of secret, by id. */
+/* The sealed secrets, by id. */
 
 export const keysId = (network: string, owner: string) => `keys:${network}:${owner}`;
 export const linkId = (network: string, owner: string, link: string) => `link:${network}:${owner}:${link}`;
-/** Whether the key copy was saved since the keys or the links last changed. */
+/** Whether the key copy was saved since the keys or the links last changed — older keys only. */
 export const copiedId = (network: string, owner: string) => `copied:${network}:${owner}`;
 
-export type StoredKeys = Readonly<{ viewing: number[]; nullifier: number[]; from: 'own' | 'wallet' }>;
+/** Older keys of the test network, sealed before keys came from the wallet; read, never written anew. */
+export type StoredKeys = Readonly<{ viewing: number[]; nullifier: number[]; from: 'own' }>;
 /** `funded` — the private transfer into the link landed; until then the link is half made and is finished, not listed. */
 export type StoredLink = Readonly<{ seed: number[]; lamports: string; at: number; address: string; fragment: string; funded: boolean }>;
+
+/* Keys from the wallet: this tab's memory, one wallet at a time. */
+
+type Destroyable = Readonly<{ destroy?: () => void }>;
+
+let inTab: Readonly<{ id: string; keys: unknown }> | null = null;
+
+/** Holds the keys the wallet gave for this address; the keys held before, for any address, are destroyed. */
+export function holdKeys(network: string, owner: string, keys: unknown): void {
+  const id = keysId(network, owner);
+  if (inTab && inTab.keys !== keys) (inTab.keys as Destroyable).destroy?.();
+  inTab = { id, keys };
+}
+
+/** The keys the wallet gave for this address in this tab, or null. */
+export function heldKeys<T>(network: string, owner: string): T | null {
+  return inTab?.id === keysId(network, owner) ? (inTab.keys as T) : null;
+}
+
+/** Drops the keys held in this tab — another wallet, or the registry holds other keys. */
+export function dropKeys(): void {
+  (inTab?.keys as Destroyable | undefined)?.destroy?.();
+  inTab = null;
+}

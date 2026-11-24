@@ -26,6 +26,8 @@
  */
 
 import { launchNameHits } from "../core/launch/moderation.ts";
+import { KNOWN_STOCK_BOOK, passesForStock, type PassesFor } from "../stocks/stock-book.ts";
+import type { StockBook } from "../world/text-safety/lookalike.ts";
 import { normalizeSpotMarket, type SpotMarket } from "./markets.ts";
 import { riskFactsOf, tokenFactsOf, type TokenWindow } from "./token-page.ts";
 
@@ -168,7 +170,21 @@ export type PulseRow = Readonly<{
   notices: readonly PulseNotice[];
   curve: PulseCurve | null;
   ryntra: PulseRyntra | null;
+  /**
+   * The tokenized stock this coin passes for and is not — its ticker or its company's name on another mint
+   * (`stockLookalikeOf`): the stock's ticker, the company and the real stock's mint. A row with it is never bought in one
+   * tap and stands after every other row of its feed. Absent or null: it passes for none.
+   */
+  passesFor?: PulsePassesFor | null;
 }>;
+
+/** The stock a coin passes for: its ticker, the company and the real one's mint. */
+export type PulsePassesFor = PassesFor;
+
+/** The stock a coin passes for, by the look-alike rule; null when it passes for none. */
+export function passesForOf(row: Pick<PulseRow, "symbol" | "name" | "mint" | "verified">, book: StockBook = KNOWN_STOCK_BOOK): PulsePassesFor | null {
+  return passesForStock({ symbol: row.symbol, name: row.name, mint: row.mint, verified: row.verified }, book);
+}
 
 /** The launchpads Jupiter names, by the names their own sites use. */
 const LAUNCHPAD_NAMES: Readonly<Record<string, string>> = {
@@ -221,8 +237,11 @@ export function noticesOf(market: SpotMarket, now: number): PulseNotice[] {
     .map((fact) => fact.code as PulseNotice);
 }
 
-/** One Jupiter Tokens V2 row → one Pulse row, or null when the row has no identity or is a tokenized stock. */
-export function pulseRowOf(raw: unknown, now: number): PulseRow | null {
+/**
+ * One Jupiter Tokens V2 row → one Pulse row, or null when the row has no identity or is a tokenized stock. `book`: the
+ * stocks a coin is checked against — the static book, or the server's universe when it is warm.
+ */
+export function pulseRowOf(raw: unknown, now: number, book: StockBook = KNOWN_STOCK_BOOK): PulseRow | null {
   const market = normalizeSpotMarket(raw);
   const facts = tokenFactsOf(raw);
   if (!market || !facts) return null;
@@ -260,6 +279,7 @@ export function pulseRowOf(raw: unknown, now: number): PulseRow | null {
     notices: noticesOf(market, now),
     curve: null,
     ryntra: null,
+    passesFor: passesForOf({ symbol: market.symbol, name: market.name, mint: market.mint, verified: market.verified }, book),
   };
 }
 
@@ -570,13 +590,17 @@ export function mergeRows(rows: readonly PulseRow[]): PulseRow[] {
  *   it — the hour's most traded first.
  * - **Обране** — the person's watched tokens, in the order given.
  *
+ * In every feed but «Обране» a coin passing for a tokenized stock (`passesFor`) stands after the rest.
+ *
  * In meme mode (`mode: "meme"`) every feed keeps only the tokens born on the three launch programs — {@link isRadarRow}.
  */
 export function feedRows(feed: PulseFeed, rows: readonly PulseRow[], window: TokenWindow, now: number, down = false, mode: PulseMode = "all"): PulseRow[] {
   if (mode === "meme" && feed !== "watchlist") rows = rows.filter(isRadarRow);
   const ours = (row: PulseRow) => row.ryntra !== null;
+  /* A coin passing for a stock stands after every other row of the feed, never above one. */
+  const copy = (row: PulseRow) => !ours(row) && Boolean(row.passesFor);
   const first = (picked: PulseRow[], order: (a: PulseRow, b: PulseRow) => number) =>
-    [...picked.filter(ours).sort(order), ...picked.filter((row) => !ours(row)).sort(order)].slice(0, PULSE_ROWS);
+    [...picked.filter(ours).sort(order), ...picked.filter((row) => !ours(row) && !copy(row)).sort(order), ...picked.filter(copy).sort(order)].slice(0, PULSE_ROWS);
   if (feed === "watchlist") return rows.slice(0, WATCHLIST_MAX);
   if (feed === "growing") {
     const picked = rows.filter((row) => {

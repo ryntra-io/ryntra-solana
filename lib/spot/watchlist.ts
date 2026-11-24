@@ -23,6 +23,7 @@
  */
 
 import { z } from "zod";
+import { isoDateTime } from "../zod/iso-datetime.ts";
 
 import { withBoundedCasRetry, type GuardStore } from "../guard/store.ts";
 
@@ -33,7 +34,7 @@ export const SPOT_WATCHLIST_LIMIT = 200;
 /** Removals remembered per wallet; the oldest fall off first. */
 export const SPOT_WATCHLIST_TOMBSTONES = 200;
 
-const RemovalSchema = z.object({ mint: z.string().regex(BASE58), removedAt: z.string().datetime({ offset: true }) }).strict();
+const RemovalSchema = z.object({ mint: z.string().regex(BASE58), removedAt: isoDateTime({ offset: true }) }).strict();
 
 /** Rows written before removals were remembered still parse; `removed` is simply absent. */
 export const SpotWatchlistSchema = z
@@ -46,7 +47,7 @@ export const SpotWatchlistSchema = z
     /** Newest star last, so the list reads in the order it was built. */
     mints: z.array(z.string().regex(BASE58)).max(SPOT_WATCHLIST_LIMIT),
     removed: z.array(RemovalSchema).max(SPOT_WATCHLIST_TOMBSTONES).optional(),
-    updatedAt: z.string().datetime({ offset: true }),
+    updatedAt: isoDateTime({ offset: true }),
   })
   .strict();
 

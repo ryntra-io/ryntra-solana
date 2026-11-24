@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 
-import { costOf, dollarsOf, etaOf, followEvery, fromRaw, landingOf, originOf, pressOf, readTransfers, refusedInWallet, settled, stateOfProgress, stateOfStatus, toRaw, txLink, withTransfer, TRANSFERS_KEPT } from "./bridge-form.ts";
+import { costOf, dollarsOf, etaOf, followEvery, fromRaw, landingOf, originOf, popularRoutes, pressOf, readTransfers, refusedInWallet, settled, stateOfProgress, stateOfStatus, toRaw, txLink, withTransfer, TRANSFERS_KEPT } from "./bridge-form.ts";
 
 /* The Bridge form's reasoning, apart from React. */
 
@@ -161,4 +161,36 @@ test("the browser talks only to this site: Relay, logos and networks go through 
     assert.doesNotMatch(source, /assets\.relay\.link|api\.relay\.link|coingecko/, `${file} names no outside host`);
   }
   assert.match(read("./bridge-run.ts"), /api\/swap\/bridge\/relay/, "the SDK's calls go through the site's pass");
+});
+
+/* The popular ways into Solana beside the form (eyes pass 20.11, №19). */
+
+const SOLANA = 792703809;
+const native = (chainId, symbol, address = "0x0000000000000000000000000000000000000000") => ({ chainId, address, symbol, name: symbol, decimals: symbol === "SOL" ? 9 : 18, verified: true, logo: true });
+const chain = (id, label, symbol, over = {}) => ({ id, name: label.toLowerCase(), label, vm: id === SOLANA ? "svm" : "evm", wallet: "evm", owner: "evm", send: true, deposit: true, explorer: null, native: native(id, symbol), featured: [], ...over });
+const CHAINS = [
+  chain(SOLANA, "Solana", "SOL", { native: native(SOLANA, "SOL", "11111111111111111111111111111111") }),
+  chain(1, "Ethereum", "ETH"),
+  chain(8453, "Base", "ETH"),
+  chain(42161, "Arbitrum", "ETH"),
+  chain(56, "BNB Chain", "BNB", { send: false }),
+  chain(137, "Polygon", "POL"),
+  chain(10, "Optimism", "ETH"),
+];
+
+test("the popular ways into Solana: each network's own coin into SOL, the way on the form left out, four at most", () => {
+  const onForm = { from: native(8453, "ETH"), to: native(SOLANA, "SOL", "11111111111111111111111111111111") };
+  const routes = popularRoutes(CHAINS, onForm, SOLANA);
+  assert.deepEqual(routes.map((route) => `${route.from.symbol}·${route.network}→${route.to.symbol}`), ["ETH·Ethereum→SOL", "ETH·Arbitrum→SOL", "POL·Polygon→SOL"], "Base is on the form; BNB Chain cannot send; Optimism is not among the popular");
+  assert.equal(routes.every((route) => route.to.chainId === SOLANA), true);
+  // Another way on the form: Base comes back, and no more than four stand.
+  const all = popularRoutes([...CHAINS.slice(0, 4), chain(56, "BNB Chain", "BNB"), CHAINS[5]], { from: native(1, "USDC", "0xa0b8"), to: onForm.to }, SOLANA);
+  assert.equal(all.length, 4);
+  assert.deepEqual(all.map((route) => route.network), ["Ethereum", "Base", "Arbitrum", "BNB Chain"]);
+});
+
+test("no popular way while the networks are not read, or without Solana among them", () => {
+  const onForm = { from: native(8453, "ETH"), to: native(SOLANA, "SOL") };
+  assert.deepEqual(popularRoutes(null, onForm, SOLANA), []);
+  assert.deepEqual(popularRoutes(CHAINS.slice(1), onForm, SOLANA), []);
 });

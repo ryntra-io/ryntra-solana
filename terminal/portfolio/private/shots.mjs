@@ -8,9 +8,13 @@
 // signature it is asked for goes to this script, which signs the exact bytes with a devnet stand key (PASS_PERSON_KEY;
 // the claim page — a fresh key with no SOL) and gives them back: the page builds, the person «signs», the relay sends.
 // Keys stay in this process and are never printed. Out: <state>-<size>-<lang>.jpg and signatures.md (what landed).
-//   SIZES=wide2560,wide,phone  LANGS=uk,en  SHOTS_COPY=<a key copy from an earlier run>
+//   SIZES=wide2560,wide,phone  LANGS=uk,en
+// The private balance's keys come from the wallet: the stub signs the key request with the same key every
+// time, so every size after the first opens the balance with one signature. PASS_PERSON_KEY must be an address not
+// registered with keys of the browser's own: a fresh devnet key. The states without
+// money and network — keys-shots.mjs.
 import { chromium } from "playwright";
-import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
@@ -192,9 +196,7 @@ if (process.env.SHOTS_CLAIM) {
 }
 
 let linkUrl = null;
-// SHOTS_COPY — a key copy saved by an earlier run: the balance is already on, the run opens it with the copy.
-let copyPath = process.env.SHOTS_COPY ?? null;
-let first = !copyPath;
+let first = true;
 for (const size of SIZES) {
   for (const lang of LANGS) {
     console.log(`${size.name} ${lang}`);
@@ -206,17 +208,14 @@ for (const size of SIZES) {
       throw error;
     });
     await page.waitForFunction(() => !/Читаємо приватний|Reading the private/.test(document.body.innerText), null, { timeout: 120_000 });
-    if (first) {
-      // The whole flow, once, on the test network: on, hide, a link.
+    const off = await button(page, "Увімкнути", "Turn on").isVisible().catch(() => false);
+    if (first && off) {
+      // The whole flow, once, on the test network: on (two signatures of the key request, then the registration), hide, a link.
       await shot(page, "1-off", size, lang, block(page));
       await button(page, "Увімкнути", "Turn on").click();
       await page.locator('a[href*="explorer.solana.com/tx/"], [data-failure]').first().waitFor({ timeout: 300_000 });
-      await waitIdle(page, "turn on (registration)");
-      await shot(page, "2-on-copy", size, lang, block(page));
-      // The key copy, saved as a person would — outside the repository; the other sizes open the balance with it.
-      const [download] = await Promise.all([page.waitForEvent("download"), button(page, "Зберегти копію ключів", "Save key copy").click()]);
-      copyPath = path.join(os.tmpdir(), `ryntra-private-shots-${Date.now()}.txt`);
-      await download.saveAs(copyPath);
+      await waitIdle(page, "turn on (registration, keys from the wallet)");
+      await shot(page, "2-on", size, lang, block(page));
       const amount = block(page).locator("input").first();
       await amount.fill("0.02");
       await shot(page, "3-hide-form", size, lang, block(page));
@@ -244,12 +243,15 @@ for (const size of SIZES) {
       await shot(page, "6-link-ready", size, lang, block(page));
       first = false;
     } else {
-      // Another browser: the balance is on, its keys are not here — opened with the saved copy.
-      await page.getByText(/іншому пристрої|another device/).first().waitFor({ timeout: 60_000 });
-      await shot(page, "0-elsewhere", size, lang, block(page));
-      await block(page).locator('input[type="file"]').setInputFiles(copyPath);
-      await page.waitForFunction(() => !/іншому пристрої|another device/.test(document.body.innerText), null, { timeout: 120_000 });
+      // Another browser: the balance is on, its keys are not here — the wallet opens it with one signature.
+      first = false;
+      await page.getByText(/одним підписом|with one signature/).first().waitFor({ timeout: 60_000 });
+      await shot(page, "0-locked", size, lang, block(page));
+      await button(page, "Відкрити", "Open").click();
+      await page.waitForFunction(() => !/одним підписом|with one signature/.test(document.body.innerText), null, { timeout: 120_000 });
       await waitIdle(page);
+      const failed = await page.locator("[data-failure]").first().getAttribute("data-failure").catch(() => null);
+      if (failed || (await page.getByText(/Увімкнено деінде|Turned on elsewhere/).count())) throw new Error(`open with the wallet's keys: ${failed ?? "other keys in the registry — use a fresh PASS_PERSON_KEY"}`);
       await shot(page, "4-hidden", size, lang, block(page));
     }
     // The private balance's «i», open.
@@ -275,22 +277,21 @@ for (const size of SIZES) {
       await claim.context.close();
     }
 
-    // The wallet check, with the stub: both envelope signatures and a v1 transaction.
+    // The wallet check, with the stub: the key request twice, a v1 transaction, this address in the registry.
     const check = await contextFor(person, size, lang);
     await open(check.page, `${base}/private/check?lang=${lang}`);
     await connect(check.page);
-    await button(check.page, "Підписати конверт", "Sign envelope").click();
-    await waitIdle(check.page);
-    await button(check.page, "Підписати ще раз", "Sign again").click();
+    await button(check.page, "Підписати запит ключів двічі", "Sign the key request twice").click();
     await waitIdle(check.page);
     await button(check.page, "Підписати v1", "Sign v1").click();
+    await waitIdle(check.page);
+    await button(check.page, "Перевірити адресу", "Check this address").click();
     await waitIdle(check.page);
     await shot(check.page, "11-check", size, lang);
     await check.context.close();
   }
 }
 await browser.close();
-if (copyPath && !process.env.SHOTS_COPY) rmSync(copyPath, { force: true });
 
 writeFileSync(path.join(out, "signatures.md"), ["| Step (through the page and the relay) | Signature |", "| --- | --- |", ...landed.map(([label, sig]) => `| ${label} | \`${sig}\` |`)].join("\n") + "\n");
 writeFileSync(path.join(out, "errors.txt"), errors.join("\n") || "none");

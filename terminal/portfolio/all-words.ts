@@ -23,7 +23,6 @@ export const ALL = words(
     connect: 'Connect wallet',
     viewOnly: 'View only',
     closeWatch: 'Close this wallet',
-    preview: 'What you will see',
     // The total.
     total: 'Total',
     totalSoFar: 'Total so far',
@@ -34,8 +33,8 @@ export const ALL = words(
     totalText:
       'Coins at today’s price; pools with their fees to collect; staking and deposits as their protocols state them; loans subtracted. «Today» counts the coins the market moved today. A coin nobody prices is listed, not counted. Other platforms are shown apart and are not in the total.',
     notAll: 'Not everything was read',
-    unread: 'Not read now',
-    again: 'Read again',
+    unread: 'Couldn’t read this wallet right now',
+    again: 'Try again',
     reading: 'Reading…',
     emptyLine: 'This wallet holds nothing yet.',
     // The parts and the groups.
@@ -49,7 +48,7 @@ export const ALL = words(
     otherInfo: 'About other platforms',
     otherText: 'Seen through Jupiter Portfolio, not read from the protocol itself: shown for the whole picture, not counted in the total, and closed in the protocol’s own app.',
     dustInfo: 'What counts as dust',
-    dustText: 'Coins worth up to $5 and coins with no price. «Clean wallet» swaps them into SOL and gives back the rent of empty accounts.',
+    dustText: 'Coins worth up to $5 and coins with no price. «Clean wallet» swaps the ones safe to swap into SOL and gives back the rent of empty accounts; a marked coin or one with no price waits until you switch it on.',
     fold: (group: string) => `Hide ${group}`,
     unfold: (group: string) => `Show ${group}`,
     // The columns.
@@ -72,7 +71,7 @@ export const ALL = words(
     loan: 'Loan',
     loanShare: (pct: string) => `${pct}% of the deposit`,
     asOf: (time: string) => `as of ${time}`,
-    sourceUnread: (name: string) => `${name}: not read now`,
+    sourceUnread: (name: string) => `${name} isn’t answering right now`,
     wallet: 'Wallet',
     emptyAccounts: 'Empty accounts',
     // The row's actions.
@@ -89,7 +88,9 @@ export const ALL = words(
     collectFact: (usd: string, n: number) => `${usd} in ${en(n, 'pool', 'pools')}`,
     exitTitle: 'Exit everything',
     exitFact: (n: number) => `${en(n, 'position', 'positions')} → SOL, USDC or 50/50`,
-    cleanFact: (sol: string, coins: number, accounts: number) => [`≈ ${sol} SOL`, coins ? en(coins, 'coin', 'coins') : null, accounts ? en(accounts, 'account', 'accounts') : null].filter(Boolean).join(' · '),
+    // `of` — the dust group's own count, where the clean takes only some of it: «51 of 307 coins».
+    cleanFact: (sol: string, coins: number, accounts: number, of?: number | null) =>
+      [`≈ ${sol} SOL`, coins ? (of ? `${coins} of ${en(of, 'coin', 'coins')}` : en(coins, 'coin', 'coins')) : null, accounts ? en(accounts, 'account', 'accounts') : null].filter(Boolean).join(' · '),
     soon: 'Soon',
     // The panels.
     into: 'Coin to exit into',
@@ -97,8 +98,6 @@ export const ALL = words(
     youGet: 'You get',
     youCollect: 'You collect',
     rentBack: (sol: string) => `rent back ${sol} SOL`,
-    fee: (fee: string) => `fee ${fee}`,
-    noFee: 'no fee',
     others: (n: number) => `${n === 1 ? '1 more coin comes' : `${n} more coins come`} as ${n === 1 ? 'it is' : 'they are'}`,
     afterBuild: 'Rent and fee show once it is prepared',
     include: (name: string) => `Include ${name}`,
@@ -113,6 +112,8 @@ export const ALL = words(
     changed: 'The figures moved — check them and press again.',
     failed: 'Could not prepare it now.',
     nothing: 'Nothing to do here right now.',
+    // The coins Jupiter carries no route for now, in one line, by their names.
+    noRoute: (names: string, n: number) => `Jupiter isn’t taking ${n === 1 ? 'this coin' : 'these coins'} right now${names ? ` · ${names}` : ''}`,
     exitDone: (figure: string) => `Received ≈ ${figure}`,
     collectDone: (figure: string) => `Collected ≈ ${figure}`,
     donePlain: 'Done.',
@@ -146,10 +147,12 @@ export const ALL = words(
           return 'This wallet cannot withdraw it';
         case 'NO_ROUTE':
           return 'Exit from here is coming — close it in its own app for now';
+        case 'NO_SWAP':
+          return 'Jupiter isn’t taking this coin right now';
         case 'PROJECTION':
           return 'Only its worth is seen — close it in its own app';
         case 'NOT_READ':
-          return 'Not read now';
+          return 'Couldn’t read it right now';
         case 'CLOSED_HERE':
           return 'Closed here for now';
         case 'SIMULATION':
@@ -178,7 +181,8 @@ export const ALL = words(
   },
   {
     lookTitle: 'Усе в Solana',
-    lookLine: 'Усе, що гаманець тримає в Solana',
+    // A non-breaking space: «в» never hangs at a line's end (eyes 20.11, 88).
+    lookLine: 'Усе, що гаманець тримає в\u00a0Solana',
     addressField: 'Встав адресу гаманця',
     show: 'Показати',
     badAddress: 'Це не адреса гаманця',
@@ -186,7 +190,6 @@ export const ALL = words(
     connect: 'Підключити гаманець',
     viewOnly: 'Лише перегляд',
     closeWatch: 'Закрити цей гаманець',
-    preview: 'Що ти побачиш',
     total: 'Разом',
     totalSoFar: 'Разом поки що',
     today: (figure: string) => `${figure} сьогодні`,
@@ -196,7 +199,7 @@ export const ALL = words(
     totalText:
       'Монети — за сьогоднішньою ціною; пули — разом із незібраними комісіями; стейкінг і депозити — як їх рахують самі протоколи; позики віднімаємо. «Сьогодні» рахує монети, які ринок зрушив за день. Монета без ціни є у списку, але не в сумі. Інші платформи показані окремо й у «Разом» не входять.',
     notAll: 'Не все прочитано',
-    unread: 'Зараз не прочитано',
+    unread: 'Зараз не вдалося прочитати гаманець',
     again: 'Ще раз',
     reading: 'Читаю…',
     emptyLine: 'У цьому гаманці поки нічого немає.',
@@ -210,7 +213,7 @@ export const ALL = words(
     otherInfo: 'Про інші платформи',
     otherText: 'Бачимо через Jupiter Portfolio, а не з самого протоколу: показано для повної картини, у «Разом» не входить, а закривається в застосунку самого протоколу.',
     dustInfo: 'Що таке дріб’язок',
-    dustText: 'Монети до $5 і монети без ціни. «Очистити гаманець» обміняє їх на SOL і поверне ренту порожніх рахунків.',
+    dustText: 'Монети до $5 і монети без ціни. «Очистити гаманець» обміняє на SOL ті, що безпечно обміняти, і поверне ренту порожніх рахунків; позначена монета чи монета без ціни чекає, доки ти її ввімкнеш.',
     fold: (group: string) => `Згорнути: ${group}`,
     unfold: (group: string) => `Розгорнути: ${group}`,
     position: 'Позиція',
@@ -231,7 +234,7 @@ export const ALL = words(
     loan: 'Позика',
     loanShare: (pct: string) => `${pct}% від депозиту`,
     asOf: (time: string) => `станом на ${time}`,
-    sourceUnread: (name: string) => `${name}: зараз не прочитано`,
+    sourceUnread: (name: string) => `${name}: зараз не відповідає`,
     wallet: 'Гаманець',
     emptyAccounts: 'Порожні рахунки',
     collect: 'Зібрати',
@@ -246,15 +249,14 @@ export const ALL = words(
     collectFact: (usd: string, n: number) => `${usd} у ${uk(n, 'пулі', 'пулах', 'пулах')}`,
     exitTitle: 'Вийти з усього',
     exitFact: (n: number) => `${uk(n, 'позиція', 'позиції', 'позицій')} → SOL, USDC або 50/50`,
-    cleanFact: (sol: string, coins: number, accounts: number) => [`≈ ${sol} SOL`, coins ? uk(coins, 'монета', 'монети', 'монет') : null, accounts ? uk(accounts, 'рахунок', 'рахунки', 'рахунків') : null].filter(Boolean).join(' · '),
+    cleanFact: (sol: string, coins: number, accounts: number, of?: number | null) =>
+      [`≈ ${sol} SOL`, coins ? (of ? `${coins} з ${uk(of, 'монети', 'монет', 'монет')}` : uk(coins, 'монета', 'монети', 'монет')) : null, accounts ? uk(accounts, 'рахунок', 'рахунки', 'рахунків') : null].filter(Boolean).join(' · '),
     soon: 'Скоро',
     into: 'У яку монету вийти',
     half: '50/50',
     youGet: 'Отримаєш',
     youCollect: 'Збереш',
     rentBack: (sol: string) => `повернеться ренти ${sol} SOL`,
-    fee: (fee: string) => `комісія ${fee}`,
-    noFee: 'без комісії',
     others: (n: number) => `ще ${n} ${pl(n, 'монета прийде', 'монети прийдуть', 'монет прийде')} як є`,
     afterBuild: 'Ренту й комісію покажемо, щойно підготуємо',
     include: (name: string) => `Додати ${name}`,
@@ -269,6 +271,7 @@ export const ALL = words(
     changed: 'Числа змінились — перевір і натисни ще раз.',
     failed: 'Зараз не вдалося підготувати.',
     nothing: 'Зараз тут нічого робити.',
+    noRoute: (names: string, n: number) => `Jupiter не бере ${n === 1 ? 'цю монету' : 'ці монети'} зараз${names ? ` · ${names}` : ''}`,
     exitDone: (figure: string) => `Отримано ≈ ${figure}`,
     collectDone: (figure: string) => `Зібрано ≈ ${figure}`,
     donePlain: 'Готово.',
@@ -302,10 +305,12 @@ export const ALL = words(
           return 'Цей гаманець не може його забрати';
         case 'NO_ROUTE':
           return 'Вихід звідси скоро — поки закрий у самому застосунку';
+        case 'NO_SWAP':
+          return 'Jupiter не бере цю монету зараз';
         case 'PROJECTION':
           return 'Бачимо лише вартість — закрий у самому застосунку';
         case 'NOT_READ':
-          return 'Зараз не прочитано';
+          return 'Зараз не вдалося прочитати';
         case 'CLOSED_HERE':
           return 'Тут поки закрито';
         case 'SIMULATION':

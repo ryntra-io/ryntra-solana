@@ -8,6 +8,7 @@ import type { Lang } from '@/city/lib/i18n/langs';
 import { Cell, Chip, CoinLogo, Icon, Info, Panel, Quiet, Table, TableHead, TableRow, Tile, Title } from '@/terminal/ui';
 import { budgetUse, resultShown, solPlain, usdShown, type Shown } from './figures';
 import { RoleBadge } from './glyphs';
+import { SignOnce, useSignOnce } from './SignOnce';
 import { tradeHistory, workerPath, type MineRow, type PastRow, type RowState } from './rows';
 import { AGENTS } from './words';
 import a from './agents.module.css';
@@ -26,6 +27,7 @@ function stateWord(w: W, state: RowState): string {
 
 /** The line under an agent's name: its coin or its pool's state, then its time left — or what holds it. */
 function subline(w: W, row: MineRow): string {
+  if (row.left) return w.notWithdrawn;
   const first = row.coin?.symbol ?? (row.pool === 'moving' ? w.movingRange : row.pool === 'earning' ? w.earning : null);
   const second = row.state !== 'working' ? stateWord(w, row.state) : row.daysLeft === null ? w.noTerm : w.daysLeft(String(row.daysLeft));
   return [first, second].filter(Boolean).join(' · ');
@@ -48,7 +50,7 @@ function Who({ row, name, sub, large = false }: { row: MineRow; name: string; su
       {row.coin ? <CoinLogo src={`/api/icon/${row.coin.mint}`} symbol={row.coin.symbol} size={large ? 'l' : 'm'} /> : <RoleBadge role={row.role} />}
       <span className={large ? a.cardHeadWords : a.whoWords}>
         <span className={large ? a.cardTitle : a.name}>{name}</span>
-        <span className={a.sub}>{sub}</span>
+        {sub ? <span className={a.sub}>{sub}</span> : null}
       </span>
     </>
   );
@@ -95,6 +97,8 @@ export type MineProps = Readonly<{
   /** The row whose «Stop» waits on the wallet: one at a time, the others stand still. */
   stopping: string | null;
   onStop: (row: MineRow) => void;
+  /** Under the AI trader's plan — «My agents», never «My bots». */
+  agent?: boolean;
 }>;
 
 /** A trader's book for its row; null for the others. */
@@ -104,15 +108,18 @@ const viewOf = (row: MineRow, views: MineProps['views']): AgentView | null => (r
  * «My bots» of the budget on a desk: one row a bot — the day's budget and what is spent of it, the day's trades, the
  * result as its own book counts it, and «Stop». No wallet, or none at work: one quiet line.
  */
-export function MineTable({ rows, owner, views, solUsd, note, stopping, onStop }: MineProps) {
+export function MineTable({ rows, owner, views, solUsd, note, stopping, onStop, agent = false }: MineProps) {
   const w = useWords(AGENTS);
   const lang = useLang();
   const names: Readonly<Record<MineRow['role'], string>> = { trader: w.trader, pilot: w.pilot, keeper: w.keeper };
+  // The engine said nothing of this wallet for want of its proof — «sign once» stands in place of «none».
+  const locked = useSignOnce(owner).shown;
   return (
-    <Panel pad="none" label={w.mine}>
+    // None at work: the name and its one line stand in one row — no wide strip of empty panel (QA 20.11, вада 110).
+    <Panel pad="none" label={agent ? w.mineAgents : w.mine} className={rows.length || note ? undefined : a.mineQuiet}>
       <div className={a.mineHead}>
         <Title as="h2" className={a.mineTitle}>
-          {w.mine}
+          {agent ? w.mineAgents : w.mine}
         </Title>
         {rows.some((row) => row.state === 'working') ? (
           <Chip tone="ok" dot>
@@ -157,7 +164,7 @@ export function MineTable({ rows, owner, views, solUsd, note, stopping, onStop }
                   <More row={row} view={viewOf(row, views)} />
                   {row.stop ? (
                     <Quiet size="s" disabled={stopping !== null} aria-busy={stopping === row.key || undefined} onClick={() => onStop(row)} data-agent-stop={row.role}>
-                      {stopping === row.key ? w.stopping : w.stop}
+                      {stopping === row.key ? w.stopping : row.left ? w.withdraw : w.stop}
                     </Quiet>
                   ) : null}
                   {result ? <Share text={w.shareText(names[row.role], result.text, row.span)} path={workerPath(row.role)} /> : null}
@@ -166,9 +173,11 @@ export function MineTable({ rows, owner, views, solUsd, note, stopping, onStop }
             );
           })}
         </Table>
-      ) : (
-        <p className={a.empty}>{owner ? w.noAgents : w.connectToSee}</p>
+      ) : locked ? null : (
+        <p className={a.empty}>{owner ? (agent ? w.noAiAgents : w.noAgents) : agent ? w.connectToSeeAgents : w.connectToSee}</p>
       )}
+      {/* Under the rows too: a pool the keeper looks after reads without the proof, the bots behind it do not. */}
+      <SignOnce owner={owner} variant="row" />
       {note ? <div className={a.notePad}>{note}</div> : null}
     </Panel>
   );
@@ -222,10 +231,10 @@ export function AgentCard({
   return (
     <Panel gap={12} label={names[row.role]}>
       <div className={a.cardHead}>
-        <Who row={row} name={names[row.role]} sub={subline(w, row)} large />
+        <Who row={row} name={names[row.role]} sub={row.left ? '' : subline(w, row)} large />
         <More row={row} view={view} />
         <Chip tone={row.state === 'working' ? 'ok' : 'warn'} dot={row.state === 'working'}>
-          {stateWord(w, row.state)}
+          {row.left ? w.notWithdrawn : stateWord(w, row.state)}
         </Chip>
       </div>
       {row.budget ? (
@@ -237,14 +246,17 @@ export function AgentCard({
           </span>
         </div>
       ) : null}
-      <div className={a.tiles}>
-        {row.trades !== null ? <Tile label={w.tradesToday} value={row.trades} /> : null}
-        <Tile label={row.span === 'week' ? w.resultWeek : row.span === 'day' ? w.today : w.result} value={result?.text ?? '—'} tone={result?.tone} />
-      </div>
+      {/* Stopped, not withdrawn: nothing works today — its one figure would be an empty «—»; only «Withdraw» stands. */}
+      {row.left ? null : (
+        <div className={a.tiles}>
+          {row.trades !== null ? <Tile label={w.tradesToday} value={row.trades} /> : null}
+          <Tile label={row.span === 'week' ? w.resultWeek : row.span === 'day' ? w.today : w.result} value={result?.text ?? '—'} tone={result?.tone} />
+        </div>
+      )}
       {children}
       {row.stop ? (
         <Quiet full disabled={stopping !== null} aria-busy={stopping === row.key || undefined} onClick={() => onStop(row)} data-agent-stop={row.role}>
-          {stopping === row.key ? w.stopping : w.stop}
+          {stopping === row.key ? w.stopping : row.left ? w.withdraw : w.stop}
         </Quiet>
       ) : null}
     </Panel>
@@ -252,14 +264,16 @@ export function AgentCard({
 }
 
 /** «My agents» on a phone: one card an agent, as the approved design draws it. */
-export function MineCards({ rows, owner, views, solUsd, note, stopping, onStop }: MineProps) {
+export function MineCards({ rows, owner, views, solUsd, note, stopping, onStop, agent = false }: MineProps) {
   const w = useWords(AGENTS);
+  const locked = useSignOnce(owner).shown;
   return (
     <div className={a.cards}>
-      {rows.length ? null : <p className={a.emptyPhone}>{owner ? w.noAgents : w.connectToSee}</p>}
+      {rows.length || locked ? null : <p className={a.emptyPhone}>{owner ? (agent ? w.noAiAgents : w.noAgents) : agent ? w.connectToSeeAgents : w.connectToSee}</p>}
       {rows.map((row) => (
         <AgentCard key={row.key} row={row} view={viewOf(row, views)} solUsd={solUsd} stopping={stopping} onStop={onStop} />
       ))}
+      <SignOnce owner={owner} variant="card" />
       {note}
     </div>
   );

@@ -16,10 +16,12 @@ import e from './earn.module.css';
 export type StakeFacts = Readonly<{ worthSol: number | null; keepsPct: number | null }>;
 
 const STAKE_COLUMNS = 'minmax(200px, 1.4fr) repeat(3, minmax(84px, 1fr)) 120px';
+/** On a narrower panel what the pool keeps goes; the worth, the rate and the row's action stay. */
+const STAKE_FOLD = ['minmax(200px, 1.4fr) repeat(2, minmax(84px, 1fr)) 120px'] as const;
 
 /**
  * Staking: the staked SOL coins the city buys, best rate first, as wide as the desk — the coin and whose it
- * is, its worth in SOL, the pool's share of the rewards, and the rate a year now, the row's bright figure. A tap on the
+ * is, its worth in SOL, the pool's share of the rewards, and the rate a year, the row's bright figure. A tap on the
  * row's action opens the coin's ticket beside the list.
  */
 export function StakingList({ stakes, facts, frontKey, held, reading, onStake, phone = false }: { stakes: readonly StakeRow[]; facts: (row: StakeRow) => StakeFacts; frontKey: string | null; held: boolean; reading: boolean; onStake: (row: StakeRow) => void; phone?: boolean }) {
@@ -42,6 +44,10 @@ export function StakingList({ stakes, facts, frontKey, held, reading, onStake, p
               <span className={e.up}>{digits(percentText(row.apyPct), lang)}</span>
               <span className={e.cap}>{w.rate}</span>
             </span>
+            {/* The row's action in sight, as on a desk (G6, fault 41 — a phone's row said nothing of how to act). */}
+            <Quiet size="s" disabled={held} onClick={() => onStake(row)} className={e.rowAct}>
+              {w.stake}
+            </Quiet>
           </div>
         ))}
       </div>
@@ -49,13 +55,13 @@ export function StakingList({ stakes, facts, frontKey, held, reading, onStake, p
   }
   return (
     <Panel pad="none" label={w.staking}>
-      <Table columns={STAKE_COLUMNS} minWidth={640} label={w.staking}>
+      <Table columns={STAKE_COLUMNS} fold={STAKE_FOLD} minWidth={640} label={w.staking}>
         <TableHead>
           <Cell head>{w.cCoin}</Cell>
           <Cell head end>
             {w.cWorth}
           </Cell>
-          <Cell head end>
+          <Cell head end fold={1}>
             {w.cPoolKeeps}
           </Cell>
           <Cell head end sorted>
@@ -77,7 +83,7 @@ export function StakingList({ stakes, facts, frontKey, held, reading, onStake, p
                 </span>
               </span>
               <Cell end>{worthSol === null ? '—' : `${digits(plainFigure(worthSol, { places: 4, significant: 5 }), lang)} SOL`}</Cell>
-              <Cell end tone="dim">
+              <Cell end tone="dim" fold={1}>
                 {keepsPct === null ? '—' : digits(percentText(keepsPct), lang)}
               </Cell>
               <Cell end tone="up" className={e.lead}>
@@ -98,6 +104,9 @@ export function StakingList({ stakes, facts, frontKey, held, reading, onStake, p
 
 const LEND_COLUMNS = 'minmax(200px, 1.4fr) repeat(4, minmax(80px, 1fr)) 112px';
 const LEND_COLUMNS_GUEST = 'minmax(200px, 1.4fr) repeat(3, minmax(84px, 1fr)) 112px';
+/** On a narrower panel what the market can pay out right now goes; the rate and the row's action stay. */
+const LEND_FOLD = ['minmax(200px, 1.4fr) repeat(3, minmax(80px, 1fr)) 112px'] as const;
+const LEND_FOLD_GUEST = ['minmax(200px, 1.4fr) repeat(2, minmax(84px, 1fr)) 112px'] as const;
 
 /**
  * Lending: the markets of Jupiter Lend the city's own ticket puts coins in — only those, every row with its
@@ -152,6 +161,11 @@ export function LendingList({
               <span className={e.up}>{digits(rateText(rate.ratePct), lang)}</span>
               <span className={e.cap}>{w.rate}</span>
             </span>
+            {actsOn(rate) ? (
+              <Quiet size="s" disabled={held} onClick={() => onLend(rate)} className={e.rowAct}>
+                {w.lend}
+              </Quiet>
+            ) : null}
           </div>
         ))}
       </div>
@@ -159,13 +173,13 @@ export function LendingList({
   }
   return (
     <Panel pad="none" label={w.lending}>
-      <Table columns={yours ? LEND_COLUMNS : LEND_COLUMNS_GUEST} minWidth={yours ? 700 : 640} label={w.lending}>
+      <Table columns={yours ? LEND_COLUMNS : LEND_COLUMNS_GUEST} fold={yours ? LEND_FOLD : LEND_FOLD_GUEST} minWidth={yours ? 700 : 640} label={w.lending}>
         <TableHead>
           <Cell head>{w.cCoin}</Cell>
           <Cell head end>
             {w.cSupplied}
           </Cell>
-          <Cell head end>
+          <Cell head end fold={1}>
             {w.cAvailable}
           </Cell>
           {yours ? (
@@ -193,7 +207,7 @@ export function LendingList({
                 )}
               </span>
               <Cell end>{shortUsd(rate.suppliedUsd, lang)}</Cell>
-              <Cell end tone="dim">
+              <Cell end tone="dim" fold={1}>
                 {shortUsd(available(rate), lang)}
               </Cell>
               {yours ? <Cell end>{mine === null ? '—' : shortUsd(mine, lang)}</Cell> : null}

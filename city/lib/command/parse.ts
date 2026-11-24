@@ -37,8 +37,12 @@ export type Command =
   | Readonly<{ kind: 'buy'; coin: Coin; view: View; amount: string | null; pay: Base | null; share: number | null }>
   /** The coin's trade window on selling: `amount` is of the coin itself; `into` is what the sale is paid in. */
   | Readonly<{ kind: 'sell'; coin: Coin; view: View; amount: string | null; into: Base | null; share: number | null }>
-  /** A limit or a stop on the coin's Spot window, with the person's own price when they said one. */
-  | Readonly<{ kind: 'order'; mode: 'limit' | 'stop'; side: Side; coin: Coin; price: string | null }>
+  /**
+   * A limit or a stop on the coin's Spot window, with the person's own price when they said one. A conditional order
+   * («buy ANT if it drops 5%», `./condition.ts`) carries `off` — basis points from the price now, signed — for the
+   * screen to turn into a price, and the amount, what pays (`pay`: the pair's other side) and a share, as said.
+   */
+  | Readonly<{ kind: 'order'; mode: 'limit' | 'stop'; side: Side; coin: Coin; price: string | null; off?: number; amount?: string | null; pay?: Base | null; share?: number | null }>
   | Readonly<{ kind: 'chart'; coin: Coin }>
   /** The coin's own window, as a tap on its tower opens it. */
   | Readonly<{ kind: 'coin'; coin: Coin }>

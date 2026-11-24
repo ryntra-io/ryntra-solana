@@ -8,7 +8,7 @@ import "server-only";
 import type { PortfolioExitOverviewResponse, PortfolioExitReviewResponse, PortfolioExitSubmitResponse } from "../../api/v1/contract.ts";
 import { portfolioDeps } from "../readers.server.ts";
 import { readPortfolio } from "../service.ts";
-import { exitChain, exitExecute, exitForget, exitPorts } from "./ports.server.ts";
+import { exitChain, exitExecute, exitForget, exitPorts, exitRoutable } from "./ports.server.ts";
 import { exitOpen, exitOverview, reviewExit, submitExit, type ExitAsk, type ExitDeps, type ExitFailure } from "./service.ts";
 
 const NETWORK = "solana:mainnet" as const;
@@ -28,9 +28,9 @@ function deps(): ExitDeps {
   };
 }
 
-/** What one approval would do, from the portfolio's kept read: nothing is built. */
+/** What one approval would do, from the portfolio's kept read and Jupiter's word on the coins a step would swap: nothing is built. */
 export async function exitOverviewAnswer(ask: ExitAsk): Promise<PortfolioExitOverviewResponse> {
-  const overview = await exitOverview(ask, { env: process.env, portfolio: (owner) => readPortfolio(owner, portfolioDeps()) });
+  const overview = await exitOverview(ask, { env: process.env, portfolio: (owner) => readPortfolio(owner, portfolioDeps()), routable: exitRoutable() });
   return { network: NETWORK, ...overview, items: overview.items.map((item) => ({ ...item })), held: overview.held.map((row) => ({ ...row })), estimate: { ...overview.estimate } };
 }
 

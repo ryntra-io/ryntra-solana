@@ -17,6 +17,7 @@
 import { createHash, createPrivateKey, sign } from "node:crypto";
 
 import { z } from "zod";
+import { isoDateTime } from "../../zod/iso-datetime.ts";
 
 import type { GuardStore } from "../../guard/store.ts";
 
@@ -96,7 +97,7 @@ export const WebPushSubscriptionSchema = z
     version: z.number().int().min(1),
     owner: z.string().regex(/^[1-9A-HJ-NP-Za-km-z]{32,44}$/),
     endpoint: z.string().url().max(1_000),
-    createdAt: z.string().datetime({ offset: true }),
+    createdAt: isoDateTime({ offset: true }),
   })
   .strict();
 export type WebPushSubscription = z.infer<typeof WebPushSubscriptionSchema>;

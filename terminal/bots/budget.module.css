@@ -1,0 +1,29 @@
+/* «Сітка» and «Сигнали» on the budget: the bot's few choices over the budget card. */
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+.picks {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
+.pick {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+/* Every choice the width of the form, its items one width: no ragged row on the phone. */
+.pick > [role='radiogroup'] {
+  display: grid;
+  grid-auto-columns: minmax(0, 1fr);
+  grid-auto-flow: column;
+}

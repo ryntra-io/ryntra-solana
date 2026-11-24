@@ -10,7 +10,7 @@
  * Pure and client-safe: the server builds the answer from it, the screen and the tests read it alike.
  */
 
-import { feeTvl24hPct, type CatalogPool, type LiquidityPoolKind } from "../liquidity/catalog/model.ts";
+import { CATALOG_PERIODS, feeTvl24hPct, type CatalogPeriod, type CatalogPeriodFigures, type CatalogPool, type LiquidityPoolKind } from "../liquidity/catalog/model.ts";
 
 const SOL_MINT = "So11111111111111111111111111111111111111112";
 
@@ -118,4 +118,35 @@ export function lendRates(markets: readonly LendMarket[]): EarnLendRate[] {
     out.push({ mint: market.asset.mint, symbol, ratePct: rate, suppliedUsd: supplied !== null && Number.isFinite(supplied) ? supplied : null });
   }
   return out.sort((a, b) => b.ratePct - a.ratePct || (a.symbol < b.symbol ? -1 : 1)).slice(0, EARN_LEND_MAX);
+}
+
+/* ── the pools' windows ───────────────────────────────────────────────────────────────────────────────── */
+
+/** The windows a person reads the pools' table by: the venue's own, the shortest half an hour, 24 hours the start. */
+export const EARN_PERIODS = CATALOG_PERIODS;
+export type EarnPeriod = CatalogPeriod;
+export type EarnPeriodFigures = CatalogPeriodFigures;
+
+/** One pool of the chooser by window: its volume and its fees in each, as the venue stated them. */
+export type EarnPoolPeriods = Readonly<{ address: string; periods: Readonly<Record<EarnPeriod, EarnPeriodFigures>> }>;
+
+export type EarnPeriodsAnswer = Readonly<{
+  pools: readonly EarnPoolPeriods[];
+  /** When the oldest part of the answer was read, ISO; null when nothing was. */
+  at: string | null;
+}>;
+
+/**
+ * The chooser's pools by window — the same pools as `earnPools`, in its order — for the table's «30 min · 1 h · 2 h ·
+ * 24 h». A pool whose record stated no window is left out: its row keeps the day alone. Every figure is the venue's own;
+ * none is worked out here.
+ */
+export function earnPeriods(pools: readonly CatalogPool[]): EarnPoolPeriods[] {
+  const byAddress = new Map(pools.map((pool) => [pool.address, pool]));
+  const out: EarnPoolPeriods[] = [];
+  for (const row of earnPools(pools)) {
+    const periods = byAddress.get(row.address)?.periods;
+    if (periods) out.push({ address: row.address, periods });
+  }
+  return out;
 }

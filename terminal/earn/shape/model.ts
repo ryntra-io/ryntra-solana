@@ -13,7 +13,7 @@
  * Pure: no I/O but the person's own browser storage, read and written behind try/catch.
  */
 
-import { GRID_COLUMNS, GRID_LEVELS, GRID_SIDE, gridFault } from '../../../lib/core/liquidity-grid.ts';
+import { GRID_COLUMNS, GRID_LEVELS, GRID_SIDE, GRID_WAVE, gridFault } from '../../../lib/core/liquidity-grid.ts';
 
 export const SHAPE_OPEN = process.env.NEXT_PUBLIC_RYNTRA_EARN_PRO_SHAPE === 'open';
 
@@ -27,6 +27,14 @@ export type Columns = readonly number[];
 export const PRESETS = ['even', 'near', 'edges', 'wave'] as const;
 export type Preset = (typeof PRESETS)[number];
 
+/** Meteora's Wave — a goal and a starting shape — only where its own switch is open (exactly `open`). */
+export const WAVE_OPEN = process.env.NEXT_PUBLIC_RYNTRA_EARN_PRO_WAVE === 'open';
+
+/** The shapes «Start from» offers: Wave only with its switch open. */
+export function presetsShown(waveOpen: boolean = WAVE_OPEN): readonly Preset[] {
+  return waveOpen ? PRESETS : PRESETS.filter((preset) => preset !== 'wave');
+}
+
 /** A side drawn from the price outwards — `at(0)` beside the line — as the whole grid, under the price mirrored. */
 function mirrored(at: (distance: number) => number): Columns {
   const side = Array.from({ length: SIDE }, (_, distance) => clampCells(Math.round(at(distance))));
@@ -35,19 +43,20 @@ function mirrored(at: (distance: number) => number): Columns {
 
 /**
  * The four shapes a grid starts from. «Even» stands at half the grid's height so that it can be painted up as well as
- * down; «Near price» and «Catch moves» fall and rise as the SDK's Curve and Bid-Ask do; «Wave» is two humps, one each
- * side of the price — Meteora's Wave, drawn as the person's own weights.
+ * down; «Near price» and «Catch moves» fall and rise as the SDK's Curve and Bid-Ask do; «Wave» is Meteora's own Wave
+ * (SDK 0.1.3) as the engine's grid rule draws it (`GRID_WAVE`): even on the half of each side nearer the price, then
+ * four steps up to twice that at the edges — on the middle width the SDK's Wave to the step, in nine ranges.
  */
 export function presetColumns(preset: Preset): Columns {
   const last = SIDE - 1;
   if (preset === 'even') return mirrored(() => LEVELS / 2);
   if (preset === 'near') return mirrored((distance) => LEVELS - ((LEVELS - 1) * distance) / last);
   if (preset === 'edges') return mirrored((distance) => 1 + ((LEVELS - 1) * distance) / last);
-  return mirrored((distance) => 1 + (LEVELS - 1) * Math.exp(-((distance - last / 2) ** 2) / (2 * 2.5 ** 2)));
+  return [...GRID_WAVE];
 }
 
 /** The shape a goal of the form is drawn in, to start a grid from the goal in force. */
-export const GOAL_PRESET: Readonly<Record<'even' | 'near' | 'edges', Preset>> = { even: 'even', near: 'near', edges: 'edges' };
+export const GOAL_PRESET: Readonly<Record<'even' | 'near' | 'edges' | 'wave', Preset>> = { even: 'even', near: 'near', edges: 'edges', wave: 'wave' };
 
 export const clampCells = (cells: number): number => Math.max(0, Math.min(LEVELS, Math.round(cells)));
 

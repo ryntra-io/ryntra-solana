@@ -99,6 +99,10 @@ test("the engine's answers are read as they are, and anything else reads as noth
     { mint: OTHER, symbol: "jlUSDC", name: "Jupiter Lend USDC", icon: "https://cdn.example/usdc.png", isVerified: true, isSuspicious: false },
   ]);
   assert.deepEqual(parseCatalog({ error: { code: "RATE_LIMITED" } }), []);
+  /* A coin the engine marks as passing for a stock is offered by no picker. */
+  const copy = parseCatalog({ tokens: [{ mint: OTHER, symbol: "ANT", name: "Anthropic", icon: null, isVerified: false, isSuspicious: false, passesFor: { ticker: "ANT", company: "Anthropic", mint: "ANTBTZQ1EUuTxUs3tfeampxdqTWPHmwyJmcWj4xoAyNe" } }] });
+  assert.equal(copy[0].isSuspicious, true);
+  assert.equal(parseCatalog({ tokens: [{ mint: OTHER, symbol: "ANT", name: "Ants", passesFor: null }] })[0].isSuspicious, false);
   const sha = "a".repeat(64);
   assert.deepEqual(factsFromLaunch(LAUNCH, { token: LAUNCH, symbol: "MOON", name: "Moon", image: `https://ryntra.io/api/launch/image/${sha}` }), { mint: LAUNCH, symbol: "MOON", name: "Moon", icon: `/api/launch/image/${sha}`, launch: true, verified: false });
   assert.equal(factsFromLaunch(LAUNCH, { token: OTHER, symbol: "MOON", name: "Moon" }), null, "another token's answer is not this one's");

@@ -1,0 +1,69 @@
+/* The page where there is none (docs/terminal/DESIGN.md): the kit's page, panel, search and rows; this sheet only stands
+   them in a column. Colours by the root's tokens, spacing from the scale, no corner of its own. */
+
+.act {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.find {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+/* The kit's search, as wide as the panel: a field to type a coin into, not a list's filter. */
+.find > label {
+  width: 100%;
+}
+
+.found {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.mint {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 56px;
+  color: var(--soft);
+  font-size: var(--type-base);
+  font-weight: 600;
+  text-decoration: none;
+  transition: color 0.15s;
+}
+
+.mint:hover {
+  color: var(--ice);
+}
+
+.mint:focus-visible {
+  outline: 2px solid var(--lilac);
+  outline-offset: 2px;
+}
+
+.mintText {
+  flex: 1 1 0;
+  min-width: 0;
+  color: var(--dim);
+  font-variant-numeric: tabular-nums;
+}
+
+.none {
+  display: flex;
+  align-items: center;
+  min-height: 56px;
+  margin: 0;
+  color: var(--soft);
+  font-size: var(--type-body);
+}
+
+.doors {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}

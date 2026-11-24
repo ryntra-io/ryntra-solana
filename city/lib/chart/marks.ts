@@ -46,18 +46,28 @@ export type MarksRead = Readonly<{ kind: 'ready'; marks: readonly LayerMark[] } 
 
 const KINDS = new Set<TokenMark['kind']>(['big-buy', 'big-sell', 'creator-buy', 'creator-sell', 'dex', 'liquidity-drop']);
 
+/**
+ * The engine's own marks in one answer of the overview read, as it found them; `[]` for a coin it has nothing on
+ * (`none`), null for a read that failed. A mark of a kind it does not know, or without its time, is left out.
+ */
+export function readTokenMarks(status: number, body: unknown): TokenMark[] | null {
+  if (status < 200 || status >= 300 || !body || typeof body !== 'object') return null;
+  const json = body as Record<string, unknown>;
+  if (json.none) return [];
+  if (!Array.isArray(json.marks)) return null;
+  return json.marks
+    .filter((mark): mark is TokenMark => {
+      if (!mark || typeof mark !== 'object') return false;
+      const { kind, t, pct, usd } = mark as Record<string, unknown>;
+      return KINDS.has(kind as TokenMark['kind']) && typeof t === 'number' && (pct === null || pct === undefined || typeof pct === 'number') && (usd === null || usd === undefined || typeof usd === 'number');
+    })
+    .map((mark) => ({ ...mark, pct: mark.pct ?? null, usd: mark.usd ?? null }));
+}
+
 /** One answer of the overview read. A coin the engine has nothing on (`none`) is a coin without marks, not a failure. */
 export function readMarks(status: number, body: unknown): MarksRead {
-  if (status < 200 || status >= 300 || !body || typeof body !== 'object') return { kind: 'failed' };
-  const json = body as Record<string, unknown>;
-  if (json.none) return { kind: 'ready', marks: [] };
-  if (!Array.isArray(json.marks)) return { kind: 'failed' };
-  const marks = json.marks.filter((mark): mark is TokenMark => {
-    if (!mark || typeof mark !== 'object') return false;
-    const { kind, t, pct } = mark as Record<string, unknown>;
-    return KINDS.has(kind as TokenMark['kind']) && typeof t === 'number' && (pct === null || pct === undefined || typeof pct === 'number');
-  });
-  return { kind: 'ready', marks: marketMarks(marks.map((mark) => ({ ...mark, pct: mark.pct ?? null }))) };
+  const marks = readTokenMarks(status, body);
+  return marks === null ? { kind: 'failed' } : { kind: 'ready', marks: marketMarks(marks) };
 }
 
 /** Reads a coin's marks. Never throws. */

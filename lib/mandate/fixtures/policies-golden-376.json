@@ -1,0 +1,412 @@
+{
+ "jupiter buy SOL": {
+  "new:mandate": "34b88d53425cdccc137d9df0d975e498a9f064a40b082686d7c0b60876a8e632",
+  "new:buy policy": "5dd13aecd5da55bd0a7cc55089debb8d676ec7f12a3c0fdab948e7625833e87a",
+  "new:enable": [
+   "f9990097e6dc4a0dd5bdfa10d82ef10af3cb56454f102b5a4be80b27ebf59d33",
+   "580cf5e679a55ae90241cd4764fee4fd6bfb22bdd71d6dd7b2d29a0eeec658c2"
+  ],
+  "new:stop": [
+   "9316194915f5ff4d135b0fb7f66f00f1548c09782a4bc459400b18d2a7857569"
+  ],
+  "new:stop and withdraw": [
+   "4079e5035f6aee93d45e3d4e56f84515a519b963d980063e300830390ff1b0ca"
+  ],
+  "new:withdraw kept open": [
+   "867b2a041e68855d71abeafd98c32c466f678df1fbc24cd7713ea2f9e344c0a3"
+  ],
+  "present:mandate": "c0cf839d8c639d7390c7e603a3c5de2c8c345c97d559a08029f966f8fdaf881a",
+  "present:buy policy": "8c4aa84de88eed1df43d7e953aa2bd98c002c9b9619222ae925d5fd17655826d",
+  "present:enable": [
+   "102bb44b992c60715f042cf4b230418544a7ff8090f0ffe6a17b4b7331e0fa85",
+   "ddd8dabe96d5c4b2dc945599fce6498d4fcb38473cead34b4394da7b24b131ab"
+  ],
+  "present:stop": [
+   "124044f1b8954f1617cd6219f211ceeade4cea36a5a9746513c1909e65a40d67"
+  ],
+  "present:stop and withdraw": [
+   "8ddcfd41d9c88cf626018693a4ab8834f2a27700b85b7cd84891948616b41372"
+  ],
+  "present:withdraw kept open": [
+   "1c227a39c9708ee1c70c60b19e6beb5f147df49a626f154f0157bc7690b69fb4"
+  ]
+ },
+ "jupiter buy USDC": {
+  "new:mandate": "b2eac70244ee5a4b9faa0e0f9f2e3f619f2553d3d3bda6306941bd158f06b2d4",
+  "new:buy policy": "2aa12adec8578b8eb8c2f005649f9101c2fc14c634c00cc36e8562c7d41505a7",
+  "new:enable": [
+   "5e2e6108d6c57c2a6f88a3ad3d3718004db5e5cfe1d054e50e210b904b864068",
+   "c85014e76f149184e6aeb853868f6709decfe9bb47f6bc3c2ee7dbb0c50e2f4e"
+  ],
+  "new:stop": [
+   "9316194915f5ff4d135b0fb7f66f00f1548c09782a4bc459400b18d2a7857569"
+  ],
+  "new:stop and withdraw": [
+   "6d483d8c5667236571ac23a9aca8e78a85ca782132056f2368f4b583877d268a"
+  ],
+  "new:withdraw kept open": [
+   "582711683f54d879376a6d9612efda691c946da580886acf31aa141aea0f3978"
+  ],
+  "present:mandate": "12d669a5dfff6e0f2a6ca5b417dff226d27d95184bc974598f21955d8fd90bd2",
+  "present:buy policy": "0c951ae5d6ba12b1623eadc9ec40dc9923162a1db2deb0509fc2f1ecdb335f20",
+  "present:enable": [
+   "121466566c43640b4cdaeb472a34ecb6ca23d463f7feda328bc1a87d5b108b46",
+   "ae465885292354191a713873cc40f00d78009b0f9ff8aeffc5d7f95b255f292f"
+  ],
+  "present:stop": [
+   "124044f1b8954f1617cd6219f211ceeade4cea36a5a9746513c1909e65a40d67"
+  ],
+  "present:stop and withdraw": [
+   "bb2c074c69c5ba8ac6de29504d7a3aab907b691a02fd87654c60688b7a863b66"
+  ],
+  "present:withdraw kept open": [
+   "ef1a6adc9646610b55febb32cadedf740fc4f2e064ba4685d51438adca7ae7b1"
+  ]
+ },
+ "jupiter buy Token-2022 coin": {
+  "new:mandate": "34b88d53425cdccc137d9df0d975e498a9f064a40b082686d7c0b60876a8e632",
+  "new:buy policy": "5dd13aecd5da55bd0a7cc55089debb8d676ec7f12a3c0fdab948e7625833e87a",
+  "new:enable": [
+   "f3e7775a874bd1eb4a8e7935ff24dcd7ada36e50f4e42d20c0ffbf73e08e6447",
+   "580cf5e679a55ae90241cd4764fee4fd6bfb22bdd71d6dd7b2d29a0eeec658c2"
+  ],
+  "new:stop": [
+   "9316194915f5ff4d135b0fb7f66f00f1548c09782a4bc459400b18d2a7857569"
+  ],
+  "new:stop and withdraw": [
+   "4079e5035f6aee93d45e3d4e56f84515a519b963d980063e300830390ff1b0ca"
+  ],
+  "new:withdraw kept open": [
+   "867b2a041e68855d71abeafd98c32c466f678df1fbc24cd7713ea2f9e344c0a3"
+  ],
+  "present:mandate": "c0cf839d8c639d7390c7e603a3c5de2c8c345c97d559a08029f966f8fdaf881a",
+  "present:buy policy": "8c4aa84de88eed1df43d7e953aa2bd98c002c9b9619222ae925d5fd17655826d",
+  "present:enable": [
+   "51bf3d571d0a7fa56ffa583a25ed059bfdfa54bddda5ca03b05cb01c73b19ecb",
+   "ddd8dabe96d5c4b2dc945599fce6498d4fcb38473cead34b4394da7b24b131ab"
+  ],
+  "present:stop": [
+   "124044f1b8954f1617cd6219f211ceeade4cea36a5a9746513c1909e65a40d67"
+  ],
+  "present:stop and withdraw": [
+   "8ddcfd41d9c88cf626018693a4ab8834f2a27700b85b7cd84891948616b41372"
+  ],
+  "present:withdraw kept open": [
+   "1c227a39c9708ee1c70c60b19e6beb5f147df49a626f154f0157bc7690b69fb4"
+  ]
+ },
+ "jupiter regular buy": {
+  "new:mandate": "34b88d53425cdccc137d9df0d975e498a9f064a40b082686d7c0b60876a8e632",
+  "new:buy policy": "9a7048fce867dd04beacd865c0af2f03cbc24ee683efe76f48c03771da81aee6",
+  "new:enable": [
+   "f9990097e6dc4a0dd5bdfa10d82ef10af3cb56454f102b5a4be80b27ebf59d33",
+   "1d0415ef12f79b96e56bf563c45f7fdbc6c0b07ffbc279a23479be5f795302fc"
+  ],
+  "new:stop": [
+   "9316194915f5ff4d135b0fb7f66f00f1548c09782a4bc459400b18d2a7857569"
+  ],
+  "new:stop and withdraw": [
+   "4079e5035f6aee93d45e3d4e56f84515a519b963d980063e300830390ff1b0ca"
+  ],
+  "new:withdraw kept open": [
+   "867b2a041e68855d71abeafd98c32c466f678df1fbc24cd7713ea2f9e344c0a3"
+  ],
+  "present:mandate": "c0cf839d8c639d7390c7e603a3c5de2c8c345c97d559a08029f966f8fdaf881a",
+  "present:buy policy": "b93b7b6b06866d13238e3c2a00fdffea5bc258304e739f01cd9acaa72c910725",
+  "present:enable": [
+   "102bb44b992c60715f042cf4b230418544a7ff8090f0ffe6a17b4b7331e0fa85",
+   "c7ddcf0d42b0b9c7508eafa565744f586352d9afbf39b116d94ade45c30d4497"
+  ],
+  "present:stop": [
+   "124044f1b8954f1617cd6219f211ceeade4cea36a5a9746513c1909e65a40d67"
+  ],
+  "present:stop and withdraw": [
+   "8ddcfd41d9c88cf626018693a4ab8834f2a27700b85b7cd84891948616b41372"
+  ],
+  "present:withdraw kept open": [
+   "1c227a39c9708ee1c70c60b19e6beb5f147df49a626f154f0157bc7690b69fb4"
+  ]
+ },
+ "jupiter regular buy Token-2022": {
+  "new:mandate": "34b88d53425cdccc137d9df0d975e498a9f064a40b082686d7c0b60876a8e632",
+  "new:buy policy": "5d5665e37055d331e682ad6d7d167d02d31e85fec03b6bb86f5898ba139e98bb",
+  "new:enable": [
+   "f3e7775a874bd1eb4a8e7935ff24dcd7ada36e50f4e42d20c0ffbf73e08e6447",
+   "a6b7e245c401c41f3894b8c8c668ee30e65597452c00e3acef36d256a2a67bc3"
+  ],
+  "new:stop": [
+   "9316194915f5ff4d135b0fb7f66f00f1548c09782a4bc459400b18d2a7857569"
+  ],
+  "new:stop and withdraw": [
+   "4079e5035f6aee93d45e3d4e56f84515a519b963d980063e300830390ff1b0ca"
+  ],
+  "new:withdraw kept open": [
+   "867b2a041e68855d71abeafd98c32c466f678df1fbc24cd7713ea2f9e344c0a3"
+  ],
+  "present:mandate": "c0cf839d8c639d7390c7e603a3c5de2c8c345c97d559a08029f966f8fdaf881a",
+  "present:buy policy": "72347a2cb31d0139c21cc779e98e576f88bb453b87ecf111525aa1655aaeb266",
+  "present:enable": [
+   "51bf3d571d0a7fa56ffa583a25ed059bfdfa54bddda5ca03b05cb01c73b19ecb",
+   "4d184434625694c71320d3deae6d9c4a7ab422754ba9bf4832d4de51f479d4f1"
+  ],
+  "present:stop": [
+   "124044f1b8954f1617cd6219f211ceeade4cea36a5a9746513c1909e65a40d67"
+  ],
+  "present:stop and withdraw": [
+   "8ddcfd41d9c88cf626018693a4ab8834f2a27700b85b7cd84891948616b41372"
+  ],
+  "present:withdraw kept open": [
+   "1c227a39c9708ee1c70c60b19e6beb5f147df49a626f154f0157bc7690b69fb4"
+  ]
+ },
+ "jupiter sale of her coin": {
+  "new:mandate": "1e39571edbd788ec9a63f1bde2e938860f2aca77ce791fdfee7830712702caf3",
+  "new:buy policy": "36766c831ec716686fe78bee654bf74cf26be6ec0742df25c2480d972db7c629",
+  "new:enable": [
+   "05035da393a02af5ff7eda7951ba18ace1990356d94f125d5b48544bcdf85de0",
+   "11f20c440720594f19220d1c178e7f328e10b48962fd55ac7b5c27fd5a0e01bb"
+  ],
+  "new:stop": [
+   "9316194915f5ff4d135b0fb7f66f00f1548c09782a4bc459400b18d2a7857569"
+  ],
+  "new:stop and withdraw": [
+   "ce270f1211f5cf58a926c4793ac819d5e12cf5b0625f191968e23e07497ae05f"
+  ],
+  "new:withdraw kept open": [
+   "e00f9cc7e3d56b6042bc4a1dfdf873f6c7dcf391b9bc4b043503cbd5228263c0"
+  ],
+  "present:mandate": "019da3bfe7ba227d4251bc0603b79bf758f35f8a783c409da3d7f2b0190922e5",
+  "present:buy policy": "e06568acb45eeb2f354a116440b195a4c31af7b9cc811e3b96c94755e56ffce5",
+  "present:enable": [
+   "8365891beecd1891bc80a8677b225f60906a033cea11780bff5ddb8a6dec260e",
+   "95fd782ffccb102de0e2ef788312fc87cebefee4190f53f8669d1db1b3016178"
+  ],
+  "present:stop": [
+   "124044f1b8954f1617cd6219f211ceeade4cea36a5a9746513c1909e65a40d67"
+  ],
+  "present:stop and withdraw": [
+   "35514d75af52cb74f4c0fa7dd6d462b16191be34f518658733f23836f9822123"
+  ],
+  "present:withdraw kept open": [
+   "5400fa5bc0bb2a20b157d7e839b4f01a30958c9fdc075e7303450942f7009204"
+  ]
+ },
+ "jupiter agent keeps a coin": {
+  "new:mandate": "917cf6405da283ebc7b46cc762446f0fba8172724119607c6841098d22d49e14",
+  "new:buy policy": "5c062145bac85ae9a01a71d8ca45019c7456d5624e7fe662d4ef36e2644903a4",
+  "new:sale policy": "232c5428ac2b4f8c215fbcafdbbe7fd6c48033bf46cebaff6555f0feaf9be6b0",
+  "new:enable": [
+   "f9990097e6dc4a0dd5bdfa10d82ef10af3cb56454f102b5a4be80b27ebf59d33",
+   "b98c67ffb55fde100dea15e4fa0f73dce3c57d316bc06e5c2f395128e036bb64",
+   "ed509c721c09790c11d0713669893c14c80bee7155971572542fd6a7e2a425b6"
+  ],
+  "new:stop": [
+   "541030b85acd163ecc0946a01d15aab5234070cd67f7ee77eec01f31924a1316"
+  ],
+  "new:stop and withdraw": [
+   "fb983dce26376a7e22b34ae7faa9880b0a666128367b6e035820d38d8f4e05fe"
+  ],
+  "new:withdraw kept open": [
+   "867b2a041e68855d71abeafd98c32c466f678df1fbc24cd7713ea2f9e344c0a3"
+  ],
+  "new:withdraw held": [
+   "119d73da1e5bc5eebb2ab94ace15b53ffdfe95d3c16d78e0858d54a22afa50ab"
+  ],
+  "present:mandate": "a14811fa58bfe56477cba8679b47837d2ebe0da6ed1bfa5b677c8c6cbe8e5b59",
+  "present:buy policy": "cb8d29d82e5ba65b99894076350a52deda6237b4f4ea5d1d3a71093bbb0a1904",
+  "present:sale policy": "6bfe1473396a816010182b40f368a82824bff43b315384ef2fcabac982d012f4",
+  "present:enable": [
+   "102bb44b992c60715f042cf4b230418544a7ff8090f0ffe6a17b4b7331e0fa85",
+   "d42d5caab3f4c538442c599d08e7b9c3cc34a21b745f96138b9e7d18d45908f9",
+   "82009b308196326e7646101bfb7f2becd2f64308f7b608c3d0ede6d3af215f35"
+  ],
+  "present:stop": [
+   "c2084b039045c03358617e69ad1aa337744154e320087b7dd922e4ef56a53713"
+  ],
+  "present:stop and withdraw": [
+   "43915939453cd32d00df8e1dc2611d2c0d3e3d3a0c2b2632a33a46e5ab7e49de"
+  ],
+  "present:withdraw kept open": [
+   "1c227a39c9708ee1c70c60b19e6beb5f147df49a626f154f0157bc7690b69fb4"
+  ],
+  "present:withdraw held": [
+   "f87b817012d86f0de8ec1e6c1663433e3e00ea0e6f69de3ab9ff55aff3ca84af"
+  ]
+ },
+ "jupiter agent keeps a Token-2022 coin": {
+  "new:mandate": "917cf6405da283ebc7b46cc762446f0fba8172724119607c6841098d22d49e14",
+  "new:buy policy": "38d65cb5400db6448049542bc8159949aabeaf89f154316ee2e38b3eb8a9e8f4",
+  "new:sale policy": "fb327e8fe8d7c20d47f857c682e54667b808267d19293666ae50cc80a88764bc",
+  "new:enable": [
+   "f3e7775a874bd1eb4a8e7935ff24dcd7ada36e50f4e42d20c0ffbf73e08e6447",
+   "915c265c5894ed00c3b5591176ab5db1561c29db20f70f1a504c190454296fe2",
+   "33a3443b83fb7f651dc4c7d64acef1c4635323c33259f3c998b989931e3f31cc"
+  ],
+  "new:stop": [
+   "541030b85acd163ecc0946a01d15aab5234070cd67f7ee77eec01f31924a1316"
+  ],
+  "new:stop and withdraw": [
+   "fb983dce26376a7e22b34ae7faa9880b0a666128367b6e035820d38d8f4e05fe"
+  ],
+  "new:withdraw kept open": [
+   "867b2a041e68855d71abeafd98c32c466f678df1fbc24cd7713ea2f9e344c0a3"
+  ],
+  "new:withdraw held": [
+   "febe16d96ea48cabe43c5584c7f3de4c0f556a2f29d7ab76b7537672f919eb61"
+  ],
+  "present:mandate": "a14811fa58bfe56477cba8679b47837d2ebe0da6ed1bfa5b677c8c6cbe8e5b59",
+  "present:buy policy": "aac57ab19e02df4ea5986de849281d4f41456e9cf1a0ed79eba22373f7e2a551",
+  "present:sale policy": "12a90cab6b86ef80037eb41bddcc2cbc01f4aa2d6fcddb5ff914e5a49e99d5cf",
+  "present:enable": [
+   "51bf3d571d0a7fa56ffa583a25ed059bfdfa54bddda5ca03b05cb01c73b19ecb",
+   "038e33d8a526c4a89bcdcf5a28ef0d496a4c308cd979c4f4bcdf6397eea91ab5",
+   "1004ec182fd753cab572546b9bd6fda0f305ba5f368179e7ee6afa86cc84835e"
+  ],
+  "present:stop": [
+   "c2084b039045c03358617e69ad1aa337744154e320087b7dd922e4ef56a53713"
+  ],
+  "present:stop and withdraw": [
+   "43915939453cd32d00df8e1dc2611d2c0d3e3d3a0c2b2632a33a46e5ab7e49de"
+  ],
+  "present:withdraw kept open": [
+   "1c227a39c9708ee1c70c60b19e6beb5f147df49a626f154f0157bc7690b69fb4"
+  ],
+  "present:withdraw held": [
+   "8998bef220fb1d1224f53c6623d01ded017b445fdee295965b90d969823394d9"
+  ]
+ },
+ "devnet buy": {
+  "new:mandate": "8e416d2e07032b0584768c10eea0be1005d3d2fa46c20c84647fae4396eee843",
+  "new:buy policy": "81ba41fc24ec87676eed3afb38353bcb328af279e05e3d1972689914e70ce0ec",
+  "new:enable": [
+   "ffa65f1209a52fe97c19f371abc683d4b03ed81968c0c47b540e2835841ed74b",
+   "9964bf8343dca8ae356c053e7975a5e4bd1174695cd24f60499262dcd3035920"
+  ],
+  "new:stop": [
+   "9316194915f5ff4d135b0fb7f66f00f1548c09782a4bc459400b18d2a7857569"
+  ],
+  "new:stop and withdraw": [
+   "4079e5035f6aee93d45e3d4e56f84515a519b963d980063e300830390ff1b0ca"
+  ],
+  "new:withdraw kept open": [
+   "867b2a041e68855d71abeafd98c32c466f678df1fbc24cd7713ea2f9e344c0a3"
+  ],
+  "present:mandate": "4cb5bbba8073ffc28e365536bc9a16e045fa6f6b9232a508523bd1578fb17ad4",
+  "present:buy policy": "a77e28a9b017556b485b1ee0a46ee811989a57091bf7fb370e7b08c888f8b5e6",
+  "present:enable": [
+   "25c1062e87308f948545fac3ff5edb1dbda72413b405a416ad0148d742652933"
+  ],
+  "present:stop": [
+   "124044f1b8954f1617cd6219f211ceeade4cea36a5a9746513c1909e65a40d67"
+  ],
+  "present:stop and withdraw": [
+   "8ddcfd41d9c88cf626018693a4ab8834f2a27700b85b7cd84891948616b41372"
+  ],
+  "present:withdraw kept open": [
+   "1c227a39c9708ee1c70c60b19e6beb5f147df49a626f154f0157bc7690b69fb4"
+  ]
+ },
+ "devnet regular buy": {
+  "new:mandate": "8e416d2e07032b0584768c10eea0be1005d3d2fa46c20c84647fae4396eee843",
+  "new:buy policy": "d06f8ba23b99fe6a32dd6908d73e19c3ca5bcbcfd4f2154b395bb408f0322965",
+  "new:enable": [
+   "ffa65f1209a52fe97c19f371abc683d4b03ed81968c0c47b540e2835841ed74b",
+   "9e3c4a593ee1e20c0873e6eeee686ef2c9cc6d19e34995690c7573f9451e519c"
+  ],
+  "new:stop": [
+   "9316194915f5ff4d135b0fb7f66f00f1548c09782a4bc459400b18d2a7857569"
+  ],
+  "new:stop and withdraw": [
+   "4079e5035f6aee93d45e3d4e56f84515a519b963d980063e300830390ff1b0ca"
+  ],
+  "new:withdraw kept open": [
+   "867b2a041e68855d71abeafd98c32c466f678df1fbc24cd7713ea2f9e344c0a3"
+  ],
+  "present:mandate": "4cb5bbba8073ffc28e365536bc9a16e045fa6f6b9232a508523bd1578fb17ad4",
+  "present:buy policy": "8f31418a802e12b262149813857f78be3ac0af00d8acb1647f1bdd562b77bd06",
+  "present:enable": [
+   "f109560ae483858f261fa86a96d6a2548257b3ab76e75af6cf440504324de15d"
+  ],
+  "present:stop": [
+   "124044f1b8954f1617cd6219f211ceeade4cea36a5a9746513c1909e65a40d67"
+  ],
+  "present:stop and withdraw": [
+   "8ddcfd41d9c88cf626018693a4ab8834f2a27700b85b7cd84891948616b41372"
+  ],
+  "present:withdraw kept open": [
+   "1c227a39c9708ee1c70c60b19e6beb5f147df49a626f154f0157bc7690b69fb4"
+  ]
+ },
+ "devnet sale of her coin": {
+  "new:mandate": "ee2bf09536620abb5ee55496b326c18a86c66b1d6ed6002bdc6326c37659dd9c",
+  "new:buy policy": "219fb0c8d4192fb743f66a30b2421892488a411fea0c202b414c9926c97dafe5",
+  "new:enable": [
+   "0e14067252afcd290adbf20505485b2df269f502971a99a60e384adcafbf870a",
+   "d6ffcac1bbc8a35a78c2e8cab9e71cc941025db429f345c2c9d8358dc300337d"
+  ],
+  "new:stop": [
+   "9316194915f5ff4d135b0fb7f66f00f1548c09782a4bc459400b18d2a7857569"
+  ],
+  "new:stop and withdraw": [
+   "caeff4d7b7d189391a3247d5a74e2743ef020e1573ef11b93ebe41cd034a610e"
+  ],
+  "new:withdraw kept open": [
+   "8c7bf019b5fdc566231f3f0398267d5b009e0ffb8fdc30f1992f9ec14af5bd1f"
+  ],
+  "present:mandate": "a8267aa06aa49ff7a17ec98de369323e0be07dfd3ddff583188f002e30c12418",
+  "present:buy policy": "25c3b6321eea2e1ef8dade6a0a411cf1a34ce4b2f454ab800612a2bec761ed3e",
+  "present:enable": [
+   "b94d81386db963dd3e8826f6d1cecdfc0a7b46564b2865d90ddb3dd7525e3c37"
+  ],
+  "present:stop": [
+   "124044f1b8954f1617cd6219f211ceeade4cea36a5a9746513c1909e65a40d67"
+  ],
+  "present:stop and withdraw": [
+   "a8f775c4720105495484f5e88cebe003557cb7392b1e85ebb8108dffafd5bbb3"
+  ],
+  "present:withdraw kept open": [
+   "db5fe71b37c600a6149c59d64c5f1bee61c740fb65d5e092dc542c4cd9a40a6d"
+  ]
+ },
+ "devnet agent keeps a coin": {
+  "new:mandate": "eba92bdf9d9e260f57627d778fd8ca3bdceac661840658f7eeb7ff15c9edb905",
+  "new:buy policy": "0c82a5ff183a726c8e990ccde1ea054ee28ea3093531ea137596aebefaaae1db",
+  "new:sale policy": "bc1ff2cb4c890602c5b2e11061646e4f477829d77e50bd5a02eefbb7ca4f731a",
+  "new:enable": [
+   "f9990097e6dc4a0dd5bdfa10d82ef10af3cb56454f102b5a4be80b27ebf59d33",
+   "fdff70a01a73f5610ca514b1829986bfb6cc120926c2c610a9e806e096d4f678",
+   "58fc362304e581fe94036e05b47ed4bb2221b543f1536e848f7dba3ca9f59289"
+  ],
+  "new:stop": [
+   "541030b85acd163ecc0946a01d15aab5234070cd67f7ee77eec01f31924a1316"
+  ],
+  "new:stop and withdraw": [
+   "fb983dce26376a7e22b34ae7faa9880b0a666128367b6e035820d38d8f4e05fe"
+  ],
+  "new:withdraw kept open": [
+   "867b2a041e68855d71abeafd98c32c466f678df1fbc24cd7713ea2f9e344c0a3"
+  ],
+  "new:withdraw held": [
+   "119d73da1e5bc5eebb2ab94ace15b53ffdfe95d3c16d78e0858d54a22afa50ab"
+  ],
+  "present:mandate": "191d8fd40081f58b6c0069eea7cd49f6159e358ebdb30d6110a970255d8f8d05",
+  "present:buy policy": "ef5d5c44db2dbfdabc857c039a6686a17ce7307190fd2fed9c2d9aeb91e7cc2a",
+  "present:sale policy": "44f7f098b52c2d452499900ebc9d3c855bc9453b00446d5f24db8b7dc54f67f0",
+  "present:enable": [
+   "2946598edfe142dfed64690242130f4f90e93ed584796d199191a04cbbfd4006",
+   "72cb5f5566da241e8f3acc13295ffd3a454bde03a03d79047e265ef3eccb0627"
+  ],
+  "present:stop": [
+   "c2084b039045c03358617e69ad1aa337744154e320087b7dd922e4ef56a53713"
+  ],
+  "present:stop and withdraw": [
+   "43915939453cd32d00df8e1dc2611d2c0d3e3d3a0c2b2632a33a46e5ab7e49de"
+  ],
+  "present:withdraw kept open": [
+   "1c227a39c9708ee1c70c60b19e6beb5f147df49a626f154f0157bc7690b69fb4"
+  ],
+  "present:withdraw held": [
+   "f87b817012d86f0de8ec1e6c1663433e3e00ea0e6f69de3ab9ff55aff3ca84af"
+  ]
+ }
+}

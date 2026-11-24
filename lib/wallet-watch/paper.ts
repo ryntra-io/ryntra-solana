@@ -11,11 +11,18 @@
  *
  * Paper only. Nothing here builds, signs or sends a transaction; live copying waits for the legal opinion (D12) and
  * the owner's canary within the spending limits of SOL-7 (decisions 58, 64) and is not built.
+ *
+ * «Повторюй за гаманцем»: a copy may carry the agent's terms (`agent`, `./copy-agent.ts`) — a trade the
+ * share of her day's budget, the day's cap and the term — and then keeps three more rules: the leader's exit never
+ * becomes its entry, its price stays within the bound of the leader's, and its buys stay within the day and the term.
+ * A copy without terms (SOL-R3's) fills exactly as before.
  */
 
 import { z } from "zod";
 
 import type { GuardStore, GuardVersionedRecord } from "../guard/store.ts";
+import { AGENT_MISSES, leaderLeft, leaderPriceSol, pastBound, termDayOf, type CopyTerms } from "./copy-agent.ts";
+import { DAYS_MAX } from "../mandate/budget.ts";
 import { COPY_ASSUMPTIONS, COPY_SIZES, COPY_SLIPPAGES, ryntraFeeBps } from "./reality.ts";
 import { WALLET_WATCH_COLLECTION } from "./store.ts";
 import type { WalletTrade } from "./trades.ts";
@@ -44,16 +51,32 @@ const FillSchema = z
     tokens: z.number().nonnegative(),
     sol: z.number().nonnegative(),
     feeSol: z.number().nonnegative(),
-    missed: z.enum(["liquidity", "price", "late", "full"]).nullable(),
+    missed: z.enum(["liquidity", "price", "late", "full", ...AGENT_MISSES]).nullable(),
   })
   .strict();
 export type PaperFill = z.infer<typeof FillSchema>;
+
+const RAW = /^\d{1,20}$/;
+
+/** The agent's terms of a copy: the mandate's numbers, the term's end, the day so far. */
+const TermsSchema = z
+  .object({
+    perDayRaw: z.string().regex(RAW),
+    perTradeRaw: z.string().regex(RAW),
+    days: z.number().int().min(1).max(DAYS_MAX),
+    sharePct: z.number().int().min(1).max(100),
+    endsAt: z.string(),
+    dayN: z.number().int().nonnegative(),
+    daySpentSol: z.number().nonnegative(),
+  })
+  .strict();
 
 const CopySchema = z
   .object({
     leader: z.string().regex(BASE58),
     name: z.string().min(1).max(32).nullable(),
-    sizeSol: z.number().refine((value) => (COPY_SIZES as readonly number[]).includes(value)),
+    /** SOL a buy: one of SOL-R3's sizes, or — with the agent's terms — her trade, any sum the budget took. */
+    sizeSol: z.number().positive().finite(),
     slippagePct: z.number().refine((value) => (COPY_SLIPPAGES as readonly number[]).includes(value)),
     /** ISO time it was started: no trade from before is copied. */
     since: z.string(),
@@ -68,8 +91,11 @@ const CopySchema = z
     missedCount: z.number().int().nonnegative().optional(),
     /** The leader's trades already handled, by key — filled, missed or nothing to sell. */
     seen: z.array(z.string().max(200)).max(300),
+    /** The agent's terms; absent — a copy of SOL-R3's fixed size. */
+    agent: TermsSchema.optional(),
   })
-  .strict();
+  .strict()
+  .refine((copy) => copy.agent !== undefined || (COPY_SIZES as readonly number[]).includes(copy.sizeSol), { message: "a copy without terms takes one of the sizes" });
 export type PaperCopy = z.infer<typeof CopySchema>;
 
 const PaperSchema = z
@@ -119,11 +145,33 @@ export async function changePaper(store: GuardStore, owner: string, change: (cop
 export function startCopy(copies: PaperCopy[], leader: string, settings: Readonly<{ sizeSol: number; slippagePct: number; name: string | null }>, nowIso: string): PaperCopy[] | "LIMIT" {
   const at = copies.findIndex((copy) => copy.leader === leader);
   if (at >= 0) {
-    copies[at] = { ...copies[at]!, sizeSol: settings.sizeSol, slippagePct: settings.slippagePct, name: settings.name ?? copies[at]!.name };
+    /* SOL-R3's fixed size again: the agent's terms, if it had them, go with it. */
+    const { agent: _terms, ...was } = copies[at]!;
+    copies[at] = { ...was, sizeSol: settings.sizeSol, slippagePct: settings.slippagePct, name: settings.name ?? was.name };
     return copies;
   }
   if (copies.length >= PAPER_LIMIT) return "LIMIT";
   return [{ leader, name: settings.name, sizeSol: settings.sizeSol, slippagePct: settings.slippagePct, since: nowIso, positions: {}, spentSol: 0, receivedSol: 0, feesSol: 0, fills: [], seen: [] }, ...copies];
+}
+
+/**
+ * The agent's copy, from now, on her terms — a trade the share of her day. Started again for a wallet it
+ * already copies: the same copy (its holdings and fills), the newer terms for what comes next.
+ */
+export function startAgentCopy(copies: PaperCopy[], leader: string, settings: Readonly<{ terms: CopyTerms; slippagePct: number; name: string | null }>, nowIso: string): PaperCopy[] | "LIMIT" {
+  const sizeSol = Number(BigInt(settings.terms.perTradeRaw)) / 1e9;
+  const at = copies.findIndex((copy) => copy.leader === leader);
+  if (at >= 0) {
+    const was = copies[at]!;
+    /* The day already spent stays spent: a restart is no new day's budget. */
+    const sinceS = Math.floor(Date.parse(was.since) / 1000);
+    const dayN = termDayOf(sinceS, Math.floor(Date.parse(nowIso) / 1000));
+    const daySpentSol = was.agent && was.agent.dayN === dayN ? was.agent.daySpentSol : 0;
+    copies[at] = { ...was, sizeSol, slippagePct: settings.slippagePct, name: settings.name ?? was.name, agent: { ...settings.terms, dayN, daySpentSol } };
+    return copies;
+  }
+  if (copies.length >= PAPER_LIMIT) return "LIMIT";
+  return [{ leader, name: settings.name, sizeSol, slippagePct: settings.slippagePct, since: nowIso, positions: {}, spentSol: 0, receivedSol: 0, feesSol: 0, fills: [], seen: [], agent: settings.terms }, ...copies];
 }
 
 export function stopCopy(copies: PaperCopy[], leader: string): PaperCopy[] | "NOT_FOUND" {
@@ -154,6 +202,12 @@ export function fillCopy(copy: PaperCopy, trades: readonly WalletTrade[], facts:
   const positions = { ...copy.positions };
   const fills: PaperFill[] = [];
   let { spentSol, receivedSol, feesSol } = copy;
+  /* The agent's day — its cap, what its buys spent of it so far — and the term's end. */
+  const agent = copy.agent ?? null;
+  const dayN = termDayOf(since, nowS);
+  let daySpent = agent && agent.dayN === dayN ? agent.daySpentSol : 0;
+  const perDaySol = agent ? Number(BigInt(agent.perDayRaw)) / 1e9 : Infinity;
+  const endsS = agent ? Math.floor(Date.parse(agent.endsAt) / 1000) : Infinity;
   /* A token whose trade waits for a price: its later trades wait too — a sale is never skipped before its buy is filled. */
   const waiting = new Set<string>();
   const wait = (trade: WalletTrade) => {
@@ -180,7 +234,9 @@ export function fillCopy(copy: PaperCopy, trades: readonly WalletTrade[], facts:
       /* The pool's depth this moment, when Jupiter gives it: a known pool too thin for the size fails as sent; an unknown one moves nothing, as in the estimate. */
       const impact = depthSol !== null ? copy.sizeSol / depthSol : 0;
       const full = !held && Object.keys(positions).length >= PAPER_POSITIONS;
-      const missed = nowS - trade.at! > PAPER_LATE_S ? "late" : full ? "full" : priceSol === null ? "price" : impact > copy.slippagePct / 100 ? "liquidity" : null;
+      /* The leader out of the coin already — never the copy's entry; the term over — no more buys. */
+      const gone = agent && leaderLeft(ordered, trade) ? "exited" : agent && nowS > endsS ? "ended" : null;
+      const missed = nowS - trade.at! > PAPER_LATE_S ? "late" : gone ? gone : full ? "full" : priceSol === null ? "price" : impact > copy.slippagePct / 100 ? "liquidity" : agentMiss(agent, priceSol * (1 + impact), trade, solUsd, copy, daySpent, perDaySol);
       /* No price this pass (a source down for a minute): tried again while fresh — an outage is never a miss. */
       if (missed === "price") {
         wait(trade);
@@ -192,6 +248,7 @@ export function fillCopy(copy: PaperCopy, trades: readonly WalletTrade[], facts:
       }
       const tokens = (copy.sizeSol * (1 - feeShare)) / (priceSol * (1 + impact));
       const fee = copy.sizeSol * feeShare + networkSol;
+      daySpent += copy.sizeSol;
       positions[trade.mint] = { tokens: (held?.tokens ?? 0) + tokens, costSol: (held?.costSol ?? 0) + copy.sizeSol + networkSol };
       spentSol += copy.sizeSol + networkSol;
       feesSol += fee;
@@ -236,7 +293,16 @@ export function fillCopy(copy: PaperCopy, trades: readonly WalletTrade[], facts:
     missedCount: (copy.missedCount ?? copy.fills.filter((fill) => fill.missed !== null).length) + fills.filter((fill) => fill.missed !== null).length,
     fills: [...fills.reverse(), ...copy.fills].slice(0, PAPER_FILLS_KEPT),
     seen: [...seen].slice(-300),
+    ...(agent ? { agent: { ...agent, dayN, daySpentSol: daySpent } } : {}),
   };
+}
+
+/** A buy the agent's copy does not make — its price past the bound of the leader's, or over the day's cap. */
+function agentMiss(agent: CopyTerms | null, priceSol: number, trade: WalletTrade, solUsd: number | null, copy: PaperCopy, daySpent: number, perDaySol: number): "drift" | "budget" | null {
+  if (!agent) return null;
+  if (pastBound(priceSol, leaderPriceSol(trade, solUsd), copy.slippagePct)) return "drift";
+  if (daySpent + copy.sizeSol > perDaySol * (1 + 1e-9)) return "budget";
+  return null;
 }
 
 /** What the leader held of a token just before a sale, from its trades read — null when its buys are not all there. */

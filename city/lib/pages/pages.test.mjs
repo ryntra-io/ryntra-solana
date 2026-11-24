@@ -5,7 +5,7 @@ import test from "node:test";
 import { CONTACTS } from "../../../lib/site/contacts.ts";
 import { API_BASE, DEV_ROWS } from "./developers.ts";
 import { HELP_MAX, HELP_MIN, helpPayload, helpReady, sendHelp } from "./help.ts";
-import { MENU_LEGAL, MENU_PAGES, MENU_SITE_DOCS, PAGE_ART, PAGE_IDS, PAGE_PATHS, SITE_DOC_PATHS, SITE_DOCS, isPageId, pageOfHref, pagePath } from "./pages.ts";
+import { LIVE_SITE_DOCS, MENU_LEGAL, MENU_PAGES, MENU_SITE_DOCS, PAGE_ART, PAGE_IDS, PAGE_PATHS, SITE_DOC_PATHS, SITE_DOCS, isPageId, pageOfHref, pagePath } from "./pages.ts";
 import { CITY_PAGES } from "../open/site-map.ts";
 import { openPage, usePages } from "./store.ts";
 
@@ -42,6 +42,17 @@ test("each address answers with the city's page, not the old site's", () => {
         // The documentation, Help and About are the terminal's (`app/docs/_book/`, `app/support/_view/`,
         // `app/about/_view/`); the city's windows keep their own copies.
         assert.match(source, /<DocsHub \/>|<HelpView \/>|<AboutView \/>/, `${file} is the terminal's page`);
+        assert.doesNotMatch(source, OLD, `${file} imports nothing of the old site`);
+        continue;
+      }
+      if (["app/developers/page.tsx", "app/connector/page.tsx", "app/feedback/page.tsx"].includes(file)) {
+        // Developers, AI chats and the second address of Help are the terminal's since 21.11 (`app/developers/_view/`,
+        // `app/connector/_view/`, `app/support/_view/`): no still of the city and no city documentation's menu around them.
+        const view = { developers: "DevelopersView", connector: "ConnectorView", help: "HelpView" }[id];
+        assert.match(source, new RegExp(`<${view} />`), `${file} is the terminal's ${id}`);
+        assert.match(source, /<TerminalFrame>/, `${file} stands in the terminal's frame`);
+        assert.match(source, new RegExp(`buildCityPageMetadata\\("${id}", "${path.replace(/\//g, "\\/")}"\\)`), `${file} names its address`);
+        assert.doesNotMatch(source, /CityDocument/, `${file} renders no page of the city`);
         assert.doesNotMatch(source, OLD, `${file} imports nothing of the old site`);
         continue;
       }
@@ -100,14 +111,18 @@ test("the menu opens the city's windows: no link of it leads to an old page", ()
   assert.match(menu, /MENU_SITE_DOCS\.map[\s\S]*href=\{SITE_DOC_PATHS\[id\]\}/);
 });
 
-test("the site's documents — «What we're building», the partner page, the roadmap — are pages of the city, in the menu and at every page's foot", () => {
+test("the site's documents — the partner page and the roadmap — are live pages, in the menu and at every page's foot; «What we're building» leads to the documentation", async () => {
   const advertised = new Set(CITY_PAGES.map((page) => page.path));
-  for (const id of SITE_DOCS) assert.ok(advertised.has(SITE_DOC_PATHS[id]), `${SITE_DOC_PATHS[id]} is a live page of the city`);
-  // «Partners» stays the menu's own window above the documents; the other two leave for their page.
-  assert.deepEqual([...MENU_SITE_DOCS], ["build", "roadmap"]);
+  for (const id of LIVE_SITE_DOCS) assert.ok(advertised.has(SITE_DOC_PATHS[id]), `${SITE_DOC_PATHS[id]} is a live page`);
+  // «What we're building» described the city (21.11): it leads to the terminal's documentation and nothing offers it.
+  assert.ok(SITE_DOCS.includes("build") && !LIVE_SITE_DOCS.includes("build") && !advertised.has(SITE_DOC_PATHS.build));
+  const { RETIRED_PAGE_REDIRECTS } = await import("../../../lib/site/retired-pages.ts");
+  assert.equal(RETIRED_PAGE_REDIRECTS.find((row) => row.source === SITE_DOC_PATHS.build)?.destination, "/docs");
+  // «Partners» stays the menu's own window above the documents; the roadmap leaves for its page.
+  assert.deepEqual([...MENU_SITE_DOCS], ["roadmap"]);
   assert.match(read("city/components/hud/Menu.tsx"), /openPartners\(\)/);
   const shell = read("city/components/pages/DocumentPage.tsx");
-  assert.match(shell, /SITE_DOCS\.map[\s\S]*href=\{SITE_DOC_PATHS\[page\]\}/, "the foot of every page leads to the three documents");
+  assert.match(shell, /LIVE_SITE_DOCS\.map[\s\S]*href=\{SITE_DOC_PATHS\[page\]\}/, "the foot of every page leads to the live documents");
 });
 
 test("the pages are windows of the city: mounted once, known to Back and to «a window is open»", () => {

@@ -30,8 +30,8 @@ import type { AddressLookupTableAccount } from "@solana/web3.js";
 import { networkFeeOf } from "../../liquidity/studio/actions.ts";
 import { NATIVE_SOL_MINT, USDC_MINT, unitsOf, type PortfolioAnswer, type PortfolioPosition } from "../model.ts";
 import { ruleHolds } from "./checks.ts";
-import { exitEstimate, exitPlan, type ExitAction, type ExitHeld, type ExitItem, type ExitMode, type ExitTarget } from "./model.ts";
-import type { BuiltTx, ExitChain, ExitPorts, ExitSkipReason, UnitBuilt } from "./ports.ts";
+import { exitEstimate, exitHeldOf, exitPlan, type ExitAction, type ExitHeld, type ExitItem, type ExitMode, type ExitPlan, type ExitTarget } from "./model.ts";
+import type { BuiltTx, ExitChain, ExitPorts, ExitRoutable, ExitSkipReason, UnitBuilt } from "./ports.ts";
 import type { ExitRelayState } from "./steps.ts";
 import { sweepsOf, type SweepSpec } from "./sweeps.ts";
 import { MAX_EXIT_STEPS, MAX_STEP_LOOKUPS, TICKET_TTL_MS, checkExitSigned, exitTicketKeyHere, issueExitTicket, lookupsOf, readExitTicket, stepDigest, type ExitStep, type ExitStepKind } from "./ticket.ts";
@@ -87,10 +87,43 @@ export type ExitOverview = Readonly<{
 /** `positions` — the ids the person left on; absent — the plan's own default. */
 export type ExitAsk = Readonly<{ owner: string; mode: ExitMode; target: ExitTarget; positions?: readonly string[] | undefined }>;
 
-/** What one approval would do, from the portfolio alone: nothing is built. */
-export async function exitOverview(ask: ExitAsk, deps: Pick<ExitDeps, "env" | "portfolio" | "now">): Promise<ExitOverview> {
+/** At most this many coins of one overview are asked of Jupiter, two at a time: the overview is a read, and the window is the site's. */
+export const EXIT_ROUTE_ASKS = 6;
+
+/**
+ * The coins a step would swap, asked of Jupiter whether it carries them into the target now: one it says it
+ * has no route for is not offered as one that sells — it leaves `items` (and so the estimate) for `held`, with
+ * `NO_ROUTE`. The picked first (the liquid staking tokens), then the rest, biggest first, at most `EXIT_ROUTE_ASKS`; a
+ * coin not asked, or with no clear answer, stays as it was — the Review still says what it could not build.
+ */
+async function routedPlan(plan: ExitPlan, answer: PortfolioAnswer, target: ExitTarget, routable: ExitRoutable): Promise<ExitPlan> {
+  const positions = new Map(answer.positions.map((position) => [position.id, position]));
+  const swaps = plan.items.filter((item) => item.action === "swap");
+  const asked = [...swaps.filter((item) => item.picked), ...swaps.filter((item) => !item.picked)].slice(0, EXIT_ROUTE_ASKS);
+  /* Half and half sells into SOL first: a coin with no route into SOL is not carried into USDC either, as a rule. */
+  const outMint = target === "USDC" ? USDC_MINT : NATIVE_SOL_MINT;
+  const routes = await mapLimit(asked, 2, async (item) => {
+    const coin = positions.get(item.id)?.tokens[0];
+    if (!coin || coin.amountRaw === null || coin.amountRaw === "0") return null;
+    return routable({ mint: coin.mint, amountRaw: coin.amountRaw, outMint }).catch(() => null);
+  });
+  const none = new Set(asked.filter((_, at) => routes[at] === false).map((item) => item.id));
+  if (none.size === 0) return plan;
+  return {
+    items: plan.items.filter((item) => !none.has(item.id)),
+    held: [...plan.held, ...plan.items.filter((item) => none.has(item.id)).map((item) => exitHeldOf(positions.get(item.id)!, "NO_ROUTE"))],
+  };
+}
+
+/**
+ * What one approval would do, from the portfolio — and, where this deployment builds exits and `routable` is handed
+ * in, Jupiter's word on each coin a step would swap: nothing is built.
+ */
+export async function exitOverview(ask: ExitAsk, deps: Pick<ExitDeps, "env" | "portfolio" | "now"> & Readonly<{ routable?: ExitRoutable }>): Promise<ExitOverview> {
   const answer = await deps.portfolio(ask.owner);
-  const plan = exitPlan(answer, ask.mode, ask.target, { only: ask.positions });
+  const planned = exitPlan(answer, ask.mode, ask.target, { only: ask.positions });
+  /* Collecting swaps nothing; a door that is shut builds nothing — neither spends the site's window on a route. */
+  const plan = ask.mode === "exit" && deps.routable && exitOpen(deps.env) ? await routedPlan(planned, answer, ask.target, deps.routable) : planned;
   return {
     owner: ask.owner,
     mode: ask.mode,
@@ -298,7 +331,8 @@ export async function reviewExit(ask: ExitAsk, deps: ExitDeps): Promise<Readonly
       kept = kept.filter((unit) => !clash.includes(unit));
       specs = specsOf(kept);
     }
-    if (kept.length === 0) return fail("NOTHING_TO_DO", "Nothing could be built for one approval now.");
+    /* As «Clean the wallet» says it: every step that fell fell for want of a route — Jupiter takes none of these coins now. */
+    if (kept.length === 0) return fail("NOTHING_TO_DO", skipped.length > 0 && skipped.every((step) => step.reason === "NO_ROUTE") ? "Jupiter takes none of these coins now; nothing was built." : "Nothing could be built for one approval now.");
     /* A fixed swap of SOL is sent only while the wallet holds what it holds now and what the swap wraps: read now, or no such swap. */
     const heldLamports = specs.some((spec) => spec.wrapLamports !== null) ? await chain.lamports(ask.owner).catch(() => null) : null;
 

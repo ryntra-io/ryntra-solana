@@ -20,11 +20,14 @@ import {
   filtersOn,
   fitColumns,
   isRisky,
+  tableTemplate,
   logoAlso,
   logoChain,
   logoOf,
   nextSort,
+  oneTapOk,
   passes,
+  sortCoins,
   readSum,
   riskFacts,
   sumField,
@@ -200,6 +203,11 @@ test("the day's line, a short count, the buys' share and a table that fits its w
     { id: "quick", min: 44, rank: 0.5 },
   ];
   assert.deepEqual(fitColumns(cols, 340).map((c) => c.id), ["coin", "price", "quick"]);
+  // A row's padding rides on the edge columns: «#» keeps its own 24 px beside the row's 16 (EYES 19.11, «10» on the logo).
+  assert.equal(tableTemplate([{ min: 24, grow: 0 }, { min: 150, grow: 2 }, { min: 28, grow: 0 }]), "40px minmax(150px, 2fr) 44px");
+  assert.equal(tableTemplate([{ min: 150, grow: 1 }]), "minmax(182px, 1fr)");
+  const market = readFileSync(new URL("./DepthMarket.tsx", import.meta.url), "utf8");
+  assert.match(market, /const template = tableTemplate\(columns\)/, "the table writes its template through tableTemplate");
 });
 
 test("the words stand in both languages with the same keys, short; Ukrainian counts its coins", () => {
@@ -274,4 +282,27 @@ test("a logo that does not load is tried at the engine's other routes: the IPFS 
   // No address of its own: the first of the others stands first.
   assert.deepEqual(logoChain(mint, null, null), { src: `/api/icon/${mint}`, also: [] });
   assert.deepEqual(logoChain(mint, pinned, "/x.png"), { src: "/x.png", also: [viaIpfs, `/api/icon/${mint}`] });
+});
+
+test("the table's age column: a meme shows it in its main set, it sorts youngest first, and the choice of columns is kept", () => {
+  assert.ok(MAIN_COLUMNS.meme.includes("age"));
+  const young = coin({ id: "Young111111111111111111111111111111111111111", bornAt: "2026-11-16T19:30:00Z" });
+  const old = coin({ id: "Old11111111111111111111111111111111111111111", bornAt: "2026-11-10T00:00:00Z" });
+  const unknown = coin({ id: "None1111111111111111111111111111111111111111", bornAt: null });
+  const sorted = sortCoins([old, unknown, young], nextSort(DEFAULT_SORT, "age"), "1h", NOW);
+  assert.deepEqual(sorted.map((c) => c.id), [young.id, old.id, unknown.id], "an unread age stands last");
+  const screen = readFileSync(new URL("./DepthMarket.tsx", import.meta.url), "utf8");
+  assert.match(screen, /id: 'age',\s*key: 'age'/);
+  assert.match(screen, /useColumnSet\('market'\)/, "«Columns» is remembered on the device by the kit");
+  for (const lang of ["en", "uk"]) assert.ok(DEPTH[lang].age.length > 0);
+});
+
+test("one tap never buys a copy or a crude name, in the table as in the Pulse", () => {
+  assert.equal(oneTapOk({ symbol: "JUP", name: "Jupiter", copyOf: null }), true);
+  assert.equal(oneTapOk({ symbol: "NVDA", name: "NVIDIA", copyOf: "NVIDIA" }), false);
+  assert.equal(oneTapOk({ symbol: "SHIT", name: "coin", copyOf: null }), false);
+  assert.equal(oneTapOk({ symbol: "CLASS", name: "Classic Pass", copyOf: null }), true);
+  const screen = readFileSync(new URL("./DepthMarket.tsx", import.meta.url), "utf8");
+  assert.ok(!/<ZapButton coin=\{quickOf\(coin\)\} \/> \}/.test(screen));
+  assert.equal(screen.match(/oneTapOk\(coin\) \? <ZapButton/g)?.length, 2, "the desk's row and the phone's row");
 });

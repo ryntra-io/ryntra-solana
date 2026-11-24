@@ -1,8 +1,47 @@
 'use client';
 
-import { useRef, type KeyboardEvent, type ReactNode } from 'react';
+import { useEffect, useLayoutEffect, useRef, type KeyboardEvent, type ReactNode, type RefObject } from 'react';
 import { cx } from './cx';
 import s from './ui.module.css';
+
+/** Before paint in the browser, so the row never shows the wrong part first; on the server, nothing to measure. */
+const useBeforePaint = typeof window === 'undefined' ? useEffect : useLayoutEffect;
+
+/** Scroll a row of choices sideways — only the row, never the page — until the chosen one is in full view. */
+function keepInView(box: HTMLElement | null, selector: string, at: number) {
+  const item = box?.querySelectorAll<HTMLElement>(selector)[at];
+  if (!box || !item || box.scrollWidth <= box.clientWidth) return;
+  const row = box.getBoundingClientRect();
+  const it = item.getBoundingClientRect();
+  if (it.left < row.left) box.scrollLeft += it.left - row.left - 16;
+  else if (it.right > row.right) box.scrollLeft += it.right - row.right + 16;
+}
+
+/**
+ * Which edge of a row of choices hides more of it: that edge fades softly, so a word cut by the screen's edge
+ * never stands there broken. Only read — the row scrolls as it always did.
+ */
+function useFadeEdges(row: RefObject<HTMLElement | null>, count: number) {
+  useEffect(() => {
+    const box = row.current;
+    if (!box) return;
+    const look = () => {
+      const left = box.scrollLeft > 1;
+      const right = box.scrollLeft + box.clientWidth < box.scrollWidth - 1;
+      const fade = left && right ? 'both' : left ? 'start' : right ? 'end' : null;
+      if (fade) box.dataset.fade = fade;
+      else delete box.dataset.fade;
+    };
+    look();
+    box.addEventListener('scroll', look, { passive: true });
+    const sized = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(look);
+    sized?.observe(box);
+    return () => {
+      box.removeEventListener('scroll', look);
+      sized?.disconnect();
+    };
+  }, [row, count]);
+}
 
 export type TabItem<T extends string> = Readonly<{ id: T; label: string; count?: string; icon?: ReactNode }>;
 
@@ -22,6 +61,9 @@ function step(event: KeyboardEvent<HTMLElement>, count: number, at: number): num
 export function Tabs<T extends string>({ items, value, onChange, label, fill = false, bare = false, className }: { items: readonly TabItem<T>[]; value: T; onChange: (id: T) => void; label: string; fill?: boolean; bare?: boolean; className?: string }) {
   const row = useRef<HTMLDivElement>(null);
   const at = Math.max(0, items.findIndex((item) => item.id === value));
+  /* On a phone the row is wider than the screen: the chosen tab — opened by a link or a choice — is never left out of sight. */
+  useBeforePaint(() => keepInView(row.current, '[role="tab"]', at), [at, items.length]);
+  useFadeEdges(row, items.length);
   return (
     <div
       ref={row}

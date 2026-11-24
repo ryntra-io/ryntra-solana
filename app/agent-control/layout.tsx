@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
-import { IBM_Plex_Mono, Onest, Unbounded } from "next/font/google";
 
 import { sitePageMetadata } from "@/app/site/seo";
+import { LANDING_FONTS } from "@/app/fonts/landing";
 import styles from "@/app/(home)/landing.module.css";
 
 /*
@@ -11,11 +11,9 @@ import styles from "@/app/(home)/landing.module.css";
  * as the same surface — same display face, same mono, same dark ground. The
  * three families load here for the same reason they load under `(home)`: this
  * segment and the landing are the only places that use them, and mounting them
- * in the root layout would ship five families to every page in the site.
+ * in the root layout would ship five families to every page in the site
+ * (`app/fonts/landing.ts`).
  */
-const sora = Unbounded({ subsets: ["latin"], weight: ["400", "600", "700"], display: "swap", variable: "--font-sora" });
-const geist = Onest({ subsets: ["latin"], display: "swap", variable: "--font-geist" });
-const geistMono = IBM_Plex_Mono({ subsets: ["latin"], weight: ["400", "500", "600"], display: "swap", variable: "--font-geist-mono" });
 
 export const metadata: Metadata = sitePageMetadata({
   path: "/agent-control",
@@ -27,7 +25,7 @@ export const metadata: Metadata = sitePageMetadata({
 export default function AgentControlLayout({ children }: { children: React.ReactNode }) {
   return (
     <div
-      className={`${sora.variable} ${geist.variable} ${geistMono.variable} ${styles.root}`}
+      className={`${LANDING_FONTS.className} ${styles.root}`}
       data-ry-theme="dark"
     >
       {children}

@@ -6,7 +6,7 @@ import { Icon, Segment, type IconName } from '@/terminal/ui';
 import { SHELL } from './words';
 import s from './shell.module.css';
 
-/** The site's own pages a person may want from anywhere: they open whole, outside the terminal's frame. */
+/** The site's own pages a person may want from anywhere: they stand in the terminal's frame too, and open as a page of their own. */
 const DOORS: readonly Readonly<{ href: string; icon: IconName; word: 'docs' | 'help' | 'about' }>[] = [
   { href: '/docs', icon: 'book', word: 'docs' },
   { href: '/support', icon: 'help', word: 'help' },

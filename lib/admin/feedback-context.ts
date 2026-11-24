@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { isoDateTime } from "../zod/iso-datetime.ts";
 
 import type { GuardStore } from "../guard/store.ts";
 import { maskWallet } from "./business.ts";
@@ -54,7 +55,7 @@ export const FeedbackContextSchema = z
     contact: z.string().min(2).max(120).nullable(),
     route: z.string().max(500).nullable(),
     locale: z.string().max(8).nullable(),
-    createdAt: z.string().datetime({ offset: true }),
+    createdAt: isoDateTime({ offset: true }),
   })
   .strict();
 

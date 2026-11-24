@@ -1,0 +1,276 @@
+/* The creator's tab under the coin's chart: one head line, one line of what the creator did, the table of
+   its coins (the kit's). Colours are tokens, spacings the scale's; no corner of its own. */
+
+.tab {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+
+/* One line on a desk: the creator, its counts, what it did with this coin, and the «i» at the end. */
+.head {
+  display: flex;
+  flex: none;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 20px;
+  min-height: 44px;
+  padding: 6px 16px;
+}
+
+.who {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+}
+
+.kick {
+  font-size: var(--type-micro);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--dim);
+}
+
+.wallet {
+  font-family: var(--display);
+  font-size: var(--type-body);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--ice);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.wallet:hover,
+.wallet:focus-visible {
+  color: var(--lilac);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.count {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 12px;
+  font-size: var(--type-small);
+  font-weight: 600;
+  color: var(--soft);
+}
+
+.listed {
+  color: var(--dim);
+}
+
+.end {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  margin-left: auto;
+}
+
+.part {
+  font-size: var(--type-caption);
+  color: var(--dim);
+  white-space: nowrap;
+}
+
+/* What the creator did: the word in its tone, the figures after it quieter. */
+.did {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 10px;
+  font-size: var(--type-body);
+  color: var(--ice);
+}
+
+.tab[data-phone] .did {
+  display: flex;
+  min-height: 40px;
+  padding: 0 0 8px;
+}
+
+.did b {
+  font-weight: 650;
+}
+
+.did[data-tone='down'] b {
+  color: var(--flare);
+}
+
+.did[data-tone='warn'] b {
+  color: var(--warm);
+}
+
+.did[data-tone='dim'] {
+  font-weight: 600;
+  color: var(--dim);
+}
+
+.figures {
+  font-family: var(--display);
+  font-size: var(--type-small);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--soft);
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  padding: 0 16px 8px;
+}
+
+.item + .item {
+  border-top: 1px solid var(--line);
+}
+
+.item[aria-current='true'] {
+  background: var(--chosen);
+}
+
+.line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  min-height: 120px;
+  margin: 0;
+  padding: 24px 16px;
+  text-align: center;
+  font-size: var(--type-small);
+  font-weight: 600;
+  color: var(--dim);
+}
+
+/* The frame while it reads: still bars of the rows' own height. */
+.bones {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 12px 16px;
+}
+
+.bones > span {
+  height: 48px;
+  background: color-mix(in srgb, var(--ice) 4%, transparent);
+}
+
+.bones > .boneHead {
+  width: 40%;
+  height: 24px;
+  margin-bottom: 12px;
+}
+
+/* The coins: dense rows of numbers, as the panel's other tables — the head stays while the rows scroll. */
+.scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--haze) transparent;
+}
+
+.table {
+  display: flex;
+  flex-direction: column;
+  min-width: 600px;
+}
+
+.th,
+.tr {
+  display: grid;
+  grid-template-columns: var(--cols);
+  align-items: center;
+  column-gap: 12px;
+  padding: 0 16px;
+}
+
+.th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  height: 34px;
+  font-size: var(--type-micro);
+  font-weight: 600;
+  color: var(--dim);
+  background: var(--panel);
+  border-bottom: 1px solid var(--line);
+}
+
+.tr {
+  min-height: 40px;
+  border-bottom: 1px solid var(--line);
+  font-size: var(--type-small);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  color: var(--ice);
+  transition: background-color 0.12s;
+}
+
+.tr:hover {
+  background: var(--chosen);
+}
+
+.tr[aria-current='true'] {
+  background: var(--chosen);
+  box-shadow: inset 2px 0 0 var(--soft);
+}
+
+.coin {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.sym {
+  flex: none;
+  font-weight: 700;
+  color: var(--ice);
+  text-decoration: none;
+}
+
+a.sym:hover,
+a.sym:focus-visible {
+  color: var(--lilac);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--dim);
+}
+
+.num {
+  justify-self: end;
+  text-align: right;
+}
+
+.dim {
+  color: var(--dim);
+}
+
+/* On a phone the tab is a part of «About»: the page's own margins, a line over it. */
+.tab[data-phone] {
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+
+.tab[data-phone] .head,
+.tab[data-phone] .did,
+.tab[data-phone] .list {
+  padding-right: 0;
+  padding-left: 0;
+}

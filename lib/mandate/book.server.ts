@@ -18,12 +18,16 @@ import type { Mandate } from "./human.ts";
 import { tokenAccountOf } from "./human.ts";
 import { BUDGET_PRESETS, type BudgetPresetId } from "./presets.ts";
 import { agentNetworkOf, budgetFund, budgetRefusal, DAYS_MAX, termOf, type AgentBudget } from "./budget.ts";
-import { policyCarriesFee } from "./fee.ts";
 import type { MandateGate, MandateNetwork, MandateRecord } from "./service.server.ts";
-import { NATIVE_MINT, readPolicyHead, readSettings, ssaAddress, SSA_PROGRAM_ID } from "./ssa.ts";
+import { NATIVE_MINT, TOKEN_PROGRAM_ID, readPolicyHead, readSettings, ssaAddress, SSA_PROGRAM_ID } from "./ssa.ts";
 import { planFrom, planText, STEADY, type Mark, type StrategyPlan } from "./plans.ts";
 import { type AgentTrade, type PauseReason, type StrategyId } from "./strategy.ts";
+import { exitText, TRADER_EXIT, type AgentEvent, type AgentSale, type ExitRules } from "./exit.ts";
+import { agentFeeAccount, policyCarriesFee } from "./fee.ts";
+import { heldAccountOf, proceedsAccountOf, type HeldCoin } from "./terms.ts";
+import { isTokenProgram } from "./token-2022.ts";
 import { storeScreen, type AgentScreen } from "./ryntra-coins.server.ts";
+import { botOfPlan, type MoneyBot } from "../bots/money/gates.ts";
 
 export const AGENT_BOOK = "agentMandates";
 
@@ -32,8 +36,13 @@ export const TRADES_KEPT = 200;
 
 export type BookStatus = "working" | "stopped" | "ended" | "spent" | "paused";
 
+/**
+ * The entry's version. `1` — every budget's. `2` — a bot's that sells (`../bots/money/gates.ts` `botOfPlan`).
+ */
+export type BookVersion = 1 | 2;
+
 export type BookEntry = Readonly<{
-  v: 1;
+  v: BookVersion;
   cluster: MandateNetwork;
   record: MandateRecord;
   preset?: BudgetPresetId;
@@ -59,6 +68,21 @@ export type BookEntry = Readonly<{
   /** Since when a figure it needs to buy stays unread, ms; absent when all were read last time. */
   unreadSince?: number;
   trades: readonly AgentTrade[];
+  /** The rules it leaves a trade by (`./exit.ts` `exitText`); absent — it does not sell on its own. */
+  exit?: string;
+  /** The sales it made on its own, the newest `TRADES_KEPT`. */
+  sales?: readonly AgentSale[];
+  /** What it did that she hears of at once, the newest `EVENTS_KEPT`. */
+  events?: readonly AgentEvent[];
+  /** Since when the price of what it holds stays unread, ms; absent — read last time. */
+  exitUnreadSince?: number;
+  /** Since when the sale its rules call for could not be built (the network, Jupiter's rate, the route), ms. */
+  exitStuckSince?: number;
+  /**
+   * The grid's level whose sale the route last could not make pay its cost and the network's fees, and when —
+   * that level is not built again before the next mark (`./tick.server.ts` `MARK_EVERY_MS`), and the buys go on meanwhile.
+   */
+  gridShort?: Readonly<{ level: number; at: number }>;
   createdAt: number;
   updatedAt: number;
 }>;
@@ -79,9 +103,21 @@ const addressOf = (value: string): PublicKey | null => {
   }
 };
 
+const RAW = /^\d{1,20}$/u;
+
+/** The coin a record's agent keeps in the vault and its day's limit; null — none, or not a coin's address and a number. */
+export function heldOfRecord(record: Pick<MandateRecord, "held" | "heldProgram" | "salePolicy" | "heldDaily">): HeldCoin | null {
+  if (!record.held || !record.salePolicy || !record.heldDaily || !RAW.test(record.heldDaily)) return null;
+  const mint = addressOf(record.held);
+  const program = record.heldProgram === undefined ? TOKEN_PROGRAM_ID : addressOf(record.heldProgram);
+  const dailyMax = BigInt(record.heldDaily);
+  return mint && program && isTokenProgram(program) && addressOf(record.salePolicy) && dailyMax > 0n && dailyMax < 1n << 64n ? { mint, program, dailyMax } : null;
+}
+
 /** The mandate the entry stands for, as the agent's trade and signer read it: the pool on devnet, Jupiter on mainnet. */
 export function mandateOf(entry: BookEntry, gate: OpenGate): Mandate {
   const r = entry.record;
+  const held = heldOfRecord(r);
   return {
     cluster: gate.network,
     terms: {
@@ -93,12 +129,14 @@ export function mandateOf(entry: BookEntry, gate: OpenGate): Mandate {
       slippageBps: 100,
       expiresAt: BigInt(r.expiresAt),
       venue: gate.network === "mainnet" ? { kind: "jupiter" } : { kind: "dlmm", pool: gate.pool },
+      ...(held ? { heldCoin: held } : {}),
     },
     settings: new PublicKey(r.settings),
     vault: new PublicKey(r.vault),
     policy: new PublicKey(r.policy),
     policySeed: 0n,
     budgetAccount: new PublicKey(r.budget),
+    ...(held && r.salePolicy ? { salePolicy: new PublicKey(r.salePolicy) } : {}),
   };
 }
 
@@ -129,6 +167,44 @@ export async function chainRefusal(record: MandateRecord, gate: OpenGate, connec
   if (!state.signers.some((signer) => signer.key.equals(owner))) return "not the person's smart account";
   const vault = ssaAddress.vault(settings, 0);
   if (vault.toBase58() !== record.vault || tokenAccountOf(vault, NATIVE_MINT).toBase58() !== record.budget) return "not the account's vault";
+  if (record.salePolicy !== undefined || record.held !== undefined || record.heldProgram !== undefined || record.heldDaily !== undefined) return saleChainRefusal(record, gate, connection, { settings, vault, owner, buy: policyInfo.data });
+  return null;
+}
+
+const carries = (data: Uint8Array, key: PublicKey) => Buffer.from(data).indexOf(key.toBuffer()) >= 0;
+
+/**
+ * Why the record's sale policy is not the agent's sale of the coin it keeps for her; null when it is: a policy
+ * of the same account at the seed after the buy's, its one signer this agent, naming the vault's account of the coin, her
+ * own account of the budget's token, Ryntra's fee account and the record's day's limit of the coin — and the buy's policy
+ * lands the coin in that same vault account.
+ */
+async function saleChainRefusal(
+  record: MandateRecord,
+  gate: OpenGate,
+  connection: Pick<Connection, "getAccountInfo">,
+  read: Readonly<{ settings: PublicKey; vault: PublicKey; owner: PublicKey; buy: Uint8Array }>,
+): Promise<string | null> {
+  const held = heldOfRecord(record);
+  const sale = addressOf(record.salePolicy ?? "");
+  if (!held || !sale) return "not the coin the agent keeps";
+  const info = await connection.getAccountInfo(sale, "confirmed");
+  if (!info || !info.owner.equals(SSA_PROGRAM_ID)) return "no such sale on chain";
+  let head;
+  try {
+    head = readPolicyHead(info.data);
+  } catch {
+    return "not a sale's policy";
+  }
+  if (!head.settings.equals(read.settings) || !ssaAddress.policy(read.settings, head.seed).equals(sale)) return "the sale is not this account's";
+  /* Signed in the same approval: the sale stands at the seed after the buy's — where her stop finds it on chain. */
+  if (head.seed < 2n || !ssaAddress.policy(read.settings, head.seed - 1n).equals(new PublicKey(record.policy))) return "the sale was not signed with this budget";
+  if (head.signers.length !== 1 || !head.signers[0]!.key.equals(gate.agent)) return "the sale names another agent";
+  const coinAccount = heldAccountOf(read.vault, held);
+  const fee = gate.network === "mainnet" ? agentFeeAccount(NATIVE_MINT) : agentFeeAccount(held.mint);
+  if (!carries(info.data, coinAccount) || !carries(info.data, proceedsAccountOf({ human: read.owner, budgetMint: NATIVE_MINT })) || !carries(info.data, fee)) return "the sale's rules are not the agent's";
+  if (!carries(read.buy, coinAccount)) return "the buys do not keep the coin in the vault";
+  if (!Buffer.from(info.data).includes(u64Bytes(held.dailyMax))) return "the day's limit of the coin is not the sale's";
   return null;
 }
 
@@ -165,14 +241,24 @@ export const networkOf = (entry: Pick<BookEntry, "preset" | "networkRaw">): bigi
  * in the future. A mandate already in the book stays as it is — the strategy is the one it joined with.
  */
 export async function registerMandate(
-  input: Readonly<{ record: MandateRecord; strategy: StrategyId; said: string | null; plan?: StrategyPlan | null; bornAt?: number | null }>,
+  input: Readonly<{ record: MandateRecord; strategy: StrategyId; said: string | null; plan?: StrategyPlan | null; bornAt?: number | null; exit?: ExitRules | null }>,
   gate: OpenGate,
-  deps: Readonly<{ store: GuardStore; connection: Pick<Connection, "getAccountInfo">; receiveMint: () => Promise<PublicKey>; screen?: AgentScreen; now?: () => number }>,
+  deps: Readonly<{ store: GuardStore; connection: Pick<Connection, "getAccountInfo">; receiveMint: () => Promise<PublicKey>; screen?: AgentScreen; now?: () => number; exitOn?: boolean; botMoneyOn?: (bot: MoneyBot) => boolean }>,
 ): Promise<RegisterResult> {
   const now = (deps.now ?? Date.now)();
+  /* A budget signed with the agent's own sale joins only where the deployment lets the agent sell (`RYNTRA_AGENT_EXIT`). */
+  const selling = input.record.salePolicy !== undefined || input.record.held !== undefined || input.record.heldProgram !== undefined || input.record.heldDaily !== undefined;
+  if ((selling || input.exit) && deps.exitOn !== true) return { ok: false, code: "REFUSED", reason: "The agent does not sell on its own here." };
   const plan = input.plan ?? STEADY;
   if (plan.id !== input.strategy) return { ok: false, code: "REFUSED", reason: "The strategy and its plan disagree." };
   if (plan.id === "early" && (input.bornAt === null || input.bornAt === undefined || !(input.bornAt <= now))) return { ok: false, code: "REFUSED", reason: "An early plan needs the launch it buys." };
+  /*
+   * A bot that sells — the grid's levels, a signal — joins only where the deployment opens its money
+   * (`../bots/money/gates.ts`), and only with the coin kept in her vault to sell (the sale's policy, signed with the budget).
+   */
+  const bot = botOfPlan(plan);
+  if (bot !== null && deps.botMoneyOn?.(bot) !== true) return { ok: false, code: "REFUSED", reason: bot === "grid" ? "The grid trades on paper here." : "Signals trade on paper here." };
+  if (bot !== null && !selling) return { ok: false, code: "REFUSED", reason: "A bot that sells needs its budget signed with the sale." };
   /* Any budget the person signed — the agent's own bounds only (`./budget.ts`), no ceiling of Ryntra's. */
   const budget = budgetOfRecord(input.record, now);
   const wrong = budget ? budgetRefusal(budget) : "not numbers";
@@ -195,8 +281,13 @@ export async function registerMandate(
   const origin = await (deps.screen ?? storeScreen(deps.store, gate.network)).origin(receive.toBase58()).catch(() => null);
   if (!origin) return { ok: false, code: "UNAVAILABLE", reason: "Ryntra's launch registry is not readable." };
   if (origin.launchedHere) return { ok: false, code: "REFUSED", reason: origin.creator === input.record.owner ? "The agent does not buy your own coin." : "The agent does not buy coins launched on Ryntra." };
+  /* A sale signed with the budget is the coin the agent buys, and its rules are the ones she saw before signing. */
+  const held = heldOfRecord(input.record);
+  if (held && !held.mint.equals(receive)) return { ok: false, code: "REFUSED", reason: "The coin the agent keeps is not the coin it buys." };
+  if (input.exit && !held) return { ok: false, code: "REFUSED", reason: "The agent sells on its own only with a budget signed for it." };
   const entry: BookEntry = {
-    v: 1,
+    /* A bot's entry is one a build of before cannot take for regular buys. */
+    v: bot === null ? 1 : 2,
     cluster: gate.network,
     record: input.record,
     /* What her numbers put in the vault — never the vault total: another mandate of hers may share the vault. */
@@ -209,6 +300,7 @@ export async function registerMandate(
     receiveMint: receive.toBase58(),
     status: "working",
     trades: [],
+    ...(held ? { exit: exitText(input.exit ?? TRADER_EXIT), sales: [] } : {}),
     createdAt: now,
     updatedAt: now,
   };
@@ -219,15 +311,18 @@ export async function registerMandate(
   return { ok: true, entry };
 }
 
+/** Whether a row of the book is a mandate's entry this build reads: every version it knows (`BookVersion`). */
+export const isBookEntry = (row: BookEntry | Readonly<{ claimedAt: number }> | null | undefined): row is BookEntry => Boolean(row && "record" in row && (row.v === 1 || row.v === 2));
+
 /** Every mandate in the book on this network. */
 export async function readBook(store: GuardStore, cluster = "devnet"): Promise<readonly BookEntry[]> {
   const rows = await bookOf(store).valuesWithPrefix(`m:${cluster}:`);
-  return rows.filter((row): row is BookEntry => "record" in row && row.v === 1);
+  return rows.filter(isBookEntry);
 }
 
 export async function readEntry(store: GuardStore, policy: string, cluster = "devnet"): Promise<BookEntry | null> {
   const row = await bookOf(store).get(entryKey(cluster, policy));
-  return row && "record" in row ? row : null;
+  return isBookEntry(row) ? row : null;
 }
 
 export async function writeEntry(store: GuardStore, entry: BookEntry): Promise<void> {
@@ -238,6 +333,26 @@ export async function writeEntry(store: GuardStore, entry: BookEntry): Promise<v
 export function planOfEntry(entry: Pick<BookEntry, "plan" | "strategy">): StrategyPlan {
   const plan = entry.plan === undefined ? null : planFrom(entry.plan);
   return plan && plan.id === entry.strategy ? plan : STEADY;
+}
+
+/**
+ * The coin's day limit the server itself read for a budget with the agent's own sale (`./terms.ts`
+ * `heldDailyMax`, at the venue's quote, when it built her transactions — `./service.server.ts` `reviewEnable`): kept
+ * beside the book under the policy and the figure, so the mandate joins only with the figure Ryntra read, never one a
+ * request names. The chain holds the real limit either way; this keeps the agent's own count of it (`./exit.ts`
+ * `saleRoom`) the same number.
+ */
+export const heldTicketKey = (cluster: string, policy: string, heldDaily: string) => `h:${cluster}:${policy}:${heldDaily}`;
+
+/** Keep the figure the server read for this policy. */
+export async function rememberHeldDaily(store: GuardStore, cluster: string, ticket: Readonly<{ policy: string; heldDaily: string }>, now: number = Date.now()): Promise<void> {
+  await bookOf(store).set(heldTicketKey(cluster, ticket.policy, ticket.heldDaily), { claimedAt: now });
+}
+
+/** Whether the server read this very figure for this policy. */
+export async function heldDailyKnown(store: GuardStore, cluster: string, record: Pick<MandateRecord, "policy" | "heldDaily">): Promise<boolean> {
+  if (!record.heldDaily || !RAW.test(record.heldDaily)) return false;
+  return Boolean(await bookOf(store).get(heldTicketKey(cluster, record.policy, record.heldDaily)));
 }
 
 /** The entry with one more trade, the oldest past the book's length let go. */

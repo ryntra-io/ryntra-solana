@@ -4,7 +4,7 @@
  * same origin) and shows it. No words travel through the push service. A
  * click opens the note in Ryntra — the tab already open, or a new one. The
  * icon and the badge are the city's mark; a push without a note
- * opens the city's assistant.
+ * opens the city's assistant. An agent's move carries «Stop agent» beside it.
  */
 
 self.addEventListener("install", () => self.skipWaiting());
@@ -31,12 +31,15 @@ self.addEventListener("push", (event) => {
       const title = note ? note.title : "Ryntra";
       const body = note ? note.body : uk ? "Нове сповіщення в Ryntra." : "A new note in Ryntra.";
       const href = note ? note.href : "/?open=assistant";
+      /* An agent's move opens the agent's own page; «Stop» beside it opens the same page with its one action ready. */
+      const agent = typeof href === "string" && href.indexOf("/agent/pulse?") === 0;
       await self.registration.showNotification(title, {
         body,
         tag: note ? note.id : "ryntra",
         icon: "/brand/city/icon-192.png",
         badge: "/brand/city/badge-96.png",
         data: { href },
+        actions: agent ? [{ action: "stop", title: uk ? "Зупинити агента" : "Stop agent" }] : [],
       });
     })(),
   );
@@ -45,7 +48,7 @@ self.addEventListener("push", (event) => {
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
   const href = (event.notification.data && event.notification.data.href) || "/?open=assistant";
-  const target = new URL(href, self.location.origin).href;
+  const target = new URL(event.action === "stop" ? `${href}&do=stop` : href, self.location.origin).href;
   event.waitUntil(
     (async () => {
       /* A tab of its own: a page open in Ryntra (a Review halfway, a form) is never navigated away from. */

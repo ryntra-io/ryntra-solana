@@ -20,8 +20,10 @@
 
 import { launchNameHits } from "../core/launch/moderation.ts";
 import { launchVenueOf, launchpadName, type PulseCurveVenue } from "../spot/pulse.ts";
+import { listedCompanyFor } from "../stocks/company-listings.ts";
 import { lifecycleEventFor } from "../stocks/lifecycle-events.ts";
 import { isRetiredToken } from "../stocks/retired.ts";
+import { passesForStock } from "../stocks/stock-book.ts";
 
 /** The lists, in the Market's order. */
 export const DEPTH_LISTS = ['trending', 'fresh', 'gainers', 'losers', 'traded', 'stocks'] as const;
@@ -255,7 +257,8 @@ export function depthCoinOf(token: JupiterTokenV2, stockMints: ReadonlySet<strin
     stable: stableOf(tags, symbol, day?.change ?? null, price),
     launchpad: launchpadName(launchpad),
     venue: launchVenueOf(launchpad),
-    copyOf: borrowedOf(verified, symbol, name),
+    /* A coin passing for a tokenized stock it is not borrows that company's name too. */
+    copyOf: borrowedOf(verified, symbol, name) ?? (verified ? null : (passesForStock({ symbol, name, mint: id, verified })?.company ?? null)),
     bornAt: iso(token.firstPool?.createdAt) ?? iso(token.createdAt),
     mint: rightOf(token.audit?.mintAuthorityDisabled, token.mintAuthority),
     freeze: rightOf(token.audit?.freezeAuthorityDisabled, token.freezeAuthority),
@@ -374,7 +377,9 @@ export function listCoins(list: DepthList, window: DepthWindow, answers: readonl
   const merged = mergeCoins(answers, stockMints);
   if (list === 'stocks') return merged.filter((coin) => coin.stock).slice(0, DEPTH_LIMIT);
   if (kind === 'stock' || kind === 'preipo') {
-    const companies = merged.filter((coin) => inKind(coin, kind));
+    /* «Pre-IPO» is the private companies: a token whose company has gone public (SpaceX; Anthropic since 19.11)
+       is no private company's, and its own page says what it is now. */
+    const companies = merged.filter((coin) => inKind(coin, kind) && !(kind === 'preipo' && listedCompanyFor({ mint: coin.id }) !== null));
     switch (list) {
       case 'gainers':
       case 'losers':

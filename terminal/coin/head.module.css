@@ -1,17 +1,83 @@
 /* The head of the coin's desk: the coin as a picker, its price and move, the trader's figures, the links.
    Pressable parts take their 4 px from coin.module.css; the picker is a menu — straight. Colours are tokens. */
 
-.head {
+/* The head is one glass panel of two rows: the coin, its price and the trader's figures; under them the passport. */
+.box {
   position: relative;
   z-index: 5;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  border: 1px solid var(--glass-edge);
+  background: var(--glass);
+}
+
+.head {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 20px;
   min-width: 0;
   height: 72px;
   padding: 8px 16px;
-  border: 1px solid var(--glass-edge);
-  background: var(--glass);
+}
+
+/* The second row: the passport's figures from the left edge, written as the row above writes its own; a company's
+   token keeps its issuer and the exchange's state at the right end. Nothing is cut: the passport gives up its least
+   read figures whole when the row is short. */
+.more {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  min-width: 0;
+  height: 56px;
+  padding: 0 16px;
+  border-top: 1px solid var(--line);
+}
+
+/* The passport's first figure stands on the panel's edge, without a rule before it. */
+.more dl > div:first-child {
+  padding-left: 0;
+  border-left: 0;
+}
+
+.stock {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+  padding-left: 16px;
+  border-left: 1px solid var(--line);
+}
+
+.issuer {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.issuerKind {
+  font-size: var(--type-micro);
+  font-weight: 600;
+  white-space: nowrap;
+  color: var(--dim);
+}
+
+.issuerName {
+  max-width: 220px;
+  overflow: hidden;
+  font-size: var(--type-small);
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--ice);
+}
+
+.chipText {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
 }
 
 .anchor {
@@ -200,6 +266,37 @@
 
   .figure {
     padding: 0 12px;
+  }
+}
+
+/* A wide head (1920): the figures share the row instead of standing in a cluster at the left with half the head empty
+   before the buttons; each keeps its words, the rules between them spread evenly. */
+@container coinhead (min-width: 1501px) {
+  .figures {
+    flex: 1 1 auto;
+  }
+
+  .figure {
+    flex: 1 1 auto;
+  }
+
+  .grow {
+    flex: 0 0 0;
+  }
+}
+
+/* The passport's row under it does the same on a wide desk: its figures share the row up to the stock's line. */
+@media (min-width: 1680px) {
+  .more > div:first-child {
+    flex: 1 1 auto;
+  }
+
+  .more dl {
+    flex: 1 1 auto;
+  }
+
+  .more dl > div {
+    flex: 1 1 auto;
   }
 }
 
@@ -421,13 +518,76 @@ li[aria-selected='true'] > .pickRow {
 @media (max-width: 767px) {
   .head {
     flex-wrap: wrap;
-    gap: 10px 12px;
+    gap: 10px 6px;
     height: auto;
     padding: 10px 12px;
   }
 
+  /* The coin and its quiet controls on the first line; the price and its move under them, the figures under those
+     (QA 19.11: the star and the share stood on a line of their own, the «i» by the price). */
+  .about {
+    order: 1;
+    margin-left: auto;
+  }
+
+  /* The coin gives way before its controls do: the picker narrows and a long ticker ends in «…», so the «i», the star
+     and the share keep its line whatever the ticker (EYES 19.11, вада 14: a ten-letter one sent two of them under it). */
+  .pickAnchor {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+
+  .pickAnchor > :first-child {
+    flex: 0 1 auto;
+    gap: 8px;
+    min-width: 0;
+    max-width: 100%;
+    padding-right: 8px;
+  }
+
+  /* The logo at the kit's own middle size here: a ticker of nine letters stands whole beside the controls. */
+  .pickAnchor > :first-child > :first-child {
+    width: 36px;
+    height: 36px;
+  }
+
+  .symRow {
+    gap: 4px;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .more {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    height: auto;
+    padding: 0 12px 12px;
+    border-top: 0;
+  }
+
+  /* A company's token on a phone: whose it is and how its exchange stands are said in «About» — the head keeps the
+     price and its figures, so the chart has the screen. */
+  .stock {
+    display: none;
+  }
+
+  /* The head's spacer has no width to give on a phone's wrapped lines. */
+  .grow {
+    display: none;
+  }
+
+  .issuerName {
+    max-width: none;
+    white-space: normal;
+  }
+
   .sym {
+    min-width: 0;
+    overflow: hidden;
     font-size: var(--type-title);
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .name {
@@ -439,10 +599,9 @@ li[aria-selected='true'] > .pickRow {
   }
 
   .quote {
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 4px;
-    margin-left: auto;
+    order: 2;
+    flex: 1 1 100%;
+    gap: 10px;
   }
 
   .price {

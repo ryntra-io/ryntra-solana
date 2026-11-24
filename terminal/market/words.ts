@@ -40,8 +40,7 @@ export const MARKET = words(
     // The first screen's promise: what the agent does, said in one tap; what it does with the money, in one line.
     heroTitle: 'Say it. Your agent does the rest.',
     heroKeys: 'Stop anytime · keys stay yours',
-    // Decision 108: the budget is the person's — no ceiling of ours; safety in one line, under the hood.
-    heroSafe: 'Your budget, your call · stop anytime · keys stay yours',
+    heroLimit: 'Your agent spends at most your budget a day · it can’t withdraw · stop anytime',
     heroWallet: (sol: string) => `${sol} SOL in your wallet`,
   },
   {
@@ -79,7 +78,7 @@ export const MARKET = words(
     sayEarn: (coin: string) => `Заробляй на ${coin}`,
     heroTitle: 'Скажи — агент зробить решту.',
     heroKeys: 'Стоп будь-коли · ключі в тебе',
-    heroSafe: 'Бюджет обираєш ти · стоп будь-коли · ключі в тебе',
+    heroLimit: 'Агент витратить не більше твого бюджету на день · вивести не може · стоп будь-коли',
     heroWallet: (sol: string) => `У гаманці ${sol} SOL`,
   },
 );

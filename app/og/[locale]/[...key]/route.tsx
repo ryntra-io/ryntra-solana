@@ -1,5 +1,5 @@
 import { companyCard, docsCard, isPageCardId, marketsCard, pageCard, type CardLocale, type CardSpec } from "@/app/brand/page-card";
-import { cityCard } from "@/city/lib/share/card.server";
+import { sectionCard } from "@/terminal/share/card.server";
 import { companyCardInputOf } from "@/lib/site/company-page";
 import { findStockRow } from "@/lib/stocks/universe.server";
 
@@ -7,9 +7,10 @@ export const runtime = "nodejs";
 export const maxDuration = 30;
 
 /**
- * The share card older posts of a page name: the city's card
- * (`city/lib/share/card.server.tsx`) in the page's language — the pages now
- * name `/opengraph-image` themselves (`pageCardImage` in `app/seo.ts`) — for
+ * The share card older posts of a page name: since 21.11 the terminal's
+ * (`terminal/share/card.server.tsx`, decision 105) — the docs' card for a
+ * docs address, home's in the page's language for the rest; the pages now
+ * name their cards themselves (`cardImageFor` in `app/seo.ts`) — for
  *
  * - `/og/{en|uk}/page/{company|security|methodology|contact|stats}`
  * - `/og/{en|uk}/docs` and `/og/{en|uk}/docs/{slug}`
@@ -49,5 +50,5 @@ export async function GET(_request: Request, { params }: { params: Promise<{ loc
   }
   const card = await cardFor(locale, parts);
   if (!card) return notFound();
-  return cityCard({ lang: locale });
+  return parts[0] === "docs" ? sectionCard({ id: "docs" }) : sectionCard({ id: "home", lang: locale });
 }

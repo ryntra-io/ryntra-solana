@@ -32,6 +32,8 @@
  * for them («SP500», «Nasdaq») reads as something else.
  */
 
+import type { KnownStock } from "./known-stocks.ts";
+import { listedCompanyFor } from "./company-listings.ts";
 import type { StockIssuerId } from "./representations.ts";
 import { sameUnderlying } from "./underlying-group.ts";
 import type { StockRow, StockUniverse } from "./universe.server.ts";
@@ -65,6 +67,12 @@ export type ShelfCard = Readonly<{
   /** The company's trading over the last day, USD — the shelf's order. */
   volume24h: number;
   issuer: StockIssuerId;
+  /**
+   * The issuer's own catalogue names the token, not only the venue's tag (`issuerConfirmation`): the stocks the agent's
+   * engine puts a person's money behind (`isShelfStock`). A card only the tag vouches for is shown and can be swapped,
+   * but a bot does not buy it — so the bot's form offers only these.
+   */
+  catalogued: boolean;
   /** A private company's token against the issuer's own valuation of it, per cent (the row's `markPremiumPct`); absent on a listed company's card. */
   premiumPct?: number | null;
   /** When the issuer's valuation behind `premiumPct` was read. */
@@ -150,6 +158,7 @@ function cardOf(row: StockRow, dayVolume: number, name: string): ShelfCard {
     change24h: typeof row.market.change24hPct === "number" && Number.isFinite(row.market.change24hPct) ? Math.round(row.market.change24hPct * 100) / 100 : null,
     volume24h: Math.round(dayVolume),
     issuer: row.representation.issuer.id,
+    catalogued: row.representation.issuerConfirmation === "issuer-catalogue",
   };
 }
 
@@ -173,13 +182,39 @@ export function shelfCompanies(rows: readonly StockRow[]): ShelfCard[] {
 }
 
 /**
+ * Whether a token is a stock of the listed shelf for who puts a person's money behind the answer (the agent's engine,
+ * `lib/mandate/stocks.server.ts`), asked by its address: a listed company's token of a shelf issuer that the issuer's
+ * own catalogue names and a person can buy now (`isShelfCandidate`) — its company's card today, or the one that was
+ * the card or would take its place. A company's card moves between its issuers' tokens with the pools' depth
+ * (Anthropic: Backpack's ANT on 19.11.2026, xStocks' ANTx a day later); a token bought as the card is still a stock of
+ * the shelf when the card moves.
+ *
+ * Narrower than what a person is shown: a card whose token only the venue's tag vouches for (`tag-only`) stands on the
+ * shelf to be looked at, and is no stock here — a tag alone never puts an issuer's rights over a token in front of a
+ * mandate. The answer is the shelf's, never the token's own word.
+ */
+export function isShelfStock(rows: readonly StockRow[], mint: string): boolean {
+  return rows.some(
+    (row) =>
+      row.representation.mint === mint &&
+      (row.representation.instrument?.class ?? "listed-equity") === "listed-equity" &&
+      row.representation.issuerConfirmation === "issuer-catalogue" &&
+      isShelfCandidate(row),
+  );
+}
+
+/**
  * The private companies — PreStocks' tokens only, every one its own card, by
  * the day's volume, each with the one number the shelf shows for it: the
- * price against PreStocks' valuation and its time.
+ * price against PreStocks' valuation and its time. A company the registry
+ * records as listed (`listedCompanyFor`: SpaceX, and Anthropic since
+ * 19.11.2026) is no private company: its token leaves this shelf,
+ * and the company's card on the listed shelf opens its share.
  */
 export function shelfPrivateCompanies(rows: readonly StockRow[]): ShelfCard[] {
   return rows
     .filter((row) => row.representation.instrument?.class === "pre-ipo" && PRIVATE_SHELF_ISSUERS.has(row.representation.issuer.id) && row.representation.tradingHalted !== true && row.lifecycle?.tradable !== false && positive(row.market.priceUsd))
+    .filter((row) => listedCompanyFor({ mint: row.representation.mint, companyKey: row.representation.companyKey }) === null)
     .map((row) => ({
       ...cardOf(row, volume(row), companyDisplayName(row.representation.underlying.name ?? row.representation.name)),
       premiumPct: typeof row.markPremiumPct === "number" && Number.isFinite(row.markPremiumPct) ? Math.round(row.markPremiumPct * 100) / 100 : null,
@@ -208,4 +243,18 @@ export function matchShelf(cards: readonly ShelfCard[], query: string): ShelfCar
     .filter((entry) => entry.score > 0)
     .sort((a, b) => b.score - a.score || b.card.volume24h - a.card.volume24h)
     .map((entry) => entry.card);
+}
+
+/**
+ * The universe's representations as the look-alike rule's book reads them: every confirmed mint with its
+ * ticker and its company — a fund named by its index, a private company's token as `private`. A token the issuer let
+ * expire is still the issuer's, so it stays in the book: a copy of it is a copy all the same.
+ */
+export function knownStocksOfRows(rows: readonly StockRow[]): KnownStock[] {
+  return rows.map((row) => {
+    const representation = row.representation;
+    const name = companyDisplayName(representation.underlying.name ?? companyFromTokenName(representation.name), representation.underlying.symbol);
+    const kind = representation.instrument?.class === "pre-ipo" ? "private" : INDEX_NAMES[representation.underlying.symbol?.toUpperCase() ?? ""] ? "fund" : "company";
+    return { mint: representation.mint, symbol: representation.symbol, company: name, issuer: representation.issuer.id, kind };
+  });
 }

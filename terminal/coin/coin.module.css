@@ -6,7 +6,8 @@
 
 .iconBtn,
 .pickBtn,
-.buyBtn {
+.buyBtn,
+.quickBtn {
   border-radius: var(--r-ctl);
 }
 
@@ -86,9 +87,30 @@
 
 /* The chart's place while its engine loads: the pane's own size, so nothing jumps when it arrives. */
 .chartWait {
+  position: relative;
   flex: 1 1 auto;
   min-height: 320px;
+  overflow: hidden;
   background: var(--panel);
+}
+
+/* Not a dark box while the engine loads: the chart's own sweep of light, as its wait draws it. */
+.chartWait::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: -40%;
+  width: 40%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--lilac), transparent);
+  animation: lostSweep 1.6s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chartWait::after {
+    animation: none;
+    left: 30%;
+  }
 }
 
 /* ── the desk's ticket column: the ticket the whole height ───────────── */
@@ -160,31 +182,135 @@
 
 /* ── a coin the engine could not name ──────────────────────────────────── */
 
+/* A coin's screen with no coin to draw: one line, the quiet way to ask again or the coin search, the
+   way back to the market — a column in the action panel. */
 .lost {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
   gap: 16px;
-  padding: 24px 0;
 }
 
-/* ── the phone ─────────────────────────────────────────────────────────── */
+/* The search as wide as the panel; the quiet «Try again» its own width. */
+.lost > div {
+  width: 100%;
+}
 
-.phoneChart {
+.lost > button {
+  align-self: flex-start;
+}
+
+.lostLine {
+  margin: 0;
+  font-size: var(--type-base);
+  color: var(--soft);
+}
+
+/* The address still asked: the panel's frame at the height of what comes, the sweep of light in it. */
+.lostWait {
+  position: relative;
+  height: 160px;
+  overflow: hidden;
+}
+
+.lostWait::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: -40%;
+  width: 40%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--lilac), transparent);
+  animation: lostSweep 1.6s ease-in-out infinite;
+}
+
+@keyframes lostSweep {
+  to {
+    left: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lostWait::after {
+    animation: none;
+    left: 30%;
+  }
+}
+
+/* ── the phone: the coin on one screen ─────────────────────────────────── */
+
+/* The door to the coin's DLMM Pro pool, beside the star and Share on a desk. */
+.proDoor {
+  display: inline-flex;
+  flex: none;
+}
+
+/* The coin's quiet controls stand on the head's first line, by the coin (QA 19.11), the same place on every coin: the pool's door, which pushed them to a second line on some coins, stays with the desk. */
+@media (max-width: 767px) {
+  .tools {
+    order: 1;
+  }
+
+  .proDoor {
+    display: none;
+  }
+}
+
+/* Under the price: the risk line's few facts, a short line each, without the room the ticket keeps for four. */
+.phoneRisk > div,
+.phoneRisk ul {
+  min-height: 0;
+}
+
+/* The views of the coin — Chart · Trades · Holders · About — the screen's whole width, one open at a time. */
+.phoneViews {
   display: flex;
   flex-direction: column;
+  min-width: 0;
   margin: 0 calc(-1 * var(--bleed, 16px));
   border-block: 1px solid var(--glass-edge);
   background: var(--glass);
 }
 
-.phoneUnder {
+.phoneTabs {
+  display: flex;
+  flex: none;
+  align-items: center;
+  min-width: 0;
+  min-height: 44px;
+  padding: 0 8px;
+  border-bottom: 1px solid var(--line);
+}
+
+.phoneTabs > div {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* A table's view keeps a height of its own — about the room left on a phone's screen above Buy and Sell — and
+   scrolls inside, so the page never runs away under the thumb; the chart and «About» stand as tall as they are. */
+.phonePane {
   display: flex;
   flex-direction: column;
-  height: 520px;
-  margin: 0 calc(-1 * var(--bleed, 16px));
-  border-block: 1px solid var(--glass-edge);
-  background: var(--glass);
+  min-width: 0;
+  height: 420px;
+  overflow: hidden;
+}
+
+.phonePane[data-view='chart'],
+.phonePane[data-page] {
+  height: auto;
+  overflow: visible;
+}
+
+.phonePane[hidden] {
+  display: none;
+}
+
+.phoneAbout {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 14px 16px 18px;
 }
 
 /* Buy and Sell over the tab bar, a thumb's reach: each opens the ticket as a sheet on its side. */
@@ -196,7 +322,7 @@
   z-index: 9;
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 10px;
+  gap: 8px 10px;
   padding: 10px 16px;
   border-top: 1px solid var(--line);
   background: color-mix(in srgb, var(--ink-deep) 92%, transparent);
@@ -219,9 +345,53 @@
   color: var(--ice);
 }
 
-/* The page keeps room under its last block for the bar. */
+/* The quick sums over the two buttons: the unit once, then four sums — a tap fills the ticket and opens it. */
+.quick {
+  display: flex;
+  grid-column: 1 / -1;
+  align-items: center;
+  gap: 6px;
+}
+
+.quickUnit {
+  flex: none;
+  min-width: 36px;
+  font-size: var(--type-caption);
+  font-weight: 700;
+  color: var(--dim);
+}
+
+.quickBtn {
+  flex: 1 1 0;
+  min-width: 0;
+  height: 36px;
+  border: 1px solid var(--glass-edge);
+  background: transparent;
+  font-size: var(--type-small);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--ice);
+  transition: border-color 0.15s;
+}
+
+.quickBtn:hover,
+.quickBtn:focus-visible {
+  border-color: var(--chosen-edge);
+}
+
+/* The sum the ticket holds: chosen, quietly — what «Buy» opens with. */
+.quickBtn[aria-pressed='true'] {
+  border-color: var(--chosen-edge);
+  background: var(--chosen);
+}
+
+/* The page keeps room under its last block for the bar, its quick sums counted. */
 .barRoom {
-  height: 64px;
+  height: 68px;
+}
+
+.barRoom[data-quick] {
+  height: 112px;
 }
 
 .sheetScrim {

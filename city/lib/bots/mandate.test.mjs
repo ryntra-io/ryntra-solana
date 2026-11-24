@@ -23,10 +23,12 @@ const SOL = 1_000_000_000n;
 /* A budget is the person's own numbers. */
 const MEDIUM = { perDay: SOL / 4n, perTrade: SOL / 8n, days: 30 };
 
-function enablePlan(budget = MEDIUM) {
+const TOKEN = new PublicKey('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA');
+
+function enablePlan(budget = MEDIUM, extra = {}) {
   return planEnable({
     cluster: 'devnet',
-    terms: { human: human.publicKey, agent: agent.publicKey, budgetMint: new PublicKey('So11111111111111111111111111111111111111112'), perTrade: budget.perTrade, perDay: budget.perDay, slippageBps: 100, expiresAt: NOW + BigInt(budget.days) * 86_400n, venue: { kind: 'dlmm', pool } },
+    terms: { human: human.publicKey, agent: agent.publicKey, budgetMint: new PublicKey('So11111111111111111111111111111111111111112'), perTrade: budget.perTrade, perDay: budget.perDay, slippageBps: 100, expiresAt: NOW + BigInt(budget.days) * 86_400n, venue: { kind: 'dlmm', pool }, ...extra },
     account: { kind: 'absent', config },
     fund: budgetFund(budget),
     nowSeconds: NOW,
@@ -169,6 +171,45 @@ test('a wallet that says no, or changes the message, sends nothing', async () =>
   });
   assert.equal(changed.result.kind, 'refused');
   assert.equal(swap.sent.length, 0);
+});
+
+test('the agent sells on its own only on the ticket she was shown — a server that answers otherwise is refused before the wallet', async () => {
+  const who = { wallet: 'Phantom', owner: human.publicKey.toBase58() };
+  const selling = enablePlan(MEDIUM, { heldCoin: { mint: tRyn, program: TOKEN, dailyMax: 2_000n } });
+  const holding = enablePlan();
+  const asked = [];
+  const sign = async (input) => (asked.push(input), walletSigns(input));
+  const bodies = [];
+  const watch = (plan) => {
+    const inner = engine(plan);
+    return { ...inner, fetch: async (url, init) => (url === '/api/bots/mandate/review' && bodies.push(JSON.parse(init.body)), inner.fetch(url, init)) };
+  };
+  /* She was shown the exit, the server's switch is off and the budget comes back without a sale: refused, not signed. */
+  const off = await enableAgent(who, MEDIUM, null, { fetch: watch(holding).fetch, sign, exit: true, exitOpen: true, prove: async () => ({ ok: true }) });
+  assert.equal(off.result.kind, 'refused');
+  assert.equal(bodies.at(-1).exit, true);
+  /* She was not shown it, and the server answers with a sale: refused. */
+  const unshown = await enableAgent(who, MEDIUM, null, { fetch: watch(selling).fetch, sign });
+  assert.equal(unshown.result.kind, 'refused');
+  assert.equal(bodies.at(-1).exit, undefined, 'not asked for');
+  /* The deployment's own switch off: nothing asks for a sale, whatever the card said. */
+  await enableAgent(who, MEDIUM, null, { fetch: watch(holding).fetch, sign, exit: true, exitOpen: false });
+  assert.equal(bodies.at(-1).exit, undefined);
+  assert.equal(asked.length, 1, 'the wallet saw only the budget without a sale it was shown as such');
+  /* Shown and answered: one approval, the record names the sale and its day. */
+  const on = await enableAgent(who, MEDIUM, null, { fetch: watch(selling).fetch, sign, exit: true, exitOpen: true, prove: async () => ({ ok: true }) });
+  assert.deepEqual(on.result, { kind: 'on' });
+  assert.equal(on.record.heldDaily, '2000');
+  assert.equal(on.record.held, tRyn.toBase58());
+  /* The agent's book takes such a budget only from her proven wallet — proven first; she says no: nothing reviewed, nothing signed. */
+  const reviewed = bodies.length;
+  const signed = asked.length;
+  const declined = await enableAgent(who, MEDIUM, null, { fetch: watch(selling).fetch, sign, exit: true, exitOpen: true, prove: async () => ({ ok: false, state: 'declined', message: 'Nothing was signed.' }) });
+  assert.equal(declined.result.kind, 'walletNo');
+  assert.equal(bodies.length, reviewed);
+  assert.equal(asked.length, signed);
+  const failed = await enableAgent(who, MEDIUM, null, { fetch: watch(selling).fetch, sign, exit: true, exitOpen: true, prove: async () => ({ ok: false, state: 'failed', message: 'Not verified.' }) });
+  assert.equal(failed.result.kind, 'refused');
 });
 
 test('mainnet keeps its mandates apart from devnet’s in the browser', () => {

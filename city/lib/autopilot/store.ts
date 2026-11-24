@@ -308,15 +308,18 @@ export function askOpen(ask: AgentAsk, launchReady: boolean = launchOpenHere(use
   return ask.kind === 'trade' ? MANDATE_NET !== null : launchReady;
 }
 
-/** «Sign once»: the mandate with the picked budget, the person's words with it into the agent's book. */
-export async function signTrade(who: Readonly<{ wallet: string; owner: string }>): Promise<MandateRecord | null> {
+/**
+ * «Sign once»: the mandate with the picked budget, the person's words with it into the agent's book. `exit` —
+ * the ticket showed the agent's own exit (`terminal/agents/Exit.tsx`); without it the agent buys and holds.
+ */
+export async function signTrade(who: Readonly<{ wallet: string; owner: string }>, options: Readonly<{ exit?: boolean }> = {}): Promise<MandateRecord | null> {
   const st = useAutopilot.getState();
   if (!st.budget || st.ask?.kind !== 'trade') return null;
   useMandate.getState().setBudget(st.budget);
   const { tapEnable } = await import('../bots/mandate-sign.ts');
   // The plan said — or the practice's, when the person goes live from paper — travels with the mandate.
   const plan = planNow();
-  const record = await tapEnable(who, { strategy: plan.id, plan: planText(plan), said: st.ask.said });
+  const record = await tapEnable(who, { strategy: plan.id, plan: planText(plan), said: st.ask.said, exit: options.exit === true });
   if (record) useAutopilot.getState().setPaper(null);
   return record;
 }

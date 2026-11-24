@@ -7,6 +7,7 @@ import { onlyRows } from "../assistant/watch/runtime.server.ts";
 import type { GuardStore } from "../guard/store.ts";
 import { deliverOutbox } from "../monitoring/service.server.ts";
 import { productionChain, productionFacts } from "./chain.server.ts";
+import { copyReads } from "./copy-reads.server.ts";
 import { runWalletWatchPass } from "./run.ts";
 
 export function runWalletWatches(store: GuardStore) {
@@ -17,5 +18,7 @@ export function runWalletWatches(store: GuardStore) {
     clock: Date.now,
     /* This pass's own deliveries, sent at once through the monitoring delivery (Telegram, push, quiet hours, retries) — it sees only their rows. */
     deliver: (rows, atMs) => deliverOutbox(onlyRows(store, rows), atMs),
+    /* A wallet read for its paper copies alone stays under the day's ceiling of credits. */
+    copyReads: copyReads(),
   });
 }

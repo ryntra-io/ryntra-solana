@@ -7,6 +7,10 @@
  * observed. A pair whose every fact reads as it was checked, whose badge is there and whose price is fresh is open; a
  * single difference closes it, with the plain word of the refusal. Nothing is offered on a read that did not answer.
  *
+ * With a launch paired with a stock open (`RYNTRA_LAUNCH_STOCK_PAIR=open`), the stocks engine's shelf is read
+ * beside the chain, and the register's rule takes it (`quoteAssetProblems`' `stock`): an empty hook passes, and a mint
+ * carrying an issuer's powers passes only as a stock of the shelf. Closed, the shelf is never read.
+ *
  * Reads only — the badge is Meteora's to create, the mint is the issuer's, and this module signs nothing. The public
  * listing may be answered from a read of the last few seconds; a build asks for its own, because the figures a creator
  * signs on must be of the moment.
@@ -26,8 +30,10 @@ import {
   type QuoteAssetRefusal,
   type QuoteConfigVersion,
   type QuoteEpochFee,
+  type QuoteMintFacts,
   type QuoteMultiplier,
 } from "../core/launch/quote-asset.ts";
+import { stockOnShelf, stockPairOpen, stockShelfEntries, type StockShelfEntry } from "../core/launch/stock-pair.ts";
 import { DBC_PROGRAM_ID, dbcSdkOf, dbcTokenBadgeAddress } from "../core/venues/meteora-dbc/sdk.server.ts";
 import { fetchTokenCatalog } from "../solana/catalog.ts";
 import { mintProfileOf } from "../solana/mint-profile.ts";
@@ -47,12 +53,17 @@ export type QuoteAssetReader = Readonly<{
 /** The price of one token in dollars, with the moment it was observed; null — the source did not answer. */
 export type QuotePriceReader = (mints: readonly string[]) => Promise<Readonly<{ usdByMint: Readonly<Record<string, number>>; observedAt: string }> | null>;
 
+/** The shelf of checked stocks; null — it could not be read. */
+export type StockShelfReader = (nowMs: number) => Promise<readonly StockShelfEntry[] | null>;
+
 export type QuoteAssetDeps = Readonly<{
   cluster: LaunchCluster;
   connection: QuoteAssetReader;
   env?: Readonly<Record<string, string | undefined>>;
   now?: () => Date;
   price?: QuotePriceReader;
+  /** Where the shelf is read while a stock-paired launch is open; absent — the stocks engine's universe. */
+  shelf?: StockShelfReader;
 }>;
 
 /** One checked pair currency as it stands after a read. */
@@ -68,6 +79,9 @@ export type QuoteAssetState = Readonly<{
   priceUsd: number | null;
   priceAt: string | null;
   checkedAt: string;
+  facts?: QuoteMintFacts | null;
+  /** The same: the shelf's entry of this mint; null — not on it, or the shelf was not read. */
+  shelf?: StockShelfEntry | null;
 }>;
 
 /** Jupiter's price of a token, the moment of the read its freshness — the source every Ryntra surface prices with. */
@@ -80,6 +94,13 @@ export const jupiterQuotePrice: QuotePriceReader = async (mints) => {
     if (Number.isFinite(usd) && usd > 0) usdByMint[mint] = usd;
   }
   return { usdByMint, observedAt: catalog.observedAt };
+};
+
+/** The stocks engine's shelf, read from its universe — imported only when asked, so a closed flag loads none of it. */
+export const universeShelf: StockShelfReader = async (nowMs) => {
+  const { readStockUniverse } = await import("../stocks/universe.server.ts");
+  const read = await readStockUniverse().catch(() => null);
+  return read?.ok ? stockShelfEntries(read.universe.rows, nowMs) : null;
 };
 
 /** The scaled unit of a mint as the chain states it: one token is `current` of the unit; null — no such extension. */
@@ -134,10 +155,12 @@ async function judge(
   if (!kept.length) return [];
   const mints = kept.map((record) => new PublicKey(record.mint));
   const badges = kept.map((record) => dbcTokenBadgeAddress(record.mint, sdk));
-  const [accounts, epoch, price] = await Promise.all([
+  const stockPair = stockPairOpen(env);
+  const [accounts, epoch, price, shelf] = await Promise.all([
     deps.connection.getMultipleAccountsInfo([...mints, ...badges], "confirmed").catch(() => null),
     deps.connection.getEpochInfo("confirmed").catch(() => null),
     (deps.price ?? jupiterQuotePrice)(kept.map((record) => record.mint)).catch(() => null),
+    stockPair ? (deps.shelf ?? universeShelf)(now().getTime()).catch(() => null) : Promise.resolve(null),
   ]);
   const at = now();
   const checkedAt = at.toISOString();
@@ -166,7 +189,9 @@ async function judge(
       priceUsd: price?.usdByMint[record.mint] ?? null,
       priceAt: price?.observedAt ?? null,
     };
-    const problems = quoteAssetProblems(record, observed, { nowMs: at.getTime(), sdk });
+    /* The shelf by this record's mint — a symbol finds nothing on it. */
+    const entry = shelf ? stockOnShelf(shelf, record.mint) : null;
+    const problems = quoteAssetProblems(record, observed, { nowMs: at.getTime(), sdk, ...(stockPair ? { stock: { onShelf: shelf ? entry !== null : null } } : {}) });
     const fee = facts?.transferFee ?? null;
     return {
       record,
@@ -177,6 +202,7 @@ async function judge(
       priceUsd: observed.priceUsd,
       priceAt: observed.priceAt,
       checkedAt,
+      ...(stockPair ? { facts, shelf: entry } : {}),
     } satisfies QuoteAssetState;
   });
 }

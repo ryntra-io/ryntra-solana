@@ -89,6 +89,8 @@ export type Row = Readonly<{
    * never set on a row the engine priced.
    */
   marketPriced?: boolean;
+  /** Wrapped SOL folded into SOL's own row on screen (`foldWrapped`), in whole coins. */
+  wrapped?: number;
 }>;
 
 const PRINCIPAL = new Set(['held', 'supplied', 'borrowed']);
@@ -342,12 +344,15 @@ export function collectable(groups: readonly Group[]): Readonly<{ rows: readonly
 /** How an exit takes a position: all of it now, a part now, a first step now and the rest later — or not at all. */
 export type ExitCan = 'now' | 'part' | 'later' | 'no';
 
+/** Why a line does not leave: the portfolio's own reason, or `NO_SWAP` — a coin Jupiter carries no route for now. */
+export type LineReason = ExitReason | 'NO_SWAP';
+
 export type ExitLine = Readonly<{
   id: string;
   row: Row;
   can: ExitCan;
   /** What stops one step, or takes only a part; null — nothing does. */
-  reason: ExitReason | null;
+  reason: LineReason | null;
   /** The share one step takes out now, per cent. */
   partPct: number;
   untilEpoch: number | null;
@@ -358,9 +363,11 @@ const NEVER: ReadonlySet<ExitReason> = new Set(['NOT_READ', 'PROJECTION', 'NO_RO
 
 /**
  * What «Exit everything» is about: everything that works — pools, staking, deposits and loans — each with how an exit
- * takes it. The wallet's own coins are not here: they are sold on their ticket, and the dust is the clean's.
+ * takes it. The wallet's own coins are not here: they are sold on their ticket, and the dust is the clean's. A coin
+ * the engine's overview found Jupiter carries no route for (`unrouted`) — a staking token — does not leave:
+ * it is not offered as one that sells.
  */
-export function exitLines(groups: readonly Group[]): ExitLine[] {
+export function exitLines(groups: readonly Group[], unrouted: readonly string[] = []): ExitLine[] {
   return groups
     .filter((group) => group.id === 'pools' || group.id === 'staking' || group.id === 'lending')
     .flatMap((group) => group.rows)
@@ -368,6 +375,7 @@ export function exitLines(groups: readonly Group[]): ExitLine[] {
     .map((row): ExitLine => {
       const exit = row.position.exit;
       const partPct = Math.round(exit.partBps / 100);
+      if (exit.how === 'swap' && unrouted.includes(row.id)) return { id: row.id, row, can: 'no', reason: 'NO_SWAP', partPct: 0, untilEpoch: null, untilTime: null };
       let can: ExitCan;
       if (exit.oneStep) can = 'now';
       else if (exit.how === 'none' || (exit.reason !== null && NEVER.has(exit.reason))) can = 'no';
@@ -455,5 +463,27 @@ export function wholeOf(answer: Pick<Answer, 'sources' | 'solUsd'>, groups: read
 export function partial(answer: Pick<Answer, 'sources'>): boolean {
   return answer.sources.some((source) => source.source !== 'jupiter-portfolio' && (source.state === 'stale' || source.state === 'unread' || (source.state === 'read' && source.reason !== null)));
 }
+
+/**
+ * The coins as the eye reads them: wrapped SOL stands inside SOL's own row — one figure for SOL, as the wallet's page
+ * says it — never a second row beside it with a second number about the same money (eyes 20.11, 86). The row keeps
+ * how much of it is wrapped, so the screen can say so; amounts and worth add up only where both are known. Only the
+ * view folds: the groups, the total, the exit and the clean read the rows as the engine gave them. Without a row of
+ * native SOL, wrapped SOL keeps its own row.
+ */
+export function foldWrapped(rows: readonly Row[]): readonly Row[] {
+  const native = rows.find(isNativeRow);
+  const wrapped = rows.filter((row) => !isNativeRow(row) && row.position.state !== 'unread' && mintOf(row.position) === NATIVE_SOL_MINT);
+  if (!native || !wrapped.length) return rows;
+  const add = (pick: (row: Row) => number | null): number | null => {
+    const known = [native, ...wrapped].map(pick).filter((value): value is number => value !== null);
+    return known.length ? known.reduce((sum, value) => sum + value, 0) : null;
+  };
+  const wrappedUnits = wrapped.reduce((sum, row) => sum + (row.units ?? 0), 0);
+  const folded: Row = { ...native, units: add((row) => row.units), usd: add((row) => row.usd), sol: add((row) => row.sol), price: native.price ?? wrapped[0]?.price ?? null, wrapped: wrappedUnits };
+  return rows.flatMap((row) => (row === native ? [folded] : wrapped.includes(row) ? [] : [row]));
+}
+
+const isNativeRow = (row: Row): boolean => isNativeSol(row.position);
 
 export { NATIVE_SOL_MINT, USDC_MINT };

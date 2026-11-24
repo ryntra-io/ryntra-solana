@@ -8,6 +8,31 @@
   min-width: 0;
 }
 
+/* ── the section's tabs ────────────────────────────────────────────────── */
+
+/* A row of tabs wider than the screen (a phone): the edge with more tabs behind it fades out, so the row reads as one
+   that goes on (QA 20.11, вада 24); the chosen tab is scrolled into view by `head.tsx`. */
+.tabsBox {
+  display: flex;
+  min-width: 0;
+}
+
+.tabsBox > [role='tablist'] {
+  flex: 1 1 auto;
+}
+
+.tabsBox[data-more='end'] > [role='tablist'] {
+  mask-image: linear-gradient(90deg, var(--ink) calc(100% - 40px), transparent);
+}
+
+.tabsBox[data-more='start'] > [role='tablist'] {
+  mask-image: linear-gradient(90deg, transparent, var(--ink) 40px);
+}
+
+.tabsBox[data-more='both'] > [role='tablist'] {
+  mask-image: linear-gradient(90deg, transparent, var(--ink) 40px, var(--ink) calc(100% - 40px), transparent);
+}
+
 /* ── a bot's head in its panel ─────────────────────────────────────────── */
 
 .head {
@@ -28,7 +53,9 @@
   font-size: var(--type-action);
 }
 
+/* A line of words never leaves its last word alone on a line (QA 20.11, вада 37). */
 .job {
+  text-wrap: pretty;
   font-size: var(--type-small);
   font-weight: 500;
   color: var(--soft);
@@ -86,6 +113,7 @@
 }
 
 .line {
+  text-wrap: pretty;
   font-size: var(--type-small);
   font-weight: 600;
   color: var(--soft);
@@ -106,6 +134,7 @@
 }
 
 .note {
+  text-wrap: pretty;
   font-size: var(--type-small);
   font-weight: 600;
   line-height: 1.4;
@@ -113,6 +142,27 @@
 
 .note[data-tone='warn'] {
   color: var(--warm);
+}
+
+/* A row of choices as wide as the fields over it, however many it holds (QA 20.11, вада 31: three choices in the kit's
+   row of four stood ~78 px short of the fields; «Швидкий», «Повільний» touched their edges). */
+.fill > [role='group'] {
+  grid-template-columns: none;
+  grid-auto-columns: minmax(0, 1fr);
+  grid-auto-flow: column;
+}
+
+.fill > [role='group'] > button {
+  padding: 0 8px;
+}
+
+/* The week on paper inside a paper bot's form, over its action: a line above it, the figure under its kicker. */
+.weekBox {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
 }
 
 /* A line kept in place before it is said: an answer never pushes the action. */
@@ -207,10 +257,33 @@
     'mine side';
 }
 
+/* The person's bots beside it end on the same line as what helps the form (QA 20.11, вада 30: under «My bots» the left
+   stood empty for the height of «The ladder» on the right): the panel takes the row's height, its rows at the top. */
+@media (min-width: 1100px) {
+  .botDesk.botDesk[data-side] > [data-bot-mine] {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .botDesk.botDesk[data-side] > [data-bot-mine] > :only-child {
+    flex: 1 1 auto;
+    align-content: flex-start;
+  }
+}
+
 .deskSide {
   grid-area: side;
   align-self: start;
   min-width: 0;
+}
+
+/* A desk: the form stands the chart's whole height, so its one action stands on the chart's bottom line and what is left
+   over sits between the fields and the action, never under it (QA 20.11, вада 28: 170–230 px empty under «Start on
+   paper» and «Practice first»). The first button straight in the form's panel is its action. */
+@media (min-width: 1100px) {
+  .botDesk > [data-bot-form] > * > button:first-of-type {
+    margin-top: auto;
+  }
 }
 
 /* A narrow desk (a tablet): the chart on top, the form under it the whole width, the person's bots under that — their
@@ -256,6 +329,7 @@
 }
 
 .cap {
+  text-wrap: pretty;
   font-size: var(--type-caption);
   font-weight: 500;
   color: var(--dim);
@@ -376,10 +450,34 @@
 }
 
 .empty {
+  text-wrap: pretty;
   padding: 4px 18px 20px;
   font-size: var(--type-body);
   font-weight: 500;
   color: var(--dim);
+}
+
+/* «My bots» with none at work (QA 20.11, вада 110): on a desk the name and its one line stand in one row, so an empty list
+   is a line, not a wide strip of empty panel under the chart. */
+@media (min-width: 768px) {
+  .mineQuiet {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    column-gap: 16px;
+  }
+
+  .mineQuiet .mineHead {
+    padding: 16px 0 16px 18px;
+  }
+
+  .mineQuiet .mineTitle {
+    flex: none;
+  }
+
+  .mineQuiet .empty {
+    padding: 16px 18px 16px 0;
+  }
 }
 
 .notePad {
@@ -417,6 +515,7 @@
 }
 
 .emptyPhone {
+  text-wrap: pretty;
   padding: 18px 2px 0;
   font-size: var(--type-body);
   font-weight: 500;
@@ -433,10 +532,13 @@
   max-width: none;
 }
 
-/* A wide desk: every bot in one row. No card draws a chart of its own — a drawn price is not the market: each bot's page stands on the terminal's chart. */
+/* Every bot a card, in the tabs' order (QA 20.11, вада 36). A desk: three to a row, and the grid's card is the wide one, so
+   every row is full whichever bots are open here (QA 19.11, вада 19) — on a wide desk too (QA 20.11, вада 109: five
+   cards in one row on 1920 left ~58% of the screen empty under them). No card draws a chart of its
+   own — a drawn price is not the market: each bot's page stands on the terminal's chart. */
 .catalog {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 20px;
 }
 
@@ -529,25 +631,101 @@
   color: var(--ice);
 }
 
-/* A narrower desk: three to a row, the grid's card twice as wide — five cards, two full rows. */
-@media (min-width: 1100px) and (max-width: 1679px) {
-  .catalog {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+@media (min-width: 1100px) {
+  /* Five cards: Recurring and the grid twice as wide fill the first row, three the second. Four: two rows of a narrow and
+     a wide card — the grid's and the last. Two: the grid twice as wide. One: the whole row. */
+  .catalog[data-count='5'] .catalogCard[data-lead],
+  .catalog[data-count='4'] .catalogCard[data-lead],
+  .catalog[data-count='2'] .catalogCard[data-lead] {
+    grid-column: span 2;
   }
 
-  .catalogCard[data-lead] {
+  .catalog[data-count='4'] .catalogCard:last-child:not([data-lead]) {
+    grid-column: span 2;
+  }
+
+  .catalog[data-count='1'] .catalogCard {
+    grid-column: span 3;
+  }
+}
+
+/* A wide desk (1920): the two rows of cards stand taller, so the catalogue is the page, not a strip over an empty screen. */
+@media (min-width: 1680px) {
+  .catalog[data-count='4'],
+  .catalog[data-count='5'] {
+    grid-auto-rows: minmax(340px, auto);
+  }
+}
+
+/* Two to a row, in the tabs' order; a last card alone on its row as wide as the row. */
+@media (max-width: 1099px) {
+  .catalog.catalog {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .catalogCard:last-child:nth-child(odd) {
     grid-column: span 2;
   }
 }
 
-@media (max-width: 1099px) {
-  .catalog {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
+/* ── «Recurring buys» of a stock ───────────────────────────── */
 
-  .catalogCard[data-lead] {
-    grid-column: span 2;
-  }
+/* The stocks' own group among the coins: a kicker and a pill a company, its logo and its ticker. */
+.stockGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* The companies in columns on one axis, the row as wide as the fields under it (QA 20.11, вада 112: 3 + 3 + 2 pills of
+   their own widths, TTWOx and GMEx ten pixels apart, the row shorter than the fields). */
+.stockGroup > [role='radiogroup'] {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+}
+
+/* The budget a day or a week: the switch, then the fields of the one chosen. */
+.budgetUnit {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
+.weekFields {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.weekTiles {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.warnCap {
+  font-size: var(--type-caption);
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--warm);
+}
+
+/* Before the signature, for a stock: the exchange's hours and the issuer's rights. */
+.stockTerms {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+
+.termsLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 700;
+  color: var(--ice);
 }
 
 @media (max-width: 767px) {
@@ -555,11 +733,17 @@
     display: none;
   }
 
+  /* What helps a bot's form, on a phone: the screen's whole width, as the form over it (QA 20.11, вада 25: «The ladder»
+     and «Last week on paper» kept a desk column's width — 55–62% of the screen, empty to the right). */
+  .deskSide {
+    align-self: stretch;
+  }
+
   .cards {
     display: flex;
   }
 
-  .catalog {
+  .catalog.catalog {
     grid-template-columns: minmax(0, 1fr);
     gap: 14px;
   }
@@ -569,7 +753,7 @@
     padding: 18px 16px;
   }
 
-  .catalogCard[data-lead] {
+  .catalogCard:last-child:nth-child(odd) {
     grid-column: auto;
   }
 }

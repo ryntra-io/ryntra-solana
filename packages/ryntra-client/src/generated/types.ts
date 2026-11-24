@@ -1944,6 +1944,24 @@ export type LaunchPoolView = {
     readonly leftRaw: string | null;
     readonly state: "WAITING" | "RESTING" | "SELLING" | "CLOSED" | null;
   } | null;
+  readonly reward?: {
+    readonly shareBps: number;
+    readonly amountRaw: string;
+    readonly days: number;
+    readonly opensAt: number | null;
+    readonly endsAt: number | null;
+    readonly perDayRaw?: string;
+    readonly locked?: {
+      readonly creatorBps: number;
+      readonly ryntraBps: number;
+    };
+    readonly state: "WAITING" | "PAYING" | "ENDED" | null;
+    readonly spent?: {
+      readonly flowedRaw: string;
+      readonly idleRaw: string;
+      readonly leftRaw: string;
+    } | null;
+  } | null;
   readonly honest: boolean | null;
   readonly problems: readonly (string)[];
   readonly receipt: {
@@ -2143,7 +2161,7 @@ export type LaunchQuoteAssetsResponse = {
     } | null;
     readonly priceUsd: number | null;
     readonly priceAt: string | null;
-    readonly reasons: readonly ("MINT_NOT_READ" | "PROGRAM_NOT_REGISTERED" | "DECIMALS_CHANGED" | "EXTENSIONS_CHANGED" | "EXTENSION_FORBIDDEN" | "BADGE_MISSING" | "BADGE_NOT_READ" | "TRANSFER_FEE_CHANGED" | "AUTHORITY_CHANGED" | "MULTIPLIER_CHANGED" | "MULTIPLIER_PENDING" | "PRICE_UNKNOWN" | "PRICE_STALE" | "CONFIG_VERSION_UNAVAILABLE")[];
+    readonly reasons: readonly ("MINT_NOT_READ" | "PROGRAM_NOT_REGISTERED" | "DECIMALS_CHANGED" | "EXTENSIONS_CHANGED" | "EXTENSION_FORBIDDEN" | "BADGE_MISSING" | "BADGE_NOT_READ" | "TRANSFER_FEE_CHANGED" | "AUTHORITY_CHANGED" | "MULTIPLIER_CHANGED" | "MULTIPLIER_PENDING" | "PRICE_UNKNOWN" | "PRICE_STALE" | "CONFIG_VERSION_UNAVAILABLE" | "STOCK_NOT_ON_SHELF" | "SHELF_NOT_READ" | "PAIR_PAUSED")[];
   })[];
   readonly checkedAt: string;
 };
@@ -2435,6 +2453,90 @@ export type LaunchStatsResponse = {
     readonly endAt: string;
   } | null;
   readonly observedAt: string;
+};
+
+export type LaunchStockPairResponse = {
+  readonly network: "solana:devnet" | "solana:mainnet";
+  readonly preset: {
+    readonly id: "stock-pair";
+    readonly name: {
+      readonly uk: string;
+      readonly en: string;
+    };
+    readonly sniperFee: {
+      readonly startBps: number;
+      readonly endBps: number;
+      readonly periods: number;
+      readonly seconds: number;
+    };
+    readonly creatorTradingFeePct: number;
+    readonly graduationFee: {
+      readonly pct: number;
+      readonly creatorPct: number;
+    };
+    readonly graduatedPool: {
+      readonly startFeeBps: number;
+      readonly endFeeBps: number;
+    };
+    readonly creatorFirstBuyCapBps: number;
+    readonly supply: number;
+    readonly multiple: number;
+  };
+  readonly stocks: readonly ({
+    readonly mint: string;
+    readonly symbol: string;
+    readonly decimals: number;
+    readonly state: "OPEN" | "CLOSED";
+    readonly reasons: readonly ("MINT_NOT_READ" | "PROGRAM_NOT_REGISTERED" | "DECIMALS_CHANGED" | "EXTENSIONS_CHANGED" | "EXTENSION_FORBIDDEN" | "BADGE_MISSING" | "BADGE_NOT_READ" | "TRANSFER_FEE_CHANGED" | "AUTHORITY_CHANGED" | "MULTIPLIER_CHANGED" | "MULTIPLIER_PENDING" | "PRICE_UNKNOWN" | "PRICE_STALE" | "CONFIG_VERSION_UNAVAILABLE" | "STOCK_NOT_ON_SHELF" | "SHELF_NOT_READ" | "PAIR_PAUSED")[];
+    readonly sizing: "PRICE_UNKNOWN" | "DEPTH_UNKNOWN" | "TOO_THIN" | null;
+    readonly threshold: {
+      readonly raw: string;
+      readonly units: string;
+      readonly usd: number;
+      readonly basis: "floor" | "depth" | "ceiling";
+    } | null;
+    readonly marketCaps: {
+      readonly start: {
+        readonly units: number;
+        readonly usd: number;
+      };
+      readonly graduation: {
+        readonly units: number;
+        readonly usd: number;
+      };
+    } | null;
+    readonly priceUsd: number | null;
+    readonly priceAt: string | null;
+    readonly honesty: {
+      readonly issuer: {
+        readonly id: "xstocks" | "backpack" | "ondo" | "prestocks";
+        readonly label: string;
+      };
+      readonly powers: {
+        readonly pause: boolean;
+        readonly take: boolean;
+        readonly freeze: boolean;
+        readonly setHook: boolean;
+        readonly mint: boolean;
+      };
+      readonly paused: boolean;
+      readonly exchange: {
+        readonly session: "open" | "pre" | "post" | "closed" | "unknown";
+        readonly nextChangeAt: string | null;
+      };
+      readonly terms: {
+        readonly title: string | null;
+        readonly url: string | null;
+        readonly excluded: readonly ({
+          readonly en: string;
+          readonly uk: string;
+        })[];
+        readonly issuerOwn: boolean;
+      };
+      readonly risks: readonly ("ISSUER_CAN_PAUSE" | "ISSUER_CAN_TAKE" | "ISSUER_CAN_FREEZE" | "ISSUER_CAN_SET_HOOK" | "EXCHANGE_CLOSED" | "EXCHANGE_UNKNOWN")[];
+    } | null;
+  })[];
+  readonly checkedAt: string;
 };
 
 export type LaunchSurvivalResponse = {
@@ -2988,6 +3090,7 @@ export type PopularCompaniesResponse = {
     readonly change24h: number | null;
     readonly volume24h: number;
     readonly issuer: "xstocks" | "backpack" | "ondo" | "prestocks";
+    readonly catalogued: boolean;
   })[];
   readonly order: "volume-24h";
   readonly fetchedAt: string;
@@ -4179,6 +4282,7 @@ export type OperationId =
   | "getLaunchQuoteAssets"
   | "getLaunchSplit"
   | "getLaunchStats"
+  | "getLaunchStockPair"
   | "getLaunchSurvival"
   | "getLaunchTransferFee"
   | "getLaunchWallet"
@@ -4257,6 +4361,7 @@ export type ResponseOf = {
   readonly getLaunchQuoteAssets: LaunchQuoteAssetsResponse;
   readonly getLaunchSplit: LaunchSplitView;
   readonly getLaunchStats: LaunchStatsResponse;
+  readonly getLaunchStockPair: LaunchStockPairResponse;
   readonly getLaunchSurvival: LaunchSurvivalResponse;
   readonly getLaunchTransferFee: LaunchTransferFeeResponse;
   readonly getLaunchWallet: LaunchWalletResponse;
@@ -4406,6 +4511,7 @@ export type ParamsOf = {
   readonly getLaunchStats: {
     readonly mint: string;
   };
+  readonly getLaunchStockPair: Readonly<Record<string, never>>;
   readonly getLaunchSurvival: Readonly<Record<string, never>>;
   readonly getLaunchTransferFee: {
     readonly mint: string;

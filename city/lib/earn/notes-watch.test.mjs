@@ -159,5 +159,5 @@ test("the routes: the watch only for the proven wallet itself, the cron only wit
   assert.match(cron, /guard\.writes\.allowed/);
   assert.match(read("vercel.json"), /"\/api\/cron\/city-earn-notes"/);
   // The browser's push opens an Earn note's own city address, as a stop's.
-  assert.match(read("app/api/v1/assistant/push/latest/route.ts"), /isEarnNote\(newest\) \? newest\.href/);
+  assert.match(read("app/api/v1/assistant/push/latest/route.ts"), /isEarnNote\(newest\)(?: \|\| isDriveNote\(newest\))? \? newest\.href/);
 });

@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect, useId, useState } from 'react';
+import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import { SPOT, TRADE, riskWords } from '@/city/components/trade/words';
 import { dateText, digits, useWords } from '@/city/lib/i18n/dict';
 import { fieldText, fieldValue, plainFigure } from '@/city/lib/i18n/figures';
+import { useLang } from '@/city/lib/i18n/lang';
 import { decimalsOf } from '@/city/lib/trade/figures';
 import { formatBps, formatUnits } from '@/city/lib/trade/format';
 import { STOPS_ENGINE } from '@/city/lib/trade/gates';
@@ -14,8 +15,11 @@ import { useTrade, type Choice, type TowerRef } from '@/city/lib/trade/store';
 import { unitOf } from '@/city/lib/trade/tiles';
 import { useWallet } from '@/city/lib/trade/wallet';
 import { crossesMarket, distanceFromMarketPercent, limitAmounts, TRIGGER_V1_MIN_ORDER_USD, typedPrice } from '@/lib/solana/limits/model';
-import { Action, AmountField, Figure, Kick, Quiet, Shares } from '@/terminal/ui';
+import { Action, AmountField, Figure, Icon, Kick, Quiet, Shares, cx } from '@/terminal/ui';
+import { FEE } from '@/terminal/ui/words';
 import { ExplainBox, ExplainButton, LONG_LABEL, Rows, TxLink, bare, connectOrPick } from './parts';
+import { capFromTyped, capHint, capShort, capToPrice, capWritten, priceToCap } from './ticket-rules';
+import { BUY_TICKET } from './ticket-words';
 import { zerosText } from './tiny';
 import { payLogo } from './staples';
 import { WalletPick } from './WalletPick';
@@ -35,18 +39,43 @@ export const SPOT_RESULT: ReadonlySet<string> = new Set(['placed', 'set', 'faile
  * the wallet opens; a stop is watched and, reached, opens its sale at the market price for the wallet to sign. Every
  * figure is the engine's.
  */
-export function LimitStop({ tower, choice, mode, onOrders, onTopUp }: { tower: TowerRef; choice: Choice; mode: 'limit' | 'stop'; onOrders?: () => void; onTopUp?: () => void }) {
+export function LimitStop({
+  tower,
+  choice,
+  mode,
+  onOrders,
+  onTopUp,
+  supply = null,
+  risk,
+}: {
+  tower: TowerRef;
+  choice: Choice;
+  mode: 'limit' | 'stop';
+  onOrders?: () => void;
+  onTopUp?: () => void;
+  /** The supply the coin's market cap is counted on: given, a limit can be set by market cap. */
+  supply?: number | null;
+  /** The coin's risk line, over a buy's button. */
+  risk?: ReactNode;
+}) {
   const phase = useSpot((st) => st.phase);
   if (phase === 'placed' || phase === 'set') return <Placed onOrders={onOrders} />;
   if (phase === 'failed') return <SpotFailed />;
   if (phase === 'unclear') return <SpotUnclear onOrders={onOrders} />;
-  return <SpotFields tower={tower} choice={choice} mode={mode} onTopUp={onTopUp} />;
+  return <SpotFields tower={tower} choice={choice} mode={mode} onTopUp={onTopUp} supply={supply} risk={risk} />;
 }
 
-function SpotFields({ tower, choice, mode, onTopUp }: { tower: TowerRef; choice: Choice; mode: 'limit' | 'stop'; onTopUp?: () => void }) {
+function SpotFields({ tower, choice, mode, onTopUp, supply, risk }: { tower: TowerRef; choice: Choice; mode: 'limit' | 'stop'; onTopUp?: () => void; supply: number | null; risk?: ReactNode }) {
   const w = useWords(SPOT);
   const t = useWords(TRADE);
   const k = useWords(TICKET);
+  const x = useWords(BUY_TICKET);
+  const fw = useWords(FEE);
+  const lang = useLang();
+  // The limit's price, typed as a price or as the market cap it stands at (the person's choice, on this ticket).
+  const [by, setBy] = useState<'price' | 'cap'>('price');
+  const [capTyped, setCapTyped] = useState('');
+  const capSet = useRef<string | null>(null);
   const side = useTrade((st) => st.side);
   const quote = useTrade((st) => st.quote);
   const market = useSpot((st) => st.market);
@@ -121,7 +150,37 @@ function SpotFields({ tower, choice, mode, onTopUp }: { tower: TowerRef; choice:
   const problem = amountProblem ?? (topUp ? null : crosses ? (side === 'buy' ? w.atOrAbove : w.atOrBelow) : wrongSide ? (side === 'sell' ? w.setBelow : w.setAbove) : null);
   const note = problem ? { tone: 'error', text: problem } : notice;
 
-  const priceLabel = mode === 'limit' ? (side === 'buy' ? w.buyAt : w.sellAt) : side === 'sell' ? w.sellIfFalls : w.buyIfRises;
+  // By market cap: only a limit, only where the supply and what pays in dollars are known.
+  const capOpen = mode === 'limit' && supply !== null && supply > 0 && quoteUsd !== null && quoteUsd > 0;
+  const byCap = capOpen && by === 'cap';
+  const capNow = capOpen && marketPrice !== null ? priceToCap(marketPrice, supply, quoteUsd) : null;
+  const typeCap = (text: string) => {
+    setCapTyped(text);
+    const cap = Number(text);
+    const at = text && Number.isFinite(cap) ? capToPrice(cap, supply, quoteUsd) : null;
+    const next = at !== null ? typedPrice(at) : '';
+    capSet.current = next;
+    setPrice(next);
+  };
+  const flip = () => {
+    if (by === 'price') {
+      // The price already typed, said as its market cap.
+      const cap = priceNumber !== null ? priceToCap(priceNumber, supply, quoteUsd) : null;
+      setCapTyped(cap !== null ? capWritten(cap) : '');
+      capSet.current = price;
+      setBy('cap');
+    } else setBy('price');
+  };
+  // A price put on the ticket another way — a new pair, the market's price, a sentence to the agent — is said again as
+  // its market cap.
+  useEffect(() => {
+    if (!byCap || capSet.current === price) return;
+    const cap = priceNumber !== null ? priceToCap(priceNumber, supply, quoteUsd) : null;
+    setCapTyped(cap !== null ? capWritten(cap) : '');
+    capSet.current = price;
+  }, [byCap, price, priceNumber, supply, quoteUsd]);
+
+  const priceLabel = byCap ? (side === 'buy' ? x.buyAtCap : x.sellAtCap) : mode === 'limit' ? (side === 'buy' ? w.buyAt : w.sellAt) : side === 'sell' ? w.sellIfFalls : w.buyIfRises;
 
   const tap = async () => {
     if (!connection) return connectOrPick(() => setPicking(true));
@@ -157,23 +216,46 @@ function SpotFields({ tower, choice, mode, onTopUp }: { tower: TowerRef; choice:
 
   return (
     <>
-      <fieldset className={s.group} disabled={!idle}>
-        <AmountField
-          label={priceLabel}
-          aside={market?.key === key && market.status === 'error' ? w.noMarketPrice : undefined}
-          value={fieldText(price)}
-          onChange={(text) => setPrice(fieldValue(text))}
-          placeholder={fieldText(marketPrice !== null ? zerosText(marketPrice, typedPrice) : '0')}
-          asset={{ symbol: unit, icon: payLogo(choice.pay) }}
-        />
+      <fieldset className={cx(s.group, s.priceGroup)} disabled={!idle}>
+        {byCap ? (
+          <AmountField
+            label={priceLabel}
+            aside={typedPriceOk ? x.capIsPrice(digits(zerosText(Number(typedPriceOk), typedPrice)), unit) : undefined}
+            value={fieldText(capTyped)}
+            onChange={(text) => typeCap(capFromTyped(text, lang))}
+            placeholder={capNow !== null ? capHint(capNow, lang) : '0'}
+            unit="USD"
+          />
+        ) : (
+          <AmountField
+            label={priceLabel}
+            aside={market?.key === key && market.status === 'error' ? w.noMarketPrice : undefined}
+            value={fieldText(price)}
+            onChange={(text) => setPrice(fieldValue(text))}
+            placeholder={fieldText(marketPrice !== null ? zerosText(marketPrice, typedPrice) : '0')}
+            asset={{ symbol: unit, icon: payLogo(choice.pay) }}
+          />
+        )}
       </fieldset>
       {marketPrice !== null ? (
         <div className={s.priceRow}>
+          {capOpen ? (
+            <Quiet size="s" className={s.byPick} disabled={!idle} aria-label={byCap ? x.switchToPrice : x.switchToCap} aria-pressed={byCap} onClick={flip}>
+              <Icon name="swap" size="s" />
+              {byCap ? x.byCap : x.byPrice}
+            </Quiet>
+          ) : null}
           <span className={s.distance}>{distance !== null && Number.isFinite(distance) && !crosses && !wrongSide ? distanceWords(distance, w) : null}</span>
-          <Quiet size="s" disabled={!idle} aria-label={w.useMarketPrice(digits(typedPrice(marketPrice)), unit)} onClick={() => setPrice(typedPrice(marketPrice))}>
-            {/* A tiny price as the chart writes it: its zeros counted, not a row of them. */}
-            {w.marketAt(digits(zerosText(marketPrice, typedPrice)))}
-          </Quiet>
+          {byCap && capNow !== null ? (
+            <Quiet size="s" disabled={!idle} aria-label={x.useCapNow(capShort(capNow))} onClick={() => typeCap(capWritten(capNow))}>
+              {x.capNow(capShort(capNow))}
+            </Quiet>
+          ) : (
+            <Quiet size="s" disabled={!idle} aria-label={w.useMarketPrice(digits(typedPrice(marketPrice)), unit)} onClick={() => setPrice(typedPrice(marketPrice))}>
+              {/* A tiny price as the chart writes it: its zeros counted, not a row of them. */}
+              {w.marketAt(digits(zerosText(marketPrice, typedPrice)))}
+            </Quiet>
+          )}
         </div>
       ) : null}
       {mode === 'stop' ? (
@@ -181,20 +263,23 @@ function SpotFields({ tower, choice, mode, onTopUp }: { tower: TowerRef; choice:
           <Shares label={w.watchFor} options={STOP_EXPIRIES.map((id) => ({ id, label: expiryWords(id) }))} value={expiry} onPick={setExpiry} />
         </fieldset>
       ) : null}
-      <div className={s.getRow}>
-        <span className={s.getCol}>
-          <Kick>{t.youGet}</Kick>
-          <span className={s.getFigure} aria-live="polite">
-            {getFigure ? <Figure value={getFigure} unit={getUnit} size="m" /> : <Figure value="—" size="m" />}
+      {/* «You get» once there is a price to count it at: before it, no line at all (QA 20.11: «You get —»). */}
+      {typedPriceOk ? (
+        <div className={s.getRow}>
+          <span className={s.getCol}>
+            <Kick>{t.youGet}</Kick>
+            <span className={s.getFigure} aria-live="polite">
+              {getFigure ? <Figure value={getFigure} unit={getUnit} size="m" /> : <Figure value="—" size="m" />}
+            </span>
           </span>
-        </span>
-      </div>
+        </div>
+      ) : null}
       <div className={s.termsLine}>
         {mode === 'limit' ? (
           shown ? (
             <>
               <span>
-                {shown.fee.ryntraBps > 0 ? k.fee(formatBps(shown.fee.ryntraBps)) : shown.fee.venueBps > 0 ? `${w.jupiterFee} ${formatBps(shown.fee.venueBps)}` : w.noFee}
+                {shown.fee.ryntraBps > 0 ? fw.ryntra(formatBps(shown.fee.ryntraBps)) : shown.fee.venueBps > 0 ? `${w.jupiterFee} ${formatBps(shown.fee.venueBps)}` : fw.none}
                 {` · ${w.fillsAt} ${digits(typedPrice(shown.fillPrice))} ${unit} ${w.per(coin)}`}
               </span>
               <ExplainButton label={w.orderDetails} open={details} controls={detailsId} onToggle={() => setDetails((was) => !was)} />
@@ -234,6 +319,7 @@ function SpotFields({ tower, choice, mode, onTopUp }: { tower: TowerRef; choice:
           {note.text}
         </p>
       ) : null}
+      {risk && side === 'buy' ? <div className={s.risk}>{risk}</div> : null}
       {picking && !connection ? (
         <WalletPick onBack={() => setPicking(false)} />
       ) : (

@@ -27,6 +27,14 @@ export const PORTFOLIO = words(
     budgetDay: 'Budget a day',
     held: 'With the agent',
     result: 'Result',
+    // The agents on a device that has not proven the wallet yet: one quiet way to show them.
+    agentsAskTitle: 'Sign once to see your agents',
+    agentsAsk: 'Show my agents',
+    agentsAskInfo: 'How your agents are shown',
+    agentsAskText: 'Your wallet signs one message — no transaction, nothing moves. Then this device shows the agents you hired anywhere, here and on every visit after.',
+    agentsAskHide: 'Hide for this wallet',
+    agentsAskNo: 'Not signed — nothing changed.',
+    agentsAskFailed: 'Couldn’t check the wallet right now — try again.',
     // An empty wallet.
     emptyLine: 'Your wallet is empty — top it up to start.',
     // The private balance.
@@ -42,8 +50,13 @@ export const PORTFOLIO = words(
     close: 'Close',
     // The coins nobody prices, folded at the list's end.
     solana: 'Solana',
+    // SOL's row with the wrapped SOL folded into it: how much of it is wrapped.
+    withWrapped: (units: string) => `incl. ${units} wSOL`,
     noPriceMore: (n: string) => `${n} more without a price`,
     noPriceFold: 'Hide coins without a price',
+    // The dust, opened: its first rows, the rest behind «N more».
+    dustMore: (n: string) => `${n} more`,
+    dustFewer: 'Show fewer',
     // The history.
     history: 'History',
     historyInfo: 'What the history shows',
@@ -71,6 +84,13 @@ export const PORTFOLIO = words(
     budgetDay: 'Бюджет на день',
     held: 'В агента',
     result: 'Результат',
+    agentsAskTitle: 'Підпиши раз, щоб побачити своїх агентів',
+    agentsAsk: 'Показати моїх агентів',
+    agentsAskInfo: 'Як показуємо твоїх агентів',
+    agentsAskText: 'Гаманець підписує одне повідомлення — без транзакції, нічого не рухається. Тоді цей пристрій показує твоїх агентів, найнятих будь-де, — і зараз, і щоразу потім.',
+    agentsAskHide: 'Сховати для цього гаманця',
+    agentsAskNo: 'Не підписано — нічого не змінилось.',
+    agentsAskFailed: 'Зараз не вдалося перевірити гаманець — спробуй ще раз.',
     emptyLine: 'Гаманець порожній — поповни, щоб почати.',
     privateTitle: 'Приватний баланс',
     soon: 'Скоро',
@@ -82,8 +102,11 @@ export const PORTFOLIO = words(
     recent: 'Останні дії',
     close: 'Закрити',
     solana: 'Solana',
+    withWrapped: (units: string) => `з них ${units} wSOL`,
     noPriceMore: (n: string) => `Ще ${n} без ціни`,
     noPriceFold: 'Сховати монети без ціни',
+    dustMore: (n: string) => `Ще ${n}`,
+    dustFewer: 'Показати менше',
     history: 'Історія',
     historyInfo: 'Що показує історія',
     historyText: 'Твої обміни, перекази й мости, зроблені в Ryntra, — від найновіших. Повна історія будь-якого гаманця з ланцюга — скоро.',

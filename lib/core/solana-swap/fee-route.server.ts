@@ -139,6 +139,19 @@ function orderStandsIn(build: Readonly<{ ok: boolean; code?: string }>, lanes: S
   return lanes === "build" && !build.ok && build.code !== "RATE_LIMITED";
 }
 
+/**
+ * What is said when neither lane gave a swap: `/order`'s own refusal, as it always was — except where the router said
+ * it has no route and `/order` only refused with a 4xx that names no reason this code knows. Then the router's «no
+ * route» is the answer: the same coin, told plainly, never a provider's refusal turned into a 5xx (a pump
+ * coin's sale reached the Swap card as «Jupiter refused the order with HTTP 400»). A full window, a venue that did not
+ * answer, a 5xx stay `/order`'s. Only the refusal is chosen here: nothing about a route, a fee or bytes.
+ */
+export function laneFailure<O extends Readonly<{ ok: false; code: string; status: number | null }>, B extends Readonly<{ ok: false; code: string }>>(order: O | null, build: B): O | B {
+  if (!order) return build;
+  const plainRefusal = order.code === "REFUSED" && order.status !== null && order.status >= 400 && order.status < 500 && order.status !== 429;
+  return build.code === "NO_ROUTE" && plainRefusal ? build : order;
+}
+
 const FEE_MINT_FACTS: Readonly<Record<string, Readonly<{ decimals: number; symbol: string }>>> = {
   [WRAPPED_SOL_MINT]: { decimals: 9, symbol: "SOL" },
   [USDC_MINT]: { decimals: 6, symbol: "USDC" },
@@ -385,7 +398,7 @@ export async function chooseExecutableOrder(args: Readonly<{
   }
   /* `/order`'s own answer stands as it always did when the router could not price — the guard judges it. */
   if (order?.ok) return { ok: true, order: withFlowFee(order.order, flow), flow, lane: "ORDER" };
-  return { ok: false, failure: order && !order.ok ? order : build, flow };
+  return { ok: false, failure: laneFailure(order && !order.ok ? order : null, build), flow };
 }
 
 /**
@@ -438,7 +451,7 @@ export async function chooseQuote(args: Readonly<{
   const order = beside ?? (orderStandsIn(build, lanes) ? await askOrder() : null);
   if (!build.ok) {
     if (order?.ok) return { ok: true, order: withFlowFee(order.order, flow), flow, lane: "ORDER" };
-    return { ok: false, failure: order && !order.ok ? order : build, flow };
+    return { ok: false, failure: laneFailure(order && !order.ok ? order : null, build), flow };
   }
   if (
     order?.ok &&

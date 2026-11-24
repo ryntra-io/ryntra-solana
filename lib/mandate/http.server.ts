@@ -41,3 +41,34 @@ export async function readMandateBody<S extends z.ZodType>(request: Request, sch
   if (!parsed.success) return mandateFailure(400, "VALIDATION_ERROR", "The body does not match the request.", rate);
   return parsed.data;
 }
+
+/** A wallet's proof as `requireWalletProof` answers it (`../api/v1/proof.ts`). */
+export type ProvenOwner = Readonly<{ ok: true; address: string }> | Readonly<{ ok: false; response: Response }>;
+export type ProveOwner = (request: Request) => Promise<ProvenOwner>;
+
+/** The real proof for a change, read from the session store — loaded only on a request, never by a test that hands its own. */
+const proveForChange: ProveOwner = async (request) => (await import("../api/v1/proof.ts")).requireWalletProof(request, "mutation");
+
+/**
+ * The agent's book takes a budget only from the wallet it is hers (the review of #1965: «the budget's entry
+ * in the book — only with the owner's proof»): the same proof as the doors of her agents and her care
+ * (`requireWalletProof(…, "mutation")` — the phone's bearer, or the browser's proof the wallet itself signed, from this
+ * site). Without it, anyone holding her public addresses could join her signed budget first, with rules she never saw.
+ * Null — proven for `owner`; otherwise the refusal to answer with: 401 (or the proof's own status) without one, 403 for
+ * another wallet.
+ */
+export async function ownerProof(request: Request, owner: string, rate: RateLimitDecision, prove: ProveOwner = proveForChange): Promise<Response | null> {
+  const proof = await prove(request).catch(() => null);
+  if (!proof) return mandateFailure(503, "UNAVAILABLE", "The wallet's proof is not readable.", rate);
+  if (!proof.ok) {
+    const said = (await proof.response
+      .clone()
+      .json()
+      .catch(() => null)) as { error?: { code?: unknown; message?: unknown } } | null;
+    const code = typeof said?.error?.code === "string" ? said.error.code : "UNAUTHORIZED";
+    const message = typeof said?.error?.message === "string" ? said.error.message : "No proven wallet: sign in with the wallet first.";
+    return mandateFailure(proof.response.status || 401, code, message, rate);
+  }
+  if (proof.address !== owner) return mandateFailure(403, "WALLET_MISMATCH", "The session's wallet is not this wallet.", rate);
+  return null;
+}

@@ -27,6 +27,7 @@
 
 import { budgetIssue, defaultDays, defaultTrade, DAYS_MAX, type AgentBudget } from "../mandate/budget.ts";
 import { boundedPlan, type StrategyPlan } from "../mandate/plans.ts";
+import { termSaid } from "../../city/lib/command/term.ts";
 
 /* ------------------------------------------------------------------------------------------------ the draft */
 
@@ -300,9 +301,14 @@ export function readDraft<C extends BookCoin>(raw: unknown, input: string, coins
   if (coin && action === "dca" && coin.mint === USDC_MINT) coin = null;
   if (action === "scout") coin = null;
 
+  /* The term in the person's own words («for a week», «на 3 дні») is the agent's days, read by the engine, not the
+     model: «a week» has no digit to hold a draft's `weeks: 1` to, and its figure is never a budget's. The draft's own
+     term is then not asked for, and the rest of the numbers are held to the sentence without the term. */
+  const term = action === "trade" || action === "scout" ? termSaid(unquoted(sentence)) : null;
+  const offered = numbersOf(raw).filter(([name]) => !(term && (name === "days" || name === "weeks" || name === "months")));
+
   /* The numbers: each typed, each once. */
-  const offered = numbersOf(raw);
-  const kept = held(typedNumbers(sentence), offered);
+  const kept = held(typedNumbers(term ? term.rest : sentence), offered);
   for (const [name] of offered) if (!kept.has(name)) dropped.push(name);
   const num = (name: SentenceNumber) => kept.get(name)?.value;
   const text = (name: SentenceNumber) => kept.get(name)?.text ?? null;
@@ -337,11 +343,11 @@ export function readDraft<C extends BookCoin>(raw: unknown, input: string, coins
   /* `trade` and `scout`: a budget a day, a trade's limit, a term, a strategy with its exits. */
   takes(["perDaySol", "perTradeSol", "days", "weeks", "months", "takeProfitPct", "stopLossPct", "dipPct", "gridStepPct", "gridLevels"]);
   const spans = (["days", "weeks", "months"] as const).filter((name) => kept.has(name));
-  let days: number | null = null;
-  if (spans.length === 1) {
+  let days: number | null = term ? term.days : null;
+  if (!term && spans.length === 1) {
     const value = num(spans[0]!)!;
     days = spans[0] === "weeks" ? value * 7 : spans[0] === "months" ? value * 30 : value;
-  } else for (const span of spans) dropped.push(span);
+  } else if (!term) for (const span of spans) dropped.push(span);
   const budget = checkedBudget(text("perDaySol"), text("perTradeSol"), days, dropped);
 
   const said = oneOf(SENTENCE_STRATEGIES, raw.strategy);

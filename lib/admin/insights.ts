@@ -71,6 +71,7 @@ export const FIRST_PARTY_EVENT_CATALOG = [
   "agent_wallet",
   "agent_sign",
   "agent_signed",
+  "agent_practice",
   "agent_connect",
   "agent_signin",
   "agent_trade",

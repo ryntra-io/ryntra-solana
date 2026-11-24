@@ -1,0 +1,79 @@
+/*
+ * The metric-matched fallbacks: the face a word shows in until its font arrives, and for a character no font in the
+ * stack draws. Each is Arial resized onto its family's metrics, so the swap does not move the line.
+ *
+ * These are next/font/google's own numbers for each family, copied as it generated them. next/font/local would compute
+ * its own from the files, and they differ — Hubot Sans by a third (its variable file opens at the narrowest width) —
+ * so the faces set `adjustFontFallback: false` and name these in `fallback`, and the look stays what it was.
+ */
+@font-face {
+  font-family: 'Geist Fallback';
+  src: local("Arial");
+  ascent-override: 95.94%;
+  descent-override: 28.16%;
+  line-gap-override: 0.00%;
+  size-adjust: 104.76%;
+}
+
+@font-face {
+  font-family: 'Geist Mono Fallback';
+  src: local("Arial");
+  ascent-override: 74.67%;
+  descent-override: 21.92%;
+  line-gap-override: 0.00%;
+  size-adjust: 134.59%;
+}
+
+@font-face {
+  font-family: 'Unbounded Fallback';
+  src: local("Arial");
+  ascent-override: 73.93%;
+  descent-override: 18.20%;
+  line-gap-override: 0.00%;
+  size-adjust: 134.59%;
+}
+
+@font-face {
+  font-family: 'Hubot Sans Fallback';
+  src: local("Arial");
+  ascent-override: 107.27%;
+  descent-override: 31.49%;
+  line-gap-override: 0.00%;
+  size-adjust: 101.61%;
+}
+
+@font-face {
+  font-family: 'Mona Sans Fallback';
+  src: local("Arial");
+  ascent-override: 104.72%;
+  descent-override: 30.74%;
+  line-gap-override: 0.00%;
+  size-adjust: 104.08%;
+}
+
+@font-face {
+  font-family: 'Onest Fallback';
+  src: local("Arial");
+  ascent-override: 92.20%;
+  descent-override: 28.99%;
+  line-gap-override: 0.00%;
+  size-adjust: 105.20%;
+}
+
+@font-face {
+  font-family: 'IBM Plex Mono Fallback';
+  src: local("Arial");
+  ascent-override: 76.16%;
+  descent-override: 20.43%;
+  line-gap-override: 0.00%;
+  size-adjust: 134.59%;
+}
+
+@font-face {
+  font-family: 'Inter Fallback';
+  src: local("Arial");
+  ascent-override: 90.44%;
+  descent-override: 22.52%;
+  line-gap-override: 0.00%;
+  size-adjust: 107.12%;
+}

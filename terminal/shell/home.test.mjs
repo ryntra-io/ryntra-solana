@@ -6,7 +6,7 @@ import test from "node:test";
 import { fileURLToPath } from "node:url";
 
 import { TERMINAL_FLAG } from "./flag.ts";
-import { asTerminalHome, cityHome, homeAsk, shelfOfWindow, terminalDestination, terminalHomeRedirects, terminalHomeRewrites } from "./home.ts";
+import { asTerminalHome, cityHome, homeAsk, shelfOfWindow, SPOT_HREF, SPOT_MINT, terminalDestination, terminalHomeRedirects, terminalHomeRewrites } from "./home.ts";
 import { CITY_PATH, HOME_PAGE, SHELF_IDS, SHELVES } from "./shelves.ts";
 
 /* The terminal as the home page: one switch turns `/` into the Market and every old address into its section, in one
@@ -88,6 +88,27 @@ test("open: every old address leads to a section in one hop, never back to the c
   }
   // A row that now leads into the terminal never answers for good.
   for (const row of rows.filter((r) => /^\/(swap|earn|portfolio|launch|agent|coin)(\/|$)/.test(r.destination))) assert.equal(row.permanent, false, row.source);
+});
+
+/* The eyes' pass of 19.11: `/spot` opened Swap while the menu's «Spot» opens SOL's trading desk. The spot's addresses open
+   the menu's own screen; a coin named in the old address's query still opens that coin. */
+test("open: `/spot` and the old spot pages open what the menu's «Spot» opens", async () => {
+  const { MENU } = await import("./menu.ts");
+  const spot = MENU.flatMap((group) => group.items).find((item) => item.id === "spot");
+  assert.equal(spot?.href, SPOT_HREF, "the menu's «Spot» and the address are one screen");
+  assert.equal(SPOT_HREF, `/coin/${SPOT_MINT}`);
+  const rows = plain(open.r);
+  for (const source of ["/spot", "/app/spot/:path*", "/uk/app/spot/:path*", "/solana/workspace/spot/:path*"]) {
+    const row = rows.find((r) => r.source === source);
+    assert.equal(row?.destination, SPOT_HREF, source);
+    assert.equal(row?.permanent, false, `${source} may still move: never a 308`);
+  }
+  assert.ok(open.r.some((row) => row.source === "/spot" && row.has?.some((c) => c.type === "host") && row.destination === `https://ryntra.io${SPOT_HREF}`), "the app host's /spot too, in one hop");
+  assert.ok(open.r.some((row) => row.source === "/app/spot" && row.has?.some((c) => c.type === "query") && row.destination === "/coin/:mint"), "a coin in the query: that coin");
+  assert.equal(plain(open.r).find((r) => r.source === "/swap"), undefined, "Swap keeps its own address");
+  // Closed: the city's table as it was.
+  assert.equal(plain(closed.r).find((r) => r.source === "/spot")?.destination, "/?open=trade");
+  assert.equal(asTerminalHome([{ source: "/spot", destination: "/?open=trade", permanent: false }], "open", READY(["swap"]))[0].destination, "/swap", "without the Market the desk is not there: Swap");
 });
 
 test("the city's windows and Money's tabs: the section that does the same work", () => {

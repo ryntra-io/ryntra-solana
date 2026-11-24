@@ -13,12 +13,13 @@ import { TICKET_OPEN } from '@/terminal/coin/Ticket';
 import { ExplainBox, ExplainButton } from '@/terminal/coin/parts';
 import { sumText } from '@/terminal/earn/rows';
 import { coinHref, shelfOn } from '@/terminal/shell/shelves';
-import { Cell, Chip, CoinLogo, Icon, Panel, Quiet, Table, TableHead, TableRow, changeText, changeTone, priceText } from '@/terminal/ui';
-import { NATIVE_SOL_MINT, PROTOCOL_NAME, exitLines, loanShare, mintOf, platformName, stakeState, type ExitLine, type Group, type GroupId, type MarketFact, type Row } from './all-view';
+import { Cell, Chip, CoinLogo, Icon, Panel, Quiet, Table, TableHead, TableRow, changeText, changeTone, priceText, type FoldStep } from '@/terminal/ui';
+import { NATIVE_SOL_MINT, PROTOCOL_NAME, exitLines, foldWrapped, loanShare, mintOf, platformName, stakeState, type ExitLine, type Group, type GroupId, type MarketFact, type Row } from './all-view';
 import { ALL } from './all-words';
 import { RiskMark } from './CleanBlock';
 import { solFigure, type CleanRead, type RiskReason } from './clean-view';
 import { CLEAN } from './clean-words';
+import { useExit } from './exit';
 import type { ExitDoor } from './exit-view';
 import { logoFor, logosFor } from './logos';
 import { tinyPrice, unitsFigure } from './portfolio-view';
@@ -46,6 +47,8 @@ export type GroupsProps = Readonly<{
   onCollect: (id: string) => void;
   onExit: (id: string) => void;
   onClean: () => void;
+  /** «Show my agents», where the agents would stand on a device that has not proven the wallet (`./AgentsAsk.tsx`). */
+  agentsAsk?: ReactNode;
 }>;
 
 export { logoFor, logosFor };
@@ -99,7 +102,9 @@ const valueText = (usd: number | null, lang: Lang, none: string): string => (usd
  */
 export function Groups(props: GroupsProps) {
   const { data, agents } = props;
-  const lines = new Map(exitLines(data.groups).map((line) => [line.id, line]));
+  // A coin Jupiter carries no route for now has no «Exit» on its row: its «i» says why.
+  const unrouted = useExit((st) => st.unrouted);
+  const lines = new Map(exitLines(data.groups, unrouted).map((line) => [line.id, line]));
   const group = (id: GroupId) => data.groups.find((entry) => entry.id === id) ?? null;
   const pools = group('pools');
   const staking = group('staking');
@@ -114,6 +119,8 @@ export function Groups(props: GroupsProps) {
       {lending ? <LendingGroup {...props} group={lending} lines={lines} /> : null}
       {other ? <OtherGroup {...props} group={other} /> : null}
       {agents.rows.length ? <AgentsGroup {...props} /> : null}
+      {/* Beside the rows too, where the engine refused the wallet for want of this device's proof. */}
+      {props.agentsAsk ?? null}
       {coins ? <CoinsGroup {...props} group={coins} /> : null}
       {dust ? <DustGroup {...props} group={dust} /> : null}
     </div>
@@ -207,14 +214,24 @@ function Logos({ row, fact }: { row: Row; fact: (mint: string) => MarketFact | n
   );
 }
 
-function NameCell({ row, name, sub, tone, fact }: { row: Row; name: string; sub: string | null; tone?: 'warn'; fact: (mint: string) => MarketFact | null }) {
+/**
+ * `unfold` — a short state the row must not lose once its own column is gone (a pool's «Out of range»): it
+ * leads the line under the name, shown only from the table's step `unfold.step` on (`Table fold`).
+ */
+function NameCell({ row, name, sub, tone, fact, unfold }: { row: Row; name: string; sub: string | null; tone?: 'warn'; fact: (mint: string) => MarketFact | null; unfold?: Readonly<{ step: FoldStep; word: string; tone?: 'warn' }> | null }) {
   return (
     <Cell className={a.nameCell}>
       <Logos row={row} fact={fact} />
       <span className={a.words}>
         <span className={a.name}>{name}</span>
-        {sub ? (
+        {sub || unfold ? (
           <span className={a.sub} data-tone={tone}>
+            {unfold ? (
+              <span className={a.subState} data-unfold={unfold.step} data-tone={unfold.tone}>
+                {unfold.word}
+                {sub ? ' · ' : null}
+              </span>
+            ) : null}
             {sub}
           </span>
         ) : null}
@@ -323,19 +340,17 @@ function PhoneRow({ logos, name, sub, tone, value, second, secondTone, marked = 
     </>
   );
   return (
-    <li>
+    <li data-marked={marked ? '' : undefined}>
       {onPress ? (
-        <button type="button" className={a.row} data-marked={marked ? '' : undefined} onClick={onPress}>
+        <button type="button" className={a.row} onClick={onPress}>
           {inner}
         </button>
       ) : href ? (
-        <Link href={href} className={a.row} data-marked={marked ? '' : undefined}>
+        <Link href={href} className={a.row}>
           {inner}
         </Link>
       ) : (
-        <div className={a.row} data-marked={marked ? '' : undefined}>
-          {inner}
-        </div>
+        <div className={a.row}>{inner}</div>
       )}
       {foot}
     </li>
@@ -344,11 +359,29 @@ function PhoneRow({ logos, name, sub, tone, value, second, secondTone, marked = 
 
 type Lines = ReadonlyMap<string, ExitLine>;
 
+/*
+ * Every group's table ends the same way: the worth, then the row's own controls — one width for each on every table,
+ * so «Value» stands on one axis from the pools down to the dust, and a wide screen never stretches a short table's
+ * middle (eyes 20.11, 90 and 127). The controls' column is as wide as the widest of them («i · Collect · Close», in Ukrainian too) on the
+ * person's own wallet, and as wide as one «i» on a wallet only looked at — kept empty where a group has nothing to press.
+ */
+const VALUE_COLUMN = '128px';
+const ACTS_COLUMN = '240px';
+const READ_ACTS_COLUMN = '44px';
+/** A group's columns: its own first ones, then the worth and the controls every table shares. */
+const columnsOf = (lead: string, own: boolean): string => `${lead} ${VALUE_COLUMN} ${own ? ACTS_COLUMN : READ_ACTS_COLUMN}`;
+/**
+ * A group's steps on a narrower panel: its own first columns with the quieter ones gone, then the
+ * same worth and controls — the table takes the first that fits (`Table fold`), so the row's controls stay whole.
+ */
+const foldOf = (leads: readonly string[], own: boolean): string[] => leads.map((lead) => columnsOf(lead, own));
+
 /* ── pools ────────────────────────────────────────────────────────────── */
 
-const POOL_COLUMNS = 'minmax(150px, 1.4fr) minmax(130px, 1.2fr) minmax(84px, 0.8fr) minmax(76px, 0.7fr) minmax(184px, auto)';
-/** A wallet only looked at: no «Collect · Close» — only the «i» of a position that does not leave in one step. */
-const POOL_COLUMNS_READ = 'minmax(150px, 1.4fr) minmax(130px, 1.2fr) minmax(84px, 0.8fr) minmax(76px, 0.7fr) minmax(44px, auto)';
+/* Position · Range · To collect, then the worth; a wallet only looked at keeps only the «i» of a position that does not leave in one step. */
+const POOL_LEAD = 'minmax(170px, 2fr) minmax(150px, 1.4fr) minmax(96px, 128px)';
+/** Narrower: the range goes first, then what is to collect. */
+const POOL_FOLD = ['minmax(170px, 2fr) minmax(96px, 128px)', 'minmax(170px, 2fr)'] as const;
 
 function PoolsGroup({ data, group, lines, own, door, narrow, onCollect, onExit }: GroupsProps & { group: Group; lines: Lines }) {
   const w = useWords(ALL);
@@ -397,15 +430,17 @@ function PoolsGroup({ data, group, lines, own, door, narrow, onCollect, onExit }
             })}
           </ul>
         ) : (
-          <Table columns={own ? POOL_COLUMNS : POOL_COLUMNS_READ} minWidth={own ? 680 : 540} label={w.pools}>
+          <Table columns={columnsOf(POOL_LEAD, own)} fold={foldOf(POOL_FOLD, own)} minWidth={own ? 740 : 540} label={w.pools}>
             <TableHead>
               <Cell head>{w.position}</Cell>
-              <Cell head>{w.range}</Cell>
-              <Cell head end sorted>
-                {w.now}
+              <Cell head fold={1}>
+                {w.range}
               </Cell>
-              <Cell head end>
+              <Cell head end fold={2}>
                 {w.earned}
+              </Cell>
+              <Cell head end sorted>
+                {p.value}
               </Cell>
               <Cell head />
             </TableHead>
@@ -415,15 +450,21 @@ function PoolsGroup({ data, group, lines, own, door, narrow, onCollect, onExit }
               return (
                 <Fragment key={row.id}>
                   <TableRow>
-                    <NameCell row={row} fact={data.fact} name={nameOf(row, w)} sub={withAge(PROTOCOL_NAME[row.position.protocol], row, w, lang)} />
-                    <Cell className={a.rangeCell}>
+                    <NameCell
+                      row={row}
+                      fact={data.fact}
+                      name={nameOf(row, w)}
+                      sub={withAge(PROTOCOL_NAME[row.position.protocol], row, w, lang)}
+                      unfold={row.position.inRange === null ? null : { step: 1, word: row.position.inRange ? w.inRange : w.outOfRange, tone: row.position.inRange ? undefined : 'warn' }}
+                    />
+                    <Cell className={a.rangeCell} fold={1}>
                       {row.position.inRange === null ? null : <Chip tone={row.position.inRange ? 'ok' : 'warn'}>{row.position.inRange ? w.inRange : w.outOfRange}</Chip>}
                       {mark ? <span className={a.rangeMark}>{mark}</span> : null}
                     </Cell>
-                    <Cell end>{valueText(row.usd, lang, p.noPrice)}</Cell>
-                    <Cell end tone={row.earnedUsd !== null && row.earnedUsd > 0 ? 'up' : 'dim'}>
+                    <Cell end tone={row.earnedUsd !== null && row.earnedUsd > 0 ? 'up' : 'dim'} fold={2}>
                       {row.earnedUsd === null ? '—' : sumText(row.earnedUsd, lang)}
                     </Cell>
+                    <Cell end>{valueText(row.usd, lang, p.noPrice)}</Cell>
                     <Cell end className={a.rowActs}>
                       {acts(row, 's')}
                     </Cell>
@@ -442,7 +483,10 @@ function PoolsGroup({ data, group, lines, own, door, narrow, onCollect, onExit }
 
 /* ── staking ──────────────────────────────────────────────────────────── */
 
-const STAKE_COLUMNS = 'minmax(180px, 1.5fr) minmax(130px, 1fr) minmax(110px, 1fr) minmax(84px, 0.8fr) minmax(110px, auto)';
+/* Position · State · Amount, then the worth: the middle stays as wide as it holds, never a gap a wide screen opens. */
+const STAKE_LEAD = 'minmax(180px, 2.4fr) minmax(130px, 1fr) minmax(110px, 1fr)';
+/** Narrower: the amount goes first, then the state. */
+const STAKE_FOLD = ['minmax(180px, 2.4fr) minmax(130px, 1fr)', 'minmax(180px, 2.4fr)'] as const;
 
 function stakeWord(row: Row, w: W): Readonly<{ word: string; tone: 'ok' | 'warn' | 'plain' }> | null {
   const state = stakeState(row.position);
@@ -495,15 +539,17 @@ function StakingGroup({ data, group, lines, own, door, narrow, onCollect, onExit
             })}
           </ul>
         ) : (
-          <Table columns={STAKE_COLUMNS} minWidth={640} label={w.staking}>
+          <Table columns={columnsOf(STAKE_LEAD, own)} fold={foldOf(STAKE_FOLD, own)} minWidth={own ? 740 : 560} label={w.staking}>
             <TableHead>
               <Cell head>{w.position}</Cell>
-              <Cell head>{w.state}</Cell>
-              <Cell head end>
+              <Cell head fold={2}>
+                {w.state}
+              </Cell>
+              <Cell head end fold={1}>
                 {p.amount}
               </Cell>
               <Cell head end sorted>
-                {w.now}
+                {p.value}
               </Cell>
               <Cell head />
             </TableHead>
@@ -514,8 +560,8 @@ function StakingGroup({ data, group, lines, own, door, narrow, onCollect, onExit
                 <Fragment key={row.id}>
                   <TableRow>
                     <NameCell row={row} fact={data.fact} name={nameOf(row, w)} sub={withAge(null, row, w, lang)} />
-                    <Cell>{state ? <Chip tone={state.tone}>{state.word}</Chip> : null}</Cell>
-                    <Cell end tone="dim">
+                    <Cell fold={2}>{state ? <Chip tone={state.tone}>{state.word}</Chip> : null}</Cell>
+                    <Cell end tone="dim" fold={1}>
                       {amount(row) ?? '—'}
                     </Cell>
                     <Cell end>{valueText(row.usd, lang, p.noPrice)}</Cell>
@@ -537,7 +583,10 @@ function StakingGroup({ data, group, lines, own, door, narrow, onCollect, onExit
 
 /* ── deposits and loans ───────────────────────────────────────────────── */
 
-const LEND_COLUMNS = 'minmax(150px, 1.2fr) minmax(200px, 1.5fr) minmax(84px, 0.8fr) minmax(84px, 0.8fr) minmax(110px, auto)';
+/* Position · State · Earned, then the worth. */
+const LEND_LEAD = 'minmax(170px, 2fr) minmax(200px, 1.6fr) minmax(96px, 128px)';
+/** Narrower: the state goes first, then the interest. */
+const LEND_FOLD = ['minmax(170px, 2fr) minmax(96px, 128px)', 'minmax(170px, 2fr)'] as const;
 
 function LendingGroup({ data, group, lines, own, door, narrow, onCollect, onExit }: GroupsProps & { group: Group; lines: Lines }) {
   const w = useWords(ALL);
@@ -585,15 +634,17 @@ function LendingGroup({ data, group, lines, own, door, narrow, onCollect, onExit
             })}
           </ul>
         ) : (
-          <Table columns={LEND_COLUMNS} minWidth={660} label={w.lendingGroup}>
+          <Table columns={columnsOf(LEND_LEAD, own)} fold={foldOf(LEND_FOLD, own)} minWidth={own ? 760 : 580} label={w.lendingGroup}>
             <TableHead>
               <Cell head>{w.position}</Cell>
-              <Cell head>{w.state}</Cell>
-              <Cell head end sorted>
-                {w.now}
+              <Cell head fold={1}>
+                {w.state}
               </Cell>
-              <Cell head end>
+              <Cell head end fold={2}>
                 {w.interest}
+              </Cell>
+              <Cell head end sorted>
+                {p.value}
               </Cell>
               <Cell head />
             </TableHead>
@@ -603,11 +654,13 @@ function LendingGroup({ data, group, lines, own, door, narrow, onCollect, onExit
                 <Fragment key={row.id}>
                   <TableRow>
                     <NameCell row={row} fact={data.fact} name={nameOf(row, w)} sub={withAge(PROTOCOL_NAME[row.position.protocol], row, w, lang)} />
-                    <Cell className={a.plain}>{kind(row)}</Cell>
-                    <Cell end>{valueText(row.usd, lang, p.noPrice)}</Cell>
-                    <Cell end tone={row.earnedUsd !== null && row.earnedUsd > 0 ? 'up' : 'dim'}>
+                    <Cell className={a.plain} fold={1}>
+                      {kind(row)}
+                    </Cell>
+                    <Cell end tone={row.earnedUsd !== null && row.earnedUsd > 0 ? 'up' : 'dim'} fold={2}>
                       {row.earnedUsd === null ? '—' : sumText(row.earnedUsd, lang)}
                     </Cell>
+                    <Cell end>{valueText(row.usd, lang, p.noPrice)}</Cell>
                     <Cell end className={a.rowActs}>
                       {acts(row, 's')}
                     </Cell>
@@ -626,9 +679,12 @@ function LendingGroup({ data, group, lines, own, door, narrow, onCollect, onExit
 
 /* ── other platforms ──────────────────────────────────────────────────── */
 
-const OTHER_COLUMNS = 'minmax(200px, 1.6fr) minmax(150px, 1.2fr) minmax(96px, 0.8fr)';
+/* Position · Platform, then the worth; nothing to press — the controls' column stays empty, for the axis. */
+const OTHER_LEAD = 'minmax(200px, 2.4fr) minmax(150px, 1.6fr)';
+/** Narrower: the platform goes. */
+const OTHER_FOLD = ['minmax(200px, 2.4fr)'] as const;
 
-function OtherGroup({ data, group, narrow }: GroupsProps & { group: Group }) {
+function OtherGroup({ data, group, own, narrow }: GroupsProps & { group: Group }) {
   const w = useWords(ALL);
   const p = useWords(PORTFOLIO);
   const lang = useLang();
@@ -643,19 +699,25 @@ function OtherGroup({ data, group, narrow }: GroupsProps & { group: Group }) {
           ))}
         </ul>
       ) : (
-        <Table columns={OTHER_COLUMNS} minWidth={520} label={w.other}>
+        <Table columns={columnsOf(OTHER_LEAD, own)} fold={foldOf(OTHER_FOLD, own)} minWidth={520} label={w.other}>
           <TableHead>
             <Cell head>{w.position}</Cell>
-            <Cell head>{w.platform}</Cell>
-            <Cell head end sorted>
-              {w.now}
+            <Cell head fold={1}>
+              {w.platform}
             </Cell>
+            <Cell head end sorted>
+              {p.value}
+            </Cell>
+            <Cell head />
           </TableHead>
           {rows.map((row) => (
             <TableRow key={row.id}>
               <NameCell row={row} fact={data.fact} name={nameOf(row, w)} sub={null} />
-              <Cell tone="dim">{platformName(row.position.platform) ?? '—'}</Cell>
+              <Cell tone="dim" fold={1}>
+                {platformName(row.position.platform) ?? '—'}
+              </Cell>
               <Cell end>{valueText(row.usd, lang, p.noPrice)}</Cell>
+              <Cell />
             </TableRow>
           ))}
         </Table>
@@ -666,12 +728,15 @@ function OtherGroup({ data, group, narrow }: GroupsProps & { group: Group }) {
 
 /* ── the coins ────────────────────────────────────────────────────────── */
 
-/* The whole page's width, or 720 beside an open panel: the columns fit both without a sideways scroll. */
-const COIN_COLUMNS = 'minmax(140px, 1.6fr) minmax(80px, 0.9fr) minmax(84px, 0.9fr) minmax(60px, 0.6fr) minmax(96px, 1fr) minmax(164px, auto)';
-/** A wallet only looked at has no «Buy · Sell»: its table keeps no empty column for them. */
-const COIN_COLUMNS_READ = 'minmax(170px, 1.6fr) minmax(96px, 0.9fr) minmax(96px, 0.9fr) minmax(72px, 0.6fr) minmax(120px, 1fr)';
+/* Coin · Amount · Price · 24h, then the worth; the whole page's width, or 720 beside an open panel, without a sideways scroll. */
+const COIN_LEAD = 'minmax(140px, 2fr) minmax(80px, 1fr) minmax(84px, 1fr) minmax(60px, 0.6fr)';
+/** Narrower: the amount and the price go; the day's move, the worth and «Buy · Sell» stay, as on a phone. */
+const COIN_FOLD = ['minmax(140px, 2fr) minmax(60px, 0.6fr)'] as const;
 
 type CoinView = Readonly<{ row: Row; mint: string; symbol: string; name: string; dayPct: number | null; risk: readonly RiskReason[]; ask: CoinAsk; fact: MarketFact | null }>;
+
+/** How much of SOL's row is wrapped SOL folded into it, in a few words; null for any other row. */
+const wrappedLine = (row: Row, p: ReturnType<typeof useWords<(typeof PORTFOLIO)['en']>>, lang: Lang): string | null => (row.wrapped ? p.withWrapped(unitsText(row.wrapped, lang)) : null);
 
 /** Native SOL is Solana itself — never «Wrapped SOL», the market's name of the token account's coin. */
 const isNative = (row: Row): boolean => row.position.id === 'wallet:sol';
@@ -690,8 +755,8 @@ function coinView(row: Row, data: AllData, risk: GroupsProps['risk'], solana: st
   return { row, mint, symbol, name, dayPct, risk: risk.get(mint) ?? [], ask: { mint, symbol, name, icon: logoFor(mint, fact) }, fact };
 }
 
-/** A coin's first cell: its logo, its ticker and its name — or, for a coin better left alone, its mark where the name would stand. */
-function CoinNameCell({ coin, href }: { coin: CoinView; href?: string }) {
+/** A coin's first cell: its logo, its ticker and its name — or, for a coin better left alone, its mark where the name would stand. Always two lines. */
+function CoinNameCell({ coin, href, note = null }: { coin: CoinView; href?: string; note?: string | null }) {
   const ticker = href ? (
     <Link href={href} className={a.name}>
       {coin.symbol}
@@ -704,7 +769,9 @@ function CoinNameCell({ coin, href }: { coin: CoinView; href?: string }) {
       <Logo mint={coin.mint} fact={coin.fact} symbol={coin.symbol} />
       <span className={a.words}>
         {ticker}
-        {coin.risk.length ? <RiskMark symbol={coin.symbol} risk={coin.risk} /> : coin.name !== coin.symbol ? <span className={a.sub}>{coin.name}</span> : null}
+        {/* Every row has its second line, as the kit's coin cell does — a coin the market names by its ticker (USDT)
+            says it twice rather than stand a line shorter than its neighbours (QA 19.11, eyes 30). */}
+        {coin.risk.length ? <RiskMark symbol={coin.symbol} risk={coin.risk} /> : <span className={a.sub}>{note ? `${coin.name} · ${note}` : coin.name}</span>}
       </span>
     </span>
   );
@@ -726,7 +793,9 @@ function CoinsGroup({ data, group, own, narrow, risk, onTrade }: GroupsProps & {
   const linked = shelfOn('market');
   const trades = own && TICKET_OPEN;
   const [unpricedOpen, setUnpricedOpen] = useState(false);
-  const all = readRows(group).flatMap((row) => coinView(row, data, risk, p.solana) ?? []);
+  const read = readRows(group);
+  const shown = foldWrapped(read);
+  const all = shown.flatMap((row) => coinView(row, data, risk, p.solana) ?? []);
   // The coins nobody prices stand folded at the list's end: a wallet's spam never buries what it holds.
   const priced = all.filter((coin) => coin.row.usd !== null);
   const unpriced = all.filter((coin) => coin.row.usd === null);
@@ -738,7 +807,7 @@ function CoinsGroup({ data, group, own, narrow, risk, onTrade }: GroupsProps & {
     </button>
   ) : null;
   return (
-    <GroupPanel title={w.coins} count={group.count} usd={group.usd}>
+    <GroupPanel title={w.coins} count={group.count - (read.length - shown.length)} usd={group.usd}>
       {coins.length ? (
         narrow ? (
           <ul className={a.rows}>
@@ -747,7 +816,7 @@ function CoinsGroup({ data, group, own, narrow, risk, onTrade }: GroupsProps & {
                 key={coin.row.id}
                 logos={<Logo mint={coin.mint} fact={coin.fact} symbol={coin.symbol} />}
                 name={coin.symbol}
-                sub={coin.row.units === null ? null : `${unitsText(coin.row.units, lang)} ${coin.symbol}`}
+                sub={[coin.row.units === null ? null : `${unitsText(coin.row.units, lang)} ${coin.symbol}`, wrappedLine(coin.row, p, lang)].filter(Boolean).join(' · ') || null}
                 foot={coin.risk.length ? <MarkFoot coin={coin} /> : undefined}
                 marked={coin.risk.length > 0}
                 value={valueText(coin.row.usd, lang, p.noPrice)}
@@ -758,13 +827,13 @@ function CoinsGroup({ data, group, own, narrow, risk, onTrade }: GroupsProps & {
             ))}
           </ul>
         ) : (
-          <Table columns={trades ? COIN_COLUMNS : COIN_COLUMNS_READ} minWidth={trades ? 680 : 580} label={w.coins}>
+          <Table columns={columnsOf(COIN_LEAD, own)} fold={foldOf(COIN_FOLD, own)} minWidth={own ? 740 : 580} label={w.coins}>
             <TableHead>
               <Cell head>{p.coin}</Cell>
-              <Cell head end>
+              <Cell head end fold={1}>
                 {p.amount}
               </Cell>
-              <Cell head end>
+              <Cell head end fold={1}>
                 {p.price}
               </Cell>
               <Cell head end>
@@ -773,35 +842,33 @@ function CoinsGroup({ data, group, own, narrow, risk, onTrade }: GroupsProps & {
               <Cell head end sorted>
                 {p.value}
               </Cell>
-              {trades ? <Cell head /> : null}
+              <Cell head />
             </TableHead>
             {coins.map((coin) => (
               <TableRow key={coin.row.id}>
-                <CoinNameCell coin={coin} href={linked ? coinHref(coin.mint, 'live') : undefined} />
-                <Cell end tone="dim">
+                <CoinNameCell coin={coin} href={linked ? coinHref(coin.mint, 'live') : undefined} note={wrappedLine(coin.row, p, lang)} />
+                <Cell end tone="dim" fold={1}>
                   {coin.row.units === null ? '—' : unitsText(coin.row.units, lang)}
                 </Cell>
-                <Cell end tone="dim">
+                <Cell end tone="dim" fold={1}>
                   {coin.row.price === null ? '—' : coinPrice(coin.row.price, lang)}
                 </Cell>
                 <Cell end tone={coin.dayPct === null ? 'dim' : changeTone(coin.dayPct)}>
                   {coin.dayPct === null ? '—' : changeText(coin.dayPct, lang)}
                 </Cell>
                 <Cell end>{valueText(coin.row.usd, lang, p.noPrice)}</Cell>
-                {trades ? (
-                  <Cell end className={a.rowActs}>
-                    {isWrapped(coin.row) ? null : (
-                      <>
-                        <Quiet size="s" aria-label={p.buyCoin(coin.symbol)} onClick={() => onTrade(coin.ask, 'buy')}>
-                          {p.buy}
-                        </Quiet>
-                        <Quiet size="s" aria-label={p.sellCoin(coin.symbol)} onClick={() => onTrade(coin.ask, 'sell')}>
-                          {p.sell}
-                        </Quiet>
-                      </>
-                    )}
-                  </Cell>
-                ) : null}
+                <Cell end className={trades ? a.rowActs : undefined}>
+                  {trades && !isWrapped(coin.row) ? (
+                    <>
+                      <Quiet size="s" aria-label={p.buyCoin(coin.symbol)} onClick={() => onTrade(coin.ask, 'buy')}>
+                        {p.buy}
+                      </Quiet>
+                      <Quiet size="s" aria-label={p.sellCoin(coin.symbol)} onClick={() => onTrade(coin.ask, 'sell')}>
+                        {p.sell}
+                      </Quiet>
+                    </>
+                  ) : null}
+                </Cell>
               </TableRow>
             ))}
           </Table>
@@ -815,14 +882,32 @@ function CoinsGroup({ data, group, own, narrow, risk, onTrade }: GroupsProps & {
 
 /* ── the dust ─────────────────────────────────────────────────────────── */
 
-const DUST_COLUMNS = 'minmax(190px, 1.6fr) minmax(110px, 1fr) minmax(96px, 0.8fr)';
+/* Coin · Amount, then the worth on the same axis as every group above. */
+const DUST_LEAD = 'minmax(190px, 2.4fr) minmax(110px, 1fr)';
+/** Narrower: the amount goes. */
+const DUST_FOLD = ['minmax(190px, 2.4fr)'] as const;
+/** The dust rows an opened group shows at once; the rest wait behind «N more» (QA 19.11, eyes 26: 307 rows, 17 130 px). */
+export const DUST_SHOWN = 12;
 
+/**
+ * The dust: folded on a desk as on a phone — it is what matters least, and a wallet's hundreds of them would bury the
+ * page under them. Opened, its first rows and «N more».
+ */
 function DustGroup({ data, group, own, narrow, risk, cleanRead, onClean }: GroupsProps & { group: Group }) {
   const w = useWords(ALL);
   const p = useWords(PORTFOLIO);
   const c = useWords(CLEAN);
   const lang = useLang();
-  const coins = readRows(group).flatMap((row) => coinView(row, data, risk, p.solana) ?? []);
+  const [whole, setWhole] = useState(false);
+  const all = readRows(group).flatMap((row) => coinView(row, data, risk, p.solana) ?? []);
+  const coins = whole ? all : all.slice(0, DUST_SHOWN);
+  const more =
+    all.length > DUST_SHOWN ? (
+      <button type="button" className={a.moreRow} aria-expanded={whole} onClick={() => setWhole((was) => !was)}>
+        <span>{whole ? p.dustFewer : p.dustMore(digits(String(all.length - DUST_SHOWN), lang))}</span>
+        <Icon name="chevron" size="s" />
+      </button>
+    ) : null;
   const empty = (cleanRead?.items ?? []).filter((item) => item.kind === 'empty');
   const emptySol = empty.reduce((sum, item) => sum + item.lamports, 0) / 1e9;
   const emptyLine = empty.length ? { name: w.emptyAccounts, count: String(empty.length), value: `≈ ${digits(solFigure(emptySol), lang)} SOL` } : null;
@@ -832,9 +917,11 @@ function DustGroup({ data, group, own, narrow, risk, cleanRead, onClean }: Group
     </Quiet>
   ) : null;
   return (
-    <GroupPanel title={w.dust} count={group.count} usd={group.usd} action={action} info={{ label: w.dustInfo, text: w.dustText }} startFolded={narrow}>
+    <GroupPanel title={w.dust} count={group.count} usd={group.usd} action={action} info={{ label: w.dustInfo, text: w.dustText }} startFolded>
       {narrow ? (
         <ul className={a.rows}>
+          {/* The empty accounts first — what a clean gives back for nothing — so «N more» stands right under the coins it opens. */}
+          {emptyLine ? <PhoneRow logos={null} name={emptyLine.name} sub={emptyLine.count} value={emptyLine.value} /> : null}
           {coins.map((coin) => (
             <PhoneRow
               key={coin.row.id}
@@ -846,28 +933,19 @@ function DustGroup({ data, group, own, narrow, risk, cleanRead, onClean }: Group
               value={valueText(coin.row.usd, lang, p.noPrice)}
             />
           ))}
-          {emptyLine ? <PhoneRow logos={null} name={emptyLine.name} sub={emptyLine.count} value={emptyLine.value} /> : null}
         </ul>
       ) : (
-        <Table columns={DUST_COLUMNS} minWidth={520} label={w.dust}>
+        <Table columns={columnsOf(DUST_LEAD, own)} fold={foldOf(DUST_FOLD, own)} minWidth={520} label={w.dust}>
           <TableHead>
             <Cell head>{p.coin}</Cell>
-            <Cell head end>
+            <Cell head end fold={1}>
               {p.amount}
             </Cell>
             <Cell head end sorted>
               {p.value}
             </Cell>
+            <Cell head />
           </TableHead>
-          {coins.map((coin) => (
-            <TableRow key={coin.row.id}>
-              <CoinNameCell coin={coin} />
-              <Cell end tone="dim">
-                {coin.row.units === null ? '—' : unitsText(coin.row.units, lang)}
-              </Cell>
-              <Cell end>{valueText(coin.row.usd, lang, p.noPrice)}</Cell>
-            </TableRow>
-          ))}
           {emptyLine ? (
             <TableRow>
               <Cell className={a.nameCell}>
@@ -875,14 +953,26 @@ function DustGroup({ data, group, own, narrow, risk, cleanRead, onClean }: Group
                   <span className={a.name}>{emptyLine.name}</span>
                 </span>
               </Cell>
-              <Cell end tone="dim">
+              <Cell end tone="dim" fold={1}>
                 {emptyLine.count}
               </Cell>
               <Cell end>{emptyLine.value}</Cell>
+              <Cell />
             </TableRow>
           ) : null}
+          {coins.map((coin) => (
+            <TableRow key={coin.row.id}>
+              <CoinNameCell coin={coin} />
+              <Cell end tone="dim" fold={1}>
+                {coin.row.units === null ? '—' : unitsText(coin.row.units, lang)}
+              </Cell>
+              <Cell end>{valueText(coin.row.usd, lang, p.noPrice)}</Cell>
+              <Cell />
+            </TableRow>
+          ))}
         </Table>
       )}
+      {more}
     </GroupPanel>
   );
 }
@@ -897,6 +987,8 @@ function stateWord(aw: AW, state: RowState): string {
 
 /** An agent's name and its line, as the Agents screen says them: its coin or its pool, then its state or its time left. */
 function agentWords(aw: AW, row: MineRow): Readonly<{ name: string; sub: string }> {
+  // A pool stopped but not withdrawn says so; its pool's page carries «Withdraw».
+  if (row.left) return { name: aw[row.role], sub: aw.notWithdrawn };
   const first = row.coin?.symbol ?? (row.pool === 'moving' ? aw.movingRange : row.pool === 'earning' ? aw.earning : null);
   const second = row.state !== 'working' ? stateWord(aw, row.state) : row.daysLeft === null ? aw.noTerm : aw.daysLeft(String(row.daysLeft));
   return { name: aw[row.role], sub: [first, second].filter(Boolean).join(' · ') };
@@ -909,14 +1001,14 @@ function resultOf(row: MineRow, solUsd: number | null, lang: Lang): Shown | null
 
 /**
  * The person's bots on a budget and what each holds: their money stands outside the wallet, so it has a group of its
- * own. Each row leads to its own bot's page, where it is managed and stopped; the keeper's to Earn.
+ * own. Each row leads to its own bot's page, where it is managed and stopped; the keeper's to its pool's page.
  */
 function AgentsGroup({ data, agents, narrow }: GroupsProps) {
   const w = useWords(ALL);
   const p = useWords(PORTFOLIO);
   const aw = useWords(AGENTS);
   const lang = useLang();
-  const hrefOf = (row: MineRow) => (shelfOn(row.role === 'keeper' ? 'earn' : 'agents') ? workerPath(row.role) : undefined);
+  const hrefOf = (row: MineRow) => (shelfOn(row.role === 'keeper' ? 'earn' : 'agents') ? workerPath(row.role, row.poolAddress ?? null) : undefined);
   const solUsd = data.answer?.solUsd ?? null;
   const logo = (row: MineRow) => (row.coin ? <Logo mint={row.coin.mint} fact={data.fact(row.coin.mint)} symbol={row.coin.symbol} /> : <RoleBadge role={row.role} />);
   return (

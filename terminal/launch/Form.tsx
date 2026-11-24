@@ -10,7 +10,10 @@ import { DESCRIPTION_MAX, type LinkKind } from '@/lib/launch/form';
 import { ExplainBox, ExplainButton, Rows } from '@/terminal/coin/parts';
 import { Kick, Segment, Switch } from '@/terminal/ui';
 import { Glyph } from './glyphs';
+import { StartFromSet } from './presets/StartFromSet';
 import { LADDER, POOL_SPLIT_BPS, dayOf, shareBpsOf, signaturesOf, sniperOf, solOf } from './launch-view';
+import { ProRewards } from './pro-rewards/ProRewards';
+import { rewardHowOf } from './pro-rewards/view';
 import type { LaunchModel } from './useLaunchModel';
 import { useSeconds } from './useSeconds';
 import l from './launch.module.css';
@@ -86,7 +89,7 @@ export function Form({ m, fileRef, nameRef }: { m: LaunchModel; fileRef: RefObje
           </label>
           <label className={l.field} data-bad={bad === 'symbol' ? '' : undefined} htmlFor={ids.symbol}>
             <Kick>{w.ticker}</Kick>
-            <span className={l.tickerRow}>
+            <span className={l.tickerRow} data-empty={m.draft.symbol ? undefined : ''}>
               <span className={l.dollar} aria-hidden="true">
                 $
               </span>
@@ -170,6 +173,9 @@ export function Form({ m, fileRef, nameRef }: { m: LaunchModel; fileRef: RefObje
           mark="ladder"
         />
       ) : null}
+
+      {m.format === 'pool' && m.choice ? <ProRewards choice={m.choice} onChoice={m.setChoice} symbol={m.symbol || w.tickerPlaceholder} disabled={still} /> : null}
+      <StartFromSet m={m} />
 
       {m.format === 'curve' && m.shield?.switchable ? (
         <Toggle name={w.fmtShield} on={m.shield.on} onChange={m.chooseShield} disabled={still} info={w.shieldInfo} how={w.settingsHow} mark="shield" />
@@ -336,7 +342,7 @@ function Terms({ m, disabled }: { m: LaunchModel; disabled: boolean }) {
   const split: readonly (readonly [string, readonly string[]])[] =
     m.format === 'pool'
       ? [
-          [w.how, [ladder ? w.poolHowLadder(pct(10_000 - LADDER.shareBps), pct(LADDER.shareBps)) : w.poolHow]],
+          [w.how, [rewardHowOf(m.choice, lang) ?? (ladder ? w.poolHowLadder(pct(10_000 - LADDER.shareBps), pct(LADDER.shareBps)) : w.poolHow)]],
           [w.share, [w.lineShare(pct(POOL_SPLIT_BPS.creator)), w.poolTheRest(pct(POOL_SPLIT_BPS.ryntra))]],
           [w.cost, [w.costPool]],
         ]

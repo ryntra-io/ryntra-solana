@@ -25,6 +25,18 @@ export const GRID_CELL_WEIGHT = 31;
  */
 export const GRID_MAX_RANGES = 15;
 
+/**
+ * Meteora's own Wave (SDK 0.1.3, `StrategyType.Wave`) as a painted grid, under the price farthest first: a
+ * side is half the grid's height over the half of it nearest the price, then rises in four steps to the full height at
+ * its edge.
+ * On the other widths the
+ * grid's rule lays it over the steps as it lays any grid. What a ticket starts «Wave» from, so that it is Meteora's.
+ */
+export const GRID_WAVE: readonly number[] = (() => {
+  const side = Array.from({ length: GRID_SIDE }, (_, column) => Math.max(GRID_LEVELS / 2, Math.ceil((GRID_LEVELS * (column + 1)) / GRID_SIDE)));
+  return Object.freeze([...[...side].reverse(), ...side]);
+})();
+
 export type GridWeight = Readonly<{ tickId: number; weight: number }>;
 export type GridLayout = "vertical" | "horizontal";
 

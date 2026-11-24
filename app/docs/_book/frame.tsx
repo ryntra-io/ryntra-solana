@@ -6,6 +6,7 @@ import { LANG_BOOT_SCRIPT } from "@/city/lib/i18n/langs";
 import { BUNDLED_CITY } from "@/city/lib/market/bundled";
 import { CITY_FONTS } from "@/city/styles/fonts";
 import { terminalOpen } from "@/terminal/shell/flag";
+import rail from "@/terminal/shell/shell.module.css";
 import { TerminalShell } from "@/terminal/shell/TerminalShell";
 import t from "@/terminal/styles/terminal.module.css";
 import { ZERO } from "@/terminal/styles/zero";
@@ -28,7 +29,7 @@ export function TerminalFrame({ children }: { children: ReactNode }) {
         <div className={b.plain}>
           <Link className={b.plainBrand} href="/" aria-label="Ryntra">
             <Mark size={28} glow={false} />
-            <span>RYNTRA</span>
+            <span className={rail.brandWord}>RYNTRA</span>
           </Link>
           <main className={b.plainMain}>{children}</main>
         </div>

@@ -54,7 +54,6 @@ export const LAUNCH_SCREEN = words(
     cost: 'Network cost',
     signatures: 'Signatures',
     about: (sol: string) => `≈ ${sol} SOL`,
-    costInfo: 'About the deposit',
     costCurve: 'Solana’s rent and fee for the coin, as Solana simulated it. Your wallet shows the exact SOL before you sign.',
     costCurveSoon: 'Solana’s rent and fee for the coin. Connect a wallet and Solana works the figure out before you sign.',
     costPool: 'Solana’s rent for the pool and the locked supply. It does not come back; the ladder’s comes back when you take it down.',
@@ -127,7 +126,6 @@ export const LAUNCH_SCREEN = words(
     fair: 'Fair launch',
     opensIn: 'Opens in',
     movesAt: 'Moves to a pool at',
-    sniper: 'Fee against snipers',
     locked: 'Liquidity locked',
 
     all: 'All',
@@ -175,10 +173,6 @@ export const LAUNCH_SCREEN = words(
     freezeOff: 'Nobody can freeze it',
     freezeOn: 'The creator can freeze wallets',
     // The launchpad.
-    sayHead: 'Say it. Your agent does the rest.',
-    sayExample: '“Launch me a token Kite $KITE”',
-    sayStart: 'launch me a token ',
-    sayLabel: 'Tell your agent to launch a token',
     fmtQuickWhy: 'Trades from the first second',
     // Not «straight» nor «at once»: the earliest the pool opens is the engine's 15 minutes (QA 19.11, m18).
     fmtPoolWhy: 'A Meteora pool, trading opens at the time you pick',
@@ -236,8 +230,8 @@ export const LAUNCH_SCREEN = words(
     curve: 'Крива',
     pool: 'Одразу в пул',
     curveHow: (cap: string) => `Крива: монета торгується з першої секунди, а при ${cap} сама переходить у пул Meteora, ліквідність замикається назавжди. Один підпис.`,
-    poolHow: 'Одразу в пул: без кривої й без переїзду — монета торгується у власному пулі Meteora з часу, який ти обереш, а вся пропозиція заходить ліквідністю, яку не забере ніхто. Три підписи: монета, пул, пропозиція.',
-    poolHowLadder: (locked: string, yours: string) => `Одразу в пул: без кривої й без переїзду — монета торгується у власному пулі Meteora з часу, який ти обереш. ${locked} пропозиції заходять ліквідністю, яку не забере ніхто; ${yours} лишаються твоїми на драбині. Три підписи: монета, пул, пропозиція.`,
+    poolHow: 'Одразу в пул: без кривої й без переїзду — монета торгується у власному пулі Meteora з часу, який ти обереш, а всі монети заходять ліквідністю, яку не забере ніхто. Три підписи: монета, пул, замкнені монети.',
+    poolHowLadder: (locked: string, yours: string) => `Одразу в пул: без кривої й без переїзду — монета торгується у власному пулі Meteora з часу, який ти обереш. ${locked} монет заходять ліквідністю, яку не забере ніхто; ${yours} лишаються твоїми на драбині. Три підписи: монета, пул, замкнені монети.`,
 
     opens: 'Торги відкриються',
     opensWhen: 'Коли відкриються торги',
@@ -252,16 +246,15 @@ export const LAUNCH_SCREEN = words(
 
     ladder: 'Драбина фіксації прибутку',
     ladderInfo: 'Як працює драбина',
-    ladderHow: (share: string, near: string, far: string) => `${share} пропозиції лишаються твоїми й до першої покупки стають на продаж за п’ятьма цінами від ${near} до ${far} стартової. Продане забираєш ти; після відкриття торгів решту можна зняти.`,
+    ladderHow: (share: string, near: string, far: string) => `${share} монет лишаються твоїми й до першої покупки стають на продаж за п’ятьма цінами від ${near} до ${far} стартової. Продане забираєш ти; після відкриття торгів решту можна зняти.`,
 
     share: 'Твоя частка комісій',
     cost: 'Плата мережі',
     signatures: 'Підписів',
     about: (sol: string) => `≈ ${sol} SOL`,
-    costInfo: 'Про депозит',
     costCurve: 'Оренда й комісія Solana за монету — за симуляцією Solana. Гаманець покаже точну суму SOL до підпису.',
     costCurveSoon: 'Оренда й комісія Solana за монету. Підключи гаманець — і Solana порахує суму до підпису.',
-    costPool: 'Оренда Solana за пул і замкнену пропозицію. Вона не повертається; оренда драбини повертається, коли ти її знімеш.',
+    costPool: 'Оренда Solana за пул і замкнені монети. Вона не повертається; оренда драбини повертається, коли ти її знімеш.',
 
     settings: 'Параметри запуску',
     firstBuyers: 'Комісія з перших покупців',
@@ -308,7 +301,7 @@ export const LAUNCH_SCREEN = words(
     stepOf: (n: number, of: number) => `Крок ${n} з ${of}`,
     stepCoin: 'Монета',
     stepPool: 'Пул',
-    stepSupply: 'Замкнена пропозиція',
+    stepSupply: 'Замкнені монети',
     signStep: (step: string) => `${step} — підтверди в гаманці`,
     sendingStep: (step: string) => `${step}: надсилаємо`,
 
@@ -331,7 +324,6 @@ export const LAUNCH_SCREEN = words(
     fair: 'Чесний запуск',
     opensIn: 'Відкриття через',
     movesAt: 'Перехід у пул при',
-    sniper: 'Комісія проти снайперів',
     locked: 'Ліквідність замкнена',
 
     all: 'Усі',
@@ -379,10 +371,6 @@ export const LAUNCH_SCREEN = words(
     freezeOff: 'Заморозити не може ніхто',
     freezeOn: 'Творець може заморозити гаманці',
     // Лаунчпад.
-    sayHead: 'Скажи — агент зробить решту.',
-    sayExample: '«Запусти мені токен Kite $KITE»',
-    sayStart: 'запусти мені токен ',
-    sayLabel: 'Сказати агентові запустити токен',
     fmtQuickWhy: 'Торгується з першої секунди',
     fmtPoolWhy: 'Пул Meteora, торги відкриваються в обраний час',
     fmtPoolTag: 'DLMM Pro',

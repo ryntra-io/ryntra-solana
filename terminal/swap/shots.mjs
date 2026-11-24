@@ -27,6 +27,9 @@ const JUP = "JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN";
 const TAKER = "4EeXQa4MKrBSwDj9pHEoZXjiiUaZmWzveGq5X9dUKPGW";
 /** Where the stand's bridge sends: an address no one holds a key to. */
 const THERE = "0x000000000000000000000000000000000000dEaD";
+/** A small pump coin of the stand's own market list, for the state where Jupiter has no route. */
+const PUMP = JSON.parse(readFileSync(new URL("../../city/lib/market/snapshot.json", import.meta.url), "utf8")).towers.find((tower) => tower.symbol === "MANIFEST");
+const PUMP_COIN = PUMP.id;
 const golden = JSON.parse(readFileSync(new URL("../../app/api/solana/swap/golden/transcripts.json", import.meta.url), "utf8"));
 const recordedOrder = () => structuredClone(golden["order: SOL to USDT with the verified referral fee is a signable Review"].steps.at(-1).body);
 const recordedBytes = recordedOrder().order.transactionBase64;
@@ -158,7 +161,7 @@ for (const size of SIZES) {
       locale: uk ? "uk-UA" : "en-US",
     });
     const asked = { quote: 0, order: 0, execute: 0, plan: 0, submit: 0, transfer: 0, signs: [] };
-    const state = { quoteFails: false, wallet: false, history: true, bridgeLive: true };
+    const state = { quoteFails: false, noRoute: false, wallet: false, history: true, bridgeLive: true };
     let lastQuote = null;
     let lastBridgeQuote = null;
     let deposit = "none";
@@ -179,9 +182,21 @@ for (const size of SIZES) {
       const body = { price: baseUsd / quoteUsd, baseUsd, quoteUsd, dlmm: { available: false, code: "NO_POOL" }, observedAt: new Date().toISOString() };
       return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(body) });
     });
+    // The pump coin a link names is known by its market facts, as the engine's own read answers them.
+    await context.route(`**/api/spot/market?mint=${PUMP_COIN}*`, (route) =>
+      route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ market: { mint: PUMP_COIN, symbol: PUMP.symbol, name: PUMP.name, icon: PUMP.icon, verified: false, price: PUMP.price } }) }),
+    );
+    // Its decimals, as the engine's mint read answers them (pump coins carry six).
+    await context.route("**/api/solana/tokens/mint", (route) => {
+      const { mint } = route.request().postDataJSON() ?? {};
+      if (mint !== PUMP_COIN) return route.fulfill({ status: 503, contentType: "application/json", body: "{}" });
+      return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ mint, decimals: 6 }) });
+    });
     await context.route("**/api/solana/swap/quote", async (route) => {
       asked.quote += 1;
       if (state.quoteFails) return route.fulfill({ status: 429, contentType: "application/json", body: JSON.stringify({ error: { code: "RATE_LIMITED", message: "Too many requests." } }) });
+      // A pair Jupiter has no route for, as the engine answers it now — 409, not a refused 502.
+      if (state.noRoute) return route.fulfill({ status: 409, contentType: "application/json", body: JSON.stringify({ error: { code: "QUOTE_NO_ROUTE", message: "Jupiter found no route for this pair at this amount.", provider: { errorCode: null } } }) });
       const url = new URL(route.request().url());
       const answer = await fetch(`${source}${url.pathname}`, { method: "POST", headers: { "content-type": "application/json" }, body: route.request().postData() }).catch(() => null);
       if (!answer) return route.fulfill({ status: 503, contentType: "application/json", body: "{}" });
@@ -265,6 +280,8 @@ for (const size of SIZES) {
     }
 
     const page = await context.newPage();
+    // A dev stand's own overlay (Next's «Issues» badge) is never part of a shot; a built stand has none.
+    await page.addInitScript(() => document.addEventListener("DOMContentLoaded", () => document.head.append(Object.assign(document.createElement("style"), { textContent: "nextjs-portal { display: none !important; }" }))));
     const errors = [];
     page.on("pageerror", (error) => errors.push(String(error)));
     await page.exposeFunction("__recordSign", (wire) => asked.signs.push(wire));
@@ -322,7 +339,7 @@ for (const size of SIZES) {
       await settle();
       await page.waitForTimeout(1500);
     };
-    const open = async (withWallet) => {
+    const open = async (withWallet, query = "") => {
       state.wallet = withWallet;
       await page.evaluate((on) => {
         try {
@@ -330,7 +347,7 @@ for (const size of SIZES) {
           else localStorage.removeItem("ryntra.solana.wallet-hint.v1");
         } catch {}
       }, withWallet).catch(() => {});
-      await page.goto(`${base}/swap?lang=${lang}`, { waitUntil: "domcontentloaded", timeout: 180_000 });
+      await page.goto(`${base}/swap?lang=${lang}${query}`, { waitUntil: "domcontentloaded", timeout: 180_000 });
       await swapPanel().waitFor({ timeout: 120_000 });
       await settle();
       await page.waitForTimeout(2500);
@@ -344,6 +361,24 @@ for (const size of SIZES) {
         await page.waitForTimeout(3000);
       }
     };
+
+    const noRoute = async () => {
+      await open(false, `&from=${PUMP_COIN}&to=SOL`);
+      state.noRoute = true;
+      await swapPanel().locator("input[inputmode='decimal']:visible").first().fill("12");
+      await page.waitForTimeout(3000);
+      await shot("swap-no-route", swapPanel());
+      const said = await swapPanel().locator("[role='status'], [role='alert']").allInnerTexts().catch(() => []);
+      report.push(`${size.name}/${lang}: no route — the card says ${JSON.stringify(said.map((text) => text.trim()).filter(Boolean))}`);
+      state.noRoute = false;
+    };
+    // NO_ROUTE_ONLY=1 — just this state, for a task that changes nothing else of the screen.
+    if (process.env.NO_ROUTE_ONLY) {
+      await page.goto(`${base}/swap?lang=${lang}`, { waitUntil: "domcontentloaded", timeout: 180_000 });
+      await noRoute();
+      await context.close();
+      continue;
+    }
 
     // ── a first visit: no wallet ──
     await page.goto(`${base}/swap?lang=${lang}`, { waitUntil: "domcontentloaded", timeout: 180_000 });
@@ -379,6 +414,7 @@ for (const size of SIZES) {
     await tap(swapPanel().getByRole("button", { name: uk ? "Ще раз" : "Try again" }));
     await page.waitForTimeout(2500);
     report.push(`${size.name}/${lang}: «Try again» asked ${asked.order - ordersBefore} orders and ${asked.signs.length - signsBefore} signatures`);
+    await noRoute();
 
     // ── a wallet: its balances, its history, the exact order built while the person reads ──
     await open(true);

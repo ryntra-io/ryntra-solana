@@ -1,0 +1,376 @@
+/* The largest holders' links under the coin's chart: the map on the left, the groups on the right; on a phone
+   the groups alone. A group's colour is a brand token (lilac, warm, violet, ice, soft — never the amber of the one
+   action, never mint or flare); a holder with no link stays a quiet outline. Colours are tokens, spacings the scale's;
+   the only round things are the bubbles of the data and a group's dot. */
+
+.tab {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+
+.head {
+  display: flex;
+  flex: none;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 16px;
+  min-height: 44px;
+  padding: 6px 16px;
+}
+
+.total {
+  font-size: var(--type-body);
+  font-weight: 650;
+  color: var(--ice);
+}
+
+.checked {
+  font-size: var(--type-caption);
+  color: var(--dim);
+}
+
+.end {
+  display: inline-flex;
+  align-items: center;
+  margin-left: auto;
+}
+
+/* The map takes the panel's height as the person sets it; the groups beside it scroll. */
+.body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 340px);
+  grid-template-rows: minmax(0, 1fr);
+  gap: 16px;
+  flex: 1 1 auto;
+  min-height: 96px;
+  padding: 0 16px 8px;
+}
+
+.body[data-alone] {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+/* The map: the data's own picture, as high as the panel lets it be. */
+.map {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 88px;
+  border: 1px solid var(--line);
+  background: color-mix(in srgb, var(--ink-deep) 60%, transparent);
+}
+
+.map a {
+  cursor: pointer;
+}
+
+.map a:focus-visible {
+  outline: none;
+}
+
+.map a:focus-visible .bubble,
+.map a:focus-visible .source {
+  stroke: var(--lilac);
+  stroke-width: 2.5;
+}
+
+.bubble {
+  --g: var(--dim);
+  fill: color-mix(in srgb, var(--g) 10%, transparent);
+  stroke: color-mix(in srgb, var(--g) 60%, transparent);
+  stroke-width: 1;
+  transition: opacity 0.15s;
+}
+
+.bubble[data-tone] {
+  fill: color-mix(in srgb, var(--g) 34%, transparent);
+  stroke: var(--g);
+  stroke-width: 1.5;
+}
+
+.bubble[data-creator] {
+  stroke-dasharray: 3 2;
+}
+
+.source {
+  --g: var(--dim);
+  fill: var(--ink);
+  stroke: var(--g);
+  stroke-width: 1.5;
+  transition: opacity 0.15s;
+}
+
+.link {
+  --g: var(--dim);
+  stroke: color-mix(in srgb, var(--g) 70%, transparent);
+  stroke-width: 1.2;
+  transition: opacity 0.15s;
+}
+
+.link[data-kind='sol'] {
+  stroke-dasharray: 4 3;
+}
+
+.link[data-kind='between'] {
+  stroke-width: 2;
+}
+
+.share {
+  fill: var(--ice);
+  font-family: var(--display);
+  font-weight: 650;
+  text-anchor: middle;
+  dominant-baseline: central;
+  pointer-events: none;
+  transition: opacity 0.15s;
+}
+
+.tab [data-tone='1'] {
+  --g: var(--lilac);
+}
+
+.tab [data-tone='2'] {
+  --g: var(--warm);
+}
+
+.tab [data-tone='3'] {
+  --g: var(--violet);
+}
+
+.tab [data-tone='4'] {
+  --g: var(--ice);
+}
+
+.tab [data-tone='5'] {
+  --g: var(--soft);
+}
+
+.map [data-quiet] {
+  opacity: 0.22;
+}
+
+/* The groups: one row each, the colour, the name, the share; what ties them and who under it. */
+.groups {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--haze) transparent;
+}
+
+.tab[data-phone] .groups {
+  padding: 0 16px 12px;
+  overflow: visible;
+}
+
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 4px 0 8px;
+  border-top: 1px solid var(--line);
+}
+
+.group:first-child {
+  border-top: 0;
+}
+
+.group[data-on] {
+  background: var(--chosen);
+}
+
+.groupMain {
+  display: grid;
+  grid-template-columns: 10px auto auto 1fr auto;
+  grid-template-areas:
+    'dot name count chip share'
+    '. ties ties ties ties';
+  align-items: center;
+  gap: 2px 8px;
+  width: 100%;
+  min-height: 40px;
+  padding: 0 8px;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: 0;
+}
+
+/* A group's row is a row: square, as every row; it lights its group on the map. */
+button.groupMain {
+  cursor: pointer;
+}
+
+button.groupMain:focus-visible {
+  outline: 1px solid var(--lilac);
+  outline-offset: -1px;
+}
+
+/* A group's dot: a small circle drawn as data, like the map's bubbles. */
+.dot {
+  --g: var(--dim);
+  grid-area: dot;
+  display: block;
+  width: 10px;
+  height: 10px;
+  fill: var(--g);
+}
+
+.groupName {
+  grid-area: name;
+  font-size: var(--type-body);
+  font-weight: 650;
+  color: var(--ice);
+}
+
+.groupCount {
+  grid-area: count;
+  font-size: var(--type-caption);
+  color: var(--dim);
+  white-space: nowrap;
+}
+
+.chip {
+  grid-area: chip;
+  justify-self: start;
+}
+
+.groupShare {
+  grid-area: share;
+  font-family: var(--display);
+  font-size: var(--type-body);
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  color: var(--ice);
+}
+
+.ties {
+  grid-area: ties;
+  font-size: var(--type-caption);
+  font-weight: 600;
+  color: var(--soft);
+}
+
+.members {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  padding: 0 8px 0 24px;
+}
+
+.member {
+  font-family: var(--display);
+  font-size: var(--type-caption);
+  font-variant-numeric: tabular-nums;
+  color: var(--soft);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.member[data-source] {
+  color: var(--dim);
+}
+
+.member:hover,
+.member:focus-visible {
+  color: var(--lilac);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.from {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  font-size: var(--type-caption);
+  color: var(--dim);
+}
+
+.more {
+  font-size: var(--type-caption);
+  color: var(--dim);
+}
+
+.line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  min-height: 120px;
+  margin: 0;
+  padding: 24px 16px;
+  text-align: center;
+  font-size: var(--type-small);
+  font-weight: 600;
+  color: var(--dim);
+}
+
+.bones {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px 16px;
+}
+
+.bones > span {
+  background: color-mix(in srgb, var(--ice) 4%, transparent);
+}
+
+.boneHead {
+  width: 40%;
+  height: 24px;
+}
+
+.boneBody {
+  flex: 1 1 auto;
+  min-height: 88px;
+}
+
+.bones[data-phone] .boneBody {
+  height: 160px;
+}
+
+/* A narrow desk keeps the map beside the groups, the list narrower. */
+@media (max-width: 1100px) {
+  .body {
+    grid-template-columns: minmax(0, 1fr) minmax(200px, 240px);
+  }
+}
+
+/* On a phone the groups are a part of «About»: the page's own margins, a line over it, the part named. */
+.tab[data-phone] {
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+
+.tab[data-phone] .head,
+.tab[data-phone] .groups {
+  padding-right: 0;
+  padding-left: 0;
+}
+
+.kick {
+  width: 100%;
+  font-size: var(--type-micro);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--dim);
+}
+
+.tab[data-phone] > .kick {
+  padding-bottom: 4px;
+}
+
+.tab[data-phone] .line,
+.tab[data-phone] .bones {
+  min-height: 0;
+  padding: 12px 0;
+}

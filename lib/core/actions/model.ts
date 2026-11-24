@@ -40,6 +40,7 @@
 import { randomBytes } from "node:crypto";
 
 import { z } from "zod";
+import { isoDateTime } from "../../zod/iso-datetime.ts";
 
 import { hashCanonical } from "../../guard/canonical.ts";
 
@@ -123,7 +124,7 @@ const ACTION_ID = /^act_[0-9a-f]{32}$/;
 const AUTHORITY_ID = /^[a-z0-9-]+\.[a-z0-9-]+$/;
 /** Printable, bounded, and no `:` — the key's separator — so one scope's key can never read as another's. */
 const IDEMPOTENCY_KEY = /^[A-Za-z0-9._~+/=@-]{8,128}$/;
-const timestamp = z.string().datetime({ offset: true });
+const timestamp = isoDateTime({ offset: true });
 
 export const ActionIdSchema = z.string().regex(ACTION_ID);
 export const SignatureSchema = z.string().regex(SIGNATURE);

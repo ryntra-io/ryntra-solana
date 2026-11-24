@@ -15,6 +15,7 @@ import {
   verify as verifyBytes,
 } from "node:crypto";
 import { z } from "zod";
+import { isoDateTime } from "../zod/iso-datetime.ts";
 
 import { issuerKeyId, type IssuerKey } from "../agent-control/issuer.ts";
 import { canonicalJson } from "../guard/canonical-json.ts";
@@ -44,7 +45,7 @@ const SignedSendReviewProofSchema = z
     keyId: z.string().min(1).max(128),
     publicKey: z.string().min(32).max(256),
     signature: z.string().min(64).max(512),
-    issuedAt: z.string().datetime({ offset: true }),
+    issuedAt: isoDateTime({ offset: true }),
   })
   .strict();
 
@@ -55,7 +56,7 @@ const UnsignedSendReviewProofSchema = z
     status: z.literal("UNSIGNED"),
     digest: z.string().regex(HEX_HASH),
     reasonCode: z.literal("NO_ISSUER_KEY_CONFIGURED"),
-    issuedAt: z.string().datetime({ offset: true }),
+    issuedAt: isoDateTime({ offset: true }),
   })
   .strict();
 

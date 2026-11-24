@@ -1,0 +1,1365 @@
+{
+ "source": "the coin's trades from the chain's events (lib/spot/token-events.ts TokenTrade), newest first; made-up wallets",
+ "reads": {
+  "CcAnNdEvoCVUU3jqK4eSjj9BNB9AWQR6z3PbRci41g4a": {
+   "trades": [
+    {
+     "signature": "3mhcLypVYP1Wx8knG39AKnjQEo7bfw6HDaHjrMbPy3KsqcPEb5P5zMmfZiMqBF1XafPUapC4cXBFHm2KLASia67j",
+     "at": "2026-11-20T11:23:47.000Z",
+     "side": "sell",
+     "wallet": "82nrTtGRovHVrandVYJ8B84n87LyJ5Y8p1CWEfhisTn9",
+     "tokenAmount": 1000000,
+     "usd": 40,
+     "priceUsd": 4e-05,
+     "capUsd": 40000
+    },
+    {
+     "signature": "4hKLoxugcA4GkdnN6dxY2Kf2TtSHQrT7viYTxekYa9N2SGMN31Lo4SMyWNhXg8CdUYMFrCLDwWeC553b19WoVvSk",
+     "at": "2026-11-20T11:23:34.000Z",
+     "side": "buy",
+     "wallet": "DJPqVc1aXoS7KK7EAy3jVNeVeARH7hTsvssuvmRYswRK",
+     "tokenAmount": 1000000,
+     "usd": 40,
+     "priceUsd": 4e-05,
+     "capUsd": 40000
+    },
+    {
+     "signature": "57dDxNcxrBgGpCTDhgU3HwTPkKMHZWPZrnH8SiGMoK6RCceRidNqhLqu4nuv74fdxYCqMttmremaBRaEs5sGn8kf",
+     "at": "2026-11-20T11:23:21.000Z",
+     "side": "buy",
+     "wallet": "3x3hqFMXitJchgTBj4XJ4aofxny4APjo16gxSL6FNB7i",
+     "tokenAmount": 1000000,
+     "usd": 40,
+     "priceUsd": 4e-05,
+     "capUsd": 40000
+    },
+    {
+     "signature": "VCuhTapPCZBZBYS3Bkp5GgpzsUxFW8eWfxDmib8hDBrMEC1H1MhK9XzBxjsUJLKuWfbeQVN4Dm18Eqtg3DxeYmA",
+     "at": "2026-11-20T11:23:08.000Z",
+     "side": "sell",
+     "wallet": "6dm6btmYV2f73DgVywMD4virkTEoR6Ko7FAm6YSWhmy9",
+     "tokenAmount": 1000000,
+     "usd": 40,
+     "priceUsd": 4e-05,
+     "capUsd": 40000
+    },
+    {
+     "signature": "brXVhxCFcJkNoiQqhq1u1HW9PXZV17yxSExGy1uMQ9ioNYqyrYvRRyu42AgWJtjP9c2SYUvcWKmBUETiRx4XSo9",
+     "at": "2026-11-20T11:22:55.000Z",
+     "side": "buy",
+     "wallet": "4fWJBLRohtfeDmbFFrUiC5ZmAjwUn7xCnwupZGAks86G",
+     "tokenAmount": 1000000,
+     "usd": 40,
+     "priceUsd": 4e-05,
+     "capUsd": 40000
+    },
+    {
+     "signature": "qn3kQqLE7yptwbR9WWjT84tQrAV464XWZLNt5VG1TzLycfvWhRFrjHQD8Qp26SqStJJDyTw3pNZPHpLBX82U5X7",
+     "at": "2026-11-20T11:22:42.000Z",
+     "side": "buy",
+     "wallet": "FRk8gVE7RUcn2k8X75sUL8YtRhqdwDotqpjFqdpDy4gg",
+     "tokenAmount": 1000000,
+     "usd": 40,
+     "priceUsd": 4e-05,
+     "capUsd": 40000
+    },
+    {
+     "signature": "5h1LQeeUNnosweLxfcrqC4ZzQQ5CGpce4LuANFZpbYZEKvsTf4Cq7i6ZFvbSFs2C3wyw3mgggqc5u1rAWkDcxQD9",
+     "at": "2026-11-20T11:22:29.000Z",
+     "side": "sell",
+     "wallet": "HKTfW5zREuv7D71ySAfhZYuM7quYg8WihXJnzh2vHZTC",
+     "tokenAmount": 1000000,
+     "usd": 40,
+     "priceUsd": 4e-05,
+     "capUsd": 40000
+    },
+    {
+     "signature": "27atJKh48fumWg828boyp2wgYRWLXWPNFmJvJAgivYPY6mamcLRnza2MyJZMrfEy1nMF4KPX3twVPLrNeAJcjS23",
+     "at": "2026-11-20T11:22:16.000Z",
+     "side": "buy",
+     "wallet": "Dvy8Yq8jARng454Vvhg3HPo6EY9wRP5sHbY2Xp4grQj",
+     "tokenAmount": 1000000,
+     "usd": 40,
+     "priceUsd": 4e-05,
+     "capUsd": 40000
+    },
+    {
+     "signature": "55CdgHzpJTUNb8XaMu6z96pGjSd1wYTUbr2RoxcTgQTA7FYBtDZhpDR6dwYcxSisnVJJMQynBxMBNfVF2PsCVoRK",
+     "at": "2026-11-20T11:22:03.000Z",
+     "side": "buy",
+     "wallet": "ExNDF2GnGS8RJjzDkojdWuSNTgjiPGTzsaRZqkxc7sgE",
+     "tokenAmount": 1000000,
+     "usd": 40,
+     "priceUsd": 4e-05,
+     "capUsd": 40000
+    },
+    {
+     "signature": "62rVk5qwLYAXXYVj8ySpZb4rtHbtoM1PaQb7ECvxdMntDogY54XHYRzs8BUACEQnyBEN3u82WWcUSJPz9k9vu5kA",
+     "at": "2026-11-20T11:21:50.000Z",
+     "side": "sell",
+     "wallet": "2jsspWeU1uKFmzZ5rkDLRRBHbUkQnG8q4oKJx7huY1qq",
+     "tokenAmount": 1000000,
+     "usd": 40,
+     "priceUsd": 4e-05,
+     "capUsd": 40000
+    },
+    {
+     "signature": "5uK5ezRfr6UbvyfQgG7NjRnLEBW4xQvDFJCkx3EPktFrKEuf63nhe6b2NSY62Tn9EgM1eFkVDV4r819dS9YBS1Py",
+     "at": "2026-11-20T11:21:37.000Z",
+     "side": "buy",
+     "wallet": "AsZaWZtvo85aK4uzTQa6Z2HBj64ZhEceixFhgVTZFtwk",
+     "tokenAmount": 1000000,
+     "usd": 40,
+     "priceUsd": 4e-05,
+     "capUsd": 40000
+    },
+    {
+     "signature": "2CwEkC4MpEvPjc1fnFrujYUFFbSRLR3Zxn9KqvwDaQkNozwHmNbPbQQ4e342srz77Ucd8c39uzSQUFnvyDMBNTJq",
+     "at": "2026-11-20T11:21:24.000Z",
+     "side": "buy",
+     "wallet": "7SZpUSZ4CgAJDhvNDPtdPqWWNZMKxHyPervFP1kXkATo",
+     "tokenAmount": 1000000,
+     "usd": 40,
+     "priceUsd": 4e-05,
+     "capUsd": 40000
+    },
+    {
+     "signature": "2NZiccrr7mBnd5oyZ7xPwJBj1bCT9pY47xgrXXZBwQVUeWHpKTfVDmuphH1XD5kFzv63ZgSmMU57mgih5Jq9ufi2",
+     "at": "2026-11-20T11:21:11.000Z",
+     "side": "sell",
+     "wallet": "DBbKUTxaUK7xLZa1jgUXnNgW9SF7qvvQxHicPkuEUaM8",
+     "tokenAmount": 1000000,
+     "usd": 40,
+     "priceUsd": 4e-05,
+     "capUsd": 40000
+    },
+    {
+     "signature": "5yMVbu4HKiSfxzs61JBHbz48MZqXWQB3y29wAhmMMV4mYBwYeDXiXPMKJeFJDiQYYeEbtXU9qUvdruDJyaKF1bCQ",
+     "at": "2026-11-20T11:20:58.000Z",
+     "side": "buy",
+     "wallet": "2bkY3j6hU9YcpwEVEo4TbsNCFf6vSrb9SXnEspG2uU8y",
+     "tokenAmount": 1000000,
+     "usd": 40,
+     "priceUsd": 4e-05,
+     "capUsd": 40000
+    },
+    {
+     "signature": "hZjbvDoQotvDTd1zmkBXmFY1yvPpBgfTUbhWEbfzH4JhoHrN9mMTcyUx3Jagd93DRGWhSnrF3Nkgd9DTNiR43Cu",
+     "at": "2026-11-20T11:20:45.000Z",
+     "side": "buy",
+     "wallet": "FcaoXm8gMrrDX2UTmgNPpvFHKcXXimTwBXM3eegaU6pK",
+     "tokenAmount": 1000000,
+     "usd": 40,
+     "priceUsd": 4e-05,
+     "capUsd": 40000
+    },
+    {
+     "signature": "2VZ1k3UAJKpz6rNbC2EETwAAPW9F6YgZUpBeMA8tQW9b1e4w5zf9j1xKtZZ2nDxXP6QSkvRVy6mTjc8oPk9XmSZa",
+     "at": "2026-11-20T11:20:32.000Z",
+     "side": "sell",
+     "wallet": "Biv7mP8qhPQiWmSWXTZAWLvuJwB6Bbncu6QVfXmH3nMe",
+     "tokenAmount": 1000000,
+     "usd": 40,
+     "priceUsd": 4e-05,
+     "capUsd": 40000
+    },
+    {
+     "signature": "5DgXgsDHLbCWsCrNjeAsKtXv7vYqGf4W6jLQHDxTkEFe17MuGFr7PozJTDMGFUZ5uwbLiZoh7CxxSRx5zvEDagJv",
+     "at": "2026-11-20T11:20:19.000Z",
+     "side": "buy",
+     "wallet": "67wNCLTrX66CMHoCWQATfbTkMSuvyWH2GxPUZpKEYHXG",
+     "tokenAmount": 1000000,
+     "usd": 40,
+     "priceUsd": 4e-05,
+     "capUsd": 40000
+    },
+    {
+     "signature": "4ho3s7CcUfn7YdHn4NTAm7zYUKKoX22esMmQ2QbeKsCGZG9p7hFL9oseaU1BEv8rt2W86CdLZo95FnhaWXTktCYE",
+     "at": "2026-11-20T11:20:06.000Z",
+     "side": "buy",
+     "wallet": "FyhsPF16c63tReUSYnvg35Hec6tGqBrAYw7izkt4UG2f",
+     "tokenAmount": 1000000,
+     "usd": 40,
+     "priceUsd": 4e-05,
+     "capUsd": 40000
+    },
+    {
+     "signature": "2V2aCyPX2BavoMGqR5ugqjfchkzvUZerwtfCjHU4U1stz17dcQcvEEfWL2tuPpcLKev7gasYwpZbwukHaFJkdfYa",
+     "at": "2026-11-20T11:19:53.000Z",
+     "side": "sell",
+     "wallet": "FY3A2ee5i7Bs1digJJ4MfjMauSu8vokzcqna6dcUdt6B",
+     "tokenAmount": 1000000,
+     "usd": 40,
+     "priceUsd": 4e-05,
+     "capUsd": 40000
+    },
+    {
+     "signature": "59JdqEStnu5bVKXHCDbSDJ4KisLNJcsZgMnyLyR7npe4b5x2S4Qs6W5V2tPAwKEG4Q6ouG8niPzsNi4EYvphngVx",
+     "at": "2026-11-20T11:19:40.000Z",
+     "side": "buy",
+     "wallet": "AhxhPUycWWPtozBriL8tT7XTUKBws3wASqDMX3VmEhP9",
+     "tokenAmount": 1000000,
+     "usd": 40,
+     "priceUsd": 4e-05,
+     "capUsd": 40000
+    },
+    {
+     "signature": "4oRHZAWS3vzckf3WbKvxUR8dryPzyZ1EZ9awUjewPPgEonD35g1PLJi8m8dVc7ANu8YA1xJBXPFRz5NZQXffBTGZ",
+     "at": "2026-11-20T11:19:27.000Z",
+     "side": "buy",
+     "wallet": "CsjSM3AUdNNPpQAd6uRnTk8rxzymSPkAxoM7dobkwExE",
+     "tokenAmount": 1000000,
+     "usd": 40,
+     "priceUsd": 4e-05,
+     "capUsd": 40000
+    },
+    {
+     "signature": "C1xDqbMgXZj1Jb3J42M2wA1kMXU2YYfMYb574MrRFQV6kHt7mp4CgQdYrVDQni8FNSJdZusR7vEeXqEdypQkEWJ",
+     "at": "2026-11-20T11:19:14.000Z",
+     "side": "sell",
+     "wallet": "DV3cJwm8jXq6HBBdCasDw795dkZzFGXtRFCWwPF9gN4m",
+     "tokenAmount": 1000000,
+     "usd": 40,
+     "priceUsd": 4e-05,
+     "capUsd": 40000
+    },
+    {
+     "signature": "3MQ8tp1ws5t4uaGHRpB6JmfF5QcEcGngp1zrZ5DERM9BV6r6P3YQ4yYZTd3ZALXXLN8S2cF2ERFfywZLw3knBzNQ",
+     "at": "2026-11-20T11:19:01.000Z",
+     "side": "buy",
+     "wallet": "E4iF5rhAqk7cTYrRbXsYki8KPRnHf4RaEHZhER9xqVWz",
+     "tokenAmount": 1000000,
+     "usd": 40,
+     "priceUsd": 4e-05,
+     "capUsd": 40000
+    },
+    {
+     "signature": "5VXyMb8KqGfcRTHt5m6N9ix3oyg7bqbZX7pmMDt51sfFwMVVpAr9AagyaLCSXtFPxKKbtSWh6FwQsebRpRMNSYeo",
+     "at": "2026-11-20T11:18:48.000Z",
+     "side": "buy",
+     "wallet": "3Y165UCH7H4XGD6zzgai6jCF4WYWHT9zrExz8Vi46hHM",
+     "tokenAmount": 1000000,
+     "usd": 40,
+     "priceUsd": 4e-05,
+     "capUsd": 40000
+    },
+    {
+     "signature": "F7GY1R4DFy5LdmQsg7p54nG4Yr5qpFuRwd1VFUxBmGzq2YF1oQQEfggN2tBhLycEgPn6czNyWWxsnWFGyWJyHyk",
+     "at": "2026-11-20T11:18:35.000Z",
+     "side": "sell",
+     "wallet": "GKkjtw1sokT4GtULQE5hf8izfyPmndztaPPnT9CgAHGc",
+     "tokenAmount": 1000000,
+     "usd": 40,
+     "priceUsd": 4e-05,
+     "capUsd": 40000
+    },
+    {
+     "signature": "5YSjAWn1ApG3tR2HKE3PjorJejfjZrnUTTGuv7B1SyaE5urGx3qxeU3uCBeU8wk47v6JV3pee64orfocSmU8V5SC",
+     "at": "2026-11-20T11:18:22.000Z",
+     "side": "buy",
+     "wallet": "2Rhic7sppN1YvyRFcoBwj5HkFHejATtLPeqzWR2BqVnV",
+     "tokenAmount": 1000000,
+     "usd": 40,
+     "priceUsd": 4e-05,
+     "capUsd": 40000
+    },
+    {
+     "signature": "GrCV28YbHJTWgkbfgzpB5gwdU4hn5rQsTZcKaLEr92jWZA2cMEmc7QDWgHpU4ed1pmLdgAA2g6U5J3653hv9awz",
+     "at": "2026-11-20T11:18:09.000Z",
+     "side": "buy",
+     "wallet": "A5LnRvTZf4zTVrqRfBewVVU3ciMGLMZUcX3tRrmDXw7e",
+     "tokenAmount": 1000000,
+     "usd": 40,
+     "priceUsd": 4e-05,
+     "capUsd": 40000
+    },
+    {
+     "signature": "4KgarGD2xmQxmcSCWr1n9Yh1S5pdoxvVNaQfzxFXjfBktVPZtAjow4aLczeMijmtrBszPeF7nr9mG8ruGKih8kAq",
+     "at": "2026-11-20T11:17:56.000Z",
+     "side": "sell",
+     "wallet": "9qJuTQi44mi8uowXT9LXmBuBN5bMcAmWeZcM1bM6vTgJ",
+     "tokenAmount": 1000000,
+     "usd": 40,
+     "priceUsd": 4e-05,
+     "capUsd": 40000
+    },
+    {
+     "signature": "2quEzpR2CFY1egkm36JJB3USPcs4u7DQWrzGNCPob4kp4QhdRancpzjYTQEyoPotwFo99bRk5L29LeS4ghb4oQeL",
+     "at": "2026-11-20T11:17:43.000Z",
+     "side": "buy",
+     "wallet": "2uww79yPXvmVto7hGR7frpVfkXLDzauxawiJCeuXxjoS",
+     "tokenAmount": 1000000,
+     "usd": 40,
+     "priceUsd": 4e-05,
+     "capUsd": 40000
+    },
+    {
+     "signature": "2GXhJuv8zsPe2fmabEeJZbKifxyHGxY8izcpo8DyoiPeKjbEN1nb7BAqK4mbGUSMpj9298WPjgNtiJmW4bNdocyW",
+     "at": "2026-11-20T11:17:30.000Z",
+     "side": "buy",
+     "wallet": "ALDs8czKvABDCbDCw1gsKoyJbzdR3NGCsaWacHyHAbm1",
+     "tokenAmount": 1000000,
+     "usd": 40,
+     "priceUsd": 4e-05,
+     "capUsd": 40000
+    },
+    {
+     "signature": "4wBXUWo7dVsgfW1NweGAwczr8fALhqJUsKLtekKVXbg2HvxpyGjdL3eckFVtnmdTKdEt9VcgeQM7wHbkSgVAu368",
+     "at": "2026-11-20T11:17:17.000Z",
+     "side": "sell",
+     "wallet": "9fDoKt9tru43ufD6uaF9ejNRiGQp1QeqsR39rnztaH6Z",
+     "tokenAmount": 1000000,
+     "usd": 40,
+     "priceUsd": 4e-05,
+     "capUsd": 40000
+    },
+    {
+     "signature": "4tBTCZmhSNmK5rysnBMpxxj8f9ZU5DVyxZUX1CRVr1AHPT3WodLCfSxr9aYZ7woGmkzC9iVn7h2fdFmg84RXuw2U",
+     "at": "2026-11-20T11:17:04.000Z",
+     "side": "buy",
+     "wallet": "7BKiRUWSiJThLy4AXwdQbdsPpF96TafdfvMXrX5tLmB2",
+     "tokenAmount": 1000000,
+     "usd": 40,
+     "priceUsd": 4e-05,
+     "capUsd": 40000
+    },
+    {
+     "signature": "gE5yaGr74iY77apmfLAqTLfAtNsPTkG5fcQFYtfLtyEcrmXFzpf5EMRXqAogVzc9NXFNX16rsSp1VQ7P31Kk3jt",
+     "at": "2026-11-20T11:16:51.000Z",
+     "side": "buy",
+     "wallet": "FeZD8cZipKZnBkQF2SuAkP1fjqgK5QfJGSGXcYbN5mrK",
+     "tokenAmount": 1000000,
+     "usd": 40,
+     "priceUsd": 4e-05,
+     "capUsd": 40000
+    },
+    {
+     "signature": "5ak1jHnUFrVmv9de2gKKuqYEoUmmPHWCPxcHzy1NLvx8DoCb32SeSPPZBeFyjHxQYpDxbfALPQRcr1fEQU7oVGrj",
+     "at": "2026-11-20T11:16:38.000Z",
+     "side": "sell",
+     "wallet": "DDV6pw9vWz31Hi7UHocYnuaprcTGHbUqN2NAPpG6sYno",
+     "tokenAmount": 1000000,
+     "usd": 40,
+     "priceUsd": 4e-05,
+     "capUsd": 40000
+    },
+    {
+     "signature": "4avcKJrgtsLXDgoNK2T5zxWwK6umj3HFJoSqNV7ejG9YZakomBaugLqevag9WVAsL76dXzmuMuHAj1PZEYzRmZbd",
+     "at": "2026-11-20T11:16:25.000Z",
+     "side": "buy",
+     "wallet": "64KKzX6rVHX9r9Cwohi2tduB4WJsJXgGNxT9TRHtUcFe",
+     "tokenAmount": 1000000,
+     "usd": 40,
+     "priceUsd": 4e-05,
+     "capUsd": 40000
+    },
+    {
+     "signature": "619a5unPcxqSjnLpoKCtwe9pU2Rkap5Q1Tk91BFFG8iRZr8yuWVYAYbkbuPxzEytfCnS8VYszgYbsrsS4PVC2wdH",
+     "at": "2026-11-20T11:16:12.000Z",
+     "side": "buy",
+     "wallet": "YamiSGeVWRW78eT8Nr7BaEMXGoZW2BNhc2fyzvsczYV",
+     "tokenAmount": 1000000,
+     "usd": 40,
+     "priceUsd": 4e-05,
+     "capUsd": 40000
+    },
+    {
+     "signature": "2C39h4DKnztM6PQbxYUTKoeigUJaXmpx9bs8eqEJy7dHr5ptyj3oqcn23MxreG7mjit89fQNvLSzhCzwCea46W5u",
+     "at": "2026-11-20T11:15:59.000Z",
+     "side": "sell",
+     "wallet": "9s7kjYjBn8NiCt1u1LtWqRsbq1xRs3UCWgFfatdPiHr8",
+     "tokenAmount": 1000000,
+     "usd": 40,
+     "priceUsd": 4e-05,
+     "capUsd": 40000
+    },
+    {
+     "signature": "4KyaxEcHU9ciFpFupHpWXiyBMyp9cuSA8bB2V7rgadTNuuzZqvZ4zUydStQA8js4tmyRrcGMep4Ad2UkmeyJbL7p",
+     "at": "2026-11-20T11:15:46.000Z",
+     "side": "buy",
+     "wallet": "3w9AgxZ2aBCVThTu4L1fCsFae9ARmjmkdNLxodJG68m6",
+     "tokenAmount": 1000000,
+     "usd": 40,
+     "priceUsd": 4e-05,
+     "capUsd": 40000
+    },
+    {
+     "signature": "4UeqZ8FkRmcidTAx9gPKxGw8y64Z6KR3hG4u7MRXdnmxUtayryHKLvd3SDmZ95wc3aZVf52Ng1m1XJs6zx5dkb5G",
+     "at": "2026-11-20T11:15:33.000Z",
+     "side": "buy",
+     "wallet": "GjuUCL1ivMvtFB7uFiMgzL2wKersfRjxqg8xXxvXjVzt",
+     "tokenAmount": 1000000,
+     "usd": 40,
+     "priceUsd": 4e-05,
+     "capUsd": 40000
+    },
+    {
+     "signature": "3P5sGEj4tfNWn25Q2cGFknPEaJY4epxXriv3mXMfVCxZCCVpW7s2GSScKZKbcxXAvuwA1jFsCfCYdvyHcQbnQ2kD",
+     "at": "2026-11-20T11:15:20.000Z",
+     "side": "sell",
+     "wallet": "FioQAin9yQwiUESTZoWYSaaF15fXTKAcD8KkDB3pNmYz",
+     "tokenAmount": 1000000,
+     "usd": 40,
+     "priceUsd": 4e-05,
+     "capUsd": 40000
+    },
+    {
+     "signature": "49WaHN8UEvf1J9jERoV8Z94LtnJ7io2dqY4NShwPxwrbiUPTVz5iqAKYGG5rLz3ScmMMJXWCxvg2vPL984K5JPS1",
+     "at": "2026-11-20T11:15:00.000Z",
+     "side": "buy",
+     "wallet": "DM7uvKb9ZkHBcN2ruPrFfDsx6bmah21voAVTu2QR61q2",
+     "tokenAmount": 10000000,
+     "usd": 300,
+     "priceUsd": 3e-05,
+     "capUsd": 30000
+    },
+    {
+     "signature": "4xA3Fw2GtEcVjGRUmWCHprkSpqJ9fmPWb6vyNJmUfJWvvyvnF1jQDToqWRJu2rxLS5VwzwUGvdwP9wJ6RRWTZvGZ",
+     "at": "2026-11-20T11:15:00.000Z",
+     "side": "buy",
+     "wallet": "3wN4qZjpo4Z1ipgZGEA12P4r4omAATs2mmsy6pJbVpJu",
+     "tokenAmount": 10000000,
+     "usd": 300,
+     "priceUsd": 3e-05,
+     "capUsd": 30000
+    },
+    {
+     "signature": "3fXtL8ZwC95dknkMRMZCW7DwBE4LJeVFVycdabpE1HrC5WUta9qHFMVFpwpNWzbPXESkB4DzNb9wbC1kn85Z2AFa",
+     "at": "2026-11-20T11:15:00.000Z",
+     "side": "buy",
+     "wallet": "FToP23aM9wNYAYnzdusLYV1vJgGtuXefcL77Bm1WvJ2G",
+     "tokenAmount": 30000000,
+     "usd": 900,
+     "priceUsd": 3e-05,
+     "capUsd": 30000
+    }
+   ],
+   "whole": true
+  },
+  "2T9aEdTDK2rpdSGR6R1LyRFGWv9gxJK5kwjcXNXBh13r": {
+   "trades": [
+    {
+     "signature": "2j28ZsySaPNK7kg2xrZfpA66L2U1vAowptFRs3GcKbBbnmG8K863BAkzo2neyQ1R9LC1e8EFvnoefwXnXRHPCZAP",
+     "at": "2026-11-20T11:21:37.000Z",
+     "side": "buy",
+     "wallet": "5RF9X5KaSocFV1eiidPjpGtcT87mabUpkZaCVxwhLHJ2",
+     "tokenAmount": 1000000,
+     "usd": 40,
+     "priceUsd": 4e-05,
+     "capUsd": 40000
+    },
+    {
+     "signature": "x2w3BKdeqUFPfqUMEuAQm2mQ8oJLhHtBn7GiX8GT7uUrd7uhaTTBGjAuFTngVyetsKCpoRChCyG2to5nKp4UDWv",
+     "at": "2026-11-20T11:21:24.000Z",
+     "side": "buy",
+     "wallet": "EUXzdwohpxS9hjpaGpnSrhq1YgAard41VE9jWbkrbRno",
+     "tokenAmount": 1000000,
+     "usd": 40,
+     "priceUsd": 4e-05,
+     "capUsd": 40000
+    },
+    {
+     "signature": "4j5gh2aTFYtpPGBzRCbmotgDhepdmvL47SjCidLoVHT51LfcWpntpUZbxkgzBzTDVNRbBULjirZdqA7VrLMtoEhq",
+     "at": "2026-11-20T11:21:11.000Z",
+     "side": "sell",
+     "wallet": "4DJYez1pqkCbQK6AcdWziFy7JKPbTjBx7MjMGSYT6BJr",
+     "tokenAmount": 1000000,
+     "usd": 40,
+     "priceUsd": 4e-05,
+     "capUsd": 40000
+    },
+    {
+     "signature": "3Et9jdnRxKz9FisHikxd4Jn6WhHMHhindoQXngSZyEeD31L5H6nm4yQxXZy17jjCAj1D6Rd3RYb88S3hKtsbUeH4",
+     "at": "2026-11-20T11:20:58.000Z",
+     "side": "buy",
+     "wallet": "2XRrvtDeMMiceWP1mjCtgTCb51cvn2sA59Z6pZmz1SEG",
+     "tokenAmount": 1000000,
+     "usd": 40,
+     "priceUsd": 4e-05,
+     "capUsd": 40000
+    },
+    {
+     "signature": "2aEWcpaZr1MtMXSz6cGjh5UK7HbXB8oWopWyHxFEPeShgjQPkWMHun4EZRBTFHu7ipC7j5rJMW2samCVXJQp3kuc",
+     "at": "2026-11-20T11:20:45.000Z",
+     "side": "buy",
+     "wallet": "Gb57fSbwUkfokCbVw5NgzbXFaXdRUzqx1VrXw2x1nS3i",
+     "tokenAmount": 1000000,
+     "usd": 40,
+     "priceUsd": 4e-05,
+     "capUsd": 40000
+    },
+    {
+     "signature": "Y5io8ZwWycRqBv9SfgimWUgKXTmLjJy5XGHJ39ojMLPN8BzXE8Ym6o2Q97rAJzV7ChktXtuGvKE6qa57vdLcjp8",
+     "at": "2026-11-20T11:20:32.000Z",
+     "side": "sell",
+     "wallet": "GGE4EeHUWVZ6H1ai3GzYnxvQruZhdKsdMSFjZxmzWKrM",
+     "tokenAmount": 1000000,
+     "usd": 40,
+     "priceUsd": 4e-05,
+     "capUsd": 40000
+    },
+    {
+     "signature": "66ss4EUjDvgsMhV7ZEoduTVADTpCgty28GfyKAiTRsHnSffEC4u1D6AdRbLyi48zeLdh9AgV8Kq2LdcboTuswmyx",
+     "at": "2026-11-20T11:20:19.000Z",
+     "side": "buy",
+     "wallet": "EPzKnpKfdTiqN8y5eJ4EadcYudYuRk2Wrhvi8pQg7vGU",
+     "tokenAmount": 1000000,
+     "usd": 40,
+     "priceUsd": 4e-05,
+     "capUsd": 40000
+    },
+    {
+     "signature": "67ozqjioG8xCfgTVYi7oi8gYXuwyXDhUeugBx53LoGqUbyTC8JDyUzH9PfWXDBf6QQT8PxSJ6umBe7t3vgry7iuL",
+     "at": "2026-11-20T11:20:06.000Z",
+     "side": "buy",
+     "wallet": "53bSBqtR3VtpqRirMEBcVabwrwPeCCqbvg8utkMYDCZp",
+     "tokenAmount": 1000000,
+     "usd": 40,
+     "priceUsd": 4e-05,
+     "capUsd": 40000
+    },
+    {
+     "signature": "3XBfgb5VmB71XVpxwG9CCLSRuSXmQD2xwetc1tyx1GCgQJKibxzWwvsdYa2PTCeGAPp5t99kGuAjVZfLEKFAr5K8",
+     "at": "2026-11-20T11:19:53.000Z",
+     "side": "sell",
+     "wallet": "85CL8rsaos6oXPTMdsaTWqT5RpFxdkA3Vi9mmjJ3Usxo",
+     "tokenAmount": 1000000,
+     "usd": 40,
+     "priceUsd": 4e-05,
+     "capUsd": 40000
+    },
+    {
+     "signature": "33ftf3JiPYb2E1TyZFBcWfMCHEh8TeBE7yaVJoWmm1cY2Y7JGjqBy5jWFpvk15b5T1VrACV3NfrQ8trHVspfDE5E",
+     "at": "2026-11-20T11:19:40.000Z",
+     "side": "buy",
+     "wallet": "9i6BzqVurAKiHY5jEpRn1yxDHxvv91RCpw7Lbma7SKAz",
+     "tokenAmount": 1000000,
+     "usd": 40,
+     "priceUsd": 4e-05,
+     "capUsd": 40000
+    },
+    {
+     "signature": "2Vd6iL1VSfAoj3f2amVuE3GxGR6bxetZdGjh6LqTiYGD9tmx1eEEVgJFPjUsy4UvhLv3qZ9Lbu8MJFjDPiH2XYft",
+     "at": "2026-11-20T11:19:27.000Z",
+     "side": "buy",
+     "wallet": "F8186KXT5UBukhsZbnMc1Yog1HCxeAs6o3SLTCx9C4UC",
+     "tokenAmount": 1000000,
+     "usd": 40,
+     "priceUsd": 4e-05,
+     "capUsd": 40000
+    },
+    {
+     "signature": "3RCgsqJoVhe2cvfR7tHiKdyDi1KuUv23A5YwkR4sHB2T8G4ZaF1trUb3a8pQDjQtp86iutYYcbDd6tSwyptuCWbU",
+     "at": "2026-11-20T11:19:14.000Z",
+     "side": "sell",
+     "wallet": "EvpC3M2u3dH8djErjqeEobf2P3d9Qk2iqZrrhcSX33SB",
+     "tokenAmount": 1000000,
+     "usd": 40,
+     "priceUsd": 4e-05,
+     "capUsd": 40000
+    },
+    {
+     "signature": "5spQSw6YumbvLXMEDvL5RGSsjRtqenLZdwc1LvEuzRpsPPgJsFVeqwqEEGoDU8bHT6D3t2hgQCK6HH5KfViyCgv1",
+     "at": "2026-11-20T11:19:01.000Z",
+     "side": "buy",
+     "wallet": "9nkDsqaBkRbTr7B48crD37w1sVA5RwwQifMo5F1zhfrg",
+     "tokenAmount": 1000000,
+     "usd": 40,
+     "priceUsd": 4e-05,
+     "capUsd": 40000
+    },
+    {
+     "signature": "RUH87X727deUzoshcrCHtsCA1Brbf2KkmN9iNMjmodv2JXn62UeNDhr9ZhEgNrmrbZST3tsFHA7s6i8jK3zgBQJ",
+     "at": "2026-11-20T11:18:48.000Z",
+     "side": "buy",
+     "wallet": "74RfTuyTcFQP82dhnbZyCxxCTNouWet7HP81CGRngWFY",
+     "tokenAmount": 1000000,
+     "usd": 40,
+     "priceUsd": 4e-05,
+     "capUsd": 40000
+    },
+    {
+     "signature": "3DXNwXvPsGNiCt3R8rDoZpMLJp16bQdFe3nCndt1mQwd2MdRF5ty3XnUKhSUVp1oCjFdLJMCZbDbqyXQMSHcRJwX",
+     "at": "2026-11-20T11:18:35.000Z",
+     "side": "sell",
+     "wallet": "5c1WYA8oMLXe4jJDiU9AYDVAfUhK1kAhyApnBkwMeTjy",
+     "tokenAmount": 1000000,
+     "usd": 40,
+     "priceUsd": 4e-05,
+     "capUsd": 40000
+    },
+    {
+     "signature": "E7JEDK2XPBhw2cVwQypRoFCwbAGua9Aa6WH3hYJkAV5EC66Jjt2mvAJXtGxAnRndqaD2tKM42f5KvkpcsgcS8RJ",
+     "at": "2026-11-20T11:18:22.000Z",
+     "side": "buy",
+     "wallet": "HpCr4BZ9PVXj6W5dakFVmZRQ2gQWiXrSNXM4N19UgxnA",
+     "tokenAmount": 1000000,
+     "usd": 40,
+     "priceUsd": 4e-05,
+     "capUsd": 40000
+    },
+    {
+     "signature": "3S6LrZemCUon8YKMmRSCpmX4gQwNdb4M3QevVu1HCTffz6oerdRFjyKtR5sccH9k93pwt5gSmnBNEntA1EPLB5f3",
+     "at": "2026-11-20T11:18:09.000Z",
+     "side": "buy",
+     "wallet": "DQkBg9nZhN7Q6tB9U8wbsCiZyoMiQFidvubtgpPUWu5L",
+     "tokenAmount": 1000000,
+     "usd": 40,
+     "priceUsd": 4e-05,
+     "capUsd": 40000
+    },
+    {
+     "signature": "23D26HiRTcm9VRiVG1mKFCmWXcXLLJxBwh3irJtsehrfEHdQRRv2NkzwMsbHCyYtbL1yadq5sk1BQRy2Agj116bA",
+     "at": "2026-11-20T11:17:56.000Z",
+     "side": "sell",
+     "wallet": "7NW1aavrhZmYEsGAdUK4sY4JH3WxaJ9kpoQga7vjQjM6",
+     "tokenAmount": 1000000,
+     "usd": 40,
+     "priceUsd": 4e-05,
+     "capUsd": 40000
+    },
+    {
+     "signature": "348u2QtidhPfcrcXqcWLQprT5yc2ir4CtcigrdTcmWDpKbnYM6qkdMdDRKJBEdtRr1EAVgAPfJowwYAzTjHMbSE8",
+     "at": "2026-11-20T11:17:43.000Z",
+     "side": "buy",
+     "wallet": "61JgXj3MEKUQGrQH8pHnUtMVzmAu5E3meo59icNiSEPQ",
+     "tokenAmount": 1000000,
+     "usd": 40,
+     "priceUsd": 4e-05,
+     "capUsd": 40000
+    },
+    {
+     "signature": "4hqPz1XrWuhMjFxEShLLbDki7wDgvj9e53uJ7j8g9JpZ21Ujk4i1ppkFQ61jiReWfRhiV2snK68gwx839Sgc8Sd5",
+     "at": "2026-11-20T11:17:30.000Z",
+     "side": "buy",
+     "wallet": "5pxHBG5827UsYCNTtCToEDANQ4JhcEsnxQrcVEV3Mikc",
+     "tokenAmount": 1000000,
+     "usd": 40,
+     "priceUsd": 4e-05,
+     "capUsd": 40000
+    },
+    {
+     "signature": "Z8op9P9J4Z7nyNj3iRF8dot1NpsqqxpA9Ci2YQs4a6DqhJX4P1CrRMpCyBaq8UXaoPY3qx8WJmS74RDEYoWvX46",
+     "at": "2026-11-20T11:17:17.000Z",
+     "side": "sell",
+     "wallet": "2ptVuqceXYMJUya2ZMoV9VxZU6YnejUyMNKxCNZ7i6rp",
+     "tokenAmount": 1000000,
+     "usd": 40,
+     "priceUsd": 4e-05,
+     "capUsd": 40000
+    },
+    {
+     "signature": "573jTwsyeBQwYZLksj1jmezoJF8HBgudbT4S43HxaipiD2J6CdVkcP37iUdkT66Ds7cbmgCicdbENAoNWYyDoj6L",
+     "at": "2026-11-20T11:17:04.000Z",
+     "side": "buy",
+     "wallet": "28ZJh1J34r7Qzwcmb1b1Wx9uhBWTUpCfJFkcXYjbNBDi",
+     "tokenAmount": 1000000,
+     "usd": 40,
+     "priceUsd": 4e-05,
+     "capUsd": 40000
+    },
+    {
+     "signature": "aXst2My8ZoqGcEpXBsZZsqQMBLEtXWKCMpHcWBc5DB2kzvhMg8GDv56A3kTAKoKaXEhNRkswxgVyyjzMqes6pqo",
+     "at": "2026-11-20T11:16:51.000Z",
+     "side": "buy",
+     "wallet": "222W5QZH8RQrSUrg5ZWoVTP9zpeRo6pXMafeF7jAjdKp",
+     "tokenAmount": 1000000,
+     "usd": 40,
+     "priceUsd": 4e-05,
+     "capUsd": 40000
+    },
+    {
+     "signature": "2Ht2VKR9nJckEzx1vCbCM2jDMpLVmfUWe6c2Rke6TbVGJJ29m7GCqfeEpHCvgpZo4a9XU56JJFkveLVifGXXKZGz",
+     "at": "2026-11-20T11:16:38.000Z",
+     "side": "sell",
+     "wallet": "AvPTqf4Kmo4quEGJ6y9q4q6KL2JRgFGoVBKynKfCZuPK",
+     "tokenAmount": 1000000,
+     "usd": 40,
+     "priceUsd": 4e-05,
+     "capUsd": 40000
+    },
+    {
+     "signature": "3MrNeKTWvodGWvEBcKLUjU48vLCn5XTR7F5W5HW7rUog5To3fpP1PG2mF4SCo1m2gLn7k88BgSk6hBzRz1c52G2Y",
+     "at": "2026-11-20T11:16:25.000Z",
+     "side": "buy",
+     "wallet": "8JbFGBv6dXwEBeoz5nh9gpxZAf6tVD1KPTMTwpWn6Lor",
+     "tokenAmount": 1000000,
+     "usd": 40,
+     "priceUsd": 4e-05,
+     "capUsd": 40000
+    },
+    {
+     "signature": "5DvgbCTj5RuiEwwY9XgUNJ49cwiThuU9jstJLW8JX2p8RkNvF6ydz9U5CZyUv1TULseKoRmRdGNsaUDmH5CqbxY7",
+     "at": "2026-11-20T11:16:12.000Z",
+     "side": "buy",
+     "wallet": "4Ujv5VaNFPrwx1tSgqkumUX9Cyn8Gf3jHEoVaDQ1RgQ5",
+     "tokenAmount": 1000000,
+     "usd": 40,
+     "priceUsd": 4e-05,
+     "capUsd": 40000
+    },
+    {
+     "signature": "4Ci3dWQfLd3HejtAa1QmsixtZQJK8RnVQhnMLM4h36YMnAMGgTmEgHUFMPqa3Qv15sqWF6fe6YMNx87c18kVJnJy",
+     "at": "2026-11-20T11:15:59.000Z",
+     "side": "sell",
+     "wallet": "7SJqxsuENiw1vPH8G5ZTMrmhMMAiq7UCizXfqeAUWes7",
+     "tokenAmount": 1000000,
+     "usd": 40,
+     "priceUsd": 4e-05,
+     "capUsd": 40000
+    },
+    {
+     "signature": "5LCtYkLnf8XGnZggMono3eGd478xJho6pEiZUcXPEMbR5eYLH1Km4bc1K6PV18HqZCGof2yo4r32pNiq3tB6PH5",
+     "at": "2026-11-20T11:15:46.000Z",
+     "side": "buy",
+     "wallet": "AXm7udGxXbYx4evQhFFT8AvQzjMryHLQ7jBo97EeRM7k",
+     "tokenAmount": 1000000,
+     "usd": 40,
+     "priceUsd": 4e-05,
+     "capUsd": 40000
+    },
+    {
+     "signature": "3GpkV1XtBD1VbiiGooU3a8TuHuRhB487XMDS8eD57DLq3Rnw2iWTBkZcV8rhSsb1s86vivgyW8jKWGs9uYZUjLqy",
+     "at": "2026-11-20T11:15:33.000Z",
+     "side": "buy",
+     "wallet": "9cYoN7DKK6HBLFruEEgAei3LFVGWHWTaR7fMzYGBrHMp",
+     "tokenAmount": 1000000,
+     "usd": 40,
+     "priceUsd": 4e-05,
+     "capUsd": 40000
+    },
+    {
+     "signature": "47XnsSfjZjqMPZ5h53G29KhSYB6Y5cb97gJHsMQ3jv3cEScYuk7TxgstUDtGouQNSLpNLawZhgTrcCEJT2pScaTy",
+     "at": "2026-11-20T11:15:20.000Z",
+     "side": "sell",
+     "wallet": "HF3QTy9FhMAkXJokyFCaX19UrrDdF6t2v8KAVtxzkFpd",
+     "tokenAmount": 1000000,
+     "usd": 40,
+     "priceUsd": 4e-05,
+     "capUsd": 40000
+    },
+    {
+     "signature": "63mfSXu5R2kDPpsC4VbjhrFb4zxfUt6G3MpTGZCREd7h4Emy3L2LeRtwbftMauRBS1Sbn3fnRsHER6hJW7XKW6Ti",
+     "at": "2026-11-20T11:15:00.000Z",
+     "side": "buy",
+     "wallet": "HdTDagm9JiQAMsUacecRV1Pyvr92wGPniWcvL26ghUCj",
+     "tokenAmount": 10000000,
+     "usd": 300,
+     "priceUsd": 3e-05,
+     "capUsd": 30000
+    },
+    {
+     "signature": "4w4TZfmFTvJgnpJ7GCFG5bideX4zaFjSJsoEWYJqozbjFYYv2rS5SiE2VJ48JVvcAEhrnJYsCUGiuHhDqBBV8H1k",
+     "at": "2026-11-20T11:15:00.000Z",
+     "side": "buy",
+     "wallet": "3AeVV8JuUnYhK3Zb88QRtqYU9aWaEeXXzhXd5uRmChVL",
+     "tokenAmount": 30000000,
+     "usd": 900,
+     "priceUsd": 3e-05,
+     "capUsd": 30000
+    }
+   ],
+   "whole": true
+  },
+  "BgniQJxhxsSRBTsjcMqcN8Amz91LQguNojfKS1Uoi3pL": {
+   "trades": [
+    {
+     "signature": "3uZR6Mn4sVXMnFwbnHAXBSBhgk7eNEu427MBxyMZKmixg8UCshkSunX3tcbxAPgmZav6uBbF2f4EF6BPSwRzLVCq",
+     "at": "2026-11-20T11:21:37.000Z",
+     "side": "buy",
+     "wallet": "HRZasQRE9gK3sVq8jjTWVo68TieLvMy9SsVadzzvacUh",
+     "tokenAmount": 1000000,
+     "usd": 40,
+     "priceUsd": 4e-05,
+     "capUsd": 40000
+    },
+    {
+     "signature": "xc6x9AQ24T8NHp8f5RZ38YKfNMQJeLv2mkf1nCw8Xf11CjVt4BCeQ5NrKQKt9T1fufnRzo5iN2BXAc9eVEoEWug",
+     "at": "2026-11-20T11:21:24.000Z",
+     "side": "buy",
+     "wallet": "3EwUHYwP3gMDpJ8mWujetPxFK7UFiRYhJvU4Rx4bxW5J",
+     "tokenAmount": 1000000,
+     "usd": 40,
+     "priceUsd": 4e-05,
+     "capUsd": 40000
+    },
+    {
+     "signature": "4iPuSgR7Q9uWiVNMcdS8yZRXga3pyGZdZbLwqpfr48j7FFsDEMVQsesg7y3mgXSyV4Rr1PbbMmJcvAhcbkSBEH23",
+     "at": "2026-11-20T11:21:11.000Z",
+     "side": "sell",
+     "wallet": "6NL3aAWK8mKjG48YdEiNNmfP28gCXrVmKgtN7zxjszqS",
+     "tokenAmount": 1000000,
+     "usd": 40,
+     "priceUsd": 4e-05,
+     "capUsd": 40000
+    },
+    {
+     "signature": "63FCji8eHgWd6ZHikSHXWkW9DT9ouyrjgYti57qcDsD8hbu4yg1WfHVvnocYzDvDSCto9vU1BHzkGLk5m4BqBaBn",
+     "at": "2026-11-20T11:20:58.000Z",
+     "side": "buy",
+     "wallet": "E6eYizyxR5FkwFEscQtqkEWcxed3pF21Roqe569yMKSZ",
+     "tokenAmount": 1000000,
+     "usd": 40,
+     "priceUsd": 4e-05,
+     "capUsd": 40000
+    },
+    {
+     "signature": "2GeqzZyS2kr9gqdydK42Pea2AUuyzg1G5Y93zR8354kYqUh3yxigMJABTH5rRQ3F6Rcr6Qk3JJ26WZrQBTZdqp64",
+     "at": "2026-11-20T11:20:45.000Z",
+     "side": "buy",
+     "wallet": "66xU7FGBsxVs39tsioN9PjZ5K1UFf83JUtyQ3zUxvj9y",
+     "tokenAmount": 1000000,
+     "usd": 40,
+     "priceUsd": 4e-05,
+     "capUsd": 40000
+    },
+    {
+     "signature": "4GsVWimtPzZigEbReCd4zuF2WDn42xjDAVHANNQB1h13p2qJ5Lp9gq2wmH5kBQxKChi5ZHEpPnUGyeP1qaH54zPS",
+     "at": "2026-11-20T11:20:32.000Z",
+     "side": "sell",
+     "wallet": "7daZurT1fKarWMuuD1TCQyxqycrXN11vxpCDpMoX1vfc",
+     "tokenAmount": 1000000,
+     "usd": 40,
+     "priceUsd": 4e-05,
+     "capUsd": 40000
+    },
+    {
+     "signature": "2hsSm4gtzd9nbJuQs9ELP8SC8Gr1FsK61Jg2MvrWrT8ddb2stqYJaLbBKHw8D7DdsTNW51NfaZYutaJnddmT6WF1",
+     "at": "2026-11-20T11:20:19.000Z",
+     "side": "buy",
+     "wallet": "ArUWzjS2qUTELJkFNV8j2wEJ4Q9k2PscCpCVQWoHDMCF",
+     "tokenAmount": 1000000,
+     "usd": 40,
+     "priceUsd": 4e-05,
+     "capUsd": 40000
+    },
+    {
+     "signature": "3uRkdGtaZhS37CLNEcBtBzTxtJhnpsXzbuTw31ve7673BxYvu3H7Vq7ZXJZ3sJH3oPKk9g8QpphKBF1D7HCkfm6X",
+     "at": "2026-11-20T11:20:06.000Z",
+     "side": "buy",
+     "wallet": "B7nek8SnUMq8vnYTKqHVCuyEPEAS43LvNfp2vnmYsCM4",
+     "tokenAmount": 1000000,
+     "usd": 40,
+     "priceUsd": 4e-05,
+     "capUsd": 40000
+    },
+    {
+     "signature": "VoJ67ytqGEd2Vw2Q83EMj8ohyQSYJ9sLHeXjoa2amchfHAbQ3NDLcJQpSTPnhXE8SE1xSrF5UUgjQL7cutgW7L3",
+     "at": "2026-11-20T11:19:53.000Z",
+     "side": "sell",
+     "wallet": "FNofDF2PfCHbZSgkbrYa1671TTLrLArfm3Gz5iJyBHLt",
+     "tokenAmount": 1000000,
+     "usd": 40,
+     "priceUsd": 4e-05,
+     "capUsd": 40000
+    },
+    {
+     "signature": "2pMyKXzBaZV56RDXcniPQVVwc2UTLTEpuQsCkUmCYoWNh3gyhhg4XpP25rncX8Y1mzKMn6aYvmJ5wTT4LsNa8HGW",
+     "at": "2026-11-20T11:19:40.000Z",
+     "side": "buy",
+     "wallet": "7E3SSZ7eyRXQ1kJpSC1LywZc9rSqNiAmpWcUzuamBHEq",
+     "tokenAmount": 1000000,
+     "usd": 40,
+     "priceUsd": 4e-05,
+     "capUsd": 40000
+    },
+    {
+     "signature": "5cSzBmV9KY7tuwbGitEcfeQEzqu8M1Ap4Ab1ksNfNQUhLZn4unoXw5Jp486fsT3wYE2eyLJpqhkvCwqm8bjkbjCo",
+     "at": "2026-11-20T11:19:27.000Z",
+     "side": "buy",
+     "wallet": "cL7JcxG6jFq7PYEJRosKWE3m1EeQtNLUX1FdouSygL8",
+     "tokenAmount": 1000000,
+     "usd": 40,
+     "priceUsd": 4e-05,
+     "capUsd": 40000
+    },
+    {
+     "signature": "46DrCE9fqc273LyD91tWm6UgPB5ymH6uxWrpgV8fwTojMMwznPnJpc8PHfpX15AAWD3CDfFQWfyUH2FtfnPcwy1i",
+     "at": "2026-11-20T11:19:14.000Z",
+     "side": "sell",
+     "wallet": "7VhReaP4TyM6JMQF5M68MHH8B8vZqownvYyMaJjs4Vmt",
+     "tokenAmount": 1000000,
+     "usd": 40,
+     "priceUsd": 4e-05,
+     "capUsd": 40000
+    },
+    {
+     "signature": "TPmqFEha6T3PvjR4LkowF2mZuDjAnnZ8PCmz9twkCJJ5EL8sYvURPt9htX1EkxXRB4Jf7g2uSW96ob4AFZyUbK6",
+     "at": "2026-11-20T11:19:01.000Z",
+     "side": "buy",
+     "wallet": "2z1gDD3JkNpwpYCCFacG9sBM36kfHHZ8semYGG99QnrN",
+     "tokenAmount": 1000000,
+     "usd": 40,
+     "priceUsd": 4e-05,
+     "capUsd": 40000
+    },
+    {
+     "signature": "4e3tiLcVoZ5yiTcgDc3JHNQVb8nuvXGfHgMbVSdKmKNebvahfwr3hen7Zzo9B78jWY6bQxku2eYmmGKMFxbk6BLc",
+     "at": "2026-11-20T11:18:48.000Z",
+     "side": "buy",
+     "wallet": "DFLQYkpMEchAjxG25USyn8qr5XR5j8zCebb3CKYMePKF",
+     "tokenAmount": 1000000,
+     "usd": 40,
+     "priceUsd": 4e-05,
+     "capUsd": 40000
+    },
+    {
+     "signature": "5tb5SZyCNMSpdX52FhqTLCW7HnjgH5ACobvcfjQvrKUtTzLxtev8anLd3MJJVT8BgQmmgwVckyGs8P8U56Howk7D",
+     "at": "2026-11-20T11:18:35.000Z",
+     "side": "sell",
+     "wallet": "8f1yg4uV1qVL9WFiphHenitDwyjdusD8E6wNzqGAvJWm",
+     "tokenAmount": 1000000,
+     "usd": 40,
+     "priceUsd": 4e-05,
+     "capUsd": 40000
+    },
+    {
+     "signature": "3ZHaaQauC5wPoPDvxXPGskYB4tYzX5oQ28tUNtdS5NMzLC5XAZhm1tyJqvXVQoYW1uzXXvhQe2mRN6rsRE3vPyPD",
+     "at": "2026-11-20T11:18:22.000Z",
+     "side": "buy",
+     "wallet": "Dzx6VY6grZds8eo3kJQSDTF8K48dsaaJ6p5iQLmQ5oW8",
+     "tokenAmount": 1000000,
+     "usd": 40,
+     "priceUsd": 4e-05,
+     "capUsd": 40000
+    },
+    {
+     "signature": "4MUwKonVwTDv32skXTCQppogi3vpBJ5eQtWZkmYQEoMuyncPimZKxhAffUTWYzQtugSr8oC3jjDMrRFeQyxooHhP",
+     "at": "2026-11-20T11:18:09.000Z",
+     "side": "buy",
+     "wallet": "HwGCG7FMzPoSGTaBayMgrH5B32gzKmyeEEUB87nxiDY5",
+     "tokenAmount": 1000000,
+     "usd": 40,
+     "priceUsd": 4e-05,
+     "capUsd": 40000
+    },
+    {
+     "signature": "3ng8xNQD9XcugoQithLPyjgmk5VY9BRFbRLBNHbgJiqEo5uxH2syBnNcG3YY2vR1YFACXALR3TUV447keuBZGjzN",
+     "at": "2026-11-20T11:17:56.000Z",
+     "side": "sell",
+     "wallet": "A7fT5q25P7wqf4FFZf3iPUehwb3PpyAYkJQSVRu1cNJw",
+     "tokenAmount": 1000000,
+     "usd": 40,
+     "priceUsd": 4e-05,
+     "capUsd": 40000
+    },
+    {
+     "signature": "2NtdVLfgSSYCrvVNPT9S7ezZpxjFVwH5Qi9LiQwGCKqpcmWXZHzL43WRJ53g5fruN1DMKhadBNEnjPAXCCVguoyT",
+     "at": "2026-11-20T11:17:43.000Z",
+     "side": "buy",
+     "wallet": "Bb9DztHn2zc5Ub7TcQWdDvCg68UZfuPhHGfjqL9bYxno",
+     "tokenAmount": 1000000,
+     "usd": 40,
+     "priceUsd": 4e-05,
+     "capUsd": 40000
+    },
+    {
+     "signature": "5JoXncNz3x6n4iAPdhJ4KuNAA7tLnfNmGdDfATeusYS9Uig15qZnvxAkcjm3zsDzp4KomgqX2jrnTpX8Nz2j7pK",
+     "at": "2026-11-20T11:17:30.000Z",
+     "side": "buy",
+     "wallet": "Hdo3zHGvJp1EszZQajBh5v3BPvPXEcidCaZN8Ntac3J8",
+     "tokenAmount": 1000000,
+     "usd": 40,
+     "priceUsd": 4e-05,
+     "capUsd": 40000
+    },
+    {
+     "signature": "aEnAk5SwrL1meFCFb1QeqmLBgxPJujwUshH9FmWvnX4fN445BV9wBQzAQqgr5c5nJ4871hw9XfEjELQ3TsovRTm",
+     "at": "2026-11-20T11:17:17.000Z",
+     "side": "sell",
+     "wallet": "3CpEbhHBS3vLtq6y8RXWPzMctJGt8BpZereLQF8qWtQt",
+     "tokenAmount": 1000000,
+     "usd": 40,
+     "priceUsd": 4e-05,
+     "capUsd": 40000
+    },
+    {
+     "signature": "2r9coHHqfwpbqa6LiJnQhNKJm4CZxrEQ8x382JnxCXUKVoWvi56orhJPUqutiDHNRJzaMG6cyU5XWosgEem5YReU",
+     "at": "2026-11-20T11:17:04.000Z",
+     "side": "buy",
+     "wallet": "6tY3eqiXur4KjfginAvdU6Msdx5TqLEb6MNUHyvHDgJU",
+     "tokenAmount": 1000000,
+     "usd": 40,
+     "priceUsd": 4e-05,
+     "capUsd": 40000
+    },
+    {
+     "signature": "4u27kzXY1TdiDGfe2xEy3DCTCcZcqeBQTrmCb3mpqXK8d9D9vZLugaNiGiHnNWxzPhAuN18crfjvq5HaEj2uScpR",
+     "at": "2026-11-20T11:16:51.000Z",
+     "side": "buy",
+     "wallet": "8V9yTXZGci5AYwjgrpwAAiaMxAw1gjKRsbVA5EgUL3yb",
+     "tokenAmount": 1000000,
+     "usd": 40,
+     "priceUsd": 4e-05,
+     "capUsd": 40000
+    },
+    {
+     "signature": "9npQyB8m6GokTSDUeDnCXE8cAj4a9L4ChwF3fcwqyW1FDja6uwvMPECFQW6h6sBNNq9b2nQAQqBG7vdNBKJBiDi",
+     "at": "2026-11-20T11:16:38.000Z",
+     "side": "sell",
+     "wallet": "GmZdGQq8QJVK6bSTXHK71eRnF4YtRCLGMqb3h19ZdSJ2",
+     "tokenAmount": 1000000,
+     "usd": 40,
+     "priceUsd": 4e-05,
+     "capUsd": 40000
+    },
+    {
+     "signature": "zCZjCbmfyh9LumZfuQYA3zH1djyMvBADgJmuPCJiY16VXRbm1EEGb2tN89ptNpK63zg2kTWWAfdebT2wuryP3tp",
+     "at": "2026-11-20T11:16:25.000Z",
+     "side": "buy",
+     "wallet": "3uvJv7yYnLgdavtFKbb2L7P2RP8vzu2K8SvGR6vTUoGy",
+     "tokenAmount": 1000000,
+     "usd": 40,
+     "priceUsd": 4e-05,
+     "capUsd": 40000
+    },
+    {
+     "signature": "D3hkdQh7dfYvE1Y5RL7HiowavXddmoDqMhhFkT375cAXQiuCrzoMDkuy7jHiURpNwHwkTjgS1p9AtQFtqqBxVYj",
+     "at": "2026-11-20T11:16:12.000Z",
+     "side": "buy",
+     "wallet": "6i1LQ1Xr43P8bLUfyVWb1ni6qNCqgmdk4UFh3RQY84QU",
+     "tokenAmount": 1000000,
+     "usd": 40,
+     "priceUsd": 4e-05,
+     "capUsd": 40000
+    },
+    {
+     "signature": "2A1SSTQt1mmbBGFkDJcuzuvFS3oq9AUCbqunrgyTvKUj8kS8gfsqPWgCedFrYrz5BGbhy5x52Dwi5PPoX8jiv914",
+     "at": "2026-11-20T11:15:59.000Z",
+     "side": "sell",
+     "wallet": "AUhn91tETbCJ9HUiQoaZLXBN3exFLFARMB1yRNJv2Gif",
+     "tokenAmount": 1000000,
+     "usd": 40,
+     "priceUsd": 4e-05,
+     "capUsd": 40000
+    },
+    {
+     "signature": "5JnCGVmtgSoh9gA1cLFQ2w1wQ2rEzPkZ7gBkzpsmQSHonzbzC1aGdx4TaTvFPQqpY2dV4h7PQyCbUxxevDDHXkSd",
+     "at": "2026-11-20T11:15:46.000Z",
+     "side": "buy",
+     "wallet": "7AyCoVwBVRXrcAJ64W9jYBurQHEuiGaftjZhBSFR7tZu",
+     "tokenAmount": 1000000,
+     "usd": 40,
+     "priceUsd": 4e-05,
+     "capUsd": 40000
+    },
+    {
+     "signature": "3KM3UkD8kG1deZR8Fm1AfPw5TikZp4qBtHLLboZoVgaFW4fXgvAyXZpDb3AhF4WhQX2YAWjZzsvAcUxn1sc78KeJ",
+     "at": "2026-11-20T11:15:33.000Z",
+     "side": "buy",
+     "wallet": "BqRJhHLgA6PoSZzBhvbZ8aUeCEmP8jZdrf7v63MRjq8m",
+     "tokenAmount": 1000000,
+     "usd": 40,
+     "priceUsd": 4e-05,
+     "capUsd": 40000
+    },
+    {
+     "signature": "5gNPz2MCuBLXQGvrbViWLzL1foNDKxhVQrjnwVcErGh1T4sMXoZbv2hmhJB9VvAnN9GkKm7c149yF7fLZi8nUJC9",
+     "at": "2026-11-20T11:15:20.000Z",
+     "side": "sell",
+     "wallet": "AWGKNmEsXPKjxg9C8cNhfUEHqBN2ktYWynwFDc3RBXMJ",
+     "tokenAmount": 1000000,
+     "usd": 40,
+     "priceUsd": 4e-05,
+     "capUsd": 40000
+    },
+    {
+     "signature": "2cmZMfjxCssoTUxY8iWcQMMZPUtUUueVhbnAzXf7rES7Eyw6jQ9JfkAYa4cLRiC6DK9dA3nWBY9xCk1svco1Ja2a",
+     "at": "2026-11-20T11:15:00.000Z",
+     "side": "buy",
+     "wallet": "DDkM3HKzJBFDZYqqoJnQvAeG1hsiBwbm8KQoTpTxrZP8",
+     "tokenAmount": 10000000,
+     "usd": 300,
+     "priceUsd": 3e-05,
+     "capUsd": 30000
+    },
+    {
+     "signature": "jLqFD5kYCZKBJjejJJjM5axawrvFpWDHKUmmwLcozmWMMXPSv4nyqCX78ufViemHU4quURKhh4M2kwqqiGUC9Z6",
+     "at": "2026-11-20T11:15:00.000Z",
+     "side": "buy",
+     "wallet": "6r1kXGMPcE7nWDEMUfbbxA1uTBax78LWRUygTVA8C3WV",
+     "tokenAmount": 10000000,
+     "usd": 300,
+     "priceUsd": 3e-05,
+     "capUsd": 30000
+    },
+    {
+     "signature": "mx7MEmkpDsyhSX8zVxGa3ugwXB23a362SSudcGwZtRDasjz48WFrMFeLuubD9zykdp7APH16J6oyW1REDjQzCkJ",
+     "at": "2026-11-20T11:15:00.000Z",
+     "side": "buy",
+     "wallet": "GySstLmrYonjdEzhm71kN5a8bzJFCVGygGkS6k7EvTcs",
+     "tokenAmount": 10000000,
+     "usd": 300,
+     "priceUsd": 3e-05,
+     "capUsd": 30000
+    },
+    {
+     "signature": "3ZtW61fa84h58bqik515BJQLck8B7QdjgNpd5auQy2gJZvY9FYbs2FYiNPj7qVM5JJJ7bwcrzQaWqxhkTuZy4A79",
+     "at": "2026-11-20T11:15:00.000Z",
+     "side": "buy",
+     "wallet": "4R3FL2zWhfnELZ2J1sDpFhJ5H8BqurJ88ntQtwXWqisp",
+     "tokenAmount": 10000000,
+     "usd": 300,
+     "priceUsd": 3e-05,
+     "capUsd": 30000
+    },
+    {
+     "signature": "4Da7Yw9qwtLZRFeyi4k2r6D8C92x2BWKoPrgbjuYUgAEp5yPykrBWx28MFhZS8WNcsdmb8k9j4bQvjQiEcSCncuD",
+     "at": "2026-11-20T11:15:00.000Z",
+     "side": "buy",
+     "wallet": "EFbAxPXbY9TUXWpK39NdAjYTCrc6t4sUUwvALHWQKYr4",
+     "tokenAmount": 10000000,
+     "usd": 300,
+     "priceUsd": 3e-05,
+     "capUsd": 30000
+    },
+    {
+     "signature": "4hdGjxbUHhrGdFArMtTUhouamuGYwvbdKLecyz65W1fw2BMNK5mEzitdHEgZEhvh6Ad1aPoRzJtq5fSSZ3SnucAB",
+     "at": "2026-11-20T11:15:00.000Z",
+     "side": "buy",
+     "wallet": "EGu4F7Z2SqPdvHmf6apMBm1f3hoCfEz3FuZzrXBKbrj5",
+     "tokenAmount": 10000000,
+     "usd": 300,
+     "priceUsd": 3e-05,
+     "capUsd": 30000
+    },
+    {
+     "signature": "4pmTCdJsrghpA2F3A5nQUsxakcGD4iTDzNySegMm781qanwkjU22RSASEYtsLbJTN1wXF8tPfH7e3rz4dkCeJPEE",
+     "at": "2026-11-20T11:15:00.000Z",
+     "side": "buy",
+     "wallet": "5hdiwh6nSC3cfjb1LoQ53BdXbkz867JLyZgSRixDwfZu",
+     "tokenAmount": 10000000,
+     "usd": 300,
+     "priceUsd": 3e-05,
+     "capUsd": 30000
+    },
+    {
+     "signature": "HaxAJZt6K3WatT67QbwJ3PcnySWAkBmcPPRjsgNiUz8ESaUrwm3rWhjUwJSnrU4D37Vq9EFQQkWXJzn8r6wGzCu",
+     "at": "2026-11-20T11:15:00.000Z",
+     "side": "buy",
+     "wallet": "9T77ntk8FjzskgmmKhnNrE1h3KbZDHCUHLif6pccwyYd",
+     "tokenAmount": 30000000,
+     "usd": 900,
+     "priceUsd": 3e-05,
+     "capUsd": 30000
+    }
+   ],
+   "whole": true
+  },
+  "Eg6GLm6aHJJZDbZGQ4WpoSks9k4xWXREanWz1Aw2RByS": {
+   "trades": [
+    {
+     "signature": "2h189Z18m6wkPDWDpsZTvBRyvDbkabqYXTz8hEWeWXYxt5ELMqZ9AzD8hkcdPXnB13JQ7XF7SqGhk8SEW659kpio",
+     "at": "2026-11-20T11:19:27.000Z",
+     "side": "buy",
+     "wallet": "799PJnsXcC7zajwrqjJBxDHQh6pbtF5qeHX3uPiZJLFy",
+     "tokenAmount": 1000000,
+     "usd": 40,
+     "priceUsd": 4e-05,
+     "capUsd": 40000
+    },
+    {
+     "signature": "4pXFRRi8hX18T3GZAwdJ3QAnSxQ9E7eLrYVXF9dEHLw1Tf6p98WBZo3xMUp6FwDPLjiq6mzvBZff1ixjzv5AhQaX",
+     "at": "2026-11-20T11:19:14.000Z",
+     "side": "sell",
+     "wallet": "CnK15u6XdWNNfVXujpTqsBtUEd1UhkYadAo6CeuL8MTV",
+     "tokenAmount": 1000000,
+     "usd": 40,
+     "priceUsd": 4e-05,
+     "capUsd": 40000
+    },
+    {
+     "signature": "4WePMseAWex2SvXPTNo68Vj5QPgWXRc3z86eqWg4d5wo8QrBVodHHZz5LB5uaK7dy73JKcFQ7zdFThD7wvncfuH5",
+     "at": "2026-11-20T11:19:01.000Z",
+     "side": "buy",
+     "wallet": "7jh65ipUBZWHGze6N6nnSaoFR45B9DWZWULwrDKrHk7y",
+     "tokenAmount": 1000000,
+     "usd": 40,
+     "priceUsd": 4e-05,
+     "capUsd": 40000
+    },
+    {
+     "signature": "3BWiPSEgDNgGkatwvtLVGvb4bNYqFK3ohBA8S3eXeYe7Y8obXWw2BLX1KEEUPfBiYguwD8SNBdmxzRrcgTN1RfHS",
+     "at": "2026-11-20T11:18:48.000Z",
+     "side": "buy",
+     "wallet": "4wwKoeyXGua1Ax3LhUTuF13NXAewoSEozVdXbSSe31BC",
+     "tokenAmount": 1000000,
+     "usd": 40,
+     "priceUsd": 4e-05,
+     "capUsd": 40000
+    },
+    {
+     "signature": "4mKTvW1RexfJwkdbg3oBuJGRaenn3gCiH2MhGtZiaLZKNwHvuczXShmF2bLz59RGHBRtVqxf629TeGc8AF1ucngR",
+     "at": "2026-11-20T11:18:35.000Z",
+     "side": "sell",
+     "wallet": "CtMjKDqjkd3T8nxjPo22oJERNeHuoUtgP3curyZh4zWm",
+     "tokenAmount": 1000000,
+     "usd": 40,
+     "priceUsd": 4e-05,
+     "capUsd": 40000
+    },
+    {
+     "signature": "3cbk576aQhCztpbLNomDaLEuQKyWzGbkY6utGX4TVjDFuFs74hrMDX19BqXXkMp5bxFy1MQ2KCaB6728bpqfLRYt",
+     "at": "2026-11-20T11:18:22.000Z",
+     "side": "buy",
+     "wallet": "5BEyTrgVg9SaHfQCoJahjnGLL3aYQ6QK1eb8kpae79p",
+     "tokenAmount": 1000000,
+     "usd": 40,
+     "priceUsd": 4e-05,
+     "capUsd": 40000
+    },
+    {
+     "signature": "49wnyttaZkSWyAcaT2wLKPMFWHVUVdHkhgnEmJAP5nLwdUmAs2e9yBtm54cj5ZEswq46b3motF8HEsBFC5Fmqsqm",
+     "at": "2026-11-20T11:18:09.000Z",
+     "side": "buy",
+     "wallet": "9YffjaoUkaaafDYFsTERbj16xzNPdFuki8W9dBEF8SZ1",
+     "tokenAmount": 1000000,
+     "usd": 40,
+     "priceUsd": 4e-05,
+     "capUsd": 40000
+    },
+    {
+     "signature": "8wAnvHTFN123wbrLou5xSHnhkSDLM7Ctbqoye1f8MM6XMMB4gg4M3ncyDVodefMDr1EGRMUjw7RzNyzFw8vajjJ",
+     "at": "2026-11-20T11:17:56.000Z",
+     "side": "sell",
+     "wallet": "J6kCMLDgbzYLpHFXq9wDUBNW3fvU1pYoMx4VHRprK37T",
+     "tokenAmount": 1000000,
+     "usd": 40,
+     "priceUsd": 4e-05,
+     "capUsd": 40000
+    },
+    {
+     "signature": "63SWeSByP5DdyDLjPciZh1JzZffHxdj7KJbGdkRWzW8chKCSkFqBKb2L3pPmt95YUzvhFw4zdYqYSMjSkS5a8s6f",
+     "at": "2026-11-20T11:17:43.000Z",
+     "side": "buy",
+     "wallet": "8S2Rt8yHhMGRrEmaaNNtfG9i51Qyk6Hxe5WjzxTV7PEA",
+     "tokenAmount": 1000000,
+     "usd": 40,
+     "priceUsd": 4e-05,
+     "capUsd": 40000
+    },
+    {
+     "signature": "61HkP4eT1kTYLcJKoHfaavYb4kL9n9qgPLhvYWjXF1RVYGfsNGsyMkj8EuKSDcMKVFf7ofxB5BLx9vgdEStTGLHM",
+     "at": "2026-11-20T11:17:30.000Z",
+     "side": "buy",
+     "wallet": "3gs4xTrjZesmyFN3oXJqumEvrDFqGumzXNxK75ovLtiC",
+     "tokenAmount": 1000000,
+     "usd": 40,
+     "priceUsd": 4e-05,
+     "capUsd": 40000
+    },
+    {
+     "signature": "3eTzMjV16uQVKdN5TPjEcCqjKob3y1VALwGbPJf43bw3GbWuSzoBBp84uTBvh7oudW3Qs4GRZi8PTcUFxkQ2ygyS",
+     "at": "2026-11-20T11:17:17.000Z",
+     "side": "sell",
+     "wallet": "28NARfAE5Ls8NLe3ztmEWe7wxqaXZkLcpvjFSAHJmCkp",
+     "tokenAmount": 1000000,
+     "usd": 40,
+     "priceUsd": 4e-05,
+     "capUsd": 40000
+    },
+    {
+     "signature": "5TYCNdnDKSzJ7GWv2ca5XvJRfNNWb9THZYGvbfbzRRuTh94AnL6SBRhRRkvVYE33mWT4YYvd5ppsWus5nZFMbPNC",
+     "at": "2026-11-20T11:17:04.000Z",
+     "side": "buy",
+     "wallet": "HGUQuAqHdFPGCMgPaXRDhsUAB4Y2yPFwFueARaPqxqud",
+     "tokenAmount": 1000000,
+     "usd": 40,
+     "priceUsd": 4e-05,
+     "capUsd": 40000
+    },
+    {
+     "signature": "4VXJwcnGRiWjknov5eZCtVq1Uaqx92FVNoyMG8YCzWTfWLEEX8CJSgc6H3rUeNa99YEKMytrH3GEByJfsC4GKSq7",
+     "at": "2026-11-20T11:16:51.000Z",
+     "side": "buy",
+     "wallet": "6DzQiXdoSMgdkxQcWc647L7qCGtK7ssmXN9pF1o2jPxU",
+     "tokenAmount": 1000000,
+     "usd": 40,
+     "priceUsd": 4e-05,
+     "capUsd": 40000
+    },
+    {
+     "signature": "2e1bnC92k48cGhw3FKQTvrRtmwyb6gVvhN2aXXDCd2JKkavb9n5Xuv1epdUAQQVr39fVwpzKGceJJGGnEo9WMpcP",
+     "at": "2026-11-20T11:16:38.000Z",
+     "side": "sell",
+     "wallet": "zcAayc6oWjDWKqVLxkHoZkzhfNSrWWRHGWXugx2SP54",
+     "tokenAmount": 1000000,
+     "usd": 40,
+     "priceUsd": 4e-05,
+     "capUsd": 40000
+    },
+    {
+     "signature": "oRzH9z2MdcXvrhKsPF1GLihVkmJkC9p6LnXPUj6innjif2UTpsJuk4sUWDS8Lp1knBXFiLtnY3PqCe7A1fmReCy",
+     "at": "2026-11-20T11:16:25.000Z",
+     "side": "buy",
+     "wallet": "86ctAXc6ZXZTB9o4fTuLb9pf8hbJWK5qWWLxVVGG8aCx",
+     "tokenAmount": 1000000,
+     "usd": 40,
+     "priceUsd": 4e-05,
+     "capUsd": 40000
+    },
+    {
+     "signature": "3vzsYjEzpHsNdWgCqrJD9BTN3huPtYRdt8YA21ZjUVdHP4jCYtwsasDeCXaADKpiPuAo5ygRc3kAgU9af5pmPw6Q",
+     "at": "2026-11-20T11:16:12.000Z",
+     "side": "buy",
+     "wallet": "F5DvPKg2hhs3bgbEQwCUxUy9YYZaBWPV9MbXUvEMbyHz",
+     "tokenAmount": 1000000,
+     "usd": 40,
+     "priceUsd": 4e-05,
+     "capUsd": 40000
+    },
+    {
+     "signature": "yzey4J4iVLRRF8iv6pDctJn6KvrPsYk2wDNExvRGHExZeUWHo2ceeX7SVJVZh5FKKrHvqp3cQuyvgLP3V7XEocK",
+     "at": "2026-11-20T11:15:59.000Z",
+     "side": "sell",
+     "wallet": "BZvAaCLhWiEts8KVisuDNdNwebqp2RjZN92ZihWpnTLy",
+     "tokenAmount": 1000000,
+     "usd": 40,
+     "priceUsd": 4e-05,
+     "capUsd": 40000
+    },
+    {
+     "signature": "3yu9a8cMh64fEmhC1sCZ5gVGsSxGigPDhpBnVWcw4rkmuLWmntZ28q1ks7nfuqpXGkx9v7ANzwPWES5qAB5tgZY9",
+     "at": "2026-11-20T11:15:46.000Z",
+     "side": "buy",
+     "wallet": "F1Rj9oD5aCxnitdvS51Y29CfNPmi31vGcgPAC9B5Ei1J",
+     "tokenAmount": 1000000,
+     "usd": 40,
+     "priceUsd": 4e-05,
+     "capUsd": 40000
+    },
+    {
+     "signature": "5F4AtLMtuUfw18Xi32RvbyvjkGkZVbgeHpKYWeZ7279chFChxxCEpFTufto3UenECKf2LyMr3i5so7t4WSPYW5Ed",
+     "at": "2026-11-20T11:15:33.000Z",
+     "side": "buy",
+     "wallet": "BvBMvmxqwFLby2xgeUKzSYu8NwErXPXEVR6ZYPJpLfJi",
+     "tokenAmount": 1000000,
+     "usd": 40,
+     "priceUsd": 4e-05,
+     "capUsd": 40000
+    },
+    {
+     "signature": "5WfjTfL2WdpNSnm3VghaqxW7zLAPUekn36DZ173GAj21pfKfveps7G5TfJb2DWnSQDYt5XzjA4s9XnZ7ubPnuYhu",
+     "at": "2026-11-20T11:15:20.000Z",
+     "side": "sell",
+     "wallet": "5R3VRvvXcWVvmfoob4yCzr4J7h5MP8eYVCvMi1Lwyy75",
+     "tokenAmount": 1000000,
+     "usd": 40,
+     "priceUsd": 4e-05,
+     "capUsd": 40000
+    },
+    {
+     "signature": "4Atf8nxoatRPPbqKe4b29cHKAtCfoyFYcv2DkbSuAw4BbmGSvCx7ZAk9Jw786XX3dRDKwv1xCpKiskptFEs4nH5m",
+     "at": "2026-11-20T11:15:00.000Z",
+     "side": "buy",
+     "wallet": "Gmw97p2F5HoAHiLK3sxLhYtCThKjasXeyzVooAEzpNDh",
+     "tokenAmount": 30000000,
+     "usd": 900,
+     "priceUsd": 3e-05,
+     "capUsd": 30000
+    }
+   ],
+   "whole": false
+  }
+ }
+}

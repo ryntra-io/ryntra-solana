@@ -216,10 +216,6 @@
   box-shadow: 0 0 8px currentColor;
 }
 
-.state[data-state='soon'] {
-  color: var(--text-dim);
-}
-
 .more {
   display: inline-flex;
   align-items: center;

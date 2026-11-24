@@ -22,11 +22,13 @@ test("the model is asked only where the line's own rules did not understand", ()
   // Not understood, or read without what was said.
   assert.equal(wanted("знаходь нові монети"), true);
   assert.equal(wanted("can you look for fresh launches and put a little sol in the good ones"), true);
-  assert.equal(wanted("trade JUP for me with 2 SOL a day for a week"), true, "a day's budget typed, not read");
+  assert.equal(wanted("торгуй JUP на 2 SOL на тиждень"), true, "a budget typed over a week, not a day's: not read");
   assert.equal(wanted("купуй SOL щодня"), true, "a plain buy said on a schedule");
   assert.equal(wanted("доглядай мій пул"), true, "a hire without its agent");
   // Understood: free, at once.
   assert.equal(wanted("торгуй JUP за мене щодня на 2 SOL"), false);
+  // A term said with the day's budget is the line's own reading now: «for a week» is 7 days, the day is 2 SOL.
+  assert.equal(wanted("trade JUP for me with 2 SOL a day for a week"), false);
   assert.equal(wanted("buy JUP for 50"), false);
   assert.equal(wanted("запусти мені токен"), false);
   assert.equal(wanted("my portfolio"), false);
@@ -40,7 +42,7 @@ test("the plan opens its shelf's card, filled — only on a shelf that is on", (
   const said = "trade JUP for me with 2 SOL a day for a week";
   const answer = planAnswer(draft({ action: "trade", coin: "JUP" }, { perDaySol: 2 }), said, BOOK, ALL, EVERY_GATE);
   assert.equal(answer.kind, "row");
-  assert.deepEqual(answer.row.target, { shelf: "agents", mint: null, path: "/bots/recurring" }, "a budget a day is the «Recurring buys» bot's page");
+  assert.deepEqual(answer.row.target, { shelf: "agents", mint: null, path: "/agent?ai=trader" }, "a budget a day is the AI trader's plan");
   assert.equal(answer.row.command.kind, "autopilot");
   assert.equal(answer.row.command.ask.perDaySol, "2");
   assert.equal(answer.row.command.ask.coin.mint, JUP);
@@ -84,8 +86,8 @@ test("new coins open the market's new coins — never a bot's card the terminal 
   assert.equal(askLabel(early.command, "uk"), "Нові на ринку");
   assert.equal(askLabel(early.command, "en"), "New on the market");
   assert.equal(askLabel(first("торгуй JUP за мене щодня на 2 SOL").command, "en"), "Trade within a daily budget");
-  // A budget a day stays Recurring buys.
-  assert.deepEqual(first("торгуй JUP за мене щодня на 2 SOL")?.target, { shelf: "agents", mint: null, path: "/bots/recurring" });
+  // A budget a day is the AI trader's plan.
+  assert.deepEqual(first("торгуй JUP за мене щодня на 2 SOL")?.target, { shelf: "agents", mint: null, path: "/agent?ai=trader" });
   // The ready sentence's own row: no model is asked for it, it opens the new coins.
   const row = newCoinsRow("Знайди нові монети");
   assert.deepEqual(row.target, NEW_COINS);

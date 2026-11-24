@@ -96,15 +96,17 @@ export function run(command: Command, doors: Doors): void {
       else if (command.share !== null) doors.fillShare(command.share);
       return;
     }
-    case 'order':
+    case 'order': {
       doors.openTrade(command.coin, command.side, 'spot', command.mode);
       // A price said aloud is dollars: the window prices the pair in what it pays with, so it pays in USDC. USDC's own
-      // price cannot be said in dollars, so none is written for it.
-      if (command.price && command.coin.symbol !== 'USDC') {
-        doors.fillPay('USDC');
-        doors.fillPrice(command.price);
-      }
+      // price cannot be said in dollars, so none is written for it. A conditional order's price is in its `pay`.
+      const pair = command.pay ?? (command.price ? 'USDC' : null);
+      if (pair && command.coin.symbol !== pair) doors.fillPay(pair);
+      if (command.amount) doors.fillAmount(command.amount);
+      else if (command.share !== undefined && command.share !== null) doors.fillShare(command.share);
+      if (command.price && command.coin.symbol !== 'USDC' && command.coin.symbol !== pair) doors.fillPrice(command.price);
       return;
+    }
     case 'chart':
       return doors.openChart(command.coin);
     case 'coin':

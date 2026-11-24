@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { isoDateTime } from "../zod/iso-datetime.ts";
 
 import type { GuardAtomicVersionedWrite, GuardStore } from "../guard/store.ts";
 import {
@@ -54,7 +55,7 @@ import { benefitJobWrite } from "./benefit-jobs.ts";
 export const FIRST_TEN_COLLECTION = "rewardWelcome" as const;
 export const FIRST_TEN_MONTH_COLLECTION = "rewardWelcomeMonths" as const;
 
-const AT = z.string().datetime({ offset: true });
+const AT = isoDateTime({ offset: true });
 const MICROS = z.string().regex(/^(?:0|[1-9][0-9]*)$/);
 const HASH = z.string().regex(SIGNAL_HASH);
 

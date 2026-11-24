@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { isoDateTime } from "../zod/iso-datetime.ts";
 
 import { splitClaim } from "../core/launch/budget.ts";
 import { canonicalJson } from "../guard/canonical-json.ts";
@@ -77,7 +78,7 @@ export const EVM_PAR_ASSETS: Readonly<Record<string, Readonly<Record<string, num
 const RAW = /^(?:0|[1-9][0-9]*)$/;
 const SIGNED = /^-?(?:0|[1-9][0-9]*)$/;
 const DECIMAL = /^(?:0|[1-9][0-9]*)(?:\.([0-9]+))?$/;
-const AT = z.string().datetime({ offset: true });
+const AT = isoDateTime({ offset: true });
 
 /* ------------------------------------------------------------------------------------------------
  * Rows

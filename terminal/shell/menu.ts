@@ -1,5 +1,8 @@
 import { terminalOpen, TERMINAL_MODE, type TerminalMode } from './flag.ts';
 import { PARTNERS_OPEN } from '../rewards/partners.ts';
+import { autopayOpen } from '../money/autopay/open.ts';
+import { contactsOpen } from '../money/contacts/open.ts';
+import { privateNetwork } from '../../lib/privacy/network.ts';
 import { BRIDGE_PATH, COIN_PATH, HOME_PAGE, HOME_PATH, isKitPath, KIT_PATH, POOL_PATH, PRO_PATH, REWARDS_PATH, shelfAt, shelfHref, shelfOn, SHELVES, type ShelfId, type View } from './shelves.ts';
 
 /**
@@ -64,6 +67,7 @@ export type MenuItemId =
   | 'send'
   | 'receive'
   | 'invoices'
+  | 'payouts'
   | 'private'
   | 'contacts'
   | 'autopay'
@@ -122,7 +126,8 @@ export const MENU: readonly MenuGroup[] = [
       inner('recurring', 'agents', '/bots/recurring', true, { gate: 'trader' }),
       inner('grid', 'agents', '/bots/grid', true),
       inner('ladder', 'agents', '/bots/ladder', true, { gate: 'ladder' }),
-      inner('copy', 'agents', '/bots/copy', false),
+      // «Copy a wallet»: on paper on the engine's own pass; money behind its closed switch.
+      inner('copy', 'agents', '/bots/copy', true),
       inner('signals', 'agents', '/bots/signals', true),
       inner('keeper', 'agents', '/bots/keeper', false),
       inner('autopilot', 'agents', '/bots/autopilot', true, { gate: 'pilot' }),
@@ -131,8 +136,10 @@ export const MENU: readonly MenuGroup[] = [
   {
     id: 'agents',
     items: [
-      inner('aiTrader', 'agents', '/agent?ai=trader', false),
-      inner('scout', 'agents', '/agent?ai=scout', false),
+      // The AI trader: the agent's plan on the person's budget — where «Trade JUP every day» opens.
+      inner('aiTrader', 'agents', '/agent?ai=trader', true),
+      // The Scout: finds new coins by itself, on paper with live prices — the Agents screen's own tab.
+      inner('scout', 'agents', '/agent?ai=scout', true),
       // The analyst: a question about any coin or the market, and Ryntra's answer — the Agents screen.
       inner('analyst', 'agents', '/agent', true),
       inner('ownAi', 'agents', '/agent?ai=own', false),
@@ -163,13 +170,16 @@ export const MENU: readonly MenuGroup[] = [
   {
     id: 'money',
     items: [
-      // «Money»: one page, its tabs; «Send» stands only where money may move. The rest come with their screens.
+      // «Money»: one page, its tabs; «Send» stands only where money may move. The rest come with their screens;
+      // «Contacts» and «Autopay» where the release opened their engines.
       inner('send', 'portfolio', '/money', true, { gate: 'send' }),
       inner('receive', 'portfolio', '/money?tab=receive', true),
       inner('invoices', 'portfolio', '/money?tab=invoices', true),
+      // «Payouts» with the private balance open: its tab lights its own item, never «Send».
+      inner('payouts', 'portfolio', '/money?tab=payouts', privateNetwork() !== null),
       inner('private', 'portfolio', '/money?tab=private', false),
-      inner('contacts', 'portfolio', '/money?tab=contacts', false),
-      inner('autopay', 'portfolio', '/money?tab=autopay', false),
+      inner('contacts', 'portfolio', '/money?tab=contacts', contactsOpen()),
+      inner('autopay', 'portfolio', '/money?tab=autopay', autopayOpen()),
     ],
   },
   {
@@ -184,6 +194,18 @@ export const MENU: readonly MenuGroup[] = [
 ];
 
 export const MENU_GROUP_IDS: readonly MenuGroupId[] = MENU.map((group) => group.id);
+
+/**
+ * The pages of a wallet's own figures with no item of their own (flaw 7: on them the menu lit nothing): the
+ * wallets a person watches (`/watch`) and one wallet's page (`/wallet/<address>`). They stand in the Portfolio — its
+ * overview lit on the rail, its tab on a phone.
+ */
+export const WALLET_PAGES: readonly string[] = ['/watch', '/wallet'];
+
+/** Whether an address is one of `WALLET_PAGES`. */
+export function walletPage(pathname: string): boolean {
+  return WALLET_PAGES.some((own) => pathname === own || pathname.startsWith(`${own}/`));
+}
 
 export function isOuter(item: MenuItem): item is OuterItem {
   return 'out' in item;
@@ -266,6 +288,7 @@ export function itemAt(pathname: string, tail: string, shown: readonly MenuGroup
     const own: MenuItemId = poolKind === 'other' ? 'pools' : 'dlmmPro';
     return items.some((item) => item.id === own) ? own : null;
   }
+  if (walletPage(here.path)) return items.some((item) => item.id === 'overview') ? 'overview' : null;
   const exact = closest(items, here);
   if (exact) return exact;
   const shelf = shelfAt(here.path);

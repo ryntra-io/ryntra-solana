@@ -241,7 +241,7 @@ export function MyLinks({ links, onUnlock, onRead }: { links: Links; onUnlock: (
       </ul>
     );
   return (
-    <Panel pad="none" edge label={w.yours} className={m.list}>
+    <Panel pad="none" label={w.yours} className={m.list}>
       <div className={m.listHead}>
         <Kick className={m.listKick}>{w.yours}</Kick>
       </div>

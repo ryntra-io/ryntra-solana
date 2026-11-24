@@ -1,9 +1,33 @@
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { create } from 'zustand';
+import { tradePrefsNow } from '@/city/lib/settings/trade';
 import { TRADE_OPEN } from '@/city/lib/trade/gates';
-import { renewAt, useTrade, type CoinRef, type View } from '@/city/lib/trade/store';
-import type { Side } from '@/city/lib/trade/tiles';
+import { SHARES } from '@/city/lib/trade/size';
+import { balanceOf, renewAt, useTrade, type CoinRef, type View } from '@/city/lib/trade/store';
+import { payAssetFor, type Side } from '@/city/lib/trade/tiles';
 import { useWallet } from '@/city/lib/trade/wallet';
-import { NO_GUARD, guardNext, pressHeld, ticketFree, type Guard } from './ticket-rules';
+import { quickSums } from './staples';
+import {
+  NO_GUARD,
+  QUICK_KEPT_START,
+  QUICK_KEY,
+  guardNext,
+  pressHeld,
+  quickActionAt,
+  quickActions,
+  readQuick,
+  standOf,
+  ticketFree,
+  writeQuick,
+  type CoinStand,
+  type Guard,
+  type ProtectSet,
+  type QuickAction,
+  type QuickInput,
+  type QuickKept,
+  type QuickPay,
+  type StandRow,
+} from './ticket-rules';
 
 /* The trade card's own beats, as the city's trade layer keeps them (`city/components/trade/TradeLayer.tsx`). */
 /** The price is read again this often while the ticket is open and nothing else is happening. */
@@ -105,4 +129,190 @@ export function useTicket(coin: CoinRef | null, view: View = 'spot', side: Side 
     if (pressHeld(guard.current, Date.now())) return 'ok';
     return useTrade.getState().press();
   }, []);
+}
+
+/* ── the person's quick sums, take-profit and stop: kept in this browser ─────────────────────────────────────────── */
+
+type Extras = {
+  kept: QuickKept;
+  ready: boolean;
+  /** Take-profit and stop at the buy: off until the person turns them on, and never kept past the page. */
+  protectOn: boolean;
+  setProtectOn: (on: boolean) => void;
+  setSums: (pay: QuickPay, row: readonly string[]) => void;
+  setProtect: (set: ProtectSet) => void;
+  resetSums: () => void;
+};
+
+function store(): Storage | null {
+  try {
+    return typeof window !== 'undefined' ? window.localStorage : null;
+  } catch {
+    return null;
+  }
+}
+
+function keep(kept: QuickKept): void {
+  try {
+    store()?.setItem(QUICK_KEY, writeQuick(kept));
+  } catch {
+    /* A browser that keeps nothing still has the sums for this page. */
+  }
+}
+
+/** The ticket's own choices of this browser: read once, every change kept at once. */
+export const useTicketExtras = create<Extras>((set, get) => ({
+  kept: QUICK_KEPT_START,
+  ready: false,
+  protectOn: false,
+  setProtectOn: (protectOn) => set({ protectOn }),
+  setSums: (pay, row) => {
+    const kept = { ...get().kept, sums: { ...get().kept.sums, [pay]: [...row] } };
+    keep(kept);
+    set({ kept });
+  },
+  setProtect: (protect) => {
+    const kept = { ...get().kept, protect };
+    keep(kept);
+    set({ kept });
+  },
+  resetSums: () => {
+    const kept = { ...get().kept, sums: QUICK_KEPT_START.sums };
+    keep(kept);
+    set({ kept });
+  },
+}));
+
+/** Reads what this browser kept, once. */
+export function hydrateTicketExtras(): void {
+  if (useTicketExtras.getState().ready || typeof window === 'undefined') return;
+  let text: string | null = null;
+  try {
+    text = store()?.getItem(QUICK_KEY) ?? null;
+  } catch {
+    text = null;
+  }
+  useTicketExtras.setState({ kept: readQuick(text), ready: true });
+}
+
+/** What a buy's quick sums are written in for the coin that pays: SOL, dollars, or none (another coin of the wallet). */
+export function quickPayOf(payMint: string): QuickPay | null {
+  const sums = quickSums(payMint);
+  return sums ? (sums.dollars ? 'usd' : 'sol') : null;
+}
+
+/** The quick row of the ticket as it stands now: its side, what pays, the person's sums and sale shares. */
+export function quickInputNow(): QuickInput | null {
+  hydrateTicketExtras();
+  const card = useTrade.getState();
+  if (!card.tower) return null;
+  const pay = payAssetFor(card.tower.mint, card.pay, card.other);
+  return {
+    side: card.side,
+    pay: quickPayOf(pay.mint),
+    sums: useTicketExtras.getState().kept.sums,
+    shares: card.side === 'sell' ? tradePrefsNow().sells : SHARES,
+  };
+}
+
+/** One quick deed on the trade card, as the card takes an amount or a share; nothing while a trade is under way. */
+export function runQuick(action: QuickAction): boolean {
+  const card = useTrade.getState();
+  if (!card.open || card.phase !== 'idle' || card.held) return false;
+  if (action.kind === 'amount') card.setTyped(action.amount);
+  else card.setShare(action.share);
+  return true;
+}
+
+/**
+ * Quick button `slot` (1–4) on the open ticket — what the keys 1–4 call: the same deed as the button, on the same card.
+ * Returns the deed done, or null where there was none (no ticket, a trade under way, no such slot).
+ */
+export function quickNow(slot: number): QuickAction | null {
+  const input = quickInputNow();
+  const action = input ? quickActionAt(input, slot) : null;
+  return action && runQuick(action) ? action : null;
+}
+
+export { quickActions };
+
+/* ── what this wallet did in the coin ────────────────────────────────────────────────────────────────────────────── */
+
+/** After a trade of this card lands, the record is read again — once the chain has it. */
+const STAND_AFTER_TRADE_MS = 8_000;
+
+type WalletRecord = Readonly<{
+  gap: boolean;
+  skipped: number;
+  solUsd: number | null;
+  tokens: readonly (StandRow & Readonly<{ mint: string; priceUsd: number | null }>)[];
+  trades: readonly Readonly<{ mint: string; quote: string | null; paidBy: string | null }>[];
+}>;
+
+/** The parts of `/api/wallet-watch/wallet` the strip reads; anything else is no record. */
+function recordOf(body: unknown): WalletRecord | null {
+  const view = body && typeof body === 'object' ? (body as { view?: unknown }).view : null;
+  if (!view || typeof view !== 'object') return null;
+  const v = view as Record<string, unknown>;
+  if (!Array.isArray(v.tokens) || !Array.isArray(v.trades)) return null;
+  return {
+    gap: v.gap === true,
+    skipped: typeof v.skipped === 'number' ? v.skipped : 0,
+    solUsd: typeof v.solUsd === 'number' && v.solUsd > 0 ? v.solUsd : null,
+    tokens: v.tokens as WalletRecord['tokens'],
+    trades: v.trades as WalletRecord['trades'],
+  };
+}
+
+/**
+ * Bought · sold · holding · result of the connected wallet in this coin (`standOf`), from the wallet's own trades on
+ * the chain — any venue — as «Стеження за гаманцями» reads them (`GET /api/wallet-watch/wallet?q=`, public data of a
+ * public address). Read when the wallet or the coin changes, and again after a trade of this card lands. Null — the
+ * strip is not drawn. Reads only: nothing here signs or sends.
+ */
+export function useCoinStand(mint: string, usd: number | null, on = true): CoinStand | null {
+  const owner = useWallet((st) => st.connection?.address ?? null);
+  const holdings = useWallet((st) => st.holdings);
+  const [record, setRecord] = useState<Readonly<{ key: string; record: WalletRecord | null }> | null>(null);
+  const key = on && owner ? `${owner}|${mint}` : null;
+
+  useEffect(() => {
+    if (!key || !owner) return;
+    let live = true;
+    const read = async () => {
+      try {
+        const answer = await fetch(`/api/wallet-watch/wallet?${new URLSearchParams({ q: owner })}`, { cache: 'no-store', headers: { accept: 'application/json' } });
+        const body = answer.ok ? await answer.json() : null;
+        if (live) setRecord((was) => (body === null && was?.key === key ? was : { key, record: recordOf(body) }));
+      } catch {
+        /* A read that failed keeps what is on screen. */
+      }
+    };
+    void read();
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    const off = useTrade.subscribe((card, before) => {
+      if (card.phase === before.phase || card.phase !== 'done' || card.tower?.mint !== mint) return;
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => void read(), STAND_AFTER_TRADE_MS);
+    });
+    return () => {
+      live = false;
+      off();
+      if (timer) clearTimeout(timer);
+    };
+  }, [key, owner, mint]);
+
+  const kept = record && record.key === key ? record.record : null;
+  if (!kept) return null;
+  const row = kept.tokens.find((token) => token.mint === mint) ?? null;
+  const priceUsd = usd ?? row?.priceUsd ?? null;
+  const balance = balanceOf(holdings, mint);
+  const held = balance && /^\d+$/.test(balance.spendableRaw) ? Number(balance.spendableRaw) / 10 ** balance.decimals : null;
+  return standOf({
+    row,
+    whole: !kept.gap && kept.skipped === 0,
+    unpriced: kept.trades.some((trade) => trade.mint === mint && (trade.quote === null || trade.paidBy !== null)),
+    held,
+    priceSol: priceUsd !== null && kept.solUsd !== null ? priceUsd / kept.solUsd : null,
+  });
 }

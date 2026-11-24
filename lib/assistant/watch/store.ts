@@ -16,6 +16,7 @@
 import { randomBytes } from "node:crypto";
 
 import { z } from "zod";
+import { isoDateTime } from "../../zod/iso-datetime.ts";
 
 import type { GuardStore } from "../../guard/store.ts";
 import type { MintRead, Sample } from "./market.ts";
@@ -24,7 +25,7 @@ import { COOLDOWN_MAX_MINUTES, COOLDOWN_MIN_MINUTES, WatchRuleSchema } from "./r
 export const WATCHES_COLLECTION = "assistantWatches" as const;
 
 const Wallet = z.string().regex(/^[1-9A-HJ-NP-Za-km-z]{32,44}$/);
-const Iso = z.string().datetime({ offset: true });
+const Iso = isoDateTime({ offset: true });
 
 const FigureSchema = z.object({ value: z.number().finite(), beside: z.number().finite().nullable(), source: z.string().min(1).max(32), observedAt: Iso }).strict();
 

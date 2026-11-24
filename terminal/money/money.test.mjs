@@ -53,7 +53,9 @@ test("the section's address and tabs: «Send» first where money may move, «Rec
     ["receive", "/money?tab=receive"],
     ["invoices", "/money?tab=invoices"],
   ]);
-  assert.deepEqual(money.items.filter((item) => !item.ready).map((item) => item.id), ["private", "contacts", "autopay"], "no item without its screen");
+  assert.deepEqual(money.items.filter((item) => !item.ready).map((item) => item.id), ["payouts", "private", "contacts", "autopay"], "no item without its screen");
+  const payouts = money.items.find((item) => item.id === "payouts");
+  assert.equal(payouts.href, "/money?tab=payouts", "«Payouts» has its own item, lit on its own tab");
 });
 
 test("the Portfolio's old panels lead on to the same tab of «Money»", () => {
@@ -156,7 +158,8 @@ test("a link's state: paid in mint, still to come in amber, a mismatch said befo
 test("the screen is the one page: its name and tabs, one amber press a tab, recent transfers beside it", () => {
   const screen = read("terminal/money/MoneyScreen.tsx");
   assert.match(screen, /<PageHead title=\{w\.title\} tabs=\{<Tabs bare/);
-  assert.match(screen, /<ActionBody side=\{<Transfers \/>\}/);
+  // Recent transfers beside every tab; «Payouts» (private balance open) has past payouts there instead.
+  assert.match(screen, /<ActionBody side=\{tab === 'payouts' \? <PayoutHistory \/> : <Transfers \/>\}/);
   assert.match(screen, /<SendPanel bare \/>/, "«Send» is the money logic's own transfer, as it stands");
   const receive = read("terminal/money/Receive.tsx");
   assert.equal((receive.match(/<Action\b/g) ?? []).length, 1, "one amber press: copy the address");

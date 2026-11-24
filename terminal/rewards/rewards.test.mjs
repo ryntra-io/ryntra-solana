@@ -93,7 +93,7 @@ test("figures as the eye reads them: dollars, SOL at the market's price, counts 
   assert.equal(countShown(12480, "en"), "12,480");
   assert.equal(countShown(12480, "uk"), "12 480");
   assert.equal(shareShown(20, "en"), "20%");
-  assert.equal(shareShown(0.5, "uk"), "0,5 %");
+  assert.equal(shareShown(0.5, "uk"), "0,5%", "a per cent straight after its number, in Ukrainian too");
   assert.equal(linkShown("https://ryntra.io/r/K7Q2M8XPLW4Z/"), "ryntra.io/r/K7Q2M8XPLW4Z");
 });
 

@@ -317,6 +317,22 @@ export const NO_ROUTE_CODES: ReadonlySet<string> = new Set([
   "ROUTE_PLAN_DOES_NOT_CONSUME_ALL_THE_AMOUNT",
 ]);
 
+/** Jupiter's own sentence for «no route», where it states one: «No routes found», «Could not find any route». */
+const NO_ROUTE_SENTENCE = /\bno routes? found\b|\bcould not find any routes?\b/i;
+
+/**
+ * Whether a refusal of Jupiter's says it has no route: its own code (`NO_ROUTE_CODES`, in any case) in `errorCode`, or
+ * in place of a sentence, or its own sentence — in `error`, `errorMessage` or `message` — where it names no code. The
+ * `/build` lane has read the sentence since it was written; the order lanes read the code alone, and a coin Jupiter
+ * has no route for reached the Swap card as «refused with HTTP 400».
+ */
+export function jupiterSaysNoRoute(body: unknown): boolean {
+  const record = typeof body === "object" && body !== null ? (body as Record<string, unknown>) : {};
+  const named = (value: unknown): boolean => typeof value === "string" && value.length > 0 && value.length <= 300 && NO_ROUTE_CODES.has(value.trim().toUpperCase());
+  if (named(record.errorCode)) return true;
+  return [record.error, record.errorMessage, record.message].some((text) => typeof text === "string" && text.length <= 300 && (named(text) || NO_ROUTE_SENTENCE.test(text)));
+}
+
 export function asText(value: unknown, field: string, maxLength = MAX_PROVIDER_TEXT): string {
   if (typeof value !== "string" || value.length === 0 || value.length > maxLength) {
     throw new Error(`${field} is missing or outside its text bound.`);
@@ -987,7 +1003,7 @@ export async function fetchJupiterOrder(
         reason: `${selection.label} was rate-limited. Refreshing later asks for a new order; no fallback ran.`,
       };
     }
-    if (errorCode && NO_ROUTE_CODES.has(errorCode)) {
+    if (jupiterSaysNoRoute(body)) {
       return {
         ok: false,
         code: "NO_ROUTE",
@@ -1246,7 +1262,7 @@ export async function fetchJupiterExecutableOrder(
         reason: `${selection.label} was rate-limited. Refreshing later asks for a new order; no fallback ran.`,
       };
     }
-    if (bodyErrorCode && NO_ROUTE_CODES.has(bodyErrorCode)) {
+    if (jupiterSaysNoRoute(body)) {
       return {
         ok: false,
         code: "NO_ROUTE",

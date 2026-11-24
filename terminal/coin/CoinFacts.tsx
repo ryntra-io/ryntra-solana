@@ -6,8 +6,12 @@ import { useLang } from '@/city/lib/i18n/lang';
 import type { DepthCoin, DepthWindow } from '@/lib/market-depth/model';
 import type { SpotMarket } from '@/lib/spot/markets';
 import { buyShare } from '@/terminal/market/depth-view';
+import { IssuerPowers } from '@/terminal/stocks/IssuerPowers';
 import { Info } from '@/terminal/ui';
 import { DESK } from './desk-words';
+import { aboutOf } from './head-view';
+import type { CoinPassport } from './passport/passport-data';
+import { PASSPORT } from './passport/words';
 import f from './facts.module.css';
 
 const WINDOWS: readonly DepthWindow[] = ['5m', '1h', '6h', '24h'];
@@ -18,51 +22,63 @@ const WINDOW_WORDS: Readonly<Record<DepthWindow, Readonly<{ en: string; uk: stri
   '24h': { en: '24h', uk: '24 год' },
 };
 
-const pct = (value: number | null, lang: 'en' | 'uk') => (value === null ? '—' : digits(`${value < 10 ? value.toFixed(1) : Math.round(value)}%`, lang));
-
 /**
- * The coin's facts at the ticket's foot, one block: the holders, the ten largest holders' share and the
- * creator's, the mint's rights; under them the buys against the sells over 5 minutes, an hour, six hours and a day.
- * Where the sources stand and what a right means — behind «i». All Jupiter's and the chain's, through the engine.
+ * «About the coin», one block: who holds it — the holders, the ten largest
+ * holders' share, the creator (what they hold, how many coins they launched and how many of those listed) — and its
+ * rights in plain words, a stock's issuer's among them; under them the buys against the sells over 5 minutes, an hour,
+ * six hours and a day. The coin's passport speaks first; the market's and the depth's reads fill what it lacks. A row
+ * nobody can fill is not drawn: a creator nobody names leaves no «—» behind. Where the sources stand — behind «i».
+ * `issuerPowers` — a stock's issuer's powers in «Rights»; off where the stock's own facts stand beside and say them.
  */
-export function CoinFacts({ market, depth }: { market: SpotMarket | null; depth: DepthCoin | null }) {
+export function CoinFacts({ market, depth, passport, flow = true, issuerPowers = true }: { market: SpotMarket | null; depth: DepthCoin | null; passport?: CoinPassport | null; flow?: boolean; issuerPowers?: boolean }) {
   const d = useWords(DESK);
+  const p = useWords(PASSPORT);
   const lang = useLang();
-  const holders = market?.holders ?? depth?.holders ?? null;
-  const top = market?.audit.topHoldersPct ?? depth?.topHolders ?? null;
-  const dev = market?.audit.devBalancePct ?? null;
-  const mint = market ? (market.audit.mintAuthorityDisabled === null ? null : market.audit.mintAuthorityDisabled ? 'off' : 'on') : (depth?.mint ?? null);
-  const freeze = market ? (market.audit.freezeAuthorityDisabled === null ? null : market.audit.freezeAuthorityDisabled ? 'off' : 'on') : (depth?.freeze ?? null);
-  if (!market && !depth) return null;
+  if (!market && !depth && !passport) return null;
+  const about = aboutOf({ market, depth, passport: passport ?? null }, lang);
   return (
     <section className={f.facts} aria-label={d.facts}>
       <div className={f.headRow}>
         <span className={f.title}>{d.facts}</span>
         <Info label={d.facts}>{d.factsWhy}</Info>
       </div>
+      {/* The cells say it once: no sentence on top that repeats them (flaws 79 and 124 — «Creator launched 3
+          coins, 1 listed; top 10 hold 25%» stood over «Top 10 hold 25%» and «Creator's coins 3 · 1 listed»). */}
       <dl className={f.grid}>
         <div className={f.cell}>
           <dt>{d.holders}</dt>
-          <dd>{holders !== null ? digits(count(holders), lang) : '—'}</dd>
+          <dd>{about.holders !== null ? digits(count(about.holders), lang) : '—'}</dd>
         </div>
         <div className={f.cell}>
-          <dt>{d.top10}</dt>
-          <dd data-tone={top !== null && top >= 50 ? 'warn' : undefined}>{pct(top, lang)}</dd>
+          <dt>{p.factTop10}</dt>
+          <dd data-tone={about.top10.warn ? 'warn' : undefined}>{about.top10.text}</dd>
         </div>
-        <div className={f.cell}>
-          <dt>{d.dev}</dt>
-          <dd data-tone={dev !== null && dev >= 10 ? 'warn' : undefined}>{pct(dev, lang)}</dd>
-        </div>
-        <div className={f.cell}>
+        {about.creatorHolds ? (
+          <div className={f.cell}>
+            <dt>{p.factCreator}</dt>
+            <dd data-tone={about.creatorHolds.warn ? 'warn' : undefined}>{about.creatorHolds.text}</dd>
+          </div>
+        ) : null}
+        {about.creatorCoins ? (
+          <div className={f.cell}>
+            <dt>{p.factLaunches}</dt>
+            <dd>{about.creatorCoins}</dd>
+          </div>
+        ) : null}
+        <div className={f.cell} data-wide="">
           <dt>{d.rights}</dt>
           <dd className={f.rights}>
-            {mint !== null ? <span data-tone={mint === 'on' ? 'warn' : 'ok'}>{mint === 'on' ? d.mintOn : d.mintOff}</span> : null}
-            {freeze !== null ? <span data-tone={freeze === 'on' ? 'warn' : 'ok'}>{freeze === 'on' ? d.freezeOn : d.freezeOff}</span> : null}
-            {mint === null && freeze === null ? '—' : null}
+            {about.rights.map((right) => (
+              <span key={right.key} data-tone={right.tone}>
+                {right.text}
+              </span>
+            ))}
+            {issuerPowers ? <IssuerPowers mint={market?.mint ?? depth?.id ?? passport?.mint} /> : null}
+            {about.rights.length ? null : <span>—</span>}
           </dd>
         </div>
       </dl>
-      {depth ? (
+      {flow && depth ? (
         <div className={f.flow} role="table" aria-label={d.flowWhy}>
           {WINDOWS.map((window) => {
             const stats = depth.stats[window];

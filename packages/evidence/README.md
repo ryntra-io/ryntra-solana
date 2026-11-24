@@ -1,7 +1,7 @@
 # @ryntra/evidence
 
-The evidence layer a Trading Plan's conditions stand on at
-[ryntra.io/app/strategies](https://ryntra.io/app/strategies). An observation
+The evidence layer a Trading Plan's conditions stand on in
+[Ryntra](https://ryntra.io). An observation
 about a token arrives with its provenance: the provider, the window, when
 Ryntra asked, how far behind the source may be, when the figures stop
 counting as current, and the attribution the source's terms require. Two

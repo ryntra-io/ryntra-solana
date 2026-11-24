@@ -21,6 +21,8 @@ export { DLMM_PRO_PROGRAM, DlmmProRefusal };
 export type { DlmmProRefusalCode, DlmmProVenue };
 export { careRefusalOf, type CareSubject } from "../core/venues/meteora-dlmm-pro/care-rules.server.ts";
 export { CARE_RIGHTS } from "../core/venues/meteora-dlmm-pro/earn.server.ts";
+/** The stock pool's keeper (`lib/care/stock-keeper.server.ts`) reaches its move and its lock only through this door. */
+export { KEEPER_RIGHTS, MAX_KEEPER_BAND_BPS, keeperRefusalOf, type KeeperBounds, type KeeperMoveBuild } from "../core/venues/meteora-dlmm-pro/range.server.ts";
 /** What a limit order keeps of the fee on what it fills. */
 export { makerShareOf } from "../core/venues/meteora-dlmm-pro/ladder.ts";
 export type { EarnIncome, EarnOpenBuild } from "../core/venues/meteora-dlmm-pro/earn.server.ts";

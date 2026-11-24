@@ -19,6 +19,7 @@
  */
 
 import { z } from "zod";
+import { isoDateTime } from "../../zod/iso-datetime.ts";
 
 import { TelegramChannelSchema } from "../../account/notifications.ts";
 import { withBoundedCasRetry, type GuardStore } from "../../guard/store.ts";
@@ -26,7 +27,7 @@ import { withBoundedCasRetry, type GuardStore } from "../../guard/store.ts";
 export const TELEGRAM_COLLECTION = "assistantTelegram" as const;
 
 const Wallet = z.string().regex(/^[1-9A-HJ-NP-Za-km-z]{32,44}$/);
-const Iso = z.string().datetime({ offset: true });
+const Iso = isoDateTime({ offset: true });
 
 /** How long the account's wallets are trusted without asking the accounts store again. */
 export const WALLETS_FRESH_MS = 10 * 60_000;

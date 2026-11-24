@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { citySigner } from '../../city/lib/app-bridge/route.ts';
 import { useWallet } from '../../city/lib/trade/wallet.ts';
 import type { ExitTarget } from './all-view.ts';
-import { DOOR_SHUT, doorOf, maybeSent, outcomeOf, reviewBody, reviewFresh, reviewOf, type ExitDoor, type ExitMode, type ExitOutcome, type ExitReview } from './exit-view.ts';
+import { DOOR_SHUT, doorOf, maybeSent, outcomeOf, reviewBody, reviewFresh, reviewOf, unroutedOf, type ExitDoor, type ExitMode, type ExitOutcome, type ExitReview } from './exit-view.ts';
 
 /** The engine's answer for a door that is shut on this deployment. */
 const CLOSED = 'CAPABILITY_UNAVAILABLE';
@@ -23,6 +23,8 @@ export type ExitAsk = Readonly<{ mode: ExitMode }>;
 type Store = {
   owner: string | null;
   door: ExitDoor;
+  /** The coins the engine's overview found Jupiter carries no route for now: not offered as coins that sell. */
+  unrouted: readonly string[];
   ask: ExitAsk | null;
   target: ExitTarget;
   /** The positions the person switched off. */
@@ -46,7 +48,7 @@ type Store = {
   landed: number;
 };
 
-const INITIAL = { owner: null, door: DOOR_SHUT, ask: null, target: 'SOL', off: [], only: null, changed: false, refused: false, asked: '', review: null, reviewAt: 0, phase: 'idle', declined: false, outcome: null, landed: 0 } as const satisfies Store;
+const INITIAL = { owner: null, door: DOOR_SHUT, unrouted: [], ask: null, target: 'SOL', off: [], only: null, changed: false, refused: false, asked: '', review: null, reviewAt: 0, phase: 'idle', declined: false, outcome: null, landed: 0 } as const satisfies Store;
 
 export const useExit = create<Store>(() => ({ ...INITIAL }));
 
@@ -78,10 +80,10 @@ const DOOR_AGAIN_MS = 15_000;
 const DOOR_TRIES = 3;
 
 async function readDoor(owner: string, tries = DOOR_TRIES): Promise<void> {
-  // The engine's overview: it builds nothing, and says whether the door is open here.
+  // The engine's overview: it builds nothing, says whether the door is open here, and which coins Jupiter carries no route for now.
   const answer = await getJson(`/api/v1/portfolio/exit?${new URLSearchParams({ owner, mode: 'exit', target: 'SOL' })}`);
   if (useExit.getState().owner !== owner) return;
-  useExit.setState({ door: answer.ok ? doorOf(answer.value) : DOOR_SHUT });
+  useExit.setState({ door: answer.ok ? doorOf(answer.value) : DOOR_SHUT, unrouted: answer.ok ? unroutedOf(answer.value) : [] });
   // Only a read that fell — not the engine's own «closed here» (404) — is asked again.
   if (!answer.ok && tries > 1 && !/^HTTP_4|CAPABILITY_UNAVAILABLE/.test(answer.code)) setTimeout(() => void (useExit.getState().owner === owner && readDoor(owner, tries - 1)), DOOR_AGAIN_MS);
 }

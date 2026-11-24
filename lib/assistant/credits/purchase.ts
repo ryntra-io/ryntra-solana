@@ -23,6 +23,7 @@
 
 import { isOffCurveAddress, type Address } from "@solana/kit";
 import { z } from "zod";
+import { isoDateTime } from "../../zod/iso-datetime.ts";
 
 import { withBoundedCasRetry, type GuardAtomicVersionedWrite, type GuardStore } from "../../guard/store.ts";
 import { newPublicId, newReferenceKey, PaymentRequestRecordSchema, type PaymentRequestRecord } from "../../pay/model.ts";
@@ -113,7 +114,7 @@ const PAYMENTS_MAX = 16;
 
 /* ------------------------------------------------------------ the order */
 
-const Iso = z.string().datetime({ offset: true });
+const Iso = isoDateTime({ offset: true });
 const PaymentSchema = z.object({ signature: z.string().regex(SIGNATURE), amountRaw: z.string().regex(RAW), payer: z.string().regex(BASE58).nullable(), at: Iso.nullable() }).strict();
 const ForeignSchema = z.object({ signature: z.string().regex(SIGNATURE), mint: z.string().regex(BASE58).nullable(), amountRaw: z.string().regex(RAW) }).strict();
 

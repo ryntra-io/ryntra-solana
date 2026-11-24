@@ -656,6 +656,40 @@ button.endPill:disabled {
   color: var(--flare);
 }
 
+/* Under the price, the three facts a swap of the coin rests on: market cap, liquidity, the day's volume (eyes pass 20.11,
+   №18) — one row of three, label over figure, under a hairline. */
+.tileFacts {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  column-gap: 12px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+
+.tileFact {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.tileFact > i {
+  overflow: hidden;
+  font-size: var(--type-caption);
+  font-style: normal;
+  color: var(--dim);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.tileFact > b {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
 /* The tile's way out: a small arrow by the coin's name, to its page. */
 .tileGo {
   display: inline-block;
@@ -749,6 +783,19 @@ button.endPill:disabled {
 .bigShimmer.bigShimmer {
   width: 140px;
   height: 30px;
+}
+
+/* The terms line while the price is on its way: the rate's place and the fee's, shimmering where they will stand. */
+.rateShimmer.rateShimmer {
+  display: block;
+  width: 168px;
+  height: 14px;
+}
+
+.feeShimmer.feeShimmer {
+  flex: none;
+  width: 72px;
+  height: 14px;
 }
 
 .bigUsd {

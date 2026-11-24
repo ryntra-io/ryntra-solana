@@ -18,6 +18,7 @@
  */
 
 import { z } from "zod";
+import { isoDateTime } from "../zod/iso-datetime.ts";
 
 import { withBoundedCasRetry, type GuardStore } from "../guard/store.ts";
 import type { SolanaWalletAction } from "../solana/action-ledger.ts";
@@ -29,7 +30,7 @@ import { readUsdcMovements, type ChainTransport, type MovementsRead } from "./pa
 const COLLECTION = "autoinvestPaymentWatch" as const;
 const BASE58 = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
 const SIGNATURE = /^[1-9A-HJ-NP-Za-km-z]{64,128}$/;
-const Iso = z.string().datetime({ offset: true });
+const Iso = isoDateTime({ offset: true });
 const TOKEN_PROGRAM = "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA";
 
 /** How many kept events the watch holds — more than any rule waits on between two passes. */

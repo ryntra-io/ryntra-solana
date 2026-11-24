@@ -33,7 +33,7 @@ export function Info({ label, word, children }: { label: string; word?: string; 
   }, [open]);
   return (
     <span className={s.infoWrap} ref={wrap}>
-      <button type="button" className={word ? `${s.info} ${s.infoWord}` : s.info} aria-label={label} aria-expanded={open} aria-controls={open ? id : undefined} onClick={() => setOpen((was) => !was)}>
+      <button type="button" className={word ? `${s.info} ${s.infoWord}` : s.info} data-info="" aria-label={label} aria-expanded={open} aria-controls={open ? id : undefined} onClick={() => setOpen((was) => !was)}>
         <Icon name="info" size="s" />
         {word ? <span>{word}</span> : null}
       </button>

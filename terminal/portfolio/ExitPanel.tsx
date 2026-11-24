@@ -7,6 +7,7 @@ import type { Lang } from '@/city/lib/i18n/langs';
 import { ExplainBox, ExplainButton } from '@/terminal/coin/parts';
 import { sumText } from '@/terminal/earn/rows';
 import { Action, CoinLogo, Figure, Icon, Kick, Panel, Quiet, Segment, Switch, Title } from '@/terminal/ui';
+import { FEE } from '@/terminal/ui/words';
 import { EXIT_TARGETS, PROTOCOL_NAME, collectLines, exitEstimate, exitLines, exitPicked, exitable, type ExitLine, type ExitTarget, type GroupId } from './all-view';
 import { ALL } from './all-words';
 import { feeText, solFigure } from './clean-view';
@@ -55,6 +56,7 @@ function whyOf(line: Pick<ExitLine, 'reason' | 'partPct' | 'untilEpoch' | 'until
  */
 export function ExitPanel({ data, onClose }: { data: AllData; onClose: () => void }) {
   const w = useWords(ALL);
+  const fw = useWords(FEE);
   const lang = useLang();
   const ask = useExit((st) => st.ask);
   const target = useExit((st) => st.target);
@@ -67,10 +69,11 @@ export function ExitPanel({ data, onClose }: { data: AllData; onClose: () => voi
   const only = useExit((st) => st.only);
   const changed = useExit((st) => st.changed);
   const refused = useExit((st) => st.refused);
+  const unrouted = useExit((st) => st.unrouted);
   const [how, setHow] = useState(false);
   const howId = useId();
   const collect = ask?.mode === 'collect';
-  const lines = useMemo(() => (collect ? collectLines(data.groups) : exitLines(data.groups)), [collect, data.groups]);
+  const lines = useMemo(() => (collect ? collectLines(data.groups) : exitLines(data.groups, unrouted)), [collect, data.groups, unrouted]);
   const picked = useMemo(() => exitPicked(lines, off, only), [lines, off, only]);
   const key = picked.map((line) => line.id).join(',');
 
@@ -90,16 +93,24 @@ export function ExitPanel({ data, onClose }: { data: AllData; onClose: () => voi
   // own. An exit whose package brings nothing in the target's coins says «—», never the estimate. Collected fees come
   // in the pools' own coins, so their worth stands until the package names SOL or USDC.
   const built = review ? receiveFigures(review).map((figure) => digits(figure, lang)) : [];
-  const figures = review && !collect ? built : built.length ? built : estimateParts(picked, collect, target, data.answer?.solUsd ?? null, lang);
+  // The engine said there is nothing to build: «—», never the estimate beside a button that cannot be pressed.
+  const figures = phase === 'empty' ? [] : review && !collect ? built : built.length ? built : estimateParts(picked, collect, target, data.answer?.solUsd ?? null, lang);
   const received = built.length ? built.join(' + ') : null;
   const rent = review ? rentSol(review) : null;
   const fee = review ? feeText(review.summary.feeBps) : null;
-  const summary = review ? [rent !== null ? w.rentBack(digits(solFigure(rent), lang)) : null, fee ? w.fee(digits(fee, lang)) : w.noFee, review.summary.others ? w.others(review.summary.others) : null].filter(Boolean).join(' · ') : phase === 'building' ? w.afterBuild : null;
+  const summary = review ? [rent !== null ? w.rentBack(digits(solFigure(rent), lang)) : null, fee ? fw.ryntra(digits(fee, lang)) : fw.none, review.summary.others ? w.others(review.summary.others) : null].filter(Boolean).join(' · ') : phase === 'building' ? w.afterBuild : null;
   const byId = new Map(lines.map((line) => [line.id, line]));
+  // The coins Jupiter carries no route for now — found by the overview, or by the build — in one line, never as rows that sell.
+  const noRouteIds = [...new Set([...lines.filter((line) => line.reason === 'NO_SWAP').map((line) => line.id), ...(review ? review.summary.left.filter((step) => step.reason === 'NO_ROUTE').map((step) => step.id) : [])])];
+  const noRouteNames = noRouteIds.flatMap((id) => {
+    const line = byId.get(id);
+    return line ? [lineName(line, w)] : [];
+  });
   // What the engine left out or only started — said once: a line that already says the same under its name is not repeated.
-  const left = review ? review.summary.left.filter((step) => step.reason !== byId.get(step.id)?.reason) : [];
+  const left = review ? review.summary.left.filter((step) => step.reason !== 'NO_ROUTE' && step.reason !== byId.get(step.id)?.reason) : [];
   const warn = phase === 'failed' ? w.failed : declined ? w.declined : refused ? w.notSent : changed ? w.changed : null;
-  const status = phase === 'signing' ? w.approve : phase === 'sending' ? (collect ? w.collecting : w.exiting) : phase === 'empty' ? w.nothing : (warn ?? (phase === 'building' ? w.building : null));
+  // Nothing to build because Jupiter takes none of the coins: the one line about them says why, «nothing to do» is not added.
+  const status = phase === 'signing' ? w.approve : phase === 'sending' ? (collect ? w.collecting : w.exiting) : phase === 'empty' ? (noRouteIds.length ? null : w.nothing) : (warn ?? (phase === 'building' ? w.building : null));
   const on = new Set(picked.map((line) => line.id));
 
   return (
@@ -131,7 +142,7 @@ export function ExitPanel({ data, onClose }: { data: AllData; onClose: () => voi
           </div>
           <div className={a.exitLists}>
             {SECTIONS.map((section) => {
-              const rows = lines.filter((line) => line.row.group === section);
+              const rows = lines.filter((line) => line.row.group === section && line.reason !== 'NO_SWAP');
               if (!rows.length) return null;
               return (
                 <section key={section} className={a.exitGroup} aria-label={section === 'pools' ? w.pools : section === 'staking' ? w.staking : w.lendingGroup}>
@@ -162,6 +173,11 @@ export function ExitPanel({ data, onClose }: { data: AllData; onClose: () => voi
               );
             })}
           </div>
+          {noRouteIds.length ? (
+            <p className={a.exitWhy} role="note">
+              {w.noRoute(noRouteNames.join(', '), noRouteIds.length)}
+            </p>
+          ) : null}
           {left.length ? (
             <ul className={a.exitRows}>
               {left.map((step) => {

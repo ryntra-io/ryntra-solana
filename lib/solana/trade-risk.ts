@@ -37,6 +37,7 @@
  */
 
 import { z } from "zod";
+import { isoDateTime } from "../zod/iso-datetime.ts";
 
 import { HONEST_STATES } from "../core/authority-matrix.ts";
 import type { SolanaPolicyVerdict } from "./contracts.ts";
@@ -110,7 +111,7 @@ export const TRADE_RISK_LIMITS = {
 } as const;
 export type TradeRiskLimits = typeof TRADE_RISK_LIMITS;
 
-const Iso = z.string().datetime({ offset: true });
+const Iso = isoDateTime({ offset: true });
 const Address = z.string().regex(/^[1-9A-HJ-NP-Za-km-z]{32,44}$/);
 
 /** Where one fact came from, and when it was read. Both, always, or the fact is not a fact. */

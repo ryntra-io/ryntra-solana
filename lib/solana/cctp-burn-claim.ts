@@ -48,6 +48,7 @@
  */
 
 import { z } from "zod";
+import { isoDateTime } from "../zod/iso-datetime.ts";
 
 import { withBoundedCasRetry, type GuardStore } from "../guard/store.ts";
 import { CCTP_DIRECTIONS, type CctpDirection } from "./cctp-direction.ts";
@@ -108,7 +109,7 @@ const CHAIN_TX = z.union([z.string().regex(SOLANA_SIGNATURE), z.string().regex(E
 const TrailEntrySchema = z
   .object({
     state: z.enum(CCTP_BURN_CLAIM_STATES),
-    at: z.string().datetime({ offset: true }),
+    at: isoDateTime({ offset: true }),
     attempt: z.number().int().min(1),
   })
   .strict();
@@ -167,8 +168,8 @@ const CctpBurnClaimRecordSchema = z
     /** The destination transaction that minted, once it has been observed. */
     mintTransactionHash: CHAIN_TX.nullable(),
     receiptHash: z.string().regex(HEX_DIGEST).nullable(),
-    reservedAt: z.string().datetime({ offset: true }),
-    updatedAt: z.string().datetime({ offset: true }),
+    reservedAt: isoDateTime({ offset: true }),
+    updatedAt: isoDateTime({ offset: true }),
     /* Bounded, because an unbounded audit trail inside a CAS record is a
        record that eventually cannot be written. Twenty-four entries is more
        than a canary can legitimately produce. */

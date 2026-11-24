@@ -1,11 +1,11 @@
 import l from './launch.module.css';
 
-export type GlyphName = 'picture' | 'clock' | 'lock' | 'bolt' | 'pool' | 'shield' | 'upload' | 'x' | 'telegram' | 'globe' | 'rocket' | 'spark';
+export type GlyphName = 'picture' | 'clock' | 'lock' | 'bolt' | 'pool' | 'shield' | 'upload' | 'x' | 'telegram' | 'globe' | 'rocket';
 
 /**
  * The marks the Launch screen draws that the kit has not: a picture, a clock and a lock; for the ready formats a bolt,
- * a pool and a shield; for the launchpad an upload, the links' X, Telegram and globe, a rocket for
- * a coin still without its picture and the agent's spark — on the kit's grid, with the kit's stroke.
+ * a pool and a shield; for the launchpad an upload, the links' X, Telegram and globe and a rocket
+ * for a coin still without its picture — on the kit's grid, with the kit's stroke.
  */
 export function Glyph({ name, small = false, className }: { name: GlyphName; small?: boolean; className?: string }) {
   return (
@@ -51,8 +51,6 @@ export function Glyph({ name, small = false, className }: { name: GlyphName; sma
           <path d="M7.5 13.5L5 16v3l2.5-1.5M16.5 13.5L19 16v3l-2.5-1.5M10.5 19.5h3" />
           <circle cx="12" cy="9.5" r="1.6" />
         </>
-      ) : name === 'spark' ? (
-        <path d="M11 3l1.8 5.2L18 10l-5.2 1.8L11 17l-1.8-5.2L4 10l5.2-1.8zM18.5 15l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8z" />
       ) : (
         <>
           <rect x="5.5" y="10.5" width="13" height="9" rx="1.5" />

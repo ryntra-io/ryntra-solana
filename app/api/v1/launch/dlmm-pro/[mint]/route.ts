@@ -36,6 +36,7 @@ export async function GET(request: Request, context: { params: Promise<{ mint: s
     price: { ...view.price },
     split: view.split ? { ...view.split } : null,
     ladder: view.ladder ? { ...view.ladder } : null,
+    reward: view.reward ? { ...view.reward } : null,
     problems: [...view.problems],
     receipt: { COIN: [...view.receipt.COIN], POOL: [...view.receipt.POOL], SUPPLY: [...view.receipt.SUPPLY] },
   } satisfies LaunchPoolView);

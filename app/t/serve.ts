@@ -3,7 +3,7 @@ import type { NextRequest } from "next/server";
 import { withinMetadataBudget } from "@/app/app/metadata-budget";
 import { launchWords } from "@/app/app/launch/launch-words";
 import { formatBps } from "@/app/app/launch/launch-format";
-import { coinOpenGraph, COIN_OG_SIZE } from "@/city/lib/coin/og.server";
+import { coinOpenGraph, COIN_OG_SIZE } from "@/terminal/share/coin.server";
 import { readCoinCard } from "@/city/lib/coin/read.server";
 import type { LaunchTokenResponse } from "@/lib/api/v1/contract";
 import { getGuardRuntime } from "@/lib/guard/runtime";
@@ -113,8 +113,8 @@ export async function serveLaunchShort(req: NextRequest, slug: string, rawCode: 
 }
 
 /**
- * `/t/<slug>/image`: the token's card — its tower's card in the city, the same picture as `/c/<mint>`'s, with
- * the price and the day's move the engine reads now. The card keeps itself as long as its price stays worth showing.
+ * `/t/<slug>/image`: the token's card — its coin's card (`terminal/share/coin.server.tsx`), the same picture as
+ * `/c/<mint>`'s, with the price and the day's move the engine reads now. The card keeps itself as long as its price stays worth showing.
  */
 export async function serveLaunchCard(_req: NextRequest, slug: string): Promise<Response> {
   const network = launchNetwork();

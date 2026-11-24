@@ -23,6 +23,7 @@
 import { randomBytes } from "node:crypto";
 
 import { z } from "zod";
+import { isoDateTime } from "../zod/iso-datetime.ts";
 
 import {
   AGENT_SESSION_ID,
@@ -71,8 +72,8 @@ export const AgentSessionRecordSchema = z
     turnCount: z.number().int().min(0),
     /** Privacy-safe product steps this session recorded, by name, with counts — never words. */
     steps: z.record(z.string().min(1).max(48), z.number().int().min(0)),
-    createdAt: z.string().datetime({ offset: true }),
-    updatedAt: z.string().datetime({ offset: true }),
+    createdAt: isoDateTime({ offset: true }),
+    updatedAt: isoDateTime({ offset: true }),
   })
   .strict();
 export type AgentSessionRecord = z.output<typeof AgentSessionRecordSchema>;

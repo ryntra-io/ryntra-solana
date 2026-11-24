@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { isoDateTime } from "../zod/iso-datetime.ts";
 
 import type { GuardStore } from "../guard/store.ts";
 
@@ -30,7 +31,7 @@ export const InternalWalletSchema = z
     wallet: z.string().refine((value) => BASE58_ADDRESS.test(value) || EVM_ADDRESS.test(value), "a Solana or EVM address"),
     /** The owner's own word for it: "founder phone", "QA stand". Never shown to a customer. */
     label: z.string().min(1).max(60),
-    addedAt: z.string().datetime({ offset: true }),
+    addedAt: isoDateTime({ offset: true }),
   })
   .strict();
 

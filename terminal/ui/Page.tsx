@@ -8,17 +8,18 @@ export type PageKind = 'action' | 'desk';
  * One page for every section. Two
  * kinds and nothing else:
  *
- * - `action` — Swap, Bridge, Launch, Earn, Agents, Portfolio and every section to come: one container as wide as the
- *   page's `--page`, in the middle of the working area, its content at the top. Every tab of a section lives in the same
- *   container — switching tabs moves nothing.
- * - `desk` — the Market and the Spot: the whole working width, with the same head.
+ * - `action` — Swap, Bridge, Launch, Agents, Portfolio and every section to come: one container as wide as the page's
+ *   `--page`, on the working area's left line — the agent's line and the desk's head (one axis from the menu,
+ *   a turn between sections moves nothing sideways) —, its content at the top. Every tab of a section lives in the
+ *   same container — switching tabs moves nothing.
+ * - `desk` — the Market, the Spot, the Bots, Earn and the pools: the whole working width, with the same head.
  *
  * A screen is built from `Page`, `PageHead` and `ActionBody`, and writes no width, place or top of its own page. A
  * screen's own `data-*` marks (for its shots and tests) stand on the page.
  *
  * `head="desk"` — an action page of a section whose other tabs are desks (Bots: the Grid is a desk, the
- * other bots forms): its head and tabs stand where the desk's stand, on the left of the working area, so a turn of the
- * tabs never moves them; only the content below keeps the action page's centred container.
+ * other bots forms): its head and tabs run the desk's whole width, so a turn of the tabs never moves them; the content
+ * below keeps the action page's container on the same left line.
  */
 export function Page({ kind = 'action', head, className, children, ...marks }: { kind?: PageKind; head?: 'desk'; className?: string; children: ReactNode } & { [mark: `data-${string}`]: string | undefined }) {
   return (
@@ -32,14 +33,18 @@ export function Page({ kind = 'action', head, className, children, ...marks }: {
  * The page's head, one line: the section's name, its tabs straight after it, and on the right a quiet mark of the
  * state, where there is one («No launch fee»). On a phone the tabs take their own row and scroll sideways; the mark
  * stays on a desk.
+ *
+ * `mode` — the page's mode, the toggle «Public ⇄ Private» (`PrivacyToggle`): last on the right, and on a
+ * phone too, beside the section's name.
  */
-export function PageHead({ title, tabs, mark, className }: { title: ReactNode; tabs?: ReactNode; mark?: ReactNode; className?: string }) {
+export function PageHead({ title, tabs, mark, mode, className }: { title: ReactNode; tabs?: ReactNode; mark?: ReactNode; mode?: ReactNode; className?: string }) {
   return (
     <div className={cx(s.pageHead, className)} data-page-head="">
       <h1 className={s.pageTitle}>{title}</h1>
       {tabs ? <div className={s.pageTabs}>{tabs}</div> : null}
       <span className={s.pageGrow} />
       {mark ? <div className={s.pageMark}>{mark}</div> : null}
+      {mode ? <div className={s.pageMode}>{mode}</div> : null}
     </div>
   );
 }

@@ -23,7 +23,7 @@ import s from './shell.module.css';
 
 /**
  * «Tell your agent what to do» — in the header of every screen. Ctrl K (⌘K on a Mac) from anywhere but another field
- * puts the keyboard here. As the person types, the rows under the line say what the agent will do — the city's own
+ * puts the keyboard here, and «/» does too (`./Keys.tsx`). As the person types, the rows under the line say what the agent will do — the city's own
  * reading of the sentence, each row a shelf that is on; Enter or a tap opens that shelf with the sentence handed over.
  * The line opens and fills; it never signs.
  */

@@ -54,8 +54,8 @@ const COLUMNS = 'minmax(200px, 1.6fr) minmax(110px, 0.9fr) minmax(80px, 0.6fr) m
 
 /**
  * A bot on paper — the Grid or Signals: the coin and the amount,
- * the rule's few fields, and one action — «Start on paper», no wallet, no signature. Beside the form, what the rule
- * would have done on the coin's last week; under it, the person's paper bots of this kind, each paused, resumed or
+ * the rule's few fields, and one action — «Start on paper», no wallet, no signature. In the form over the action, what
+ * the rule would have done on the coin's last week; under it, the person's paper bots of this kind, each paused, resumed or
  * stopped on its own. The bots, their week and their runs are the city's own (`city/lib/bots/store.ts`, `sim.ts`).
  */
 export function PaperBot({ id, lay }: { id: PaperBotId; lay: (parts: BotParts) => ReactNode }) {
@@ -129,40 +129,43 @@ export function PaperBot({ id, lay }: { id: PaperBotId; lay: (parts: BotParts) =
   const weekResult = week ? signedUsd(week.pnlUsd, lang) : null;
   const holdResult = week ? signedUsd(week.holdUsd, lang) : null;
 
+  // What the rule would have done on the coin's last week, in the form over its action — the place the form keeps free
+  // beside the chart (QA 20.11, вада 28: the room under the action stood empty while the week sat apart under it).
+  const weekBlock = (
+    <div className={b.weekBox}>
+      <Kick>{w.weekTitle}</Kick>
+      {week && weekResult ? (
+        <div className={b.figureCol} data-bot-week="">
+          <Figure value={weekResult.text} tone={weekResult.tone} />
+          <span className={b.cap}>
+            {w.weekTrades(String(week.trades))}
+            {holdResult ? ` · ${w.weekHold(holdResult.text)}` : ''}
+          </span>
+          <span className={b.cap}>{w.picture}</span>
+        </div>
+      ) : (
+        <span className={b.cap}>{path?.status === 'ready' && !path.bars.length ? w.weekNone : issue ? '—' : w.reading}</span>
+      )}
+    </div>
+  );
+
   const form = (
     <Panel tone="hi" pad="l" gap={16} label={w[id]}>
       <BotHead id={id} kick={w.paperKick} info={<HowInfo lines={[w.signalsHow, w.paperHow]} />} />
       <CoinAmount coin={shown} amount={amount} onAmount={setAmount} onCoin={setCoin} />
       <div className={b.group}>
         <Kick>{w.paceLabel}</Kick>
-        <Shares label={w.paceLabel} value={pace} onPick={setPace} options={PACE_IDS.map((one) => ({ id: one, label: { fast: w.paceFast, steady: w.paceSteady, slow: w.paceSlow }[one] }))} />
+        <div className={b.fill}>
+          <Shares label={w.paceLabel} value={pace} onPick={setPace} options={PACE_IDS.map((one) => ({ id: one, label: { fast: w.paceFast, steady: w.paceSteady, slow: w.paceSlow }[one] }))} />
+        </div>
       </div>
       <span className={b.line}>{w.paperLine}</span>
+      {weekBlock}
       <Note warn={Boolean(issue)}>{issue ?? (started ? w.startedPaper : null)}</Note>
       <Action disabled={!draft || issues.length > 0} onClick={go} data-bot-start="">
         {w.startPaper}
       </Action>
     </Panel>
-  );
-
-  const side = (
-    <div className={b.side}>
-      <Panel gap={10} label={w.weekTitle}>
-        <Kick>{w.weekTitle}</Kick>
-        {week && weekResult ? (
-          <div className={b.figureCol} data-bot-week="">
-            <Figure value={weekResult.text} tone={weekResult.tone} />
-            <span className={b.cap}>
-              {w.weekTrades(String(week.trades))}
-              {holdResult ? ` · ${w.weekHold(holdResult.text)}` : ''}
-            </span>
-            <span className={b.cap}>{w.picture}</span>
-          </div>
-        ) : (
-          <span className={b.cap}>{path?.status === 'ready' && !path.bars.length ? w.weekNone : issue ? '—' : w.reading}</span>
-        )}
-      </Panel>
-    </div>
   );
 
   const working = rows.filter((row) => row.status === 'running').length;
@@ -197,7 +200,7 @@ export function PaperBot({ id, lay }: { id: PaperBotId; lay: (parts: BotParts) =
   // The coin's chart beside the form: the terminal's own, its price and day in its head.
   const chart = <BotChart coin={shown ?? SOL_COIN} label={w[id]} />;
 
-  return lay({ chart, form, side, mine });
+  return lay({ chart, form, side: null, mine });
 }
 
 /** A paper bot's own steps: pause or resume, and stop — in this browser, nothing signed. */

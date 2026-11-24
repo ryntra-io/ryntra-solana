@@ -1,0 +1,137 @@
+import { words } from '../../city/lib/i18n/dict.ts';
+
+/**
+ * The buy ticket's own words beside `words.ts` (`TICKET`): the person's quick sums, take-profit and stop at the buy,
+ * the limit by market cap, the strip of what this wallet did in the coin, and the slippage line with what it does and
+ * does not do. English and Ukrainian with the same keys; no promise of a result anywhere.
+ */
+export const BUY_TICKET = words(
+  {
+    // The person's own quick sums.
+    editQuick: 'Change quick sums',
+    sellShares: 'Sell shares, %',
+    saveQuick: 'Save',
+    resetQuick: 'Reset',
+    cancelQuick: 'Cancel',
+    maxStays: 'Max stays 100%',
+    badSum: 'Four different sums',
+    badShare: 'Three different shares, 1–99',
+
+    // Take-profit and stop at the buy.
+    protect: 'Take-profit and stop',
+    protectLine: (take: string, stop: string) => `+${take}% · −${stop}%`,
+    protectHow: 'How take-profit and stop work',
+    protectSays: 'Stop is a reminder, not an automatic sale',
+    protectRowTake: 'Take-profit',
+    protectTakeIs: (take: string) => `A Jupiter limit order: sells at +${take}% or better`,
+    protectRowStop: 'Stop',
+    protectStopIs: (stop: string) => `At −${stop}% we remind you; you sign the sale`,
+    protectStopDevice: (stop: string) => `At −${stop}% this device reminds you; you sign the sale`,
+    protectRowWhen: 'When',
+    protectWhenIs: 'Right after the buy lands; your wallet asks for each',
+    protectRowDeposit: 'Deposit',
+    protectDepositIs: 'Jupiter keeps a small deposit while the order is open, back when it closes',
+    takeLabel: 'Take-profit, %',
+    stopLabel: 'Stop, %',
+    badProtect: 'Take-profit 1–1000%, stop 1–90%',
+
+    // After the buy, protecting it.
+    setProtect: (take: string, stop: string) => `Set +${take}% · −${stop}%`,
+    placeTake: (take: string) => `Place +${take}% order`,
+    takeReview: (fee: string, deposit: string | null) => (deposit ? `${fee} · deposit ${deposit} SOL, back when it closes` : fee),
+    takeSkipped: 'Take-profit not placed',
+    protectBusy: 'Waiting for your wallet',
+
+    // The limit by market cap.
+    byPrice: 'Price',
+    byCap: 'MC',
+    switchToCap: 'Set the limit by market cap',
+    switchToPrice: 'Set the limit by price',
+    buyAtCap: 'Buy at market cap',
+    sellAtCap: 'Sell at market cap',
+    capNow: (cap: string) => `Now ${cap}`,
+    useCapNow: (cap: string) => `Use the market cap now, ${cap}`,
+    capIsPrice: (price: string, unit: string) => `= ${price} ${unit}`,
+
+    // What this wallet did in the coin.
+    stand: 'Your trades in this coin',
+    bought: 'Bought',
+    sold: 'Sold',
+    holding: 'Holding',
+    result: 'Result',
+
+    // Slippage and front-running.
+    slippageLine: (percent: string) => `Slippage ${percent}`,
+    slippageAuto: 'Slippage auto',
+    rowSlippage: 'Slippage',
+    slippageIs: (percent: string) => `${percent}, Jupiter's estimate for this pair now`,
+    slippageAutoIs: "Jupiter's estimate for this pair, set when the order is built",
+    rowMinimum: 'Least you get',
+    minimumIs: 'Written into the transaction: the network refuses to fill for less',
+    rowFrontRun: 'Front-running',
+    frontRunIs: 'Sent the ordinary way, not by a private route; no one ahead of you can take you below the least you get',
+    rowIfMissed: 'If the price runs away',
+    ifMissedIs: 'The swap fails and only the network fee is spent',
+  },
+  {
+    editQuick: 'Змінити швидкі суми',
+    sellShares: 'Частки продажу, %',
+    saveQuick: 'Зберегти',
+    resetQuick: 'Скинути',
+    cancelQuick: 'Скасувати',
+    maxStays: 'Макс лишається 100%',
+    badSum: 'Чотири різні суми',
+    badShare: 'Три різні частки, 1–99',
+
+    protect: 'Тейк-профіт і стоп',
+    protectLine: (take: string, stop: string) => `+${take}% · −${stop}%`,
+    protectHow: 'Як працюють тейк-профіт і стоп',
+    protectSays: 'Стоп — нагадування, а не автопродаж',
+    protectRowTake: 'Тейк-профіт',
+    protectTakeIs: (take: string) => `Лімітний ордер Jupiter: продає на +${take}% або краще`,
+    protectRowStop: 'Стоп',
+    protectStopIs: (stop: string) => `На −${stop}% нагадаємо; продаж підписуєш ти`,
+    protectStopDevice: (stop: string) => `На −${stop}% нагадає цей пристрій; продаж підписуєш ти`,
+    protectRowWhen: 'Коли',
+    protectWhenIs: 'Одразу після купівлі; гаманець попросить підпис для кожного',
+    protectRowDeposit: 'Депозит',
+    protectDepositIs: 'Поки ордер відкритий, Jupiter тримає невеликий депозит, він повернеться після закриття',
+    takeLabel: 'Тейк-профіт, %',
+    stopLabel: 'Стоп, %',
+    badProtect: 'Тейк-профіт 1–1000%, стоп 1–90%',
+
+    setProtect: (take: string, stop: string) => `Поставити +${take}% · −${stop}%`,
+    placeTake: (take: string) => `Розмістити ордер +${take}%`,
+    takeReview: (fee: string, deposit: string | null) => (deposit ? `${fee} · депозит ${deposit} SOL, повернеться після закриття` : fee),
+    takeSkipped: 'Тейк-профіт не розміщено',
+    protectBusy: 'Чекаємо на гаманець',
+
+    byPrice: 'Ціна',
+    byCap: 'Кап.',
+    switchToCap: 'Ліміт за капіталізацією',
+    switchToPrice: 'Ліміт за ціною',
+    buyAtCap: 'Купити на капіталізації',
+    sellAtCap: 'Продати на капіталізації',
+    capNow: (cap: string) => `Зараз ${cap}`,
+    useCapNow: (cap: string) => `Узяти капіталізацію зараз, ${cap}`,
+    capIsPrice: (price: string, unit: string) => `= ${price} ${unit}`,
+
+    stand: 'Твої угоди з цією монетою',
+    bought: 'Куплено',
+    sold: 'Продано',
+    holding: 'Тримаю',
+    result: 'Результат',
+
+    slippageLine: (percent: string) => `Прослизання ${percent}`,
+    slippageAuto: 'Прослизання авто',
+    rowSlippage: 'Прослизання',
+    slippageIs: (percent: string) => `${percent}, оцінка Jupiter для цієї пари зараз`,
+    slippageAutoIs: 'Оцінка Jupiter для цієї пари, ставиться, коли ордер збирається',
+    rowMinimum: 'Щонайменше отримаєш',
+    minimumIs: 'Записано в транзакцію: мережа не виконає її на менше',
+    rowFrontRun: 'Випередження',
+    frontRunIs: 'Надсилається звичайним шляхом, не приватним; той, хто встане попереду, не опустить тебе нижче мінімуму',
+    rowIfMissed: 'Якщо ціна втече',
+    ifMissedIs: 'Обмін не відбудеться, витратиться лише комісія мережі',
+  },
+);

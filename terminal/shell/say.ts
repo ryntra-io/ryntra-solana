@@ -6,7 +6,8 @@ import { askSentence } from '../../lib/sentence/client.ts';
 import { lookalikeOf } from '../../lib/world/text-safety/lookalike.ts';
 import { searchCatalog } from '../../city/lib/search/sources.ts';
 import { readShelf, shelfNow, useDepth } from '../market/depth.ts';
-import { EVERY_GATE, askHref, askRows, foundCoin, modelWanted, planAnswer, stayOn, withShelf, type AskRow } from './ask-route.ts';
+import { SOL } from '../../city/lib/trade/tiles.ts';
+import { EVERY_GATE, askHref, askRows, conditionUnsure, foundCoin, modelWanted, planAnswer, pricedRow, stayOn, withShelf, type AskRow, type PriceOf } from './ask-route.ts';
 import { handOff, useAsk } from './ask.ts';
 import { engineGates } from './engine.ts';
 import { useWhere } from './frame.ts';
@@ -75,12 +76,25 @@ export function useSay(): (sentence: string, row?: AskRow) => boolean {
       const book = withShelf(bookOf(towers), shelfNow());
       const first = stayOn(askRows(sentence, book, { subject }, on, gates), shelf, on)[0] ?? null;
       const chosen = row ?? first;
-      const go = (target: AskRow) => {
+      // The price now, as the market and the shelf read it: a conditional order's price is worked out from it.
+      const priceOf: PriceOf = (mint) => {
+        const tower = towers.find((each) => each.id === mint);
+        if (tower && !tower.unread?.includes('price') && tower.price > 0) return tower.price;
+        const shelfCoin = shelfNow().find((each) => each.id === mint);
+        return shelfCoin?.price && shelfCoin.price > 0 ? shelfCoin.price : null;
+      };
+      const go = (picked: AskRow) => {
+        const target = pricedRow(picked, priceOf, SOL.mint);
         const href = askHref(target.target, view);
         handOff(target.target.shelf, href, target.command, said);
         router.push(href);
       };
       const picked = row !== undefined && row.key !== first?.key;
+      // A buy or a sale on a condition the terminal cannot rest: which action, asked back — never a screen that does another.
+      if (!picked && (!first || first.command.kind === 'ask') && conditionUnsure(said, book, { subject })) {
+        useAsk.setState({ clarify: { said, need: 'action' } });
+        return true;
+      }
       if (!picked && view !== 'preview' && modelWanted(said, first)) {
         const id = (turn += 1);
         const stale = () => useAsk.getState().reading?.id !== id;

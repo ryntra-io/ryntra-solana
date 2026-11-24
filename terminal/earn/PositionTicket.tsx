@@ -11,12 +11,15 @@ import { digits, useWords } from '@/city/lib/i18n/dict';
 import { useLang } from '@/city/lib/i18n/lang';
 import { useWallet } from '@/city/lib/trade/wallet';
 import { explorerTxUrl } from '@/lib/solana/explorer';
+import { PrivateIncomePart, startPrivateIncome, usePrivateIncome } from '@/terminal/stocks/private/PrivateIncome';
+import { usePrivateStockButton } from '@/terminal/stocks/private/PrivateStockBuy';
 import { Action, Chip, Quiet, Tabs } from '@/terminal/ui';
 import { Note, Result, TicketHead } from './bits';
 import { noticeKey } from './failures';
 import { lineOf } from './PoolTicket';
 import { ProOutcome } from './ProTicket';
 import { proRewardsText, resultTone, sumText, type PositionRow } from './rows';
+import { ResultFacts } from './ResultFacts';
 import { pick, type PoolAct, type ProAct } from './ticket';
 import { useRefreshAfter } from './useReads';
 import { EARN } from './words';
@@ -52,6 +55,9 @@ export function PositionTicket({ view, row, act, exitOpen, solPriceUsd, onConnec
   const sent = usePier((st) => st.sent);
   const connection = useWallet((st) => st.connection);
   const holdings = useWallet((st) => st.holdings);
+  // A stock pool's fees into the private balance: the same ticket and button; the part is `terminal/stocks/private`'s.
+  const priv = usePrivateIncome(view.x.mint, view.y.mint);
+  const privButton = usePrivateStockButton();
   const wanted = connection ? targetKey(connection.address, { kind: act, position: view }) : null;
   const shown = wanted && reviewed?.key === wanted ? reviewed : null;
   const review = poolReviewOf(shown);
@@ -103,6 +109,7 @@ export function PositionTicket({ view, row, act, exitOpen, solPriceUsd, onConnec
   const label = phase === 'reviewing' ? w.building : phase === 'wallet' ? w.inWallet : phase === 'sending' ? w.sending : verb;
   const press = () => {
     if (!connection) return onConnect();
+    if (priv.on && review) return startPrivateIncome(review, view.x.mint, view.y.mint, connection.wallet, connection.address);
     if (shown) void usePier.getState().confirm(connection, holdings);
     else void usePier.getState().prepare(connection, { kind: act, position: view }, holdings);
   };
@@ -144,8 +151,9 @@ export function PositionTicket({ view, row, act, exitOpen, solPriceUsd, onConnec
       {near ? <Note>{near === 'over' ? w.feeOver : w.feeNear}</Note> : null}
       {figures?.note && !notice ? <Note>{figures.note}</Note> : null}
       {notice ? <Note tone={notice.tone}>{said ? w[said] : notice.text}</Note> : null}
-      <Action onClick={press} busy={waiting} disabled={waiting || (connection !== null && !possible)}>
-        {connection ? label : w.connect}
+      {priv.offered ? <PrivateIncomePart x={view.x} y={view.y} review={review} on={priv.on} /> : null}
+      <Action onClick={press} busy={waiting || (priv.on && privButton.busy)} disabled={waiting || (connection !== null && !possible) || (priv.on && privButton.busy)}>
+        {connection ? ((priv.on ? privButton.label : null) ?? label) : w.connect}
       </Action>
     </>
   );
@@ -157,7 +165,7 @@ const PRO_VERB = { collect: 'take', compound: 'takeAndAdd', leave: 'leave', clos
  * A position in a pool of DLMM Pro: take what it earned, take it and add it back in one transaction, or leave; an empty
  * one gives its deposit back. The Pro pool's own flow as the city runs it; the exact figures stand before the signature.
  */
-export function ProPositionTicket({ boat, pier, row, act, onConnect }: { boat: ProBoat; pier: ProPier; row: PositionRow; act: ProAct; onConnect: () => void }) {
+export function ProPositionTicket({ boat, pier, row, act, solPriceUsd, onConnect }: { boat: ProBoat; pier: ProPier; row: PositionRow; act: ProAct; solPriceUsd: number | null; onConnect: () => void }) {
   const w = useWords(EARN);
   const lang = useLang();
   const phase = useProPier((st) => st.phase);
@@ -209,6 +217,7 @@ export function ProPositionTicket({ boat, pier, row, act, onConnect }: { boat: P
           </span>
         </span>
       </div>
+      {row.result && !boat.empty ? <ResultFacts result={row.result} solPriceUsd={solPriceUsd} /> : null}
       {acts.length > 1 ? (
         <Tabs<ProAct> fill label={w.actions} value={act} onChange={(id) => void pick({ kind: 'proPosition', nftMint: boat.nftMint, act: id })} items={acts.map((id) => ({ id, label: id === 'compound' ? w.addMore : w[PRO_VERB[id]] }))} />
       ) : null}

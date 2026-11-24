@@ -13,8 +13,10 @@ import { useWords } from '@/city/lib/i18n/dict';
 import { Icon } from '@/terminal/ui';
 import { LendTicket } from './LendTicket';
 import { PoolTicket } from './PoolTicket';
+import { ledgersOf } from './ledger';
 import { PositionTicket, ProPositionTicket } from './PositionTicket';
 import { ProTicket } from './ProTicket';
+import { KeeperMount } from './keeper/KeeperMount';
 import { poolPositionRow, poolRows, proPoolRows, proPositionRow } from './rows';
 import { StakeTicket } from './StakeTicket';
 import { closeSheet, place, ticketKey, useTicket, useTicketHeld, type Ticket } from './ticket';
@@ -100,8 +102,13 @@ export function TicketBody({ ticket, figures, owner, onConnect }: { ticket: Tick
       const boat = figures.proBoats.find((entry) => entry.nftMint === ticket.nftMint) ?? (keptPro?.nftMint === ticket.nftMint ? keptPro : null);
       const pier = boat ? figures.proAll.find((entry) => entry.address === boat.pool) : undefined;
       if (!boat || !pier || keptPro?.nftMint !== ticket.nftMint) return null;
-      const row = figures.positions.find((entry) => entry.kind === 'pro' && entry.ref === ticket.nftMint) ?? proPositionRow(boat, pier, figures.solPriceUsd);
-      return <ProPositionTicket key={`${boat.nftMint}:${ticket.act}`} boat={boat} pier={pier} row={row} act={ticket.act} onConnect={onConnect} />;
+      const row = figures.positions.find((entry) => entry.kind === 'pro' && entry.ref === ticket.nftMint) ?? proPositionRow(boat, pier, figures.solPriceUsd, ledgersOf(owner).get(boat.nftMint) ?? null);
+      // In a stock pool the agent keeps, its line under the ticket, and its bounds in the ticket's place.
+      return (
+        <KeeperMount boat={boat} pier={pier} coins={row.coins} name={row.name} onConnect={onConnect}>
+          <ProPositionTicket key={`${boat.nftMint}:${ticket.act}`} boat={boat} pier={pier} row={row} act={ticket.act} solPriceUsd={figures.solPriceUsd} onConnect={onConnect} />
+        </KeeperMount>
+      );
     }
   }
 }

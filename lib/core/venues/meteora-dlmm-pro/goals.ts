@@ -7,12 +7,17 @@
  * that swings. And three widths: **Calm** · **Balanced** · **Dense** — 34 · 16 · 5 steps of the pool's tick spacing
  * on each side of the price, the same counts the city's other piers use for bins.
  *
+ * A fourth goal is Meteora's own: **Wave** — even over the half of each side nearest the price,
+ * then rising in four steps to twice that weight at the edges: it earns by the price like «Even» and catches the
+ * swings like «Catch moves». It is the SDK's `StrategyType.Wave`, built by the SDK at the width asked.
+ *
  * A goal becomes one position: one NFT that holds the whole shape in a few ranges. How many is a cost, not a detail —
  * every range keeps rent until the position is closed (0.004552 SOL each on mainnet, 14.11.2026) — so an even shape
- * is the one range it always merges into, and the two that thin or thicken are drawn in at most seven steps. Seven
+ * is the one range it always merges into, and the two that thin or thicken are drawn in at most seven steps. A wave is
+ * never coarsened: the SDK draws it in at most nine ranges at any width, and its four steps are what it is. Nine
  * ranges and the pool's two sides fit one transaction with the deposit (`REHEARSAL.md` §12: up to 15 do).
  *
- * A fourth way stands beside the three goals (Meteora's «Create New Strategy»): **a shape of the person's
+ * A fifth way stands beside the four goals (Meteora's «Create New Strategy»): **a shape of the person's
  * own** — a grid of 32 columns, 16 under the price and 16 over it, each painted 0 to 8 cells tall. The width stays the
  * person's choice of the same three: the 16 columns of a side are laid over that side's steps (`customPlanOf`).
  *
@@ -23,9 +28,9 @@ import type { ShapeRequest, ShapeStrategy } from "./shapes.server.ts";
 import { GRID_CELL_WEIGHT, GRID_COLUMNS, GRID_LEVELS, GRID_MAX_RANGES, GRID_SIDE, bestLayout, gridFault, gridWeights } from "../../liquidity-grid.ts";
 import { MAX_TICK_ID, MIN_TICK_ID, alignTickDown } from "./ticks.ts";
 
-export const EARN_GOALS = ["even", "near", "edges"] as const;
+export const EARN_GOALS = ["even", "near", "edges", "wave"] as const;
 export type EarnGoal = (typeof EARN_GOALS)[number];
-/** What an opening may be built from: one of the three goals, or the person's own painted shape. */
+/** What an opening may be built from: one of the four goals, or the person's own painted shape. */
 export const CUSTOM_GOAL = "custom" as const;
 export type OpenGoal = EarnGoal | typeof CUSTOM_GOAL;
 
@@ -33,13 +38,19 @@ export const EARN_STYLES = ["calm", "balanced", "dense"] as const;
 export type EarnStyle = (typeof EARN_STYLES)[number];
 
 /** The shape each goal is drawn in. */
-export const GOAL_STRATEGY: Readonly<Record<EarnGoal, ShapeStrategy>> = { even: "spot", near: "curve", edges: "bidAsk" };
+export const GOAL_STRATEGY: Readonly<Record<EarnGoal, ShapeStrategy>> = { even: "spot", near: "curve", edges: "bidAsk", wave: "wave" };
 
 /** Steps of the pool's tick spacing on each side of the price. */
 export const STYLE_STEPS: Readonly<Record<EarnStyle, number>> = { calm: 34, balanced: 16, dense: 5 };
 
-/** The most ranges a goal's position takes: an even shape is one range whatever its width. */
-export const GOAL_MAX_RANGES: Readonly<Record<EarnGoal, number>> = { even: 1, near: 7, edges: 7 };
+/**
+ * The most ranges a wave takes, as the SDK draws it (`StrategyType.Wave`, 0.1.3): the even middle, and four steps up on
+ * each side — whatever the width and either way it is laid. So a wave is never coarsened: it is held to exactly this.
+ */
+export const WAVE_MAX_RANGES = 9;
+
+/** The most ranges a goal's position takes: an even shape is one range whatever its width; a wave, the SDK's own nine. */
+export const GOAL_MAX_RANGES: Readonly<Record<EarnGoal, number>> = { even: 1, near: 7, edges: 7, wave: WAVE_MAX_RANGES };
 
 export const isEarnGoal = (value: unknown): value is EarnGoal => typeof value === "string" && (EARN_GOALS as readonly string[]).includes(value);
 export const isEarnStyle = (value: unknown): value is EarnStyle => typeof value === "string" && (EARN_STYLES as readonly string[]).includes(value);

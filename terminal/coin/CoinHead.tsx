@@ -15,6 +15,9 @@ import { KIND_TABS, logoChain, logoOf, type KindTab } from '@/terminal/market/de
 import { coinName } from '@/terminal/market/market-view';
 import { useSaved } from '@/terminal/market/saved';
 import { useDismiss } from '@/terminal/shell/useDismiss';
+import { chipOf, timeText } from '@/terminal/stocks/facts-view';
+import { useStockPoolFacts } from '@/terminal/stocks/useStockPoolFacts';
+import { STOCK_COIN, STOCK_FACTS } from '@/terminal/stocks/words';
 import { Chip, CoinLogo, Icon, Search, Tabs, changeText, changeTone, cx, priceText, usdText } from '@/terminal/ui';
 import { DESK } from './desk-words';
 import { CoinGlyph } from './glyphs';
@@ -39,11 +42,13 @@ const PICK_TABS: readonly PickTab[] = ['main', ...KIND_TABS];
 /**
  * The head of the coin's desk: the coin with its logo is
  * a picker — a search over every coin of Solana, «Main» first and the Market's tabs by kind (All · Memes ·
- * Crypto · Stocks · Pre-IPO · Saved), a tap opens another coin in place — then its price and the day's move, and the figures a trader reads first:
- * the day's volume, liquidity, market cap, holders. The address with its copy, the site and X stand behind one quiet
- * control. Every figure is the engine's (`/api/spot/market`).
+ * Crypto · Stocks · Pre-IPO · Saved), a tap opens another coin in place — then its price and the day's move, and the
+ * figures a trader reads first: the market cap, liquidity, the day's volume, holders. Under them, the head's second row:
+ * the coin's passport (`figures` — the full value, the moves over 5 minutes, an hour and six hours, the people who
+ * traded in the day, the age) and, for a company's token, its issuer and the exchange's state (`stockMint`). The address
+ * with its copy, the site and X stand behind one quiet control. Every figure is the engine's.
  */
-export function CoinHead({ coin, market, price, change, tools }: { coin: HeadCoin; market: SpotMarket | null; price: number | null; change: number | null; tools: ReactNode }) {
+export function CoinHead({ coin, market, price, change, tools, figures, stockMint = null }: { coin: HeadCoin; market: SpotMarket | null; price: number | null; change: number | null; tools: ReactNode; figures?: ReactNode; stockMint?: string | null }) {
   const w = useWords(COIN);
   const d = useWords(DESK);
   const lang = useLang();
@@ -51,57 +56,103 @@ export function CoinHead({ coin, market, price, change, tools }: { coin: HeadCoi
   const box = useRef<HTMLDivElement>(null);
   useDismiss(open, box, () => setOpen(false));
   const sym = bare(coin.symbol);
-  const figures: [string, string][] = [
-    [d.volume, market?.volume24hUsd != null ? usdText(market.volume24hUsd, lang) : '—'],
-    [d.liquidity, market?.liquidityUsd != null ? usdText(market.liquidityUsd, lang) : '—'],
+  // The order the best terminals read a coin in: what it is worth, how deep its pool is, how much traded, who holds it.
+  const own: [string, string][] = [
     [d.mcap, market?.marketCapUsd != null ? usdText(market.marketCapUsd, lang) : '—'],
+    [d.liquidity, market?.liquidityUsd != null ? usdText(market.liquidityUsd, lang) : '—'],
+    [d.volume, market?.volume24hUsd != null ? usdText(market.volume24hUsd, lang) : '—'],
     [d.holders, market?.holders != null ? digits(count(market.holders), lang) : '—'],
   ];
   return (
-    <div className={h.head}>
-      <div className={h.anchor} ref={box}>
-        <button type="button" className={u.pickBtn} aria-haspopup="dialog" aria-expanded={open} aria-label={`${sym} — ${d.pick}`} onClick={() => setOpen((was) => !was)}>
-          <CoinLogo {...logoChain(coin.mint, coin.logo, coin.logo)} symbol={sym} size="l" />
-          <span className={h.names}>
-            <span className={h.symRow}>
-              <b className={h.sym}>{sym}</b>
-              <Icon name="chevron" size="s" />
+    <div className={h.box}>
+      <div className={h.head}>
+        <div className={cx(h.anchor, h.pickAnchor)} ref={box}>
+          <button type="button" className={u.pickBtn} aria-haspopup="dialog" aria-expanded={open} aria-label={`${sym} — ${d.pick}`} onClick={() => setOpen((was) => !was)}>
+            <CoinLogo {...logoChain(coin.mint, coin.logo, coin.logo)} symbol={sym} size="l" />
+            <span className={h.names}>
+              <span className={h.symRow}>
+                <b className={h.sym}>{sym}</b>
+                <Icon name="chevron" size="s" />
+              </span>
+              <span className={h.name}>{coinName({ id: coin.mint, name: coin.name })}</span>
             </span>
-            <span className={h.name}>{coinName({ id: coin.mint, name: coin.name })}</span>
-          </span>
-        </button>
-        {open ? <Picker current={coin.mint} onClose={() => setOpen(false)} /> : null}
-      </div>
-      {coin.verified ? (
-        <span className={h.vetted} title={w.verified} role="img" aria-label={w.verified}>
-          <Chip tone="ok">
-            <Icon name="check" size="s" />
-            <span className={h.vettedWord} aria-hidden="true">
-              {w.verified}
-            </span>
-          </Chip>
-        </span>
-      ) : null}
-      <div className={h.quote}>
-        <b className={h.price}>{price !== null ? priceText(price, lang) : '—'}</b>
-        {change !== null ? (
-          <span className={h.change} data-tone={changeTone(change)}>
-            {changeText(change, lang)}
+          </button>
+          {open ? <Picker current={coin.mint} onClose={() => setOpen(false)} /> : null}
+        </div>
+        {coin.verified ? (
+          <span className={h.vetted} title={w.verified} role="img" aria-label={w.verified}>
+            <Chip tone="ok">
+              <Icon name="check" size="s" />
+              <span className={h.vettedWord} aria-hidden="true">
+                {w.verified}
+              </span>
+            </Chip>
           </span>
         ) : null}
+        <div className={h.quote}>
+          <b className={h.price}>{price !== null ? priceText(price, lang) : '—'}</b>
+          {change !== null ? (
+            <span className={h.change} data-tone={changeTone(change)}>
+              {changeText(change, lang)}
+            </span>
+          ) : null}
+        </div>
+        <dl className={h.figures}>
+          {own.map(([label, value]) => (
+            <div key={label} className={h.figure}>
+              <dt>{label}</dt>
+              <dd>{value}</dd>
+            </div>
+          ))}
+        </dl>
+        <span className={h.grow} />
+        <About mint={coin.mint} market={market} />
+        {tools}
       </div>
-      <dl className={h.figures}>
-        {figures.map(([label, value]) => (
-          <div key={label} className={h.figure}>
-            <dt>{label}</dt>
-            <dd>{value}</dd>
-          </div>
-        ))}
-      </dl>
-      <span className={h.grow} />
-      <About mint={coin.mint} market={market} />
-      {tools}
+      {figures || stockMint ? (
+        <div className={h.more}>
+          {figures}
+          {stockMint ? <StockLine mint={stockMint} /> : null}
+        </div>
+      ) : null}
     </div>
+  );
+}
+
+/** How often the exchange's chip is judged again: a minute is fine enough for an exchange's hours. */
+const STOCK_TICK_MS = 60_000;
+
+/**
+ * A company's token in the head: whose it is («Stock token · Backpack Securities», «Pre-IPO token · not a share») and the
+ * exchange's state with the time it next changes — the stock's own facts (`terminal/stocks`), the same read the facts
+ * block under the ticket uses. A coin that is no stock shows nothing.
+ */
+function StockLine({ mint }: { mint: string }) {
+  const facts = useStockPoolFacts(mint);
+  const d = useWords(STOCK_FACTS);
+  const w = useWords(STOCK_COIN);
+  const lang = useLang();
+  // Times are the person's own clock: drawn in the browser only, never a server's zone first.
+  const [now, setNow] = useState<number | null>(null);
+  useEffect(() => {
+    setNow(Date.now());
+    const tick = window.setInterval(() => setNow(Date.now()), STOCK_TICK_MS);
+    return () => window.clearInterval(tick);
+  }, []);
+  if (now === null || !facts?.isStock || !facts.issuer) return null;
+  const chip = chipOf(facts, now);
+  return (
+    <span className={h.stock} data-session={facts.session}>
+      <span className={h.issuer}>
+        <span className={h.issuerKind}>{facts.kind === 'pre-ipo' ? w.preIpo : w.share}</span>
+        <span className={h.issuerName}>{facts.issuer.label}</span>
+      </span>
+      {chip ? (
+        <Chip tone={chip.tone} dot>
+          <span className={h.chipText}>{chip.at === null ? d[chip.key] : d[`${chip.key}Until`](timeText(chip.at, now, lang))}</span>
+        </Chip>
+      ) : null}
+    </span>
   );
 }
 
@@ -130,7 +181,7 @@ function About({ mint, market }: { mint: string; market: SpotMarket | null }) {
   if (market?.links.twitter) links.push([d.x, market.links.twitter, 'x']);
   if (market?.links.telegram) links.push([d.telegram, market.links.telegram, 'telegram']);
   return (
-    <span className={h.anchor} ref={box}>
+    <span className={cx(h.anchor, h.about)} ref={box}>
       <span className={h.links}>
         {/* On a wide head the links stand beside «i»; where the four figures need the room, they wait behind it (QA 19.11). */}
         {links.map(([label, href, glyph]) => (

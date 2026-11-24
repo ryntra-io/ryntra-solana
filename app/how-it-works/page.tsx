@@ -5,9 +5,9 @@ import { GuidesPage } from "@/city/components/how/GuidesPage";
 import { CITY_GUIDE_FLAGS, HOW_PATH, lessons } from "@/city/lib/how/guides";
 import { LANG_BOOT_SCRIPT } from "@/city/lib/i18n/langs";
 import { PALETTE } from "@/city/lib/palette";
-import { CITY_CARD_SIZE, cityCardVersion } from "@/city/lib/share/card";
 import { CITY_FONTS } from "@/city/styles/fonts";
 import city from "@/city/styles/city.module.css";
+import { SHARE_CARD_SIZE, shareCardAlt, shareCardPath } from "@/terminal/share/cards";
 
 import { buildMissionControlMetadata } from "../seo";
 
@@ -27,7 +27,7 @@ const WORDS = {
 const ITEMS = lessons(CITY_GUIDE_FLAGS);
 
 export const metadata: Metadata = {
-  ...buildMissionControlMetadata(WORDS, HOW_PATH, `/opengraph-image?v=${cityCardVersion()}`, CITY_CARD_SIZE),
+  ...buildMissionControlMetadata(WORDS, HOW_PATH, shareCardPath("docs"), SHARE_CARD_SIZE, shareCardAlt("docs")),
   robots: { index: ITEMS.length > 0, follow: true },
 };
 

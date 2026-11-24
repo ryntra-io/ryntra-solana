@@ -77,6 +77,8 @@ export type Ready = Readonly<{
   stale: boolean;
   /** The source the engine read, by its own name («GeckoTerminal»); null when it named none. */
   source: string | null;
+  /** The pool the engine read, as the page may read it itself: only where the answer names it whole. */
+  ref?: DirectPool;
 }>;
 
 export type CandlesRead =
@@ -132,6 +134,7 @@ export function readCandles(timeframe: Timeframe, status: number, body: unknown,
   const observed = typeof json.observedAt === 'string' ? Date.parse(json.observedAt) : Number.NaN;
   const pool = json.pool && typeof json.pool === 'object' ? (json.pool as Record<string, unknown>).name : null;
   const source = json.source && typeof json.source === 'object' ? (json.source as Record<string, unknown>).label : null;
+  const ref = namedPool(json);
   return {
     status: 'ready',
     timeframe,
@@ -140,6 +143,7 @@ export function readCandles(timeframe: Timeframe, status: number, body: unknown,
     observedAt: Number.isFinite(observed) ? Math.min(observed, now) : now,
     stale: json.stale === true,
     source: typeof source === 'string' && source ? source : null,
+    ...(ref ? { ref } : {}),
   };
 }
 
@@ -211,6 +215,42 @@ export function settle(state: ChartData, read: CandlesRead): ChartData {
  */
 export const saysUnavailable = (data: ChartData): boolean => data.status === 'unavailable' && !data.last && !data.busy && data.misses >= QUIET_MISSES;
 
+/**
+ * How far behind bars may be and still pass for live: two of their interval's cache times, never under a
+ * minute (the engine's own `freshForMs`). A copy the engine held a few seconds past fresh is not a delay.
+ */
+export function delayMs(timeframe: Timeframe): number {
+  return Math.max(60_000, 2 * TIMEFRAME_TTL_MS[timeframe]);
+}
+
+/** Bars really behind: stated stale by whoever read them, and older than their interval's `delayMs`. */
+export function isDelayed(read: Pick<Ready, 'stale' | 'observedAt' | 'timeframe'>, now: number): boolean {
+  return read.stale && now - read.observedAt > delayMs(read.timeframe);
+}
+
+/**
+ * Whether the browser reads the pool itself after this answer of the engine (`direct.ts`). The engine reads
+ * the source from the platform's shared addresses, which the source refuses for hours at a time; its last good copy —
+ * shared by every instance — then answered «Delayed 5h» while the person's own browser could read the same pool now.
+ * So the page reads the pool itself when the engine:
+ *
+ *  - answered held bars that are really behind (`isDelayed`) — not only when it has none;
+ *  - refused (its 429 or 503) while the screen holds none of the engine's bars, this browser's own, or engine bars that
+ *    have since fallen behind.
+ */
+export function readsDirect(answer: CandlesRead, shown: 'none' | 'engine' | 'direct', held: Ready | null, now: number): boolean {
+  if (answer.status === 'ready') return isDelayed(answer, now);
+  if (answer.status !== 'unavailable' || answer.http === undefined) return false;
+  return shown !== 'engine' || (held !== null && isDelayed({ ...held, stale: true }, now));
+}
+
+/** The newer of the engine's answer and this browser's own read: bars only win over bars by being read later. */
+export function newerRead(engine: CandlesRead, own: CandlesRead): CandlesRead {
+  if (own.status !== 'ready') return engine;
+  if (engine.status !== 'ready') return own;
+  return own.observedAt > engine.observedAt ? own : engine;
+}
+
 /** Held bars answered at once (stated stale) are followed soon by the read the engine makes behind them. */
 export const STALE_RECHECK_MS = 15_000;
 
@@ -254,7 +294,7 @@ export function delayLine(timeframe: Timeframe): string {
 
 /**
  * The chart's «Details»: where the bars come from and how old they are — the source, the pool, the age and, when the
- * engine answered with a held copy, «Delayed». Nothing while there are no bars.
+ * bars are really behind (`isDelayed`), «Delayed». Nothing while there are no bars.
  */
 export function detailsOf(data: ChartData, now: number): string[] {
   const read = data.last;
@@ -264,7 +304,7 @@ export function detailsOf(data: ChartData, now: number): string[] {
   if (read.source) parts.push(read.source);
   if (read.pool) parts.push(read.pool);
   parts.push(w.ago(ageText(now - read.observedAt)));
-  if (read.stale) parts.push(w.delayed);
+  if (isDelayed(read, now)) parts.push(w.delayed);
   return parts;
 }
 

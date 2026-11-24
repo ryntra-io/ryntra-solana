@@ -7,8 +7,9 @@ import { EARN_OPEN } from '../earn/flag.ts';
 import { openEarn } from '../earn/open.ts';
 import { launchOpenHere, useLaunch } from '../launch/district.ts';
 import { PILOT_OPEN, usePilot } from '../pilot/store.ts';
-import { readPilotAsk } from '../pilot/read.ts';
-import type { Book } from '../command/parse.ts';
+import { openCommand } from '../command/store.ts';
+import { terminalOpen } from '../../../terminal/shell/flag.ts';
+import { PILOT_PAGE, pilotHireWay } from './pilot-way.ts';
 import type { CrewGates, Role } from './read.ts';
 
 /**
@@ -30,7 +31,10 @@ export function crewGatesNow(): CrewGates {
   };
 }
 
-/** The Autopilot's first plan when no amount was said: a small budget the card shows before anything is signed. */
+/**
+ * The Autopilot's starter plan — its parts, never its sum: the sum in it only marks where the person's own goes (the
+ * terminal's card asks her for it, decision 108). Nothing is planned or signed with this sum.
+ */
 export const PILOT_STARTER = { en: 'Work with my 0.2 SOL: some into savings, some trade, some into pools', uk: 'Працюй з моїми 0,2 SOL: частину в скарбничку, частину торгуй, частину в пули' } as const;
 
 type CrewState = {
@@ -52,11 +56,8 @@ function openTrader(): void {
   openBots('launch');
 }
 
-/**
- * Opens the agent's own card — or, for `null` or an agent shut on this deployment, the crew in «Bots». `book` names the
- * coins a plan may trade (the command line's); the opening lines are the language on screen.
- */
-export function hire(role: Role | null, book: Book, lang: 'en' | 'uk', open: Readonly<{ pilot: (ask: NonNullable<ReturnType<typeof readPilotAsk>>) => void }>): void {
+/** Opens the agent's own card — or, for `null` or an agent shut on this deployment, the crew in «Bots». */
+export function hire(role: Role | null): void {
   const gates = crewGatesNow();
   if (!role || !gates[role]) {
     useCrew.getState().point(role);
@@ -71,11 +72,13 @@ export function hire(role: Role | null, book: Book, lang: 'en' | 'uk', open: Rea
     useCrew.getState().point(null);
     return useAutopilot.getState().show({ kind: 'launch', said: '', name: null, symbol: null });
   }
-  // The Autopilot working already: its card on what it did; else the plan from the starter sentence, for her to read.
+  // The Autopilot working already: its card on what it did. Else the plan's sum is hers to say — never one of Ryntra's
+  // (decision 108): the terminal's Autopilot page asks her for it; without the terminal, the line does, and the plan
+  // card opens with the sum she said.
   const pilot = usePilot.getState();
-  if (pilot.view?.status === 'working') return pilot.showLive();
-  const ask = readPilotAsk(PILOT_STARTER[lang], book) ?? readPilotAsk(PILOT_STARTER.en, book);
-  if (ask) return open.pilot(ask);
-  useCrew.getState().point('pilot');
-  openBots('launch');
+  const way = pilotHireWay(pilot.view?.status === 'working', terminalOpen());
+  if (way === 'live') return pilot.showLive();
+  useCrew.getState().point(null);
+  if (way === 'terminal' && typeof window !== 'undefined') return window.location.assign(PILOT_PAGE);
+  openCommand();
 }

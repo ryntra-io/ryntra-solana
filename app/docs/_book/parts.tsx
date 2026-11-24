@@ -1,12 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useLayoutEffect, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, type ReactNode } from "react";
 
 import { hydrateLang, LANG_LABEL, LANGS, setLang, useLang } from "@/city/lib/i18n/lang";
+import { terminalOpen } from "@/terminal/shell/flag";
+import { Icon } from "@/terminal/ui";
 import ui from "@/terminal/ui/ui.module.css";
 
-import { shotSrc, UI, type Lang, type ShotId } from "./book";
+import { docsTabTitle, shotSrc, UI, type Lang, type SectionId, type ShotId } from "./book";
 import b from "./book.module.css";
 
 /** The reader's language: the terminal's own switch and kept choice (`?lang=` on a link wins). */
@@ -15,43 +17,68 @@ export function useDocsLang(): Lang {
   return useLang();
 }
 
-/** The quiet bar over every page: where you are, and the language switch. */
+/**
+ * The browser's tab in the reader's language, as the terminal's pages do (`terminal/shell/useTabTitle.ts`): the server
+ * names the page in English; once the page knows the language, the tab says the page's name in it — again whenever the
+ * reader turns the language, or the router writes the English name back on a move. `null` is the docs' first page.
+ */
+export function useDocsTabTitle(id: SectionId | null, lang: Lang): void {
+  useEffect(() => {
+    const want = docsTabTitle(id, lang);
+    const put = () => {
+      if (document.title !== want) document.title = want;
+    };
+    put();
+    // The router writes a page's title after the screen has drawn (a streamed one later still): it is put back.
+    const watch = new MutationObserver(put);
+    watch.observe(document.head, { childList: true, subtree: true, characterData: true });
+    return () => watch.disconnect();
+  }, [id, lang]);
+}
+
+/**
+ * The quiet bar over a page: where you are — the way back to the docs from one of their pages. The language is the
+ * frame's own, in «More» on a desk and in the phone's menu (the eyes' pass of 19.11: a second switch beside it); only where the
+ * terminal is shut and the page stands in the plain frame does the bar keep a switch of its own. The docs, Help and About
+ * are named by their heads, not by the bar, so their heads stand on the line of every screen's head (the eyes' passes of
+ * 19.11 and 20.11); the way back to the docs from a section is the first line of its list of sections.
+ */
 export function DocsBar({ lang, here }: { lang: Lang; here?: string }) {
   const u = UI[lang];
+  const own = !terminalOpen();
+  if (!here && !own) return null;
   return (
     <div className={b.bar}>
-      <nav className={b.crumbs} aria-label={u.docs}>
-        {here ? (
-          <>
-            <Link href="/docs" className={b.crumb}>
-              {u.docs}
-            </Link>
-            <span className={b.crumbSep} aria-hidden="true">
-              /
-            </span>
-            <span className={b.crumbHere} aria-current="page">
-              {here}
-            </span>
-          </>
-        ) : (
-          <span className={b.crumbHere} aria-current="page">
+      {here ? (
+        <nav className={b.crumbs} aria-label={u.docs}>
+          <Link href="/docs" className={b.crumb}>
             {u.docs}
+          </Link>
+          <span className={b.crumbSep} aria-hidden="true">
+            /
           </span>
-        )}
-      </nav>
-      <div className={b.lang} role="group" aria-label={u.language}>
-        {LANGS.map((code) => (
-          <button key={code} type="button" className={b.langButton} aria-pressed={lang === code} onClick={() => setLang(code)}>
-            {LANG_LABEL[code]}
-          </button>
-        ))}
-      </div>
+          <span className={b.crumbHere} aria-current="page">
+            {here}
+          </span>
+        </nav>
+      ) : (
+        <span />
+      )}
+      {own ? (
+        <div className={b.lang} role="group" aria-label={u.language}>
+          {LANGS.map((code) => (
+            <button key={code} type="button" className={b.langButton} aria-pressed={lang === code} onClick={() => setLang(code)}>
+              {LANG_LABEL[code]}
+            </button>
+          ))}
+        </div>
+      ) : null}
     </div>
   );
 }
 
-/** A frame of the live site, the phone's frame on a phone. */
-export function Shot({ shot, lang, alt, priority = false, className }: { shot: ShotId; lang: Lang; alt: string; priority?: boolean; className?: string }) {
+/** A frame of the live site, the phone's frame on a phone; a short caption under it says what the frame shows. */
+export function Shot({ shot, lang, alt, caption, priority = false, className }: { shot: ShotId; lang: Lang; alt: string; caption?: string; priority?: boolean; className?: string }) {
   return (
     <figure className={`${b.shot} ${className ?? ""}`}>
       <picture>
@@ -67,6 +94,7 @@ export function Shot({ shot, lang, alt, priority = false, className }: { shot: S
           decoding="async"
         />
       </picture>
+      {caption ? <figcaption className={b.caption}>{caption}</figcaption> : null}
     </figure>
   );
 }
@@ -77,6 +105,24 @@ export function OpenLink({ href, children, className }: { href: string; children
     <Link href={href} className={`${ui.act} ${className ?? ""}`} prefetch={false}>
       {children}
     </Link>
+  );
+}
+
+/**
+ * A few doors to other pages, under a quiet heading: each a full-width row with a hairline under it and an arrow on the
+ * right, so it reads as a link (the eyes' pass of 20.11: pale rows with no arrow and no rule did not).
+ */
+export function LinkList({ title, links }: { title: string; links: readonly { href: string; label: string }[] }) {
+  return (
+    <nav className={b.linkList} aria-label={title}>
+      <h2 className={b.blockHead}>{title}</h2>
+      {links.map((link) => (
+        <Link key={link.href} href={link.href} className={b.linkRow}>
+          <span>{link.label}</span>
+          <Icon name="arrow" size="s" className={b.linkArrow} />
+        </Link>
+      ))}
+    </nav>
   );
 }
 

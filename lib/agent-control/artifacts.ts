@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { isoDateTime } from "../zod/iso-datetime.ts";
 
 import { EvidenceItemSchema, PolicyResultSchema } from "../guard/contracts.ts";
 import { AGENT_HASH_DOMAINS_V2, hashAgentPayloadV2 } from "./canonical.ts";
@@ -43,7 +44,7 @@ import {
  * simply has not been authorized, and a verifier says so rather than failing.
  */
 
-const timestamp = z.string().datetime({ offset: true });
+const timestamp = isoDateTime({ offset: true });
 const HEX_HASH = /^0x[0-9a-f]{64}$/;
 const BASE64 = /^[A-Za-z0-9+/]+={0,2}$/;
 const CAIP2 = /^[a-z0-9-]+:[A-Za-z0-9-]+$/;

@@ -15,6 +15,8 @@ import { useMoneyStore } from '@/city/lib/money/store';
 import { USDC } from '@/city/lib/trade/tiles';
 import { useWallet } from '@/city/lib/trade/wallet';
 import { iconOf } from '@/terminal/coin/Ticket';
+import { ContactSuggest } from '@/terminal/money/contacts/Contacts';
+import { contactsOpen } from '@/terminal/money/contacts/open';
 import { ExplainBox, ExplainButton, Rows } from '@/terminal/coin/parts';
 import { connectWallet } from '@/terminal/shell/Wallet';
 import { AmountField, CoinLogo, Icon, Kick, Panel, Quiet, Shares, Title, cx } from '@/terminal/ui';
@@ -126,6 +128,8 @@ function Form({ owner }: { owner: string | null }) {
           disabled={!idle}
         />
       </label>
+      {/* The wallet's contacts under «To»; the warning on a new recipient below stays as it was. */}
+      {contactsOpen() ? <ContactSuggest owner={owner} typed={send.to} disabled={!idle} onPick={(to) => useMoneyStore.getState().setTo(to)} /> : null}
       {send.name?.state === 'FOUND' && gate.recipient ? (
         <p className={s.termsLine} translate="no">
           {send.name.name} → {short(gate.recipient)}

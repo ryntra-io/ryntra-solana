@@ -1,7 +1,7 @@
 # @ryntra/trading-plans
 
 The deterministic helpers of a Trading Plan — the rules a person writes before
-they sign at [ryntra.io/app/strategies](https://ryntra.io/app/strategies). Two
+they sign in [Ryntra](https://ryntra.io). Two
 parts of a plan are pure arithmetic, and those are published here: the size
 of a spot-long position and the reading of a number a person typed. No
 network, no storage, no order placement.

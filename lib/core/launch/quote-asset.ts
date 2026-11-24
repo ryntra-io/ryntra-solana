@@ -22,6 +22,15 @@
  * transfer hook on the pair currency (the venue's own swap and claim refuse a pool with one) and new accounts frozen by
  * default (a buyer could not receive what they bought).
  *
+ * A launch paired with a stock, behind its own flag (`./stock-pair.ts`). A stock token carries the hook's
+ * extension with no program in it: Backpack's ANT and SPCX name an authority that may set one and `programId: null`,
+ * and a transfer of such a mint runs no hook at all. With the flag open the rule is the hook's program, not the
+ * extension: an empty hook passes, a hook with a program is refused as before. In exchange, a pair currency whose mint
+ * carries an issuer's powers — anything beyond the extensions DBC takes without a badge — passes only when it is a
+ * stock on the shelf of checked stocks (`../../stocks/shelf.ts`), matched by its mint and never by its symbol, and a
+ * mint the issuer has paused passes not at all. The badge is read on chain as before, first. Without the flag nothing
+ * of this is asked and the rule is the one above.
+ *
  * The figures a creator reads before signing are counted here too: the threshold in the pair's own units and in
  * dollars, and the liquidity that reaches the DEX after every fee on the way — the move's own fee and what the issuer's
  * mint withholds on the transfer into the pool. The dollars are of the price read at that moment, and its age is said
@@ -54,6 +63,8 @@ export const EXTENSION = {
   PERMANENT_DELEGATE: 12,
   TRANSFER_HOOK: 14,
   METADATA_POINTER: 18,
+  /* A stock token's; named so a record reads by name, never a reason by itself. */
+  CONFIDENTIAL_TRANSFER_MINT: 4,
   TOKEN_METADATA: 19,
   SCALED_UI_AMOUNT: 25,
   PAUSABLE: 26,
@@ -167,6 +178,9 @@ export const QUOTE_ASSET_REFUSALS = [
   "PRICE_UNKNOWN",
   "PRICE_STALE",
   "CONFIG_VERSION_UNAVAILABLE",
+  "STOCK_NOT_ON_SHELF",
+  "SHELF_NOT_READ",
+  "PAIR_PAUSED",
 ] as const;
 export type QuoteAssetRefusal = (typeof QUOTE_ASSET_REFUSALS)[number];
 
@@ -186,7 +200,16 @@ export const QUOTE_ASSET_REASONS: Readonly<Record<QuoteAssetRefusal, string>> = 
   PRICE_UNKNOWN: "the pair currency's price is not known now, so the curve cannot be set in dollars",
   PRICE_STALE: "the pair currency's price is older than this pair allows",
   CONFIG_VERSION_UNAVAILABLE: "a pair currency whose transfers carry a fee needs DBC 0.2.2, which this deployment does not build on",
+  STOCK_NOT_ON_SHELF: "a pair currency whose issuer holds powers over it is offered only as a stock on Ryntra's shelf of checked stocks, found by its mint",
+  SHELF_NOT_READ: "the shelf of checked stocks could not be read, so whether this mint is on it is unknown now",
+  PAIR_PAUSED: "the issuer has paused every transfer of the pair currency",
 });
+
+/**
+ * What the stocks engine says of a pair currency, asked only while a launch paired with a stock is open
+ * (`./stock-pair.ts`): whether its mint is on the shelf of checked stocks; null — the shelf could not be read.
+ */
+export type QuoteStockShelf = Readonly<{ onShelf: boolean | null }>;
 
 const BASE58 = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
 const ACCOUNT_STATES = ["initialized", "frozen", "uninitialized"] as const;
@@ -251,7 +274,8 @@ const sameNumber = (a: number, b: number): boolean => Math.abs(a - b) <= 1e-9;
 export function quoteAssetProblems(
   record: QuoteAssetRecord,
   observed: QuoteAssetObservation,
-  options: Readonly<{ nowMs: number; sdk: string }>,
+  /** `stock` — the rule, present only while the stock-pair flag is open; absent, the rule is SOL-L11's as it was. */
+  options: Readonly<{ nowMs: number; sdk: string; stock?: QuoteStockShelf }>,
 ): readonly QuoteAssetRefusal[] {
   const problems: QuoteAssetRefusal[] = [];
   if (observed.badge === null) problems.push("BADGE_NOT_READ");
@@ -266,8 +290,19 @@ export function quoteAssetProblems(
   if (facts.decimals !== record.decimals) problems.push("DECIMALS_CHANGED");
   if (!sameKeys(record.extensions, facts.extensions)) problems.push("EXTENSIONS_CHANGED");
   /* Not the issuer's powers as such — those are read and recorded — but the two a market could not live with. */
-  const forbidden = facts.extensions.some((extension) => FORBIDDEN_QUOTE_EXTENSIONS.includes(Number(extension)));
-  if (forbidden || facts.transferHook?.program || facts.defaultAccountState === "frozen") problems.push("EXTENSION_FORBIDDEN");
+  const hookLive = Boolean(facts.transferHook?.program);
+  /* With the stock-pair flag open, a hook's extension with no program in it runs nothing and passes. */
+  const forbidden = options.stock ? hookLive : facts.extensions.some((extension) => FORBIDDEN_QUOTE_EXTENSIONS.includes(Number(extension))) || hookLive;
+  if (forbidden || facts.defaultAccountState === "frozen") problems.push("EXTENSION_FORBIDDEN");
+  if (options.stock) {
+    /* A paused mint moves for nobody: the curve could neither take the pair currency in nor pay it out. */
+    if (facts.pausable?.paused) problems.push("PAIR_PAUSED");
+    /* Whatever DBC would take only with a badge carries an issuer's powers: such a mint must be a stock of the shelf. */
+    if (quoteBadgeRequired(facts, epoch)) {
+      if (options.stock.onShelf === null) problems.push("SHELF_NOT_READ");
+      else if (!options.stock.onShelf) problems.push("STOCK_NOT_ON_SHELF");
+    }
+  }
   const fee = facts.transferFee;
   const recorded = record.transferFee;
   if ((fee === null) !== (recorded === null)) problems.push("TRANSFER_FEE_CHANGED");

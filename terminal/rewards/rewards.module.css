@@ -62,6 +62,15 @@
   transition: transform 0.2s ease-out;
 }
 
+/* Before the figures, one line where the level's span stands, the span's height kept: the panel never grows when they come. */
+.pitch {
+  min-height: 32px;
+  margin: 0;
+  font-size: var(--type-base);
+  line-height: 1.5;
+  color: var(--soft);
+}
+
 /* Three facts in a row on a desk; two on a phone, the odd one across. */
 .tiles {
   display: grid;

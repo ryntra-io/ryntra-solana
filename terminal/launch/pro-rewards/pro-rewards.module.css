@@ -1,0 +1,40 @@
+/* The reward for a pool's liquidity in the Launch form: the switch's row is the ladder's
+   (`../launch.module.css`); here only its two rows of choices and its one line before the signature. */
+
+.choices {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Four shares and three terms each in one row, desk and phone alike: the words are short. */
+.shares,
+.days {
+  display: grid;
+  gap: 8px;
+}
+
+.shares {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.days {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+/* How much, for how long, to whom, and that it does not come back: one line on the form's own well. */
+.line {
+  margin: 0;
+  padding: 12px 16px;
+  font-size: var(--type-body);
+  line-height: 1.45;
+  color: var(--ice);
+  background: var(--well);
+  border: 1px solid var(--line);
+}

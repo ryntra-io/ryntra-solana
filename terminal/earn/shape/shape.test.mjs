@@ -30,6 +30,7 @@ const {
 } = await import("./model.ts");
 const { SHAPE } = await import("./words.ts");
 const { proChoice, proShapeBuilds, proShapeFault, proShapeRanges } = await import("../../../city/lib/earn/pro.ts");
+const { GRID_WAVE } = await import("../../../lib/core/liquidity-grid.ts");
 
 test("the four shapes a grid starts from: the three goals and «Wave», each mirrored about the price and painted on both sides", () => {
   assert.deepEqual([...PRESETS], ["even", "near", "edges", "wave"]);
@@ -43,9 +44,9 @@ test("the four shapes a grid starts from: the three goals and «Wave», each mir
   assert.deepEqual(outward("even"), Array(SIDE).fill(LEVELS / 2), "even stands at half height, to paint up or down");
   assert.deepEqual(outward("near"), [8, 8, 7, 7, 6, 6, 5, 5, 4, 4, 3, 3, 2, 2, 1, 1], "most by the price");
   assert.deepEqual(outward("edges"), [1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8], "most at the edges");
-  const wave = outward("wave");
-  assert.equal(Math.max(...wave), LEVELS);
-  assert.ok(wave[0] <= 2 && wave.at(-1) <= 2 && wave[7] === LEVELS && wave[8] === LEVELS, `one hump a side, in its middle: ${wave}`);
+  // «Wave» is Meteora's own (SDK 0.1.3) as the engine's grid rule draws it: even by the price, four steps up to the edges.
+  assert.deepEqual(outward("wave"), [4, 4, 4, 4, 4, 4, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8], "even on the nearer half, twice that at the edges");
+  assert.deepEqual(presetColumns("wave"), [...GRID_WAVE], "the very grid the engine calls Meteora's Wave");
 });
 
 test("a point of the grid is a column and a height; a press on a column's top cell takes it off", () => {
@@ -122,7 +123,7 @@ test("the Review the form asks for: the grid names its key, and a grid on one si
   assert.equal(proShapeBuilds(wave.slice(1), "balanced"), false);
   /* Too detailed for one position: teeth on every column need more ranges than fifteen — said, never flattened. */
   const comb = Array.from({ length: 32 }, (_, index) => (index % 2 ? 1 : 8));
-  assert.equal(proShapeRanges(wave, "balanced"), 11, "«Wave» stacks into eleven ranges");
+  assert.equal(proShapeRanges(wave, "balanced"), 9, "«Wave» stacks into nine ranges, as the SDK's own");
   assert.equal(proShapeFault(comb, "balanced"), "detail");
   assert.equal(proShapeFault(comb, "dense"), null, "the same teeth over five steps a side blend into eight ranges");
   assert.equal(proShapeFault([...Array(16).fill(0), ...wave.slice(16)], "balanced"), "sides");
@@ -146,5 +147,5 @@ test("the ticket offers the shape only behind its switch, and the store sends th
   const store = readFileSync(new URL("../../../city/lib/earn/pro-store.ts", import.meta.url), "utf8");
   assert.match(store, /goal: 'custom', columns: \[\.\.\.st\.shape\]/);
   const ticket = readFileSync(new URL("../ProTicket.tsx", import.meta.url), "utf8");
-  assert.match(ticket, /SHAPE_OPEN \? \[\.\.\.PIER_GOALS, 'custom'\] : PIER_GOALS/);
+  assert.match(ticket, /SHAPE_OPEN \? \[\.\.\.GOALS, 'custom'\] : GOALS/);
 });

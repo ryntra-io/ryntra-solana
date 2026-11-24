@@ -45,6 +45,9 @@ const BOTS_HREF = '/bots';
  * Five doors under the agent's panel: Trade with SOL's price and its day, Bots, Agents, Earn
  * with the staking rate the engine reads, Launch. A tile is a link to its section; it stands only when that section's
  * screen is on. A phone shows all five: Trade across the row, the other four two by two.
+ *
+ * Every tile is built alike (EYES 19.11: a figure without an arrow on two, an arrow without a figure on three): its
+ * icon, its name with the arrow, its line; a live figure, where the engine gives one, stands beside the icon.
  */
 export function Tiles({ towers }: { towers: readonly Tower[] }) {
   const w = useWords(DEPTH);
@@ -66,6 +69,8 @@ export function Tiles({ towers }: { towers: readonly Tower[] }) {
       figure: sol ? (
         <span className={d.tileFig}>
           <CoinLogo src={`/api/icon/${sol.id}`} symbol="SOL" size="s" />
+          {/* A phone names whose price it is (EYES 19.11: «$72.90» alone); a desk's tile has no room, its logo says it. */}
+          <span className={d.tileSym}>SOL</span>
           <b>{priceText(sol.price, lang)}</b>
           {solDay !== null ? <i data-tone={changeTone(solDay)}>{changeText(solDay, lang)}</i> : null}
         </span>
@@ -96,15 +101,16 @@ export function Tiles({ towers }: { towers: readonly Tower[] }) {
         <Link key={tile.id} href={tile.href} className={d.tile} data-tile={tile.id}>
           <span className={d.tileTop}>
             <span className={d.tileIcon}>{tile.icon}</span>
-            {tile.figure ?? (
+            {tile.figure ?? null}
+          </span>
+          <span className={d.tileWords}>
+            <span className={d.tileName}>
+              <b>{tile.title}</b>
               <span className={d.tileGo}>
                 <Icon name="arrow" size="s" />
               </span>
-            )}
-          </span>
-          <span className={d.tileWords}>
-            <b>{tile.title}</b>
-            <span>{tile.sub}</span>
+            </span>
+            <span className={d.tileSub}>{tile.sub}</span>
           </span>
         </Link>
       ))}

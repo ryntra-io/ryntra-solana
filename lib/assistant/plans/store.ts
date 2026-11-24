@@ -12,6 +12,7 @@
 import { randomBytes } from "node:crypto";
 
 import { z } from "zod";
+import { isoDateTime } from "../../zod/iso-datetime.ts";
 
 import { ASSISTANT_PLAN_EVENTS, ASSISTANT_PLAN_ID, ASSISTANT_PLAN_REASONS, ASSISTANT_PLAN_STATES, ASSISTANT_PLAN_VERSIONS_LIMIT, AssistantPlanVersionSchema, PLAN_ID, type AssistantPlanState, type AssistantPlanVersion } from "../../api/v1/contract.ts";
 import type { GuardStore } from "../../guard/store.ts";
@@ -22,7 +23,7 @@ export const PLANS_PER_WALLET = 20;
 export const JOURNAL_LIMIT = 200;
 
 const Wallet = z.string().regex(/^[1-9A-HJ-NP-Za-km-z]{32,44}$/);
-const Iso = z.string().datetime({ offset: true });
+const Iso = isoDateTime({ offset: true });
 
 export const PlanJournalRowSchema = z.object({ at: Iso, event: z.enum(ASSISTANT_PLAN_EVENTS), version: z.number().int().min(1), note: z.string().max(240).nullable() }).strict();
 export type PlanJournalRow = z.infer<typeof PlanJournalRowSchema>;

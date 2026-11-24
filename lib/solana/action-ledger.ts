@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { isoDateTime } from "../zod/iso-datetime.ts";
 
 import { withBoundedCasRetry, type GuardStore } from "../guard/store.ts";
 import type { RyntraServiceFee } from "../swap/service-fee.ts";
@@ -277,8 +278,8 @@ export const SolanaWalletActionSchema = z
      * unvalued where no stablecoin leg gives par. Null before this field.
      */
     statedUsd: z.number().nonnegative().nullable().default(null),
-    startedAt: z.string().datetime({ offset: true }),
-    updatedAt: z.string().datetime({ offset: true }),
+    startedAt: isoDateTime({ offset: true }),
+    updatedAt: isoDateTime({ offset: true }),
   })
   .strict();
 

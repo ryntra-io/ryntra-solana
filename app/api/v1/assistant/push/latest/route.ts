@@ -5,6 +5,7 @@ import { getGuardRuntime } from "@/lib/guard/runtime";
 import { listInbox } from "@/lib/monitoring/store";
 import { isStopNote } from "@/lib/stops/notes";
 import { isEarnNote } from "@/city/lib/earn/notes";
+import { isDriveNote } from "@/lib/agent-drive/note";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -31,8 +32,8 @@ export async function GET(request: Request) {
           id: newest.id,
           title: (newest.text?.[newest.locale]?.title ?? newest.title).slice(0, 200),
           body: (newest.text?.[newest.locale]?.reason ?? newest.reason).slice(0, 400),
-          /* A reached stop opens the city on its sale, an Earn note Earn; every other note its own page. */
-          href: isStopNote(newest) || isEarnNote(newest) ? newest.href : `/app/alerts/open?n=${encodeURIComponent(newest.id)}`,
+          /* A reached stop opens the city on its sale, an Earn note Earn, an agent's move its own page; every other note its own page. */
+          href: isStopNote(newest) || isEarnNote(newest) || isDriveNote(newest) ? newest.href : `/app/alerts/open?n=${encodeURIComponent(newest.id)}`,
         }
       : null,
   };

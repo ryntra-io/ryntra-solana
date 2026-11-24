@@ -1,6 +1,6 @@
 import { PublicKey, SystemProgram, Transaction, TransactionInstruction } from '@solana/web3.js';
 import type { LaunchPoolBuildResponse, LaunchPoolView } from '../../../lib/api/v1/contract.ts';
-import { DLMM_PRO_LAUNCH_TERMS, DLMM_PRO_PROGRAM_ID } from '../../../lib/core/launch/dlmm-pro.ts';
+import { DLMM_PRO_LAUNCH_TERMS, DLMM_PRO_PROGRAM_ID, dlmmProRewardLockedShare, dlmmProRewardPerDayRaw } from '../../../lib/core/launch/dlmm-pro.ts';
 import type { Answer } from './engine.ts';
 import type { PoolEngine, PoolListed, PoolStage } from './pool.ts';
 import { STUB_CREATOR, stubAddress, stubSignature } from './stub.ts';
@@ -17,13 +17,13 @@ import { STUB_CREATOR, stubAddress, stubSignature } from './stub.ts';
 
 export type PoolStubOptions = Readonly<{ delayMs?: number; now?: () => number }>;
 
-type StubLaunch = { mint: string; pool: string; creator: string; name: string; symbol: string; pair: 'SOL' | 'USDC'; opensAt: number; ladder: boolean; done: PoolStage[]; createdAt: string; steps: Record<PoolStage, string[]> };
+type StubLaunch = { mint: string; pool: string; creator: string; name: string; symbol: string; pair: 'SOL' | 'USDC'; opensAt: number; ladder: boolean; reward?: { shareBps: number; days: number } | null; done: PoolStage[]; createdAt: string; steps: Record<PoolStage, string[]> };
 
 const ORDER: readonly PoolStage[] = ['COIN', 'POOL', 'SUPPLY'];
 const toBase64 = (bytes: Uint8Array) => btoa(String.fromCharCode(...bytes));
 
 /** A step's bytes as the city's own reader takes them: the creator pays; the coin's account is made in the first; the pool is named after. */
-function stubWires(stage: PoolStage, creator: string, mint: string, pool: string, seed: string, ladder = false): string[] {
+function stubWires(stage: PoolStage, creator: string, mint: string, pool: string, seed: string, ladder = false, reward = false): string[] {
   const payer = new PublicKey(creator);
   const blockhash = stubAddress(`blockhash:${seed}`);
   const tx = (instruction: TransactionInstruction) => toBase64(new Transaction({ feePayer: payer, recentBlockhash: blockhash }).add(instruction).serialize({ requireAllSignatures: false, verifySignatures: false }));
@@ -32,8 +32,8 @@ function stubWires(stage: PoolStage, creator: string, mint: string, pool: string
   const call = () => new TransactionInstruction({ programId: new PublicKey(DLMM_PRO_PROGRAM_ID), data: new Uint8Array(8) as Buffer, keys: [{ pubkey: new PublicKey(pool), isSigner: false, isWritable: true }, { pubkey: payer, isSigner: true, isWritable: true }] });
   const proof = SystemProgram.transfer({ fromPubkey: payer, toPubkey: new PublicKey(pool), lamports: 1 });
   if (stage === 'POOL') return [toBase64(new Transaction({ feePayer: payer, recentBlockhash: blockhash }).add(proof, call()).serialize({ requireAllSignatures: false, verifySignatures: false }))];
-  /* The supply: the creator's position, Ryntra's, its hand-over — and the creator's ladder where there is one. */
-  return [tx(call()), tx(call()), tx(call()), ...(ladder ? [tx(call())] : [])];
+  /* The supply: the creator's position, Ryntra's, its hand-over — the creator's ladder and the reward where there are. */
+  return [tx(call()), tx(call()), tx(call()), ...(ladder ? [tx(call())] : []), ...(reward ? [tx(call())] : [])];
 }
 
 export function stubPoolEngine(options: PoolStubOptions = {}): PoolEngine {
@@ -59,6 +59,13 @@ export function stubPoolEngine(options: PoolStubOptions = {}): PoolEngine {
   /* The creator's ladder as the engine tells it: a twentieth of the supply, five prices from ×2 to ×10. */
   const ladderRaw = (BigInt(terms.coin.supply) * 10n ** BigInt(terms.coin.decimals) * BigInt(terms.ladder.shareBps)) / 10_000n;
   const ladderTold = { shareBps: terms.ladder.shareBps, amountRaw: ladderRaw.toString(), nearMultiple: 1 + terms.ladder.nearBps / 10_000, farMultiple: 1 + terms.ladder.farBps / 10_000, rungs: terms.ladder.rungs };
+  /* The reward for the pool's liquidity as the engine tells it: its share of the supply over its days, from the opening. */
+  const rewardTold = (launch: StubLaunch, built: boolean) => {
+    if (!launch.reward) return null;
+    const amountRaw = ((BigInt(terms.coin.supply) * 10n ** BigInt(terms.coin.decimals) * BigInt(launch.reward.shareBps)) / 10_000n).toString();
+    /* A day of it, and who earns it while the launch's locked liquidity is alone at the price. */
+    return { shareBps: launch.reward.shareBps, amountRaw, days: launch.reward.days, opensAt: built ? launch.opensAt : null, endsAt: built ? launch.opensAt + launch.reward.days * 86_400 : null, perDayRaw: dlmmProRewardPerDayRaw(BigInt(amountRaw), launch.reward.days).toString(), locked: dlmmProRewardLockedShare(true) };
+  };
   const viewOf = (launch: StubLaunch): LaunchPoolView => {
     const next = nextOf(launch);
     const open = next === null && seconds() >= launch.opensAt;
@@ -82,6 +89,7 @@ export function stubPoolEngine(options: PoolStubOptions = {}): PoolEngine {
       split: { creatorBps: terms.split.creatorBps, ryntraBps: terms.split.ryntraBps },
       /* A trading tower on the stand has sold its ladder's nearest price: what is left of it rests on the other four. */
       ladder: launch.ladder ? { ...ladderTold, leftRaw: launch.done.includes('SUPPLY') ? (open ? ((ladderRaw * 14n) / 15n).toString() : ladderRaw.toString()) : null, state: launch.done.includes('SUPPLY') ? (open ? 'SELLING' : 'RESTING') : null } : null,
+      reward: launch.reward ? { ...rewardTold(launch, launch.done.includes('SUPPLY'))!, state: launch.done.includes('SUPPLY') ? (open ? 'PAYING' : 'WAITING') : 'WAITING', spent: null } : null,
       honest: next === null ? true : null,
       problems: [],
       receipt: { COIN: launch.steps.COIN, POOL: launch.steps.POOL, SUPPLY: launch.steps.SUPPLY },
@@ -104,13 +112,13 @@ export function stubPoolEngine(options: PoolStubOptions = {}): PoolEngine {
         const seed = `${launches.size}:${now()}`;
         const mint = stubAddress(`pool-mint:${seed}`);
         const words = (body.metadataUri ?? '').split('/').pop() ?? '';
-        launch = { mint, pool: stubAddress(`pool:${seed}`), creator: body.creator, name: words.slice(0, 6) || 'Coin', symbol: 'COIN', pair: body.pair ?? 'SOL', opensAt: body.opensAt ?? seconds() + terms.opening.defaultAfter, ladder: body.ladder === true, done: [], createdAt: new Date(now()).toISOString(), steps: { COIN: [], POOL: [], SUPPLY: [] } };
+        launch = { mint, pool: stubAddress(`pool:${seed}`), creator: body.creator, name: words.slice(0, 6) || 'Coin', symbol: 'COIN', pair: body.pair ?? 'SOL', opensAt: body.opensAt ?? seconds() + terms.opening.defaultAfter, ladder: body.ladder === true, reward: body.reward ?? null, done: [], createdAt: new Date(now()).toISOString(), steps: { COIN: [], POOL: [], SUPPLY: [] } };
         launches.set(mint, launch);
       }
       const stage = nextOf(launch);
       if (stage === null) return refusal('VALIDATION_ERROR', 'This launch is on chain whole; there is nothing left to sign.');
       const buildId = Array.from(crypto.getRandomValues(new Uint8Array(16)), (byte) => byte.toString(16).padStart(2, '0')).join('');
-      const wires = stubWires(stage, launch.creator, launch.mint, launch.pool, buildId, launch.ladder);
+      const wires = stubWires(stage, launch.creator, launch.mint, launch.pool, buildId, launch.ladder, Boolean(launch.reward));
       builds.set(buildId, { mint: launch.mint, stage, creator: launch.creator, wires, used: false });
       const left = { COIN: 99_929_000, POOL: 95_408_000, SUPPLY: 88_031_000 }[stage];
       const data: LaunchPoolBuildResponse = {
@@ -128,6 +136,7 @@ export function stubPoolEngine(options: PoolStubOptions = {}): PoolEngine {
         fee: { startBps: terms.fee.startBps, endBps: stage === 'COIN' ? null : 100.13, askedEndBps: terms.fee.endBps, priceMultiple: terms.fee.priceMultiple },
         split: { creatorBps: terms.split.creatorBps, ryntraBps: terms.split.ryntraBps },
         ladder: launch.ladder ? { ...ladderTold } : null,
+        reward: rewardTold(launch, stage === 'SUPPLY'),
         expiresAt: new Date(now() + 60_000).toISOString(),
         signableMs: 25_000,
       };

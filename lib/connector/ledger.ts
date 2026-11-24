@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 
 import { z } from "zod";
+import { isoDateTime } from "../zod/iso-datetime.ts";
 
 import type { GuardStore } from "../guard/store.ts";
 
@@ -49,7 +50,7 @@ export async function consumeConnectorQuota(
   throw new Error("CONNECTOR_QUOTA_CONTENDED");
 }
 
-const timestamp = z.string().datetime({ offset: true });
+const timestamp = isoDateTime({ offset: true });
 
 export const ConnectorReceiptSchema = z
   .object({

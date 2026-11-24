@@ -15,6 +15,7 @@
  */
 
 import { WRAPPED_SOL_MINT } from "../solana/send-kinds.ts";
+import type { WalletLabel } from "./wallet-labels.ts";
 
 /* ------------------------------------------------------------- sources */
 
@@ -331,7 +332,20 @@ export type TokenTrade = Readonly<{
   priceUsd: number | null;
   /** The market's capitalisation at the trade: the trade's price times today's circulating supply; null for a tokenized stock. */
   capUsd: number | null;
+  /** The wallet's marks (`./wallet-labels.ts`); absent when it has none. */
+  labels?: readonly WalletLabel[];
+  /** The transaction's network fee in SOL, where the source states it (the chain's events); absent otherwise. */
+  feeSol?: number;
 }>;
+
+/**
+ * A trade a row can show whole: its size, its dollars and its price are all there. One without any of them is not a
+ * row — the engine does not send it and the screen does not draw it (a tape of «Buy — 0.000069 —» reads as broken).
+ */
+export function isWholeTrade(trade: Pick<TokenTrade, "tokenAmount" | "usd" | "priceUsd">): boolean {
+  const positive = (value: unknown): value is number => typeof value === "number" && Number.isFinite(value) && value > 0;
+  return positive(trade.tokenAmount) && positive(trade.usd) && positive(trade.priceUsd);
+}
 
 /**
  * GeckoTerminal's `/pools/{pool}/trades?token={mint}` answer → the token's
@@ -404,6 +418,8 @@ export type TokenHolder = Readonly<{
   change: number | null;
   /** How many of those trades were this wallet's. */
   trades: number;
+  /** What the holding is worth at the coin's price now, dollars; null — no price; absent where not counted. */
+  valueUsd?: number | null;
 }>;
 
 export type HolderRead = Readonly<{

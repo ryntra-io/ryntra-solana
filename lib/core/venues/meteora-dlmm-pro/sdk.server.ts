@@ -4,7 +4,7 @@
  *
  * DLMM Pro is a program of its own, not an upgrade of DLMM: `dPro1D5wiqnGMH8vMDG23jh35btTHoWdyqXjqkqxe8n` on mainnet
  * and devnet, release 0.1.0, open since 12.11.2026 as a beta whose interface Meteora may still break. So the SDK is
- * pinned exactly — `@meteora-ag/dlmm-pro-sdk` 0.1.2, no range — and `DLMM_PRO_SDK_VERSION` is held to the installed
+ * pinned exactly — `@meteora-ag/dlmm-pro-sdk` 0.1.3, no range — and `DLMM_PRO_SDK_VERSION` is held to the installed
  * copy by `./sdk.test.mjs`: an upgrade is a read of the changelog and a run of the rehearsal
  * (`scripts/launch-qa/dlmm-pro-rehearsal.mjs`), never a silent bump.
  *
@@ -22,7 +22,7 @@ import { ACCESS_REGISTRY_PROGRAM_ID, DLMM_PRO_PROGRAM_ID, DlmmProClient, DlmmPro
 import type { Connection } from "@solana/web3.js";
 
 /** The SDK version this venue was read, built and rehearsed against. */
-export const DLMM_PRO_SDK_VERSION = "0.1.2";
+export const DLMM_PRO_SDK_VERSION = "0.1.3";
 /** The program release the SDK's IDL describes — the one deployed on mainnet. */
 export const DLMM_PRO_PROGRAM_VERSION = "0.1.0";
 

@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import { notFound, permanentRedirect } from "next/navigation";
 
-import { SITE, SITE_NAME, TWITTER } from "@/app/seo";
+import { SITE, SITE_NAME, TWITTER, cardImageFor } from "@/app/seo";
 
-import { docHref, isSectionId, OLD_SECTIONS, SECTION_IDS, sectionOf } from "../_book/book";
+import { docHref, docsTabTitle, isSectionId, OLD_SECTIONS, SECTION_IDS, sectionOf } from "../_book/book";
 import { DocsSection } from "../_book/DocsSection";
 
 /* A section of the documentation at its own address: `/docs/start`, `/docs/meteora`. The city's sections
@@ -24,15 +24,17 @@ function idOf(slug: string[]): string | null {
 export async function generateMetadata({ params }: { params: Promise<{ slug: string[] }> }): Promise<Metadata> {
   const id = idOf((await params).slug);
   if (!isSectionId(id)) return {};
-  const { title: name, line: description } = sectionOf(id).en;
-  const title = `${name} — Ryntra Docs`;
+  const { line: description } = sectionOf(id).en;
+  // English here; the page names the tab in the reader's language once it knows it (`useDocsTabTitle`).
+  const title = docsTabTitle(id, "en");
   const url = `${SITE}${docHref(id)}`;
+  const card = cardImageFor(docHref(id));
   return {
     title: { absolute: title },
     description,
     alternates: { canonical: url },
-    openGraph: { type: "article", siteName: SITE_NAME, title, description, url },
-    twitter: { card: "summary_large_image", site: TWITTER, creator: TWITTER, title, description },
+    openGraph: { type: "article", siteName: SITE_NAME, title, description, url, images: [card] },
+    twitter: { card: "summary_large_image", site: TWITTER, creator: TWITTER, title, description, images: [card.url] },
   };
 }
 

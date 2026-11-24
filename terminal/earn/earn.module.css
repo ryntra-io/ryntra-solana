@@ -135,14 +135,6 @@
   color: var(--soft);
 }
 
-/* Where the pair's cell is narrow (a laptop beside the ticket), the invitation says its first words only; a phone's row
-   has the room. */
-@media (min-width: 768px) and (max-width: 1679px) {
-  .inviteMore {
-    display: none;
-  }
-}
-
 /* The row's name is its control: its shade covers the whole row, so a tap anywhere on the row picks it. */
 .rowHit::after {
   content: '';
@@ -203,6 +195,16 @@
   font-size: var(--type-body);
   color: var(--dim);
   line-height: 1.45;
+}
+
+/* G6, fault 45 — a list whose source did not answer stands across the desk: one line and «Try again» in its middle,
+   never a narrow box under filters that filter nothing. */
+.blankWide {
+  align-items: center;
+  justify-content: center;
+  min-height: 320px;
+  text-align: center;
+  border-top: 0;
 }
 
 .bones {
@@ -324,6 +326,25 @@
   font-size: var(--type-caption);
   color: var(--dim);
   line-height: 1.35;
+}
+
+/* A line of honesty before a signature (`tone="warn"`, a stock's issuer and hours): the ticket's text, read at once,
+   with a quiet amber sign ahead of it. */
+.oneLine[data-tone='warn'] > span:first-child {
+  color: var(--soft);
+}
+
+.oneLineSign {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  margin-right: 6px;
+  vertical-align: -2px;
+  fill: none;
+  stroke: var(--amber);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .details {
@@ -516,6 +537,106 @@
   color: var(--mint);
 }
 
+/* G6, fault 39 — what is in the pool in a column of its own between the pair and the figure the row is chosen by: the
+   line under the pair says the fee. Its head stands over it. */
+.pMid {
+  flex: none;
+  width: 64px;
+  text-align: right;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.pSideHead {
+  flex: none;
+  text-align: right;
+}
+
+.pListHead .pMid {
+  font-weight: 600;
+}
+
+/* A pool's phone row as a grid: the pair's logos over two lines; its name, then under it the line that says its type,
+   fee and step, which runs on under the column of what is in the pool (that column has one line); and the figure the
+   row is chosen by on the right. The two columns on the right have the same widths as the head's, so they stand under
+   it. */
+.pRowGrid {
+  display: grid;
+  grid-template-columns: auto auto minmax(0, 1fr) 66px 74px;
+  align-content: center;
+  align-items: center;
+  gap: 2px 8px;
+}
+
+/* DLMM Pro's rows have no star; their right column holds the bonus under «Бонус ліміту». */
+.pRowBare {
+  grid-template-columns: auto minmax(0, 1fr) 66px 80px;
+}
+
+/* The pair's two logos a step smaller in a phone's row: the pair's name keeps its room («SOL · USDC», «DacityCoin ·
+   SOL» whole on 390, measured: 98 and 141 px). */
+.pRowGrid .pair > * {
+  width: 28px;
+  height: 28px;
+  font-size: var(--type-caption);
+}
+
+.pRowGrid .pair > * + * {
+  margin-left: -8px;
+}
+
+.pRowGrid > :not(.pMain, .pMid, .pSide) {
+  grid-row: 1 / 3;
+}
+
+.pRowGrid .pMain {
+  display: contents;
+}
+
+.pRowGrid .pMain > :first-child {
+  grid-row: 1;
+  grid-column: -4 / -3;
+  justify-self: start;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pRowGrid .pMain > :last-child {
+  grid-row: 2;
+  grid-column: -4 / -2;
+}
+
+.pRowGrid .pMid {
+  grid-row: 1;
+  grid-column: -3 / -2;
+  width: auto;
+}
+
+.pRowGrid .pSide {
+  grid-row: 1 / 3;
+  grid-column: -2 / -1;
+}
+
+.pHeadGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 66px 74px;
+  gap: 8px;
+}
+
+.pHeadBare {
+  grid-template-columns: minmax(0, 1fr) 66px 80px;
+}
+
+.pHeadGrid .pMid {
+  width: auto;
+}
+
+/* The sort chip on a phone says its order alone, «fees ↓»: its name stays its label for a screen reader (G6, fault 47). */
+.chipNameOff {
+  display: none;
+}
+
 .pSide .down {
   color: var(--flare);
 }
@@ -640,12 +761,17 @@
   white-space: nowrap;
 }
 
+/* A card's figure is a fact of the past (a day's fees over the depth, a rate now), in the text's own colour
+   and a step smaller: never a big green number that reads as a promise. */
+/* The figure stands at the card's foot: the four figures of a row on one line whether a card's line takes one row or
+   two (G6, fault 48 — in Ukrainian the lines wrap where English ones do not). */
 .cardFigure {
-  margin-top: 4px;
+  margin-top: auto;
+  padding-top: 4px;
   font-family: var(--display);
-  font-size: var(--type-headline);
+  font-size: var(--type-title);
   font-weight: 800;
-  color: var(--mint);
+  color: var(--ice);
   font-variant-numeric: tabular-nums;
 }
 
@@ -910,7 +1036,8 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr) 400px;
   align-items: stretch;
-  gap: 24px;
+  /* Between panels on a desk — the document's step (DESIGN.md, «Відступи»). */
+  gap: 20px;
 }
 
 .deskMain {
@@ -955,11 +1082,37 @@
     gap: 6px;
   }
 
+  /* G6, fault 117 — a step tighter still, and no rule between the strategies and the filters (the chips' own look tells
+     them apart): on 1920 the Ukrainian bar stands in one row with «+ Фільтри» and «Колонки» at its end. */
   .deskMain .chip {
-    padding: 0 10px;
+    gap: 4px;
+    padding: 0 8px;
+  }
+
+  .deskMain .chipFloor {
+    margin-left: 4px;
+  }
+
+  /* A chip that opens a menu says its name, its value and its chevron: its sides a step closer. */
+  .deskMain .pickBox .chip {
+    padding: 0 6px;
+  }
+
+  .deskMain .filtersEnd {
+    gap: 6px;
+  }
+
+  .deskMain .stratSep {
+    display: none;
   }
 
   .deskMain .filtersEnd [data-terminal='columns'] > span:first-child {
+    display: none;
+  }
+
+  /* «Saved» a star alone and the window its value alone: the bar keeps two lines with them (the names stay
+     the chips' labels). */
+  .deskMain .chip[data-short] .chipName {
     display: none;
   }
 }
@@ -1001,6 +1154,17 @@
 
 .deskTicket[data-tall] {
   position: static;
+}
+
+.desk[data-solo] {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+/* G6, fault 41 — the pools under staking and lending: their bar and a short table, the same gap as the parts above. */
+.near {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
 @media (min-width: 1680px) {
@@ -1119,6 +1283,54 @@
   min-width: 240px;
 }
 
+/* The window's menu says how its figures are counted, one quiet line under the four windows. */
+.menuNote {
+  max-width: 260px;
+  margin: 0;
+  padding: 8px 12px 4px;
+  border-top: 1px solid var(--line);
+  font-size: var(--type-caption);
+  line-height: 1.45;
+  color: var(--soft);
+  white-space: normal;
+}
+
+/* A row's star: the pool joins «Saved». Over the row's own link; pressed — filled in the text's own colour. */
+.star {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  margin-right: -6px;
+  color: var(--dim);
+  transition: color 0.15s;
+}
+
+.star:hover {
+  color: var(--ice);
+}
+
+.star[aria-pressed='true'] {
+  color: var(--ice);
+}
+
+.star[aria-pressed='true'] svg {
+  fill: currentColor;
+}
+
+/* A phone's star is a finger's target: 44 px, its icon where the desk's stands. */
+@media (max-width: 767px) {
+  .star {
+    width: 44px;
+    height: 44px;
+    margin: 0 -12px 0 -10px;
+  }
+}
+
 .segBox > * {
   flex: 1 1 auto;
 }
@@ -1150,16 +1362,28 @@
     min-width: 0;
   }
 
-  .cards {
-    display: flex;
-    margin: 0 -16px;
-    padding: 0 16px;
-    overflow-x: auto;
-    scrollbar-width: none;
+  /* G6, fault 46 — the four ways stand whole, two by two: a strip that scrolled cut the second card mid-word, and the
+     card of Staking and Lending stood out of sight. */
+  .deskMain > .cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
   }
 
   .card {
-    flex: 0 0 72%;
+    gap: 4px;
+    padding: 12px 14px;
+  }
+
+  .cardLine {
+    display: -webkit-box;
+    white-space: normal;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
+  .cardFigure {
+    padding-top: 2px;
+    font-size: var(--type-lead);
   }
 
   .strats {
@@ -1174,21 +1398,29 @@
     height: 40px;
   }
 
-  /* A phone's filters: one row that scrolls sideways; a menu opens under the whole row, within the gutters. */
+  /* A phone's filters wrap onto a second line, every chip whole (G6, fault 47 — a row that scrolled hid «Sort» past the
+     edge); a menu opens under the whole bar, within the gutters. */
   .filters {
-    flex-wrap: nowrap;
-    margin: 0 -16px;
-    padding: 0 16px;
-    overflow-x: auto;
-    scrollbar-width: none;
+    flex-wrap: wrap;
   }
 
-  .filters::-webkit-scrollbar {
-    display: none;
+  /* A list's line on a phone stands at the page's own gutter, as the rows do (fault 45 — it stood 18 px in). */
+  .phoneCol .blank {
+    padding-right: 0;
+    padding-left: 0;
+  }
+
+  .phoneCol .blankWide {
+    min-height: 200px;
   }
 
   /* The bar of DLMM Pro keeps its figures and its choice on one row: the venue's mark is the tab's own name here. */
-  .barBadge {
+  /* `.bar` before it: the pool sheet's own badge rule is read after this sheet. */
+  .bar .barBadge {
+    display: none;
+  }
+
+  .barDay {
     display: none;
   }
 
@@ -1226,3 +1458,58 @@
   }
 }
 
+
+/* A column's head with its «i»: the word and the quiet control on one line (the result against holding). */
+.headInfo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+/* What the engine does not know of the positions' results: one quiet line under the table. */
+.gapLine {
+  padding-top: 12px;
+}
+
+/* A position's result (DLMM Pro): the parts, then the whole against holding on its own line. */
+.resultBox {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: var(--type-small);
+}
+
+.resultBox dd[data-tone='up'],
+.resultNet b[data-tone='up'] {
+  color: var(--mint);
+}
+
+.resultBox dd[data-tone='down'],
+.resultNet b[data-tone='down'] {
+  color: var(--flare);
+}
+
+.resultNet {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+  color: var(--soft);
+}
+
+.resultNet b {
+  font-family: var(--display);
+  font-size: var(--type-body);
+  font-variant-numeric: tabular-nums;
+  color: var(--ice);
+}
+
+.resultWhy {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}

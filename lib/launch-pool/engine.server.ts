@@ -15,7 +15,10 @@
  *    put liquidity in before it. A launch pool; from Ryntra's dynamic config only once Meteora gives one (D-M1) —
  *    built here, switched off (`DLMM_PRO_LAUNCH_POOL_SOURCE`);
  * 3. `SUPPLY` — the whole supply above the first price as locked liquidity: the creator's position, and — with the
- *    split of D-M2 — Ryntra's, which the creator opens, locks and hands over in the same step.
+ *    split of D-M2 — Ryntra's, which the creator opens, locks and hands over in the same step; the creator's ladder
+ *    where asked; and — where asked — the reward for the pool's liquidity: one more transaction of the same
+ *    approval that sets up the pool's creator reward slot with the launch's coin and funds its emission from the
+ *    opening (`./reward.server.ts`). Its pool is made with liquidity mining at the pool's step; without a reward, never.
  *
  * Each step is its own build and its own approval in the creator's wallet: a pool cannot be built before its coin is
  * on chain, nor a position before its pool. A step whose answer did not come is settled from the chain's own accounts
@@ -48,8 +51,16 @@ import {
   dlmmProOpensAt,
   dlmmProPhase,
   dlmmProStartPrice,
+  dlmmProEmission,
+  dlmmProRewardLockedShare,
+  dlmmProRewardPerDayRaw,
+  dlmmProRewardProblem,
+  dlmmProRewardRaw,
+  dlmmProRewardSeconds,
+  dlmmProRewardSpent,
   dlmmProSupplyParts,
   type DlmmProLaunchChain,
+  type DlmmProRewardAsk,
   type DlmmProLaunchFacts,
   type DlmmProPoolFacts,
   type DlmmProLaunchPair,
@@ -57,7 +68,7 @@ import {
   type DlmmProLaunchStage,
 } from "../core/launch/dlmm-pro.ts";
 import { metadataBytesOf, mintInstructions } from "../core/venues/meteora-alpha-vault/early-access.server.ts";
-import { DLMM_PRO_ACCOUNT_BYTES, assertAffords, mintExtensionTypes, type DlmmProPool } from "../core/venues/meteora-dlmm-pro/pools.server.ts";
+import { DLMM_PRO_ACCOUNT_BYTES, assertAffords, mintExtensionTypes, type DlmmProPool, type DlmmProReward } from "../core/venues/meteora-dlmm-pro/pools.server.ts";
 import type { OrderView } from "../core/venues/meteora-dlmm-pro/limit-orders.server.ts";
 import { DLMM_PRO_PROGRAM, DlmmProRefusal } from "../core/venues/meteora-dlmm-pro/sdk.server.ts";
 import { TICKS_PER_ARRAY } from "../core/venues/meteora-dlmm-pro/ticks.ts";
@@ -70,14 +81,15 @@ import { NEXT_TRANSACTION_MARGIN_MS, readBuildWindows, web3ChainReader } from ".
 import { ed25519Valid } from "../solana/limits/trigger-tx.ts";
 import { compareWalletTransaction } from "../solana/wallet-modification.ts";
 import { LAUNCHES_PER_CREATOR_PER_DAY, launchPartnerVault, type LaunchCluster, type LaunchNetwork } from "../launch/config.server.ts";
-import { DLMM_PRO_LAUNCH_OWNER_WORD, DLMM_PRO_LAUNCH_POOL_SOURCE, dlmmProLaunchOpenFor } from "./gate.ts";
+import { DLMM_PRO_LAUNCH_OWNER_WORD, DLMM_PRO_LAUNCH_POOL_SOURCE, DLMM_PRO_LAUNCH_REWARD_MAINNET, dlmmProLaunchOpenFor, dlmmProLaunchRewardOpenFor } from "./gate.ts";
+import { REWARD_START_MARGIN_SECONDS, buildLaunchReward } from "./reward.server.ts";
 import { accountOnChain, budgetLeft, sendOnce, type Sendable, type Sent } from "../launch/flow.server.ts";
 import { checkLaunchForm } from "../launch/form.ts";
 import { isTakenDown, metadataOfUri } from "../launch/metadata.server.ts";
 
 /* ------------------------------------------------------------- gating */
 
-export { DLMM_PRO_LAUNCH_OWNER_WORD, DLMM_PRO_LAUNCH_POOL_SOURCE, dlmmProLaunchOpenFor };
+export { DLMM_PRO_LAUNCH_OWNER_WORD, DLMM_PRO_LAUNCH_POOL_SOURCE, DLMM_PRO_LAUNCH_REWARD_MAINNET, dlmmProLaunchOpenFor, dlmmProLaunchRewardOpenFor };
 
 /** The wallet a dynamic config belongs to, as a signer the server holds: it signs a pool's creation and nothing else. */
 export type DlmmProConfigSigner = Readonly<{ address: string; signMessage: (message: Uint8Array) => Promise<Uint8Array> }>;
@@ -111,6 +123,8 @@ export type DlmmProLaunchDeps = Readonly<{
   sendBudget?: Readonly<{ confirmMs: number; settleMs: number }>;
   /** Whether a read may write what the chain shows landed into the record; absent — it may. A deployment that writes no launches says no. */
   settle?: boolean;
+  /** The deployment's switch is read from `env`. */
+  rewardWord?: boolean;
 }>;
 
 export type DlmmProLaunchFailure = Readonly<{ ok: false; code: ApiErrorCode; message: string }>;
@@ -120,6 +134,13 @@ export type DlmmProStepState = "CONFIRMED" | "PENDING" | "FAILED" | "NOT_SENT";
 export type DlmmProStep = Readonly<{ signatures: readonly string[]; state: DlmmProStepState; reason: string | null; /** What the step's build told of its cost: the network's fees, and the rent that stays on chain. */ feeLamports: number; rentLamports: number }>;
 
 export type DlmmProFeeRecord = Readonly<{ startBps: number; /** The fee the pool reads for ever, as its build said it. */ endBps: number; askedEndBps: number; settles: Readonly<{ afterSeconds: number; atPriceMultiple: number | null }> | null; /** The volatility fee's most, as the build sized it; absent on a record made before it was kept. */ dynamicCeilingBps?: number }>;
+
+/**
+ * The reward for the pool's liquidity as the record keeps it: what was asked — a share of the supply over
+ * whole days —, its coins, and the window the supply's step built it for (null until then). The chain's own slot is
+ * what a tower and the honest check read; the window here is what the creator was told at the signature.
+ */
+export type DlmmProRewardRecord = Readonly<{ shareBps: number; days: number; amountRaw: string; opensAt: number | null; endsAt: number | null }>;
 
 /** The creator's ladder as the record keeps it; `signature` — its transaction's, once sent: the chain's word that it rested, after its owner took it down. */
 export type DlmmProLadderRecord = Readonly<{ nftMint: string; amountRaw: string; order: string | null; signature?: string | null }>;
@@ -149,6 +170,8 @@ export type DlmmProLaunchRecord = Readonly<{
    * rests, and its order's address once the supply's step is built. Null or absent — the launch has none.
    */
   ladder?: DlmmProLadderRecord | null;
+  /** The reward for the pool's liquidity. Null or absent — the launch has none. */
+  reward?: DlmmProRewardRecord | null;
   /** The coin's mint key (0), the creator's position's NFT (1), Ryntra's (2) and the ladder's (3, where there is one), sealed. */
   cosign: string;
   steps: Readonly<Record<DlmmProLaunchStage, DlmmProStep>>;
@@ -243,7 +266,7 @@ const venueOf = (deps: Pick<DlmmProLaunchDeps, "connection" | "network">): DlmmP
  */
 export async function dlmmProLaunchEstimate(
   connection: Pick<Connection, "getMinimumBalanceForRentExemption">,
-  args: Readonly<{ name: string; symbol: string; uri: string; split: boolean; ladder?: boolean }>,
+  args: Readonly<{ name: string; symbol: string; uri: string; split: boolean; ladder?: boolean; /** The pool mines, its positions' slots and ticks are longer, and the supply's step sets the reward up. */ reward?: boolean }>,
 ): Promise<Readonly<{ feeLamports: number; rentLamports: number; /** Each step's own: its fees and the rent it leaves on chain. */ stages: Readonly<Record<DlmmProLaunchStage, number>> }>> {
   const [bare, oneByte] = await Promise.all([connection.getMinimumBalanceForRentExemption(0, "confirmed"), connection.getMinimumBalanceForRentExemption(1, "confirmed")]);
   const perByte = oneByte - bare;
@@ -254,13 +277,19 @@ export async function dlmmProLaunchEstimate(
   /* The tick arrays the shape stands in: its width over an array's, and one more for where it starts within one. */
   const arrays = Math.ceil((terms.shape.columns * terms.tickSpacing) / (TICKS_PER_ARRAY * terms.tickSpacing)) + 1;
   const coin = account(getMintLen([ExtensionType.MetadataPointer]) + metadataBytesOf(args.name, args.symbol, args.uri)) + account(sizes.tokenAccount2022);
-  const pool = account(sizes.pool + sizes.poolActivation) + account(sizes.oracle) + account(sizes.tokenAccount2022) + account(sizes.tokenAccount2022);
-  const position = account(sizes.nftMint) + account(sizes.nftAccount) + account(sizes.positionHead) + terms.maxRanges * (sizes.positionSlot + 2 * sizes.tick) * perByte;
+  /* A pool that mines is longer by its reward slots, and so is every slot of a position and every tick on it. */
+  const mines = args.reward === true;
+  const slot = mines ? sizes.positionSlotWithRewards : sizes.positionSlot;
+  const tick = mines ? sizes.tickWithRewards : sizes.tick;
+  const pool = account(sizes.pool + sizes.poolActivation + (mines ? sizes.poolRewards : 0)) + account(sizes.oracle) + account(sizes.tokenAccount2022) + account(sizes.tokenAccount2022);
+  const position = account(sizes.nftMint) + account(sizes.nftAccount) + account(sizes.positionHead) + terms.maxRanges * (slot + 2 * tick) * perByte;
   /* The creator's ladder: its NFT, its head, an entry and a tick for each price — inside the supply's tick arrays, which the positions make. */
-  const ladder = args.ladder ? account(sizes.nftMint) + account(sizes.nftAccount) + account(sizes.orderHead) + terms.ladder.rungs * (sizes.orderEntry + sizes.tick) * perByte : 0;
-  const supply = positions * position + arrays * account(sizes.tickArrayHead) + (args.split ? account(sizes.tokenAccount2022) : 0) + ladder;
-  /* Signatures: the coin (wallet and mint), the pool, each position (wallet and its NFT), the hand-over, the ladder (wallet and its NFT). */
-  const supplySignatures = 2 * positions + (args.split ? 1 : 0) + (args.ladder ? 2 : 0);
+  const ladder = args.ladder ? account(sizes.nftMint) + account(sizes.nftAccount) + account(sizes.orderHead) + terms.ladder.rungs * (sizes.orderEntry + tick) * perByte : 0;
+  /* The reward: its slot's vault, a token account of the launch's coin. */
+  const reward = mines ? account(sizes.tokenAccount2022) : 0;
+  const supply = positions * position + arrays * account(sizes.tickArrayHead) + (args.split ? account(sizes.tokenAccount2022) : 0) + ladder + reward;
+  /* Signatures: the coin (wallet and mint), the pool, each position (wallet and its NFT), the hand-over, the ladder (wallet and its NFT), the reward (wallet). */
+  const supplySignatures = 2 * positions + (args.split ? 1 : 0) + (args.ladder ? 2 : 0) + (mines ? 1 : 0);
   const signatures = 2 + 1 + supplySignatures;
   const fee = (count: number) => count * LAMPORTS_PER_SIGNATURE;
   return {
@@ -306,7 +335,13 @@ async function positionOnChain(deps: Pick<DlmmProLaunchDeps, "connection">, venu
   return { whole: liquidity > 0n && view.lockedBps === 10_000, lockedBps: view.lockedBps, liquidity: liquidity.toString(), holder };
 }
 
-type ChainRead = Readonly<{ chain: DlmmProLaunchChain; pool: DlmmProPool | null; creatorPosition: PositionOnChain | null; ryntraPosition: PositionOnChain | null; ladder: OrderView | null }>;
+type ChainRead = Readonly<{ chain: DlmmProLaunchChain; pool: DlmmProPool | null; creatorPosition: PositionOnChain | null; ryntraPosition: PositionOnChain | null; ladder: OrderView | null; /** The pool's creator reward slot, as the pool reads; null — never set up, or no pool. */ rewardSlot: DlmmProReward | null }>;
+
+/** The pool's creator reward slot, where it was set up. */
+const rewardSlotOf = (pool: DlmmProPool | null): DlmmProReward | null => pool?.rewards.find((entry) => entry.index === DLMM_PRO_LAUNCH_TERMS.reward.slot) ?? null;
+
+/** Whether a launch's reward is on chain: the creator slot pays the launch's coin and an emission is funded on it. */
+const rewardFunded = (slot: DlmmProReward | null, mint: string): boolean => slot !== null && slot.mint === mint && slot.endsAt > 0 && BigInt(slot.emissionPerSecondX64) > 0n;
 
 /** A launch's ladder as the chain holds it; null — no order lives at its NFT (not placed yet, or closed by its owner). */
 async function ladderOnChain(venue: DlmmProVenue, pool: string, nftMint: string): Promise<OrderView | null> {
@@ -326,7 +361,7 @@ async function ladderOnChain(venue: DlmmProVenue, pool: string, nftMint: string)
  */
 async function chainOf(
   deps: Pick<DlmmProLaunchDeps, "connection" | "network"> & Partial<Pick<DlmmProLaunchDeps, "second">>,
-  record: Pick<DlmmProLaunchRecord, "mint" | "pool" | "creator" | "ryntra" | "positions" | "ladder" | "opensAt"> & Partial<Pick<DlmmProLaunchRecord, "steps">>,
+  record: Pick<DlmmProLaunchRecord, "mint" | "pool" | "creator" | "ryntra" | "positions" | "ladder" | "opensAt"> & Partial<Pick<DlmmProLaunchRecord, "steps" | "reward">>,
 ): Promise<ChainRead> {
   const venue = venueOf(deps);
   const mintInfo = await deps.connection.getAccountInfo(new PublicKey(record.mint), "confirmed");
@@ -351,11 +386,13 @@ async function chainOf(
       creatorPosition: creatorPosition?.whole === true,
       ryntraPosition: record.ryntra === null ? null : { made: ryntraPosition?.whole === true, handed: ryntraPosition?.whole === true && ryntraPosition.holder === record.ryntra },
       ladder: record.ladder ? rested : null,
+      reward: record.reward ? rewardFunded(rewardSlotOf(pool), record.mint) : null,
     },
     pool,
     creatorPosition,
     ryntraPosition,
     ladder,
+    rewardSlot: rewardSlotOf(pool),
   };
 }
 
@@ -369,6 +406,11 @@ export type PrepareDlmmProLaunchInput = Readonly<{
   opensAt?: number | null;
   /** A new launch: whether the creator's take-profit ladder rests a twentieth of the supply before the opening. Absent — no ladder. */
   ladder?: boolean;
+  /**
+   * A new launch: the reward for the pool's liquidity — a share of the supply, basis points, paid to the
+   * liquidity at the price over whole days from the opening. Absent or null — none. Asked only where the switch is open.
+   */
+  reward?: DlmmProRewardAsk | null;
   /** A launch already begun: its coin. The build is then the step the chain shows is next. */
   mint?: string;
 }>;
@@ -394,9 +436,37 @@ export type PreparedDlmmProLaunch = Readonly<{
   split: Readonly<{ creatorBps: number; ryntraBps: number }> | null;
   /** The creator's ladder: its share of the supply and where it sells, multiples of the first price; null — none. */
   ladder: DlmmProLadderTold | null;
+  /** The reward for the pool's liquidity, as the creator is told it before signing; null — none. */
+  reward: DlmmProRewardTold | null;
   expiresAt: string;
   signableMs: number;
 }>;
+
+/**
+ * The reward for the pool's liquidity as a person is told it before signing: its share of the supply, its
+ * coins, its days, and — from the supply's step on — the window it runs for, unix seconds. To whom and whether it
+ * comes back are the program's, the same for every launch: the liquidity at the price, the launch's own locked
+ * liquidity among it; never back, but for what was emitted while nobody's liquidity stood at the price.
+ */
+export type DlmmProRewardTold = Readonly<{
+  shareBps: number;
+  amountRaw: string;
+  days: number;
+  opensAt: number | null;
+  endsAt: number | null;
+  /** A day of it, base units. */
+  perDayRaw: string;
+  /**
+   * Who earns it while the launch's own locked liquidity is the only liquidity at the price — the creator's
+   * position and Ryntra's, basis points (`dlmmProRewardLockedShare`): the program cannot leave a position out.
+   */
+  locked: Readonly<{ creatorBps: number; ryntraBps: number }>;
+}>;
+
+const rewardTold = (reward: DlmmProRewardRecord | null | undefined, split: boolean): DlmmProRewardTold | null =>
+  reward
+    ? { shareBps: reward.shareBps, amountRaw: reward.amountRaw, days: reward.days, opensAt: reward.opensAt, endsAt: reward.endsAt, perDayRaw: dlmmProRewardPerDayRaw(BigInt(reward.amountRaw), reward.days).toString(), locked: dlmmProRewardLockedShare(split) }
+    : null;
 
 /** The creator's ladder as a person is told it before signing: its share of the supply, the coins, and the prices it sells at — multiples of the first. */
 export type DlmmProLadderTold = Readonly<{ shareBps: number; amountRaw: string; nearMultiple: number; farMultiple: number; rungs: number }>;
@@ -459,6 +529,7 @@ export async function prepareDlmmProLaunch(deps: DlmmProLaunchDeps, input: Prepa
   let record: DlmmProLaunchRecord | null = null;
   if (input.mint !== undefined) {
     if (!BASE58.test(input.mint)) return fail("VALIDATION_ERROR", "The coin is not an address.");
+    if (input.reward) return fail("VALIDATION_ERROR", "A launch already begun keeps the reward it was begun with.");
     record = await readDlmmProLaunchRecord(deps.store, deps.network.cluster, input.mint);
     if (!record) return fail("LAUNCH_NOT_FOUND", "No launch of this coin here.");
     if (record.creator !== input.creator) return fail("WALLET_MISMATCH", "This launch is another wallet's.");
@@ -528,6 +599,14 @@ export async function prepareDlmmProLaunch(deps: DlmmProLaunchDeps, input: Prepa
     if (mine.length >= LAUNCHES_PER_CREATOR_PER_DAY) return fail("LAUNCH_LIMIT", `One wallet launches at most ${LAUNCHES_PER_CREATOR_PER_DAY} coins a day.`);
     const source = sourceOf(deps);
     if (source === "config" && !deps.config) return fail("LAUNCH_PAUSED", "Launching is paused; nothing was built.");
+    /* The reward: only where its switch is open, only on a launch pool — the one it was rehearsed on —, and only as the terms allow. */
+    const reward = input.reward ?? null;
+    if (reward) {
+      if (!dlmmProLaunchRewardOpenFor(deps.network, deps.env, deps.rewardWord ?? DLMM_PRO_LAUNCH_REWARD_MAINNET)) return fail("LAUNCH_PAUSED", "The reward for the pool's liquidity is not offered here; nothing was built.");
+      if (source !== "launch") return fail("LAUNCH_PAUSED", "The reward for the pool's liquidity is not offered here; nothing was built.");
+      const problem = dlmmProRewardProblem(reward);
+      if (problem) return fail("VALIDATION_ERROR", problem);
+    }
     const ryntra = ryntraOf(deps);
     if (ryntra !== null && (!BASE58.test(ryntra) || ryntra === input.creator)) return fail("LAUNCH_PAUSED", "Launching is paused; nothing was built.");
     /* The fresh keys of the whole launch, made once: the coin's mint, each position's NFT, and the ladder's where the creator asked for one. */
@@ -560,6 +639,7 @@ export async function prepareDlmmProLaunch(deps: DlmmProLaunchDeps, input: Prepa
       ryntra,
       positions: { creator: keys.creator.publicKey.toBase58(), ryntra: ryntra ? keys.ryntra.publicKey.toBase58() : null },
       ladder: keys.ladder ? { nftMint: keys.ladder.publicKey.toBase58(), amountRaw: dlmmProLadderRaw(true).toString(), order: null } : null,
+      reward: reward ? { shareBps: reward.shareBps, days: reward.days, amountRaw: dlmmProRewardRaw(reward.shareBps).toString(), opensAt: null, endsAt: null } : null,
       cosign,
     };
     stage = "COIN";
@@ -570,7 +650,7 @@ export async function prepareDlmmProLaunch(deps: DlmmProLaunchDeps, input: Prepa
   let estimate: Awaited<ReturnType<typeof dlmmProLaunchEstimate>>;
   let blockhash: Readonly<{ blockhash: string; lastValidBlockHeight: number }>;
   try {
-    [estimate, blockhash] = await Promise.all([dlmmProLaunchEstimate(deps.connection, { name: draft.name, symbol: draft.symbol, uri: draft.metadataUri, split, ladder: Boolean(draft.ladder) }), deps.connection.getLatestBlockhash("confirmed")]);
+    [estimate, blockhash] = await Promise.all([dlmmProLaunchEstimate(deps.connection, { name: draft.name, symbol: draft.symbol, uri: draft.metadataUri, split, ladder: Boolean(draft.ladder), reward: Boolean(draft.reward) }), deps.connection.getLatestBlockhash("confirmed")]);
   } catch (error) {
     return refusalOf(error, "The network could not be read");
   }
@@ -606,6 +686,8 @@ export async function prepareDlmmProLaunch(deps: DlmmProLaunchDeps, input: Prepa
         dynamicFee: true,
         collectFee: "tokenY",
         opening: { swapAt: draft.opensAt, depositor: draft.creator },
+        /* The pool mines only where the launch pays a reward: a pool is made once and for ever. */
+        liquidityMining: Boolean(draft.reward),
       } as const;
       const built = draft.poolSource === "config" ? await venue.pools.buildConfigPool({ ...request, config: draft.config!, authority: deps.config!.signer.address }, { blockhash }) : await venue.pools.buildLaunchPool(request, { blockhash });
       if (built.pool !== draft.pool) return fail("UNAVAILABLE", "The pool was built at another address than the launch's; nothing was built.");
@@ -614,7 +696,7 @@ export async function prepareDlmmProLaunch(deps: DlmmProLaunchDeps, input: Prepa
       draft = { ...draft, fee: { startBps: terms.fee.startBps, endBps: built.parameters.endFeeBps, askedEndBps: built.parameters.askedEndFeeBps, settles: built.parameters.settles, dynamicCeilingBps: built.parameters.dynamicCeilingBps } };
       txs.push(builtOf(built, "POOL", { address: draft.pool, owner: DLMM_PRO_PROGRAM }, draft.poolSource === "config"));
     } else {
-      const parts = dlmmProSupplyParts(split, Boolean(draft.ladder));
+      const parts = dlmmProSupplyParts(split, Boolean(draft.ladder), draft.reward ? BigInt(draft.reward.amountRaw) : 0n);
       const shape = dlmmProSupplyShape(draft.initialTickId);
       const pool = read!.pool!;
       /* The supply goes in above a price that has not moved: exactly what each position takes, no band. A pool that has traded is not this launch any more. */
@@ -675,6 +757,20 @@ export async function prepareDlmmProLaunch(deps: DlmmProLaunchDeps, input: Prepa
         draft = { ...draft, ladder: { ...draft.ladder, order: built.order } };
         txs.push(builtOf(built, "LADDER", { address: built.order, owner: DLMM_PRO_PROGRAM }));
       }
+      if (draft.reward && read!.chain.reward === false) {
+        /*
+         * The reward for the pool's liquidity: the pool's creator slot set up with the launch's coin and its
+         * emission funded, in one transaction of this same approval — from the opening, or two minutes past the chain's
+         * clock where the creator signs this late, for the days asked. A slot set up some other way is not this launch.
+         */
+        if (read!.rewardSlot) return fail("UNAVAILABLE", "The pool's reward was set up outside this launch; this launch cannot be completed here.");
+        const opensAt = Math.max(draft.opensAt, chainNow + REWARD_START_MARGIN_SECONDS);
+        const built = await buildLaunchReward(deps.connection, { pool: draft.pool, creator: draft.creator, mint: draft.mint, amountRaw: BigInt(draft.reward.amountRaw), seconds: dlmmProRewardSeconds(draft.reward.days), opensAt }, { blockhash });
+        feeLamports += built.feeLamports;
+        rentLamports += built.rentLamports - built.rentReturnedLamports;
+        draft = { ...draft, reward: { ...draft.reward, opensAt: built.opensAt, endsAt: built.endsAt } };
+        txs.push(builtOf(built, "REWARD", { address: built.vault, owner: TOKEN_2022_PROGRAM_ID.toBase58() }));
+      }
       /* Each position's build was held to the wallet on its own; together they are held to it once more. */
       const holds = BigInt(await deps.connection.getBalance(creator, "confirmed"));
       if (holds < BigInt(feeLamports + rentLamports)) return fail("LAUNCH_BALANCE_LOW", `The wallet holds ${holds.toString()} lamports; the supply takes ${feeLamports + rentLamports} with its fees and the rent of what it creates.`);
@@ -715,6 +811,7 @@ export async function prepareDlmmProLaunch(deps: DlmmProLaunchDeps, input: Prepa
     fee: { startBps: terms.fee.startBps, endBps: draft.fee?.endBps ?? null, askedEndBps: terms.fee.endBps, priceMultiple: terms.fee.priceMultiple },
     split: split ? { creatorBps: terms.split.creatorBps, ryntraBps: terms.split.ryntraBps } : null,
     ladder: ladderTold(draft.ladder),
+    reward: rewardTold(draft.reward, split),
     expiresAt: build.expiresAt,
     signableMs: windows.signableMs,
   };
@@ -936,6 +1033,21 @@ export type DlmmProLaunchView = Readonly<{
    */
   ladder: (DlmmProLadderTold & Readonly<{ leftRaw: string | null; state: "WAITING" | "RESTING" | "SELLING" | "CLOSED" | null }>) | null;
   /**
+   * The reward for the pool's liquidity: what was told, with its window as the chain holds it, and its state
+   * — WAITING, not funded yet or not started; PAYING, the emission runs; ENDED, its days are over; null — not read.
+   * Null — the launch has none.
+   */
+  reward: (DlmmProRewardTold &
+    Readonly<{
+      state: "WAITING" | "PAYING" | "ENDED" | null;
+      /**
+       * What the creator has spent of it so far, from the pool's own slot — `flowedRaw`, paid to the liquidity
+       * at the price; `idleRaw`, what found none there and comes back to the creator once its days are over; `leftRaw`,
+       * still to flow. Null — not funded yet, or not read.
+       */
+      spent: Readonly<{ flowedRaw: string; idleRaw: string; leftRaw: string }> | null;
+    }>) | null;
+  /**
    * The honest-launch check, from the chain: `true` — the coin, the pool and the locked supply are exactly the launch
    * its creator was shown; `false` — they are not, and `problems` says how; `null` — the launch is not on chain whole
    * yet, or the chain could not be read: nothing is said either way.
@@ -956,7 +1068,7 @@ function poolFactsOf(venue: DlmmProVenue, record: DlmmProLaunchRecord, pool: Dlm
   const initialTickId = venue.pools.tickOfSqrtPrice(pool.initSqrtPriceX64);
   return {
     creator: record.creator,
-    terms: { pair: record.pair, quoteMint: record.quoteMint, opensAt: record.opensAt, initialTickId: record.initialTickId, endFeeBps: record.fee?.endBps ?? null, settlesAtPriceMultiple: record.fee?.settles?.atPriceMultiple ?? null, dynamicCeilingBps: record.fee?.dynamicCeilingBps ?? null, ryntra: record.ryntra, poolSource: record.poolSource, config: record.config, ladder: Boolean(record.ladder) },
+    terms: { pair: record.pair, quoteMint: record.quoteMint, opensAt: record.opensAt, initialTickId: record.initialTickId, endFeeBps: record.fee?.endBps ?? null, settlesAtPriceMultiple: record.fee?.settles?.atPriceMultiple ?? null, dynamicCeilingBps: record.fee?.dynamicCeilingBps ?? null, ryntra: record.ryntra, poolSource: record.poolSource, config: record.config, ladder: Boolean(record.ladder), reward: record.reward ? { amountRaw: record.reward.amountRaw, seconds: dlmmProRewardSeconds(record.reward.days) } : null },
     pool: {
       kind: pool.kind,
       creator: pool.creator,
@@ -1031,8 +1143,23 @@ async function factsOf(deps: Pick<DlmmProLaunchDeps, "connection" | "network">, 
             : null,
         }
       : {}),
+    ...(record.reward ? { reward: read.rewardSlot ? { mint: read.rewardSlot.mint, authority: read.rewardSlot.authority, emissionPerSecondX64: read.rewardSlot.emissionPerSecondX64, opensAt: read.rewardSlot.opensAt, endsAt: read.rewardSlot.endsAt } : null } : {}),
     open: pool.at.unix >= record.opensAt,
   };
+}
+
+/** The reward as its tower reads it: the chain's own window where the slot is funded; null — the launch has none. */
+function rewardView(record: DlmmProLaunchRecord, read: ChainRead | null): DlmmProLaunchView["reward"] {
+  const told = rewardTold(record.reward, record.ryntra !== null);
+  if (!told) return null;
+  if (!read || !read.pool) return { ...told, state: null, spent: null };
+  const slot = read.rewardSlot;
+  if (!slot || !rewardFunded(slot, record.mint)) return { ...told, state: "WAITING", spent: null };
+  const now = read.pool.at.unix;
+  /* The vault was funded with the rate over the window, rounded up (`./reward.server.ts`): the same arithmetic here. */
+  const fundedRaw = dlmmProEmission(BigInt(told.amountRaw), slot.endsAt - slot.opensAt).fundedRaw;
+  const spent = dlmmProRewardSpent({ perSecondX64: BigInt(slot.emissionPerSecondX64), fundedRaw, opensAt: slot.opensAt, endsAt: slot.endsAt, idleSeconds: slot.idleSeconds, updatedAt: slot.updatedAt, liquidityNow: BigInt(read.pool.liquidity) > 0n, now });
+  return { ...told, opensAt: slot.opensAt, endsAt: slot.endsAt, state: now < slot.opensAt ? "WAITING" : now < slot.endsAt ? "PAYING" : "ENDED", spent: { flowedRaw: spent.flowedRaw.toString(), idleRaw: spent.idleRaw.toString(), leftRaw: spent.leftRaw.toString() } };
 }
 
 /** The creator's ladder as its tower reads it; null — the launch has none. */
@@ -1062,7 +1189,7 @@ export async function dlmmProLaunchView(deps: Pick<DlmmProLaunchDeps, "connectio
   } catch {
     /* The chain could not be read: the record's own word for where the launch stands, and nothing said of its honesty. */
     const next = record.steps.COIN.state !== "CONFIRMED" ? "COIN" : record.steps.POOL.state !== "CONFIRMED" ? "POOL" : record.steps.SUPPLY.state !== "CONFIRMED" ? "SUPPLY" : null;
-    return { ...shared, phase: dlmmProPhase({ next, opensAt: record.opensAt, now: wall }), next, fee: { startBps: terms.fee.startBps, endBps: record.fee?.endBps ?? null, nowBps: null }, price: { start: null, now: null }, ladder: ladderView(record, null), honest: null, problems: [], at: wall };
+    return { ...shared, phase: dlmmProPhase({ next, opensAt: record.opensAt, now: wall }), next, fee: { startBps: terms.fee.startBps, endBps: record.fee?.endBps ?? null, nowBps: null }, price: { start: null, now: null }, ladder: ladderView(record, null), reward: rewardView(record, null), honest: null, problems: [], at: wall };
   }
   const next = dlmmProNextStage(read.chain);
   const now = read.pool?.at.unix ?? wall;
@@ -1094,6 +1221,7 @@ export async function dlmmProLaunchView(deps: Pick<DlmmProLaunchDeps, "connectio
     fee: { startBps: terms.fee.startBps, endBps: read.pool?.fee.endBps ?? record.fee?.endBps ?? null, nowBps: read.pool ? read.pool.fee.totalBps : null },
     price: { start: read.pool?.initPrice ?? null, now: read.pool?.price ?? null },
     ladder: ladderView(record, read),
+    reward: rewardView(record, read),
     honest,
     problems,
     at: now,

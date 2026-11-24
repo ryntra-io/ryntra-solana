@@ -162,18 +162,55 @@
 }
 
 .safe {
-  display: inline-flex;
+  display: flex;
+  flex: 1 0 100%;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 0;
+  color: var(--ice);
+  font: 600 var(--type-base) / 1.4 var(--ui);
+}
+
+.safe > svg {
+  flex: none;
+  margin-top: 2px;
+  color: var(--lilac);
+}
+
+/* The agent's answer to what was said (reading, «Clarify: …») — a plain line, never the edge's big type. On a desk it
+   stands in the edge's place while it lasts; on a phone it stands over the dock, by the field (`.dockNote`). */
+.note,
+.dockNote {
+  display: flex;
   align-items: center;
   gap: 6px;
-  margin: 0 0 0 auto;
+  margin: 0;
+  color: var(--soft);
+  font: 500 var(--type-small) / 1.35 var(--ui);
+}
+
+.note > svg,
+.dockNote > svg {
+  flex: none;
+  color: var(--lilac);
+}
+
+.safe[data-under-note] {
+  display: none;
+}
+
+.dot {
   color: var(--dim);
-  font: 500 var(--type-caption) / 1.3 var(--ui);
+}
+
+.part {
+  white-space: nowrap;
 }
 
 .shield {
   flex: none;
-  width: 14px;
-  height: 14px;
+  width: 16px;
+  height: 16px;
   fill: none;
   stroke: currentColor;
   stroke-width: 1.7;
@@ -181,8 +218,34 @@
   stroke-linecap: round;
 }
 
-/* A phone (macket `Phone.dc.html`): the promise on two lines, the field over a full-width «Say», the sentences in one row
-   that slides, the money line under them. */
+/* A wide screen: the field on the left, the ready sentences and the line on the money beside it — «Say» stays by the
+   words a person types, never across the screen from them (flaw 115: 1400 px apart at 1920). */
+@media (min-width: 1680px) {
+  .inner {
+    display: grid;
+    /* Half and half: the four ready sentences stand in one row beside the field, the edge under them. */
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: center;
+    gap: 16px 40px;
+  }
+
+  .title {
+    grid-column: 1 / -1;
+  }
+
+  .under {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .safe {
+    flex: none;
+  }
+}
+
+/* A phone (macket `Phone.dc.html`): the promise on two lines, the sentences, the line on the money
+   under them; the field and its «Say» stand in the dock over the tab bar (the end of this file). */
 @media (max-width: 767px) {
   .inner {
     gap: 14px;
@@ -238,24 +301,85 @@
     gap: 10px;
   }
 
+  /* A long one takes
+     two lines inside its own button, never a cut word. */
   .says {
-    flex-wrap: nowrap;
-    margin: 0 -16px;
-    padding: 0 16px;
-    overflow-x: auto;
-    scrollbar-width: none;
-  }
-
-  .says::-webkit-scrollbar {
-    display: none;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
   }
 
   .say {
+    min-width: 0;
+    height: auto;
+    min-height: 44px;
+    padding: 8px 10px;
+    line-height: 1.25;
+    text-align: left;
+    white-space: normal;
+  }
+
+  .say > svg {
     flex: none;
-    height: 40px;
+  }
+
+  /* The answer stands over the dock, by the field; the panel keeps the edge. */
+  .under .note {
+    display: none;
+  }
+
+  .safe[data-under-note] {
+    display: flex;
   }
 
   .safe {
-    margin: 0;
+    flex: none;
+  }
+}
+
+/* ── the phone's dock: the agent's field in the thumb's reach ───────────────────────────────────────
+   A desk keeps the field in the panel and draws no dock. A phone draws the field over the tab bar, edge to edge, as a
+   screen's sheet stands there (split.module.css): the panel above keeps the promise, the sentences and the edge. */
+.dock {
+  display: none;
+}
+
+@media (max-width: 767px) {
+  .ask:not(.askDock) {
+    display: none;
+  }
+
+  .dock {
+    position: fixed;
+    right: 0;
+    bottom: calc(var(--tabbar) + env(safe-area-inset-bottom));
+    left: 0;
+    /* Under the header (z 4) and the market's own sheets, over the page. */
+    z-index: 3;
+    display: block;
+    padding: 10px 16px;
+    border-top: 1px solid var(--line);
+    background: color-mix(in srgb, var(--ink-deep) 94%, transparent);
+    backdrop-filter: blur(16px);
+  }
+
+  .dockNote {
+    margin-bottom: 8px;
+  }
+
+  .askDock {
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .askDock .askBox {
+    height: 48px;
+  }
+
+  .askDock .askGo {
+    height: 48px;
+    padding: 0 16px;
+    font-size: var(--type-base);
   }
 }

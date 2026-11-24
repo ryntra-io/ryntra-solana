@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 
 import { z } from "zod";
+import { isoDateTime } from "../zod/iso-datetime.ts";
 
 import { canonicalJson } from "../guard/canonical-json.ts";
 import {
@@ -147,7 +148,7 @@ export const SolanaCanaryBudgetSnapshotSchema = z
         TOKEN_2022: FamilyBudgetSchema,
       })
       .strict(),
-    observedAt: z.string().datetime({ offset: true }),
+    observedAt: isoDateTime({ offset: true }),
   })
   .strict()
   .superRefine((value, context) => {
@@ -187,8 +188,8 @@ export const SolanaCanaryIntentSchema = z
       .object({
         method: z.enum(["USDC_NOMINAL", "PROVIDER_QUOTE", "CHAIN_READ"]),
         sourceRef: z.string().min(1).max(256),
-        observedAt: z.string().datetime({ offset: true }),
-        validUntil: z.string().datetime({ offset: true }),
+        observedAt: isoDateTime({ offset: true }),
+        validUntil: isoDateTime({ offset: true }),
       })
       .strict()
       .nullable(),
@@ -292,9 +293,9 @@ export const SolanaCanaryVerdictSchema = z
     policyId: z.string().min(1).max(96),
     policyDigest: z.string().regex(/^0x[0-9a-f]{64}$/),
     intentDigest: z.string().regex(/^0x[0-9a-f]{64}$/),
-    budgetObservedAt: z.string().datetime({ offset: true }),
+    budgetObservedAt: isoDateTime({ offset: true }),
     findings: z.array(FindingSchema).length(SOLANA_CANARY_RULES.length),
-    evaluatedAt: z.string().datetime({ offset: true }),
+    evaluatedAt: isoDateTime({ offset: true }),
   })
   .strict();
 
@@ -396,7 +397,7 @@ export const SolanaToken2022ApprovalSchema = z
     semanticDigest: z.string().regex(HEX_DIGEST),
     reviewDigest: z.string().regex(HEX_DIGEST),
     approvalRef: z.string().min(1).max(256),
-    expiresAt: z.string().datetime({ offset: true }),
+    expiresAt: isoDateTime({ offset: true }),
   })
   .strict();
 

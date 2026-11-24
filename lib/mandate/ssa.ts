@@ -472,6 +472,9 @@ export const REFUSAL = Object.freeze({
   ProgramInteractionProgramIdMismatch: "the program is outside the mandate",
   ProgramInteractionInsufficientTokenAllowance: "the day's budget is spent",
   ProgramInteractionInsufficientLamportAllowance: "the vault's SOL may not decrease",
+  /* A vault account of a coin the policy names no limit for fell, or one was closed or handed over (`account_tracking.rs`). */
+  ProgramInteractionModifiedIllegalBalance: "a coin outside the mandate left the vault",
+  ProgramInteractionIllegalTokenAccountModification: "a vault account was closed or handed over",
   ProgramInteractionInstructionDataMismatch: "the instruction is outside the mandate",
   PolicyExpirationViolationTimestampExpired: "the mandate has ended",
   PolicyNotActiveYet: "the mandate has not started",

@@ -9,6 +9,7 @@
  */
 
 import { z } from "zod";
+import { isoDateTime } from "../../zod/iso-datetime.ts";
 
 import { ASSISTANT_EXPERIENCE, ASSISTANT_GOALS, ASSISTANT_HORIZONS, type AssistantProfile } from "../../api/v1/contract.ts";
 import type { GuardStore } from "../../guard/store.ts";
@@ -16,7 +17,7 @@ import type { GuardStore } from "../../guard/store.ts";
 export const PROFILES_COLLECTION = "assistantProfiles" as const;
 
 const Wallet = z.string().regex(/^[1-9A-HJ-NP-Za-km-z]{32,44}$/);
-const Iso = z.string().datetime({ offset: true });
+const Iso = isoDateTime({ offset: true });
 
 export const ProfileRecordSchema = z
   .object({

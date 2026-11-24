@@ -1,0 +1,388 @@
+{
+ "_source": [
+  "Mainnet, read 2026-11-20 from public nodes (getSignaturesForAddress, reads only): the buyers of three pump.fun coins in the trades ryntra.io showed, and how long each wallet's history really is.",
+  "`quietButOld`: the largest buyer ($171) of a coin three minutes old. A node that keeps a day and a half of history lists twelve signatures for it, the oldest sixteen hours back — it looks new. Its whole history, from a node that keeps everything, is the list here: 139 signatures since July 2025.",
+  "`verified`: the buyers a short-history node listed with few signatures (under a hundred for the first coin, under forty for the second), read again whole. `signatures` is the whole count (`more`: a thousand and more), `firstHoursAgo` the first signature's age at the read (with `more`, the thousandth newest's).",
+  "Of 93 buyers of the first coin (an hour old) none has under 100 signatures: the twenty a short-history node listed with under a hundred were read whole, the least has 244. Of 123 buyers of the second (seven minutes old) thirteen of the twenty-two candidates were read whole: none is under 20 signatures, three are under 40 and younger than 72 hours.",
+  "Of 77 buyers of the third (three minutes old: its whole life is in the trades) fifty have under forty signatures in the last day and a half, the largest among them. Six of the eight largest — the eight the engine read first — were read whole: 68 to 213 signatures each, the first of them fourteen to sixteen months back. An old farm of wallets, not fresh ones."
+ ],
+ "quietButOld": {
+  "wallet": "4Dai4MrGMBeatdhTsFFNNtRHJvWAFAjXKsCMwE8LmTtH",
+  "readAt": "2026-11-20T16:34:50.000Z",
+  "buyUsd": 171,
+  "blockTimes": [1795192341, 1795192338, 1795192325, 1795192325, 1795192318, 1795192318, 1795192317, 1795192313, 1795192312, 1795192304, 1795134227, 1795134227, 1794525111, 1794525084, 1794525078, 1794525070, 1794525064, 1794525057, 1794525056, 1794525054, 1794525054, 1793661216, 1793661216, 1793319657, 1793319650, 1793319625, 1793319624, 1793319615, 1793319613, 1793319613, 1792626141, 1792626119, 1792626109, 1792625982, 1792625972, 1792625969, 1792625968, 1792625968, 1792623829, 1792623819, 1792623755, 1792623755, 1792623688, 1792623679, 1792623625, 1792623536, 1792623373, 1792619756, 1792619756, 1792105681, 1792105681, 1790811452, 1790811448, 1790811442, 1790811442, 1790533662, 1790533653, 1790533626, 1790533609, 1790533608, 1790533608, 1790472577, 1790472576, 1790346496, 1790346464, 1790346041, 1790346041, 1789764003, 1789764002, 1789333866, 1789333860, 1789333844, 1789333836, 1789333836, 1786931965, 1786931964, 1785610544, 1785610532, 1785610292, 1785610277, 1785610260, 1785610257, 1785610247, 1785610247, 1775157055, 1767962427, 1767243787, 1767243773, 1767243768, 1767243768, 1766624389, 1765686300, 1765686218, 1765686218, 1765686214, 1765686214, 1765686212, 1765686211, 1765686211, 1752832969, 1752807079, 1752798781, 1752798780, 1752798772, 1752798718, 1752798718, 1752798715, 1752798633, 1752798629, 1752798456, 1752798454, 1752798454, 1752798325, 1752798163, 1752798160, 1752797617, 1752797615, 1752797615, 1752797206, 1752797200, 1752797177, 1752797101, 1752797097, 1752797095, 1752796833, 1752796829, 1752796790, 1752796790, 1752796758, 1752796757, 1752796757, 1752796754, 1752796753, 1752796753, 1752464697, 1752464370, 1752464284, 1752461584, 1752460509]
+ },
+ "verified": {
+  "hourOldCoin": {
+   "mint": "9U76nMfZepDZYRpqfL2tcmbgM7QLQ3RRTPVCoJeGxRSe",
+   "buyers": 93,
+   "candidates": [
+    {
+     "wallet": "F1jRWL8TpiP7MhxDMLWHTvjKx4VNJCJ4NU3C8BZhUMDE",
+     "rankBySize": 10,
+     "buyUsd": 98.43,
+     "signaturesLast33h": 67,
+     "signatures": 1000,
+     "more": true,
+     "firstHoursAgo": 260.6
+    },
+    {
+     "wallet": "EBkuFqMy5i6vQCp7hra7DBbL6akCotyiRP7Qgyr4nfSb",
+     "rankBySize": 17,
+     "buyUsd": 79.34,
+     "signaturesLast33h": 89,
+     "signatures": 1000,
+     "more": true,
+     "firstHoursAgo": 655.2
+    },
+    {
+     "wallet": "AguXBQi21sHZ9Zkt3ZvCEEpry17Wy8Xrcof7s57Kpnmh",
+     "rankBySize": 23,
+     "buyUsd": 66.74,
+     "signaturesLast33h": 65,
+     "signatures": 1000,
+     "more": true,
+     "firstHoursAgo": 339.2
+    },
+    {
+     "wallet": "9yaQCxct1n9hnDNbU2gj38kN4rJDneJpM5NtDDzCeYb7",
+     "rankBySize": 25,
+     "buyUsd": 66.31,
+     "signaturesLast33h": 66,
+     "signatures": 1000,
+     "more": true,
+     "firstHoursAgo": 1444.4
+    },
+    {
+     "wallet": "FKZaxxfa8L5EGQ3fG3boLesV9fPnPW8aKqK7bhjMHbFD",
+     "rankBySize": 27,
+     "buyUsd": 64.27,
+     "signaturesLast33h": 76,
+     "signatures": 1000,
+     "more": true,
+     "firstHoursAgo": 334.4
+    },
+    {
+     "wallet": "4wmny5WFVktoTSo6bFUQ2r9FBRw7G3WuJT94cT5GVp79",
+     "rankBySize": 37,
+     "buyUsd": 33.7,
+     "signaturesLast33h": 71,
+     "signatures": 1000,
+     "more": true,
+     "firstHoursAgo": 75.8
+    },
+    {
+     "wallet": "A5XvxnVzbwjGFLNR8anAK5tYEKMZRZ8JCuipCdPBYmaP",
+     "rankBySize": 47,
+     "buyUsd": 19.27,
+     "signaturesLast33h": 62,
+     "signatures": 1000,
+     "more": true,
+     "firstHoursAgo": 346.5
+    },
+    {
+     "wallet": "8waVUYuzbwqyG7omzv8Ps1uAMHDbT87HkjBT2DMmzF18",
+     "rankBySize": 51,
+     "buyUsd": 14.31,
+     "signaturesLast33h": 75,
+     "signatures": 1000,
+     "more": true,
+     "firstHoursAgo": 3853.3
+    },
+    {
+     "wallet": "6DdKuy1azD7Sf43WTbd4pRi1Q2Mcm2NGAvDtCG7cX3r5",
+     "rankBySize": 52,
+     "buyUsd": 13.47,
+     "signaturesLast33h": 32,
+     "signatures": 1000,
+     "more": true,
+     "firstHoursAgo": 2568.9
+    },
+    {
+     "wallet": "H6VVVfKeQT8KU5zmc59LzbmqcEHb81bczN976hvgNXw9",
+     "rankBySize": 53,
+     "buyUsd": 11.42,
+     "signaturesLast33h": 19,
+     "signatures": 1000,
+     "more": true,
+     "firstHoursAgo": 190.4
+    },
+    {
+     "wallet": "2pQdfSmPBfaNfyMq34NPyUJRKpQiwMBS9bxJM8NSyJGw",
+     "rankBySize": 63,
+     "buyUsd": 6.64,
+     "signaturesLast33h": 32,
+     "signatures": 641,
+     "more": false,
+     "firstHoursAgo": 1272
+    },
+    {
+     "wallet": "3u1JnvQijDqYh2Lj5KqJrxR2g4fbWDenL3KX2h7FZEm9",
+     "rankBySize": 68,
+     "buyUsd": 6.58,
+     "signaturesLast33h": 15,
+     "signatures": 1000,
+     "more": true,
+     "firstHoursAgo": 360.7
+    },
+    {
+     "wallet": "ABY8K2ztnY1X2UUogMHpWjUvmbHNdLypfqojLQ9VyEPy",
+     "rankBySize": 71,
+     "buyUsd": 6.39,
+     "signaturesLast33h": 34,
+     "signatures": 1000,
+     "more": true,
+     "firstHoursAgo": 1358.6
+    },
+    {
+     "wallet": "FphSaHmtG3XqGtKhSgYWskg6QenCXhtsbtVhJqw29XcL",
+     "rankBySize": 72,
+     "buyUsd": 5.02,
+     "signaturesLast33h": 3,
+     "signatures": 244,
+     "more": false,
+     "firstHoursAgo": 516.6
+    },
+    {
+     "wallet": "5MhRUbJtGzJxhggtYNiduRcjYC8YzixBtCFQFtW4M9kn",
+     "rankBySize": 75,
+     "buyUsd": 3.39,
+     "signaturesLast33h": 42,
+     "signatures": 1000,
+     "more": true,
+     "firstHoursAgo": 317.1
+    },
+    {
+     "wallet": "6yPmsbrtGEsaAmQr3epe1ZGLZDTX1LX57hgdu9TuuM6U",
+     "rankBySize": 81,
+     "buyUsd": 1.36,
+     "signaturesLast33h": 40,
+     "signatures": 1000,
+     "more": true,
+     "firstHoursAgo": 8083
+    },
+    {
+     "wallet": "k6he4k7vEvSAK3Y4UgXWN7xhigsVXnaEwmbqwo15gkV",
+     "rankBySize": 83,
+     "buyUsd": 0.55,
+     "signaturesLast33h": 62,
+     "signatures": 1000,
+     "more": true,
+     "firstHoursAgo": 1181.2
+    },
+    {
+     "wallet": "HorSkPo3tFVoLmLueXBxtbTeFbs4WfXGgnAhjvNu3H4e",
+     "rankBySize": 84,
+     "buyUsd": 0.46,
+     "signaturesLast33h": 6,
+     "signatures": 497,
+     "more": false,
+     "firstHoursAgo": 3329.1
+    },
+    {
+     "wallet": "3WX3P7YuB8oXs539ADnGh9TATwB3TXuUrkij76RMiVa1",
+     "rankBySize": 85,
+     "buyUsd": 0.4,
+     "signaturesLast33h": 77,
+     "signatures": 830,
+     "more": false,
+     "firstHoursAgo": 226.8
+    },
+    {
+     "wallet": "HvLeQdg7zHjf21wLrizD4dvVNK5DmbZnAd8J5EaCkYNA",
+     "rankBySize": 89,
+     "buyUsd": 0.06,
+     "signaturesLast33h": 9,
+     "signatures": 1000,
+     "more": true,
+     "firstHoursAgo": 794
+    }
+   ]
+  },
+  "sevenMinuteCoin": {
+   "mint": "5GPqN4He3VUzMPh3sZ7Bq7GANSMnpa4cipLDq7PJjdpy",
+   "buyers": 123,
+   "candidatesListed": 22,
+   "candidates": [
+    {
+     "wallet": "21Ma7Pe88VT9N9mFoXpTwzQT4D5aXgLDm5tZXTenM3sm",
+     "rankBySize": 25,
+     "buyUsd": 39.36,
+     "signaturesLast33h": 23,
+     "signatures": 248,
+     "more": false,
+     "firstHoursAgo": 310.9
+    },
+    {
+     "wallet": "mEhEpB3JdYcEgLJmbdc8uRDiEjFa2u1Hd1cBku2en43",
+     "rankBySize": 29,
+     "buyUsd": 32.94,
+     "signaturesLast33h": 19,
+     "signatures": 504,
+     "more": false,
+     "firstHoursAgo": 266.5
+    },
+    {
+     "wallet": "9868nHo8NZfy3iERfRDgi7vot3seQfb1qdXo3swA3prn",
+     "rankBySize": 36,
+     "buyUsd": 23.94,
+     "signaturesLast33h": 16,
+     "signatures": 1000,
+     "more": true,
+     "firstHoursAgo": 546.7
+    },
+    {
+     "wallet": "7z1muH47moKHVZjkNSfJMeQQU9JqxWC4hMffWNuGfX3h",
+     "rankBySize": 40,
+     "buyUsd": 21.24,
+     "signaturesLast33h": 36,
+     "signatures": 1000,
+     "more": true,
+     "firstHoursAgo": 10869.6
+    },
+    {
+     "wallet": "4FZui57CXtUtavEkaxskmtcnjqpdWh2VuMWqUUS7nPet",
+     "rankBySize": 43,
+     "buyUsd": 19.74,
+     "signaturesLast33h": 31,
+     "signatures": 178,
+     "more": false,
+     "firstHoursAgo": 258.2
+    },
+    {
+     "wallet": "54Ly5zZtpBiburwT4Li1uQxLKjyrRAbGtAA7VM5v5ADT",
+     "rankBySize": 45,
+     "buyUsd": 19.55,
+     "signaturesLast33h": 13,
+     "signatures": 217,
+     "more": false,
+     "firstHoursAgo": 573.9
+    },
+    {
+     "wallet": "CVMQWfNxwY4qhVeCXzq2WaTgMf4oi8zuMF4ms7tEukKd",
+     "rankBySize": 53,
+     "buyUsd": 14.59,
+     "signaturesLast33h": 31,
+     "signatures": 1000,
+     "more": true,
+     "firstHoursAgo": 529.5
+    },
+    {
+     "wallet": "CW7ym2kjc1HeoLVB2tChyTtwrBdmZaVerkaQD1AKYb2w",
+     "rankBySize": 58,
+     "buyUsd": 13.38,
+     "signaturesLast33h": 25,
+     "signatures": 700,
+     "more": false,
+     "firstHoursAgo": 75.4
+    },
+    {
+     "wallet": "5CNstw9fokecbbhYSaTsEcMpdBFBpQ8LQuHozdtCHQx5",
+     "rankBySize": 64,
+     "buyUsd": 7.73,
+     "signaturesLast33h": 23,
+     "signatures": 24,
+     "more": false,
+     "firstHoursAgo": 3.3
+    },
+    {
+     "wallet": "JFpfm8zcLmuDNFxCG4bdgidh6uTnJTBbTfgTvUzknJx",
+     "rankBySize": 65,
+     "buyUsd": 7.11,
+     "signaturesLast33h": 5,
+     "signatures": 990,
+     "more": false,
+     "firstHoursAgo": 4945.2
+    },
+    {
+     "wallet": "FNjrSeWuC9BkzHLueCus38Mtgg9RfUBDWzTeWvCp58W5",
+     "rankBySize": 73,
+     "buyUsd": 6.56,
+     "signaturesLast33h": 36,
+     "signatures": 36,
+     "more": false,
+     "firstHoursAgo": 20.7
+    },
+    {
+     "wallet": "ED4rtjC1itbYg413FHoLaXLjKrMadtLHt33B64vJ5SiX",
+     "rankBySize": 83,
+     "buyUsd": 4.89,
+     "signaturesLast33h": 10,
+     "signatures": 28,
+     "more": false,
+     "firstHoursAgo": 69.2
+    },
+    {
+     "wallet": "GKbXQp2Fg1jEkLLWqtvi2z1xS8Swt3M4JVGL2QXdW9co",
+     "rankBySize": 84,
+     "buyUsd": 4.86,
+     "signaturesLast33h": 5,
+     "signatures": 659,
+     "more": false,
+     "firstHoursAgo": 1900.7
+    }
+   ]
+  },
+  "threeMinuteCoin": {
+   "mint": "NYKSfV7yGvG1BaxEzHkBQ48NB2YtcKTf4jarHxmpump",
+   "buyers": 77,
+   "quietBuyers": 50,
+   "largest": [
+    {
+     "wallet": "4Dai4MrGMBeatdhTsFFNNtRHJvWAFAjXKsCMwE8LmTtH",
+     "rankBySize": 1,
+     "buyUsd": 171,
+     "signaturesLast33h": 12,
+     "signatures": 139,
+     "more": false,
+     "firstHoursAgo": 11870
+    },
+    {
+     "wallet": "3yHDP3yRoiLMDcWeKGKiMovs5LyPpWELmKnxaxBNJtKK",
+     "rankBySize": 3,
+     "buyUsd": 113.94,
+     "signaturesLast33h": 8,
+     "signatures": 213,
+     "more": false,
+     "firstHoursAgo": 9993.1
+    },
+    {
+     "wallet": "FMAbvAoP6EMkcVFiBT4WuC4BEbppYeMgNjb9A8K4h9di",
+     "rankBySize": 4,
+     "buyUsd": 97.02,
+     "signaturesLast33h": 8,
+     "signatures": 81,
+     "more": false,
+     "firstHoursAgo": 11941.7
+    },
+    {
+     "wallet": "JAdeukmzZRFAn9nQsEkfkSaWVhgGNNrX9htCUqkmo34m",
+     "rankBySize": 5,
+     "buyUsd": 88.08,
+     "signaturesLast33h": 10,
+     "signatures": 105,
+     "more": false,
+     "firstHoursAgo": 11869.9
+    },
+    {
+     "wallet": "BUDRvVjyarrmYpnHDkg5KEaW9TuesGLqBq119gKTZsN1",
+     "rankBySize": 6,
+     "buyUsd": 76.93,
+     "signaturesLast33h": 14,
+     "signatures": 123,
+     "more": false,
+     "firstHoursAgo": 11601.3
+    },
+    {
+     "wallet": "8oAr6YshQustDhhmcxxor5wKjho3qUsJr2vJTgViXA6e",
+     "rankBySize": 7,
+     "buyUsd": 76.89,
+     "signaturesLast33h": 14,
+     "signatures": 68,
+     "more": false,
+     "firstHoursAgo": 11909.6
+    }
+   ]
+  }
+ }
+}

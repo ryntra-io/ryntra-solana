@@ -40,7 +40,8 @@ export function AmountField({
   aside?: string;
   value: string;
   onChange: (text: string) => void;
-  asset?: Readonly<{ symbol: string; icon: string | null }>;
+  /** `also` — the logo's addresses tried in turn when `icon` cannot be brought (`CoinLogo`). */
+  asset?: Readonly<{ symbol: string; icon: string | null; also?: readonly string[] }>;
   /** Opens the screen's own list of coins; without it the coin is shown, not chosen. */
   onAsset?: () => void;
   assetLabel?: string;
@@ -79,13 +80,13 @@ export function AmountField({
         {asset ? (
           onAsset ? (
             <button type="button" className={s.pill} onClick={onAsset} aria-label={assetLabel ?? asset.symbol} aria-haspopup={assetOpen === undefined ? undefined : 'menu'} aria-expanded={assetOpen}>
-              <CoinLogo src={asset.icon} symbol={asset.symbol} size="s" eager />
+              <CoinLogo src={asset.icon} also={asset.also} symbol={asset.symbol} size="s" eager />
               {asset.symbol}
               <Icon name="chevron" size="s" />
             </button>
           ) : (
             <span className={s.pill}>
-              <CoinLogo src={asset.icon} symbol={asset.symbol} size="s" eager />
+              <CoinLogo src={asset.icon} also={asset.also} symbol={asset.symbol} size="s" eager />
               {asset.symbol}
             </span>
           )

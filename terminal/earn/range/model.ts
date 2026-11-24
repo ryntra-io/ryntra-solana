@@ -160,17 +160,19 @@ export function halfAt(fraction: number, span: number, max: number = RANGE_MAX_H
   return clampHalf(Math.abs(offset), Math.min(max, span));
 }
 
-export type ShapeId = 'spot' | 'curve' | 'bid_ask';
+export type ShapeId = 'spot' | 'curve' | 'bid_ask' | 'wave';
 
 /**
- * How a new position spreads over its steps, for the eye: even, more by the price, or more at the edges — each step's
- * share against the tallest, 0…1. The engine builds the real spread; this is its outline over the pool's bars.
+ * How a new position spreads over its steps, for the eye: even, more by the price, more at the edges, or Meteora's Wave
+ * — even on the half of each side nearer the price, rising to twice that at the edges — each step's share against the
+ * tallest, 0…1. The engine builds the real spread; this is its outline over the pool's bars.
  */
 export function shapeAt(shape: ShapeId, offset: number, half: number): number {
   const far = Math.abs(offset);
   if (far > half) return 0;
   if (shape === 'spot' || half === 0) return 1;
   const along = far / half;
+  if (shape === 'wave') return along <= 0.5 ? 0.5 : along;
   return shape === 'curve' ? 1 - along * 0.8 : 0.2 + along * 0.8;
 }
 

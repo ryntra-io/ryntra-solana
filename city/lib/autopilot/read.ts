@@ -1,4 +1,5 @@
 import { COMMAND_MAX, findCoin, isBase, LINE_WORDS, parse, tokens, type Book, type Coin, type Token } from '../command/parse.ts';
+import { termSaid } from '../command/term.ts';
 import { boundedPlan, type PlanId, type StrategyPlan } from '../../../lib/mandate/plans.ts';
 
 /**
@@ -188,14 +189,18 @@ export function readAsk(input: string, book: Book, pools = false): AgentAsk | nu
   /* -------------------------------------------------- The agent to trade */
   // «торгуй на 1 SOL на день», «trade for me», «запусти бота на 0,5 SOL», «let my agent trade 1 SOL a day».
   if (trade || (agent && put) || strategyAsk) {
-    // A plain trade of a coin («trade JUP») is the trade window's: the agent only when a budget, a day, «for me» or a strategy is said.
-    const amounts = solAmounts(list);
-    const span = dayly(list);
-    if (!agent && !strategyAsk && amounts.sol.length === 0 && span === 'none' && !has(list, FOR_ME)) return null;
+    // The term said («for a week», «на 3 дні») is the agent's days, and its words are no budget's: the day is read
+    // without them, so «1 SOL a day for a week» is 1 SOL a day for 7 days, never a budget over a week.
+    const term = termSaid(said);
+    const budgetWords = term ? tokens(term.rest) : list;
+    // A plain trade of a coin («trade JUP») is the trade window's: the agent only when a budget, a day, a term, «for me» or a strategy is said.
+    const amounts = solAmounts(budgetWords);
+    const span = dayly(budgetWords);
+    if (!agent && !strategyAsk && amounts.sol.length === 0 && span === 'none' && !term && !has(list, FOR_ME)) return null;
     const one = amounts.sol.length === 1 && !amounts.other && amounts.sol[0] !== '' && span !== 'other';
     // An early plan buys a launch the agent picks itself: a tower named is not it.
     const coin = plan?.id === 'early' ? null : towerNamed(list, book);
-    return { kind: 'trade', said, perDaySol: one ? amounts.sol[0]! : null, coin, ...(plan ? { plan } : {}) };
+    return { kind: 'trade', said, perDaySol: one ? amounts.sol[0]! : null, coin, ...(plan ? { plan } : {}), ...(term ? { days: term.days } : {}) };
   }
 
   /* -------------------------------------------------- The agent to launch a coin */

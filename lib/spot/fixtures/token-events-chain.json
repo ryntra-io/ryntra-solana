@@ -1,0 +1,1106 @@
+{
+ "_source": [
+  "Real mainnet transactions, read 2026-11-20 with getTransaction (jsonParsed) from a public node, of four coins: PAPI (a pool), $LA BEAST (pump.fun's curve), HCAT (pump.fun) and ACRES (Meteora DBC's curve).",
+  "Each is laid out as `parsed` of Helius Parsed Events by the rules Helius publishes (docs/parsed-events/parsed-response, read 2026-11-20): nativeTransfers are System Program transfer and create_account plus a synthetic transfer for SPL Token close_account; tokenTransfers are transfer, transfer_checked, burn, mint_to and their kin. The same layout of transaction 5xSKzM8b… reproduces Helius's own published answer for it field for field (`published`, which is that answer itself, its `instructions` left out for size).",
+  "`instructions` holds only pump.fun's own event of the trade: its `rawData` is the chain's instruction data, the same base58 text Helius gives (checked on the published answer).",
+  "`summary` is not on the chain and Helius's own was not recorded (the scan needs the deployment's key): where a record has one it is an assumption — Helius names a swap through Jupiter and through pump.fun a swap. Records with `summary: null` are read with no help from it.",
+  "`chain` is what the transaction's balances before and after say changed for the trader — the measure the reading is checked against."
+ ],
+ "mints": {
+  "PAPI": "FtV7rWXo1J7BUtBekKeXZ6jNkVofhvuewMZTiFQxpump",
+  "BEAST": "7XFPrrafUF5JL3eCNZF4ogKKTUNUHwzy6tp47FrEpump",
+  "HCAT": "9U76nMfZepDZYRpqfL2tcmbgM7QLQ3RRTPVCoJeGxRSe",
+  "ACRES": "5ekqGuwRQR573sw6RdXnyj4AJhYwGgG1qDxWsMGBKB9p"
+ },
+ "published": {
+  "signature": "5xSKzM8bvpudE521jikHqASzMr23Ms4X4ieY3K8oFPFrJWCSSgYocJmHznrR8b12voDxKDH8ykdCLXSRrx6duVLH",
+  "parserStatus": "OK",
+  "parsed": {
+   "slot": 433950192,
+   "blockTime": 1784487060,
+   "fee": 2005000,
+   "feePayer": "GV6UUmNxz2RpKxmNAPadYKb7uQpszwqQAu3qLJxVdC52",
+   "transactionStatus": "OK",
+   "error": null,
+   "decodedError": null,
+   "nativeTransfers": [
+    { "fromUserAccount": "GV6UUmNxz2RpKxmNAPadYKb7uQpszwqQAu3qLJxVdC52", "toUserAccount": "teBPkZtsnaKDpGHTy1KUZeh1PbVtbrKXhzruYpRiUUs", "amount": 2039280 },
+    { "fromUserAccount": "GV6UUmNxz2RpKxmNAPadYKb7uQpszwqQAu3qLJxVdC52", "toUserAccount": "teBPkZtsnaKDpGHTy1KUZeh1PbVtbrKXhzruYpRiUUs", "amount": 1500000000000 },
+    { "fromUserAccount": "teBPkZtsnaKDpGHTy1KUZeh1PbVtbrKXhzruYpRiUUs", "toUserAccount": "GV6UUmNxz2RpKxmNAPadYKb7uQpszwqQAu3qLJxVdC52", "amount": 2039280 }
+   ],
+   "tokenTransfers": [
+    { "fromUserAccount": "GV6UUmNxz2RpKxmNAPadYKb7uQpszwqQAu3qLJxVdC52", "toUserAccount": "7iWnBRRhBCiNXXPhqiGzvvBkKrvFSWqqmxRyu9VyYBxE", "fromTokenAccount": "teBPkZtsnaKDpGHTy1KUZeh1PbVtbrKXhzruYpRiUUs", "toTokenAccount": "2oL6my4QDDCfpgJZX1bZV1NgbmuNptKdgcE8wJm6efgk", "rawTokenAmount": 1498500000000, "decimals": 9, "tokenStandard": "Fungible", "mint": "So11111111111111111111111111111111111111112" },
+    { "fromUserAccount": "7iWnBRRhBCiNXXPhqiGzvvBkKrvFSWqqmxRyu9VyYBxE", "toUserAccount": "8FnX3xo2yYw3EUE6w3nQA4GfXGS9wpK6oj3veJpbFzLo", "fromTokenAccount": "2oL6my4QDDCfpgJZX1bZV1NgbmuNptKdgcE8wJm6efgk", "toTokenAccount": "ATRsNGv2nDw7hSMfkUTBoVUDsFDwN7po7KbecyiGWNB4", "rawTokenAmount": 470229300000, "decimals": 9, "tokenStandard": "Fungible", "mint": "So11111111111111111111111111111111111111112" },
+    { "fromUserAccount": "8FnX3xo2yYw3EUE6w3nQA4GfXGS9wpK6oj3veJpbFzLo", "toUserAccount": "7iWnBRRhBCiNXXPhqiGzvvBkKrvFSWqqmxRyu9VyYBxE", "fromTokenAccount": "2Y7HATmn9aJBcxCskE5V2U2epmjvkZmB51zTJBbhj4cU", "toTokenAccount": "EpdaePzdqRkMtdZJquVPUWgyoJ5YEEpYALki6dv9VBrt", "rawTokenAmount": 35579021038, "decimals": 6, "tokenStandard": "Fungible", "mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v" },
+    { "fromUserAccount": "7iWnBRRhBCiNXXPhqiGzvvBkKrvFSWqqmxRyu9VyYBxE", "toUserAccount": "8ekCy2jHHUbW2yeNGFWYJT9Hm9FW7SvZcZK66dSZCDiF", "fromTokenAccount": "2oL6my4QDDCfpgJZX1bZV1NgbmuNptKdgcE8wJm6efgk", "toTokenAccount": "5pVN5XZB8cYBjNLFrsBCPWkCQBan5K5Mq2dWGzwPgGJV", "rawTokenAmount": 1028270700000, "decimals": 9, "tokenStandard": "Fungible", "mint": "So11111111111111111111111111111111111111112" },
+    { "fromUserAccount": "8ekCy2jHHUbW2yeNGFWYJT9Hm9FW7SvZcZK66dSZCDiF", "toUserAccount": "7iWnBRRhBCiNXXPhqiGzvvBkKrvFSWqqmxRyu9VyYBxE", "fromTokenAccount": "9t4P5wMwfFkyn92Z7hf463qYKEZf8ERVZsGBEPNp8uJx", "toTokenAccount": "EpdaePzdqRkMtdZJquVPUWgyoJ5YEEpYALki6dv9VBrt", "rawTokenAmount": 77798063361, "decimals": 6, "tokenStandard": "Fungible", "mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v" },
+    { "fromUserAccount": "HyKbc1vUxNL9xJC2Q44qdGiuKC1Ey95KNdokfHivrFnZ", "toUserAccount": "7iWnBRRhBCiNXXPhqiGzvvBkKrvFSWqqmxRyu9VyYBxE", "fromTokenAccount": "7CdAWd32k1c9ywpyErij2xRbBDRCLFqrZAXTUjD3ziek", "toTokenAccount": "9RzosLeV5P5gG5MLobJWrBTGYu1ApMHJ7pwhX6S2xFFS", "rawTokenAmount": 8348494812168, "decimals": 6, "tokenStandard": "Fungible", "mint": "pumpCmXqMfrsAkQ5r49WcJnRayYRqmXz6ae8H7H9Dfn" },
+    { "fromUserAccount": "7iWnBRRhBCiNXXPhqiGzvvBkKrvFSWqqmxRyu9VyYBxE", "toUserAccount": "HyKbc1vUxNL9xJC2Q44qdGiuKC1Ey95KNdokfHivrFnZ", "fromTokenAccount": "EpdaePzdqRkMtdZJquVPUWgyoJ5YEEpYALki6dv9VBrt", "toTokenAccount": "Cad4XrQrtXdKEhZKtWX5YAkwumUvphZKw1cqpYXYnZDr", "rawTokenAmount": 14625643887, "decimals": 6, "tokenStandard": "Fungible", "mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v" },
+    { "fromUserAccount": "7iWnBRRhBCiNXXPhqiGzvvBkKrvFSWqqmxRyu9VyYBxE", "toUserAccount": "8ekCy2jHHUbW2yeNGFWYJT9Hm9FW7SvZcZK66dSZCDiF", "fromTokenAccount": "EpdaePzdqRkMtdZJquVPUWgyoJ5YEEpYALki6dv9VBrt", "toTokenAccount": "9t4P5wMwfFkyn92Z7hf463qYKEZf8ERVZsGBEPNp8uJx", "rawTokenAmount": 35566391375, "decimals": 6, "tokenStandard": "Fungible", "mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v" },
+    { "fromUserAccount": "8ekCy2jHHUbW2yeNGFWYJT9Hm9FW7SvZcZK66dSZCDiF", "toUserAccount": "7iWnBRRhBCiNXXPhqiGzvvBkKrvFSWqqmxRyu9VyYBxE", "fromTokenAccount": "FhdiaEWUX8ZrW5TT2iNjWivMCzuBZhUJutrpfw6CvsxU", "toTokenAccount": "9RzosLeV5P5gG5MLobJWrBTGYu1ApMHJ7pwhX6S2xFFS", "rawTokenAmount": 20283004384731, "decimals": 6, "tokenStandard": "Fungible", "mint": "pumpCmXqMfrsAkQ5r49WcJnRayYRqmXz6ae8H7H9Dfn" },
+    { "fromUserAccount": "7iWnBRRhBCiNXXPhqiGzvvBkKrvFSWqqmxRyu9VyYBxE", "toUserAccount": "2kfQuYG2FVZL2RqqKEttcdadbPWP4c7b6AFQztNcBWyV", "fromTokenAccount": "EpdaePzdqRkMtdZJquVPUWgyoJ5YEEpYALki6dv9VBrt", "toTokenAccount": "CMghWj6TEDfGTN5CSzo9p27kPMb73fsDPM22LqTe2C9y", "rawTokenAmount": 63185049137, "decimals": 6, "tokenStandard": "Fungible", "mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v" },
+    { "fromUserAccount": "2kfQuYG2FVZL2RqqKEttcdadbPWP4c7b6AFQztNcBWyV", "toUserAccount": "7iWnBRRhBCiNXXPhqiGzvvBkKrvFSWqqmxRyu9VyYBxE", "fromTokenAccount": "8PbjFCfVNHH5PwP7xJj4JnGom397ybK3mLzw9164nZ4K", "toTokenAccount": "9RzosLeV5P5gG5MLobJWrBTGYu1ApMHJ7pwhX6S2xFFS", "rawTokenAmount": 36041340065051, "decimals": 6, "tokenStandard": "Fungible", "mint": "pumpCmXqMfrsAkQ5r49WcJnRayYRqmXz6ae8H7H9Dfn" },
+    { "fromUserAccount": "GV6UUmNxz2RpKxmNAPadYKb7uQpszwqQAu3qLJxVdC52", "toUserAccount": "7iWnBRRhBCiNXXPhqiGzvvBkKrvFSWqqmxRyu9VyYBxE", "fromTokenAccount": "teBPkZtsnaKDpGHTy1KUZeh1PbVtbrKXhzruYpRiUUs", "toTokenAccount": "2oL6my4QDDCfpgJZX1bZV1NgbmuNptKdgcE8wJm6efgk", "rawTokenAmount": 1500000000, "decimals": 9, "tokenStandard": "Fungible", "mint": "So11111111111111111111111111111111111111112" },
+    { "fromUserAccount": "7iWnBRRhBCiNXXPhqiGzvvBkKrvFSWqqmxRyu9VyYBxE", "toUserAccount": "GV6UUmNxz2RpKxmNAPadYKb7uQpszwqQAu3qLJxVdC52", "fromTokenAccount": "9RzosLeV5P5gG5MLobJWrBTGYu1ApMHJ7pwhX6S2xFFS", "toTokenAccount": "3zExK5UQLkARi2KAAFUTvZAtNZ8P3BDiCHy3g6CMQSCH", "rawTokenAmount": 64672839261950, "decimals": 6, "tokenStandard": "Fungible", "mint": "pumpCmXqMfrsAkQ5r49WcJnRayYRqmXz6ae8H7H9Dfn" }
+   ],
+   "summary": {
+    "type": "swap",
+    "description": "GV6UUmNxz2RpKxmNAPadYKb7uQpszwqQAu3qLJxVdC52 swapped 1500 SOL for 64672839.26195 pumpCmXqMfrsAkQ5r49WcJnRayYRqmXz6ae8H7H9Dfn via Jupiter",
+    "parsedData": {
+     "type": "swap",
+     "protocol": "jupiter",
+     "kind": "swap",
+     "in_amount": "1500000000000",
+     "actual_out_amount": "64672839261950",
+     "input_mint": "So11111111111111111111111111111111111111112",
+     "output_mint": "pumpCmXqMfrsAkQ5r49WcJnRayYRqmXz6ae8H7H9Dfn",
+     "inner_swaps": [
+      {
+       "amm_program_id": "",
+       "amm_program_name": null,
+       "input_amount": "470229300000",
+       "output_amount": "35579021038",
+       "input_mint": "So11111111111111111111111111111111111111112",
+       "output_mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+      },
+      {
+       "amm_program_id": "",
+       "amm_program_name": null,
+       "input_amount": "1028270700000",
+       "output_amount": "77798063361",
+       "input_mint": "So11111111111111111111111111111111111111112",
+       "output_mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+      },
+      {
+       "amm_program_id": "",
+       "amm_program_name": null,
+       "input_amount": "14625643887",
+       "output_amount": "8348494812168",
+       "input_mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+       "output_mint": "pumpCmXqMfrsAkQ5r49WcJnRayYRqmXz6ae8H7H9Dfn"
+      },
+      {
+       "amm_program_id": "",
+       "amm_program_name": null,
+       "input_amount": "35566391375",
+       "output_amount": "20283004384731",
+       "input_mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+       "output_mint": "pumpCmXqMfrsAkQ5r49WcJnRayYRqmXz6ae8H7H9Dfn"
+      },
+      {
+       "amm_program_id": "",
+       "amm_program_name": null,
+       "input_amount": "63185049137",
+       "output_amount": "36041340065051",
+       "input_mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+       "output_mint": "pumpCmXqMfrsAkQ5r49WcJnRayYRqmXz6ae8H7H9Dfn"
+      }
+     ]
+    }
+   },
+   "instructions": []
+  }
+ },
+ "records": {
+  "usdtSale": {
+   "coin": "PAPI",
+   "note": "A sale through Jupiter paid in USDT.",
+   "signature": "3yzwEYrRGCNn7mRd8LWex1zGMnRpfnBZSLRSRgBYxzrZQQeQzW71ExvFknZkATFuBR8uL9oxHjMwu2NDx7vLSvdq",
+   "parserStatus": "OK",
+   "parsed": {
+    "slot": 471797134,
+    "blockTime": 1795190569,
+    "fee": 22942,
+    "feePayer": "4qXLiz1vsWs6su2KNnUz1TL3P7Lf8iFekdCr4YMB7Moy",
+    "transactionStatus": "OK",
+    "nativeTransfers": [
+     { "fromUserAccount": "4qXLiz1vsWs6su2KNnUz1TL3P7Lf8iFekdCr4YMB7Moy", "toUserAccount": "9CqFrX39yA1vz6Xcana86BGZWeUdoRxNRzZHtdm86E4n", "amount": 1488440 },
+     { "fromUserAccount": "4qXLiz1vsWs6su2KNnUz1TL3P7Lf8iFekdCr4YMB7Moy", "toUserAccount": "4KVc5ErPAfs25iWGDyxUnSKB9PG3gemMn53AwknniFDy", "amount": 1488440 },
+     { "fromUserAccount": "9CqFrX39yA1vz6Xcana86BGZWeUdoRxNRzZHtdm86E4n", "toUserAccount": "4qXLiz1vsWs6su2KNnUz1TL3P7Lf8iFekdCr4YMB7Moy", "amount": 1488440 }
+    ],
+    "tokenTransfers": [
+     { "fromUserAccount": "4qXLiz1vsWs6su2KNnUz1TL3P7Lf8iFekdCr4YMB7Moy", "toUserAccount": "4MoAH6GTVsAgEtpL2ZaB8iQNk6GD2wkoQySZGB5qLsDy", "fromTokenAccount": "Dg2V4mn8UmojuxVEd26cLvWC7kqCRKvLNfrQ4HGc74q7", "toTokenAccount": "9KVNdUi4UZSx4nue6ct6mxu2Pdh9g3Qh7KZXtVHSDxE3", "rawTokenAmount": 1779359872664, "decimals": 6, "tokenStandard": "Fungible", "mint": "FtV7rWXo1J7BUtBekKeXZ6jNkVofhvuewMZTiFQxpump" },
+     { "fromUserAccount": "4MoAH6GTVsAgEtpL2ZaB8iQNk6GD2wkoQySZGB5qLsDy", "toUserAccount": "4qXLiz1vsWs6su2KNnUz1TL3P7Lf8iFekdCr4YMB7Moy", "fromTokenAccount": "4HC3bbHZWdcd1PLyFZf8F8WocnyEbLF9TXRxaU5pbYA1", "toTokenAccount": "9CqFrX39yA1vz6Xcana86BGZWeUdoRxNRzZHtdm86E4n", "rawTokenAmount": 293921065, "decimals": 9, "tokenStandard": "Fungible", "mint": "So11111111111111111111111111111111111111112" },
+     { "fromUserAccount": "4MoAH6GTVsAgEtpL2ZaB8iQNk6GD2wkoQySZGB5qLsDy", "toUserAccount": "EHAAiTxcdDwQ3U4bU6YcMsQGaekdzLS3B5SmYo46kJtL", "fromTokenAccount": "4HC3bbHZWdcd1PLyFZf8F8WocnyEbLF9TXRxaU5pbYA1", "toTokenAccount": "CA7v8gHfbquYXyDnDx6QxWW8hmL1H7X6Y2RYDrGLnuck", "rawTokenAmount": 1384033, "decimals": 9, "tokenStandard": "Fungible", "mint": "So11111111111111111111111111111111111111112" },
+     { "fromUserAccount": "4qXLiz1vsWs6su2KNnUz1TL3P7Lf8iFekdCr4YMB7Moy", "toUserAccount": "5zpyutJu9ee6jFymDGoK7F6S5Kczqtc9FomP3ueKuyA9", "fromTokenAccount": "9CqFrX39yA1vz6Xcana86BGZWeUdoRxNRzZHtdm86E4n", "toTokenAccount": "ES7yhSrYeFo4U1PfJHNRkbfCWxCwPLk2DjrEbmN8bg58", "rawTokenAmount": 293921065, "decimals": 9, "tokenStandard": "Fungible", "mint": "So11111111111111111111111111111111111111112" },
+     { "fromUserAccount": "5zpyutJu9ee6jFymDGoK7F6S5Kczqtc9FomP3ueKuyA9", "toUserAccount": "4qXLiz1vsWs6su2KNnUz1TL3P7Lf8iFekdCr4YMB7Moy", "fromTokenAccount": "4dmvFGeQH2eqa3ktNHMgm4wZ8vuTukBiK9M7gxW5oR9F", "toTokenAccount": "4KVc5ErPAfs25iWGDyxUnSKB9PG3gemMn53AwknniFDy", "rawTokenAmount": 972222562481, "decimals": 5, "tokenStandard": "Fungible", "mint": "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263" },
+     { "fromUserAccount": "4qXLiz1vsWs6su2KNnUz1TL3P7Lf8iFekdCr4YMB7Moy", "toUserAccount": "EHcege7dok1iYs7SxL2XzDPvhg6XzMVcx2V5SkMUurJP", "fromTokenAccount": "4KVc5ErPAfs25iWGDyxUnSKB9PG3gemMn53AwknniFDy", "toTokenAccount": "EYZdaSMrKcSgw3BdbbTMzRyBy4raUZBgKtdhFBZeM2Uo", "rawTokenAmount": 972222562481, "decimals": 5, "tokenStandard": "Fungible", "mint": "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263" },
+     { "fromUserAccount": "EHcege7dok1iYs7SxL2XzDPvhg6XzMVcx2V5SkMUurJP", "toUserAccount": "4qXLiz1vsWs6su2KNnUz1TL3P7Lf8iFekdCr4YMB7Moy", "fromTokenAccount": "qZGfSMBqqCK7jFUdBDCVk7uHHgP67WDRD6kTt84gGK2", "toTokenAccount": "984p5eMjmxkPeWo8snAsajkg1QVtK8KpYcDqgu81h9Cg", "rawTokenAmount": 20000300, "decimals": 6, "tokenStandard": "Fungible", "mint": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB" },
+     { "fromUserAccount": "4qXLiz1vsWs6su2KNnUz1TL3P7Lf8iFekdCr4YMB7Moy", "toUserAccount": "6Gfahmxqn1VfJE1rZ3JsDZdztUKMc4F8bjR9pfu1XhWZ", "fromTokenAccount": "984p5eMjmxkPeWo8snAsajkg1QVtK8KpYcDqgu81h9Cg", "toTokenAccount": "EspZi6PtwfNjxzCMX8QjbpMn1JQNMqPyqS4NKAzVheeJ", "rawTokenAmount": 100001, "decimals": 6, "tokenStandard": "Fungible", "mint": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB" }
+    ],
+    "summary": {
+     "type": "swap",
+     "description": "",
+     "parsedData": null
+    },
+    "instructions": []
+   },
+   "chain": {
+    "wallet": "4qXLiz1vsWs6su2KNnUz1TL3P7Lf8iFekdCr4YMB7Moy",
+    "coin": -1779359.872664,
+    "sol": 0.0013462,
+    "dollars": 19.900299
+   }
+  },
+  "poolBuy": {
+   "coin": "PAPI",
+   "note": "A buy in a pool paid in SOL.",
+   "signature": "ydyeVikUH3iZRgCqAqQfi5SD2egLsGwtL95ruCfj5mHaNbZtNYF6DPksB7wN85GijKkwjk97WmfuE4DoRzxKR4R",
+   "parserStatus": "OK",
+   "parsed": {
+    "slot": 471797604,
+    "blockTime": 1795190670,
+    "fee": 72819,
+    "feePayer": "7afTvTDE5qSNG4N3vzHX1APXKiNQomy4ZjMe6WvHRdmj",
+    "transactionStatus": "OK",
+    "nativeTransfers": [
+     { "fromUserAccount": "7afTvTDE5qSNG4N3vzHX1APXKiNQomy4ZjMe6WvHRdmj", "toUserAccount": "5gHcMukAwafRz1VnnFUaENorSiA9azTBeMwNiRFP2gw7", "amount": 1513840 },
+     { "fromUserAccount": "7afTvTDE5qSNG4N3vzHX1APXKiNQomy4ZjMe6WvHRdmj", "toUserAccount": "247y4a4zLLxZnsHRhDx15J4MHtFhDP1rDRWohrPTkfXo", "amount": 1981488440 },
+     { "fromUserAccount": "247y4a4zLLxZnsHRhDx15J4MHtFhDP1rDRWohrPTkfXo", "toUserAccount": "7afTvTDE5qSNG4N3vzHX1APXKiNQomy4ZjMe6WvHRdmj", "amount": 1488440 },
+     { "fromUserAccount": "7afTvTDE5qSNG4N3vzHX1APXKiNQomy4ZjMe6WvHRdmj", "toUserAccount": "2ApLdwLrGayEmxgpLX9BTR47Q2QprfMg5SpjrLeaK8s7", "amount": 20000000 },
+     { "fromUserAccount": "7afTvTDE5qSNG4N3vzHX1APXKiNQomy4ZjMe6WvHRdmj", "toUserAccount": "5qLPs1V6j9MDFHk9G1ygimtLJCjUWmkbMBEiPX7toBvB", "amount": 9332181 }
+    ],
+    "tokenTransfers": [
+     { "fromUserAccount": "4MoAH6GTVsAgEtpL2ZaB8iQNk6GD2wkoQySZGB5qLsDy", "toUserAccount": "7afTvTDE5qSNG4N3vzHX1APXKiNQomy4ZjMe6WvHRdmj", "fromTokenAccount": "9KVNdUi4UZSx4nue6ct6mxu2Pdh9g3Qh7KZXtVHSDxE3", "toTokenAccount": "5gHcMukAwafRz1VnnFUaENorSiA9azTBeMwNiRFP2gw7", "rawTokenAmount": 8599073478248, "decimals": 6, "tokenStandard": "Fungible", "mint": "FtV7rWXo1J7BUtBekKeXZ6jNkVofhvuewMZTiFQxpump" },
+     { "fromUserAccount": "7afTvTDE5qSNG4N3vzHX1APXKiNQomy4ZjMe6WvHRdmj", "toUserAccount": "4MoAH6GTVsAgEtpL2ZaB8iQNk6GD2wkoQySZGB5qLsDy", "fromTokenAccount": "247y4a4zLLxZnsHRhDx15J4MHtFhDP1rDRWohrPTkfXo", "toTokenAccount": "4HC3bbHZWdcd1PLyFZf8F8WocnyEbLF9TXRxaU5pbYA1", "rawTokenAmount": 1970906667, "decimals": 9, "tokenStandard": "Fungible", "mint": "So11111111111111111111111111111111111111112" },
+     { "fromUserAccount": "7afTvTDE5qSNG4N3vzHX1APXKiNQomy4ZjMe6WvHRdmj", "toUserAccount": "A7hAgCzFw14fejgCp387JUJRMNyz4j89JKnhtKU8piqW", "fromTokenAccount": "247y4a4zLLxZnsHRhDx15J4MHtFhDP1rDRWohrPTkfXo", "toTokenAccount": "qkYdTGRPHbWTWuBMz45bCiU6a23axRqf6sBHm9295WY", "rawTokenAmount": 9093333, "decimals": 9, "tokenStandard": "Fungible", "mint": "So11111111111111111111111111111111111111112" }
+    ],
+    "summary": null,
+    "instructions": []
+   },
+   "chain": {
+    "wallet": "7afTvTDE5qSNG4N3vzHX1APXKiNQomy4ZjMe6WvHRdmj",
+    "coin": 8599073.478248,
+    "sol": -2.009332181,
+    "dollars": 0
+   }
+  },
+  "poolSale": {
+   "coin": "PAPI",
+   "note": "A sale in a pool for SOL.",
+   "signature": "4ndJurVfe5zUqzbneTZpczxMeJ9RXas1DRWbuaK9PtnN9ZiXSwypqk5ssruEziHjCn1ZrQh2X5YAeJuAkh7DpG3Z",
+   "parserStatus": "OK",
+   "parsed": {
+    "slot": 471797634,
+    "blockTime": 1795190677,
+    "fee": 222225,
+    "feePayer": "kEFiAX3jo5NmemysQov342TZ9mGh6yp92GDRjhA8XDf",
+    "transactionStatus": "OK",
+    "nativeTransfers": [
+     { "fromUserAccount": "kEFiAX3jo5NmemysQov342TZ9mGh6yp92GDRjhA8XDf", "toUserAccount": "B2dPU9oHqPwhRz4ayMbMWR8DpupAkBYQSKDdbgYpRjGn", "amount": 1488440 },
+     { "fromUserAccount": "B2dPU9oHqPwhRz4ayMbMWR8DpupAkBYQSKDdbgYpRjGn", "toUserAccount": "kEFiAX3jo5NmemysQov342TZ9mGh6yp92GDRjhA8XDf", "amount": 668159571 },
+     { "fromUserAccount": "kEFiAX3jo5NmemysQov342TZ9mGh6yp92GDRjhA8XDf", "toUserAccount": "astra9xWY93QyfG6yM8zwsKsRodscjQ2uU2HKNL5prk", "amount": 10000 }
+    ],
+    "tokenTransfers": [
+     { "fromUserAccount": "kEFiAX3jo5NmemysQov342TZ9mGh6yp92GDRjhA8XDf", "toUserAccount": "4MoAH6GTVsAgEtpL2ZaB8iQNk6GD2wkoQySZGB5qLsDy", "fromTokenAccount": "73LZndxLfp1mLX28tbgeuHcGZEnXR2TmRZjCFgvHsj4B", "toTokenAccount": "9KVNdUi4UZSx4nue6ct6mxu2Pdh9g3Qh7KZXtVHSDxE3", "rawTokenAmount": 2928142447760, "decimals": 6, "tokenStandard": "Fungible", "mint": "FtV7rWXo1J7BUtBekKeXZ6jNkVofhvuewMZTiFQxpump" },
+     { "fromUserAccount": "4MoAH6GTVsAgEtpL2ZaB8iQNk6GD2wkoQySZGB5qLsDy", "toUserAccount": "kEFiAX3jo5NmemysQov342TZ9mGh6yp92GDRjhA8XDf", "fromTokenAccount": "4HC3bbHZWdcd1PLyFZf8F8WocnyEbLF9TXRxaU5pbYA1", "toTokenAccount": "B2dPU9oHqPwhRz4ayMbMWR8DpupAkBYQSKDdbgYpRjGn", "rawTokenAmount": 666671131, "decimals": 9, "tokenStandard": "Fungible", "mint": "So11111111111111111111111111111111111111112" },
+     { "fromUserAccount": "4MoAH6GTVsAgEtpL2ZaB8iQNk6GD2wkoQySZGB5qLsDy", "toUserAccount": "5eHhjP8JaYkz83CWwvGU2uMUXefd3AazWGx4gpcuEEYD", "fromTokenAccount": "4HC3bbHZWdcd1PLyFZf8F8WocnyEbLF9TXRxaU5pbYA1", "toTokenAccount": "CASRL2zkwDnppxEFQ4LgdwgR9pdz5Q8R8nEMKVZ9QoLp", "rawTokenAmount": 3139262, "decimals": 9, "tokenStandard": "Fungible", "mint": "So11111111111111111111111111111111111111112" }
+    ],
+    "summary": null,
+    "instructions": []
+   },
+   "chain": {
+    "wallet": "kEFiAX3jo5NmemysQov342TZ9mGh6yp92GDRjhA8XDf",
+    "coin": -2928142.44776,
+    "sol": 0.666661131,
+    "dollars": 0
+   }
+  },
+  "usdcBuy": {
+   "coin": "PAPI",
+   "note": "A buy paid in USDC.",
+   "signature": "2EUXoDeJ2LHf3gxefk4zNYDD2p7e7f9Gnn5yy8hihYa2q5edz4gNZydGkBzxM9LCqD6AeMYQCoJxsfYxkYaDizuz",
+   "parserStatus": "OK",
+   "parsed": {
+    "slot": 471792901,
+    "blockTime": 1795189657,
+    "fee": 27973,
+    "feePayer": "2n2WftKHXuDzpjam4V8sNcRkwHYGfSk9XxM2uwcmMFiZ",
+    "transactionStatus": "OK",
+    "nativeTransfers": [
+     { "fromUserAccount": "2n2WftKHXuDzpjam4V8sNcRkwHYGfSk9XxM2uwcmMFiZ", "toUserAccount": "2UP3FP3egCy9T3by73hLZpae2VsVj5dTdx9oEu34Q9zG", "amount": 1513840 },
+     { "fromUserAccount": "2n2WftKHXuDzpjam4V8sNcRkwHYGfSk9XxM2uwcmMFiZ", "toUserAccount": "6mJyvRHee4buAWp2NF54fpL7VjcrFJJPJkQpmjDiwb1p", "amount": 1488440 },
+     { "fromUserAccount": "6mJyvRHee4buAWp2NF54fpL7VjcrFJJPJkQpmjDiwb1p", "toUserAccount": "5vPNE6VFyXmCmzmWotdxmRk57LEWiXxuAfZL3hKbi2LH", "amount": 2950493 },
+     { "fromUserAccount": "2n2WftKHXuDzpjam4V8sNcRkwHYGfSk9XxM2uwcmMFiZ", "toUserAccount": "DU3oUMrzewfvuUN8HNA3rXTvbscCA3krY365mzfFixrT", "amount": 177027 }
+    ],
+    "tokenTransfers": [
+     { "fromUserAccount": "2n2WftKHXuDzpjam4V8sNcRkwHYGfSk9XxM2uwcmMFiZ", "toUserAccount": "2LAYGGSiF3QfyQEG1Gb3UGAsuzvD21zjHEW88v2XZ7cW", "fromTokenAccount": "C2jYLiYH5YDfsTqzfXPnGD6PFcCzVryzFJVMBYVd3C4z", "toTokenAccount": "J4qimdWSWyNgySouC2JSc2K6i7TSxFeHjV37ncDDhdSn", "rawTokenAmount": 10000000, "decimals": 6, "tokenStandard": "Fungible", "mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v" },
+     { "fromUserAccount": "2LAYGGSiF3QfyQEG1Gb3UGAsuzvD21zjHEW88v2XZ7cW", "toUserAccount": "2n2WftKHXuDzpjam4V8sNcRkwHYGfSk9XxM2uwcmMFiZ", "fromTokenAccount": "Az7WRdCP38Ep4PBaVKoATkMoUgLpRcLJNTDtowDWaeKC", "toTokenAccount": "6mJyvRHee4buAWp2NF54fpL7VjcrFJJPJkQpmjDiwb1p", "rawTokenAmount": 146205328, "decimals": 9, "tokenStandard": "Fungible", "mint": "So11111111111111111111111111111111111111112" },
+     { "fromUserAccount": "4MoAH6GTVsAgEtpL2ZaB8iQNk6GD2wkoQySZGB5qLsDy", "toUserAccount": "2n2WftKHXuDzpjam4V8sNcRkwHYGfSk9XxM2uwcmMFiZ", "fromTokenAccount": "9KVNdUi4UZSx4nue6ct6mxu2Pdh9g3Qh7KZXtVHSDxE3", "toTokenAccount": "2UP3FP3egCy9T3by73hLZpae2VsVj5dTdx9oEu34Q9zG", "rawTokenAmount": 759510017041, "decimals": 6, "tokenStandard": "Fungible", "mint": "FtV7rWXo1J7BUtBekKeXZ6jNkVofhvuewMZTiFQxpump" },
+     { "fromUserAccount": "2n2WftKHXuDzpjam4V8sNcRkwHYGfSk9XxM2uwcmMFiZ", "toUserAccount": "4MoAH6GTVsAgEtpL2ZaB8iQNk6GD2wkoQySZGB5qLsDy", "fromTokenAccount": "6mJyvRHee4buAWp2NF54fpL7VjcrFJJPJkQpmjDiwb1p", "toTokenAccount": "4HC3bbHZWdcd1PLyFZf8F8WocnyEbLF9TXRxaU5pbYA1", "rawTokenAmount": 144078528, "decimals": 9, "tokenStandard": "Fungible", "mint": "So11111111111111111111111111111111111111112" },
+     { "fromUserAccount": "2n2WftKHXuDzpjam4V8sNcRkwHYGfSk9XxM2uwcmMFiZ", "toUserAccount": "5eHhjP8JaYkz83CWwvGU2uMUXefd3AazWGx4gpcuEEYD", "fromTokenAccount": "6mJyvRHee4buAWp2NF54fpL7VjcrFJJPJkQpmjDiwb1p", "toTokenAccount": "CASRL2zkwDnppxEFQ4LgdwgR9pdz5Q8R8nEMKVZ9QoLp", "rawTokenAmount": 664747, "decimals": 9, "tokenStandard": "Fungible", "mint": "So11111111111111111111111111111111111111112" }
+    ],
+    "summary": null,
+    "instructions": []
+   },
+   "chain": {
+    "wallet": "2n2WftKHXuDzpjam4V8sNcRkwHYGfSk9XxM2uwcmMFiZ",
+    "coin": 759510.017041,
+    "sol": -0.001665467,
+    "dollars": -10
+   }
+  },
+  "relayedSale": {
+   "coin": "PAPI",
+   "note": "A sale whose fee a relayer paid: the fee payer holds none of the coin.",
+   "signature": "5EfUH5iABnJG4LrYEiV2jMoQMzbbGisaDHA898SUbfbrY1QhnrcB1LPpdc6KP5a2NJDU3ZADysHuToe26381DiPA",
+   "parserStatus": "OK",
+   "parsed": {
+    "slot": 471796535,
+    "blockTime": 1795190438,
+    "fee": 410000,
+    "feePayer": "AgmLJBMDCqWynYnQiPCuj9ewsNNsBJXyzoUhD9LJzN51",
+    "transactionStatus": "OK",
+    "nativeTransfers": [
+     { "fromUserAccount": "AgmLJBMDCqWynYnQiPCuj9ewsNNsBJXyzoUhD9LJzN51", "toUserAccount": "3kiD2niF5vGfwmFJkCRBeDy2JpAUfsyeEiMwViYcYUEz", "amount": 1488440 },
+     { "fromUserAccount": "AgmLJBMDCqWynYnQiPCuj9ewsNNsBJXyzoUhD9LJzN51", "toUserAccount": "AZVmh9emcWhk7NNSUidbLywB4Lg9ZawRENUDh2ztYUeY", "amount": 1346200 },
+     { "fromUserAccount": "7t5znbQVzWQEuiNhRdccQdQMwjXvs1TVP6jqrsEVyWJw", "toUserAccount": "AgmLJBMDCqWynYnQiPCuj9ewsNNsBJXyzoUhD9LJzN51", "amount": 1346200 },
+     { "fromUserAccount": "3kiD2niF5vGfwmFJkCRBeDy2JpAUfsyeEiMwViYcYUEz", "toUserAccount": "AgmLJBMDCqWynYnQiPCuj9ewsNNsBJXyzoUhD9LJzN51", "amount": 1488440 },
+     { "fromUserAccount": "AgmLJBMDCqWynYnQiPCuj9ewsNNsBJXyzoUhD9LJzN51", "toUserAccount": "AgmLJBMDCqWynYnQiPCuj9ewsNNsBJXyzoUhD9LJzN51", "amount": 0 }
+    ],
+    "tokenTransfers": [
+     { "fromUserAccount": "7t5znbQVzWQEuiNhRdccQdQMwjXvs1TVP6jqrsEVyWJw", "toUserAccount": "4MoAH6GTVsAgEtpL2ZaB8iQNk6GD2wkoQySZGB5qLsDy", "fromTokenAccount": "7Q2NM3vCmLuVm2A4fxyhkJP6TVV7ZPdb2DRiUAKPhDQx", "toTokenAccount": "9KVNdUi4UZSx4nue6ct6mxu2Pdh9g3Qh7KZXtVHSDxE3", "rawTokenAmount": 214446028585, "decimals": 6, "tokenStandard": "Fungible", "mint": "FtV7rWXo1J7BUtBekKeXZ6jNkVofhvuewMZTiFQxpump" },
+     { "fromUserAccount": "4MoAH6GTVsAgEtpL2ZaB8iQNk6GD2wkoQySZGB5qLsDy", "toUserAccount": "7t5znbQVzWQEuiNhRdccQdQMwjXvs1TVP6jqrsEVyWJw", "fromTokenAccount": "4HC3bbHZWdcd1PLyFZf8F8WocnyEbLF9TXRxaU5pbYA1", "toTokenAccount": "3kiD2niF5vGfwmFJkCRBeDy2JpAUfsyeEiMwViYcYUEz", "rawTokenAmount": 34417692, "decimals": 9, "tokenStandard": "Fungible", "mint": "So11111111111111111111111111111111111111112" },
+     { "fromUserAccount": "4MoAH6GTVsAgEtpL2ZaB8iQNk6GD2wkoQySZGB5qLsDy", "toUserAccount": "A7hAgCzFw14fejgCp387JUJRMNyz4j89JKnhtKU8piqW", "fromTokenAccount": "4HC3bbHZWdcd1PLyFZf8F8WocnyEbLF9TXRxaU5pbYA1", "toTokenAccount": "qkYdTGRPHbWTWuBMz45bCiU6a23axRqf6sBHm9295WY", "rawTokenAmount": 162068, "decimals": 9, "tokenStandard": "Fungible", "mint": "So11111111111111111111111111111111111111112" },
+     { "fromUserAccount": "7t5znbQVzWQEuiNhRdccQdQMwjXvs1TVP6jqrsEVyWJw", "toUserAccount": "CyrzGrL9U9x9FfqfQiTi7kWsvJ9mK97tGxtPF1AV8E8d", "fromTokenAccount": "3kiD2niF5vGfwmFJkCRBeDy2JpAUfsyeEiMwViYcYUEz", "toTokenAccount": "FHNPYg6zwhKjLT3QEhEHkBMQ1B6LU5xYV3GD25oNN469", "rawTokenAmount": 34417692, "decimals": 9, "tokenStandard": "Fungible", "mint": "So11111111111111111111111111111111111111112" },
+     { "fromUserAccount": "CyrzGrL9U9x9FfqfQiTi7kWsvJ9mK97tGxtPF1AV8E8d", "toUserAccount": "7t5znbQVzWQEuiNhRdccQdQMwjXvs1TVP6jqrsEVyWJw", "fromTokenAccount": "64U7eFD1Ct6S6RtAV634TpaKwFkzSazq9TLDTp67RSeR", "toTokenAccount": "3tx5hu1HXiL9xUyexevE4ffMge6uRh3xTdJnXXpJyEPF", "rawTokenAmount": 2350709, "decimals": 6, "tokenStandard": "Fungible", "mint": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB" },
+     { "fromUserAccount": "7t5znbQVzWQEuiNhRdccQdQMwjXvs1TVP6jqrsEVyWJw", "toUserAccount": "UUUXQdoC85FmgUgDMfYj3UsBWMLSjU7gVj4QmYGdMRx", "fromTokenAccount": "3tx5hu1HXiL9xUyexevE4ffMge6uRh3xTdJnXXpJyEPF", "toTokenAccount": "UUUXQdoC85FmgUgDMfYj3UsBWMLSjU7gVj4QmYGdMRx", "rawTokenAmount": 2350709, "decimals": 6, "tokenStandard": "Fungible", "mint": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB" },
+     { "fromUserAccount": "EPUHjseXG3izk3MVUJ1PcyWT9xeBhtAnq8gUpq3j8Uni", "toUserAccount": "7t5znbQVzWQEuiNhRdccQdQMwjXvs1TVP6jqrsEVyWJw", "fromTokenAccount": "EPUHjseXG3izk3MVUJ1PcyWT9xeBhtAnq8gUpq3j8Uni", "toTokenAccount": "8QADBgLmGxJ1iiJQW6rHcmzJUE3zGB9NwzZG7XQ7Sgbm", "rawTokenAmount": 2348398, "decimals": 6, "tokenStandard": "Fungible", "mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v" },
+     { "fromUserAccount": "7t5znbQVzWQEuiNhRdccQdQMwjXvs1TVP6jqrsEVyWJw", "toUserAccount": "R4rNJHaffSUotNmqSKNEfDcJE8A7zJUkaoM5Jkd7cYX", "fromTokenAccount": "8QADBgLmGxJ1iiJQW6rHcmzJUE3zGB9NwzZG7XQ7Sgbm", "toTokenAccount": "HrTf9CzXR1dRH4Sof5QrpmGWwpwAf3qZzwCsEjQpXcSq", "rawTokenAmount": 100000, "decimals": 6, "tokenStandard": "Fungible", "mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v" }
+    ],
+    "summary": {
+     "type": "swap",
+     "description": "",
+     "parsedData": null
+    },
+    "instructions": []
+   },
+   "chain": {
+    "wallet": "7t5znbQVzWQEuiNhRdccQdQMwjXvs1TVP6jqrsEVyWJw",
+    "coin": -214446.028585,
+    "sol": 0,
+    "dollars": 2.248398
+   }
+  },
+  "curveSale": {
+   "coin": "BEAST",
+   "note": "A sale on pump.fun's curve: the curve pays the SOL out of its own account, no transfer shows it.",
+   "signature": "5euzjQCkdtRFQbirDPJ86do5JbtSP61f6SSfhqeeGBBSQiwbx9AWt5UtiDWrws7ZyCrL94Hyxezrh3NXZNRAxh9q",
+   "parserStatus": "OK",
+   "parsed": {
+    "slot": 471558878,
+    "blockTime": 1795139351,
+    "fee": 9000,
+    "feePayer": "GmoCeg2DtKBgSzUeNxpye9ZZ4TFdakJkYuJjX7XvbcRh",
+    "transactionStatus": "OK",
+    "nativeTransfers": [
+     { "fromUserAccount": "GmoCeg2DtKBgSzUeNxpye9ZZ4TFdakJkYuJjX7XvbcRh", "toUserAccount": "KfHbT5Jrr5SV3CDkQVCLiSNWyVv5DmuVaCzbAHrzMFQ", "amount": 766469 },
+     { "fromUserAccount": "GmoCeg2DtKBgSzUeNxpye9ZZ4TFdakJkYuJjX7XvbcRh", "toUserAccount": "4ACfpUFoaSD9bfPdeu6DBt89gB6ENTeHBXCAi87NhDEE", "amount": 10000 }
+    ],
+    "tokenTransfers": [
+     { "fromUserAccount": "GmoCeg2DtKBgSzUeNxpye9ZZ4TFdakJkYuJjX7XvbcRh", "toUserAccount": "kjyvYyLXh2msLew9begdA9b33u7tL5nLf4Wr4jix4B9", "fromTokenAccount": "5k6ApCWPHs6L2rmJvmp8iesAA2asSyDQFDTqM5ff2JFV", "toTokenAccount": "ZU5cpa7oikcBx1w6SHBg9THjyPKYt3EcwfTUje4EsmB", "rawTokenAmount": 3591507380970, "decimals": 6, "tokenStandard": "Fungible", "mint": "7XFPrrafUF5JL3eCNZF4ogKKTUNUHwzy6tp47FrEpump" }
+    ],
+    "summary": {
+     "type": "swap",
+     "description": "",
+     "parsedData": null
+    },
+    "instructions": [
+     {
+      "instructionIndex": 2,
+      "innerInstructionIndex": 3,
+      "programId": "6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P",
+      "rawData": "b8WmrpJDiMq6X8gnpBQFpjmgpzbzghhzpQspH2FP1u9BuHmiRG7dCbeZpfFGb46NaXUTkbvqAwA6vc3hemnN1nn9o4a6R8pUJziFh5vcVf4FAABUqmoc5aB2FjGN9mqECFvRgsDpNpKKhQwfd79GQ15ZJXNufXN2T9PJqMLxEVL19MsgWUd3Tn99y9nHjE2d6fpw8rtpHxKc3EN4hYcR6ohXcyB1QKraeEAzZZ1acj6zR6HNefEuhX3CiUMNB1uAm2kGeA9XCGqXnezz95Q3Y6xpy4Pn5CcZpzw8yp454evdSEHjvJVg9RA4PeL5TSF8Nu1c2ahJmoLkGjcJf2dmg5dGQTkjiLAQ91uGsN7hH5s532phgUE1cK2fN62g4jA9qCGa5fcwiCejCt74YDU9TEEZ9cGcoVkzmQo7sWMsQnrvTiCQJF3FPQBW4H36ioJHLUis353SzGCzAKTeL4iTwumU1Vv5TCtnKWDTGL4iADCXstWSxa2qyjCnXnh7fQGPvBgDm8jBWR69iuPMauV33sJqsDWDyfw1y"
+     }
+    ]
+   },
+   "chain": {
+    "wallet": "GmoCeg2DtKBgSzUeNxpye9ZZ4TFdakJkYuJjX7XvbcRh",
+    "coin": -3591507.38097,
+    "sol": 0.169398476,
+    "dollars": 0
+   }
+  },
+  "curveBuy": {
+   "coin": "BEAST",
+   "note": "A buy on pump.fun's curve.",
+   "signature": "xpugspVbos7bU1bsWwuN87NAJmDG2js9aQRDSBKmokVKqbNg1V5swERYC3AG9yMdDy9wXmGrrnb3ebNQFcvgcfq",
+   "parserStatus": "OK",
+   "parsed": {
+    "slot": 471558781,
+    "blockTime": 1795139330,
+    "fee": 9000,
+    "feePayer": "GmoCeg2DtKBgSzUeNxpye9ZZ4TFdakJkYuJjX7XvbcRh",
+    "transactionStatus": "OK",
+    "nativeTransfers": [
+     { "fromUserAccount": "GmoCeg2DtKBgSzUeNxpye9ZZ4TFdakJkYuJjX7XvbcRh", "toUserAccount": "KfHbT5Jrr5SV3CDkQVCLiSNWyVv5DmuVaCzbAHrzMFQ", "amount": 185439 },
+     { "fromUserAccount": "GmoCeg2DtKBgSzUeNxpye9ZZ4TFdakJkYuJjX7XvbcRh", "toUserAccount": "BKRNdwzAU12xBEi5b8eRHHdgSviJdsQ78XqeAqGnthoo", "amount": 121551 },
+     { "fromUserAccount": "GmoCeg2DtKBgSzUeNxpye9ZZ4TFdakJkYuJjX7XvbcRh", "toUserAccount": "kjyvYyLXh2msLew9begdA9b33u7tL5nLf4Wr4jix4B9", "amount": 40516890 },
+     { "fromUserAccount": "GmoCeg2DtKBgSzUeNxpye9ZZ4TFdakJkYuJjX7XvbcRh", "toUserAccount": "4UQeTP1T39KZ9Sfxzo3WR5skgsaP6NZa87BAkuazLEKH", "amount": 384911 },
+     { "fromUserAccount": "GmoCeg2DtKBgSzUeNxpye9ZZ4TFdakJkYuJjX7XvbcRh", "toUserAccount": "4vieeGHPYPG2MmyPRcYjdiDmmhN3ww7hsFNap8pVN3Ey", "amount": 10000 }
+    ],
+    "tokenTransfers": [
+     { "fromUserAccount": "kjyvYyLXh2msLew9begdA9b33u7tL5nLf4Wr4jix4B9", "toUserAccount": "GmoCeg2DtKBgSzUeNxpye9ZZ4TFdakJkYuJjX7XvbcRh", "fromTokenAccount": "ZU5cpa7oikcBx1w6SHBg9THjyPKYt3EcwfTUje4EsmB", "toTokenAccount": "5k6ApCWPHs6L2rmJvmp8iesAA2asSyDQFDTqM5ff2JFV", "rawTokenAmount": 829867440153, "decimals": 6, "tokenStandard": "Fungible", "mint": "7XFPrrafUF5JL3eCNZF4ogKKTUNUHwzy6tp47FrEpump" }
+    ],
+    "summary": {
+     "type": "swap",
+     "description": "",
+     "parsedData": null
+    },
+    "instructions": [
+     {
+      "instructionIndex": 3,
+      "innerInstructionIndex": 6,
+      "programId": "6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P",
+      "rawData": "xP5X2rtd7D1PF6YVZfjxs5GPAPBLB4AaBfzNbW266PcotfwidC1nLAATUeW6K4XcUqMzvd45a2BumzZoh4qJTmHhHdPpHv7pdzrLonp6qcB5oePtDhX2AFPFmgP9EHU9XM4upSdsV6P7Qbb2oCJkDEqiB2HfbK1xroX4FMG771wFQkJ1xS7CK8HahqJpBSRWHNh7kwz7yXShqm8JC8AkPeEB2cJJGdbXCf2poTe2zuj6erzGnRym8az4w86mmnD5BrFvKpm4fNK43kJAUFjEnQauTH2H7StKmjKqGQ2NQf4Wt8jEzN6bCqEHYaXby36SNgtycUQ1xN5eHdvWiKG1t6ZBgoH1ESxLHjmZUvbvc8yNqrrc83JinKCeF6KnyeiBwy1yochW5W5pQ61fZPzgPUnre4Mv4XEbAo89nzuQAzcB34Srq9gmaFEeAr3o1v4f17pm8e6TCih7ftFB9Exg8sKhwArTVaxRs5n1uZB2n6G1JWGrwBztURRCLzc5jHNbGaH8mkGtnk1zkNkPtVX2sCd5TQmpgpYrMJRs8VkahnAQsn81nRgb"
+     }
+    ]
+   },
+   "chain": {
+    "wallet": "GmoCeg2DtKBgSzUeNxpye9ZZ4TFdakJkYuJjX7XvbcRh",
+    "coin": 829867.440153,
+    "sol": -0.041218791,
+    "dollars": 0
+   }
+  },
+  "curveRelayedSale": {
+   "coin": "BEAST",
+   "note": "A sale on pump.fun's curve whose fee a relayer paid.",
+   "signature": "j32MSdxr9cnXNXqa7p3q6W35TznUCHRzJ3HcWi1Nv3bYRTFNWoXyGD5A7F656Ex3zcMWjQr7CgPgbM7xFDY5CQx",
+   "parserStatus": "OK",
+   "parsed": {
+    "slot": 471558829,
+    "blockTime": 1795139340,
+    "fee": 410000,
+    "feePayer": "AgmLJBMDCqWynYnQiPCuj9ewsNNsBJXyzoUhD9LJzN51",
+    "transactionStatus": "OK",
+    "nativeTransfers": [
+     { "fromUserAccount": "AgmLJBMDCqWynYnQiPCuj9ewsNNsBJXyzoUhD9LJzN51", "toUserAccount": "D18Jk76bsRqDS6SB3VWEBMva6nLagDCCSwPANsgqK59", "amount": 1488440 },
+     { "fromUserAccount": "AgmLJBMDCqWynYnQiPCuj9ewsNNsBJXyzoUhD9LJzN51", "toUserAccount": "6oQj3veVnonNv8BwDAvSvxRQz4UgiWApoFYtCdnvHfir", "amount": 1346200 },
+     { "fromUserAccount": "8SuUBLw4pm4Nw46bGTfnDUh22muNwQe3fm1xyfZmwt1t", "toUserAccount": "AgmLJBMDCqWynYnQiPCuj9ewsNNsBJXyzoUhD9LJzN51", "amount": 1346200 },
+     { "fromUserAccount": "8SuUBLw4pm4Nw46bGTfnDUh22muNwQe3fm1xyfZmwt1t", "toUserAccount": "D18Jk76bsRqDS6SB3VWEBMva6nLagDCCSwPANsgqK59", "amount": 163345415 },
+     { "fromUserAccount": "D18Jk76bsRqDS6SB3VWEBMva6nLagDCCSwPANsgqK59", "toUserAccount": "8SuUBLw4pm4Nw46bGTfnDUh22muNwQe3fm1xyfZmwt1t", "amount": 1488440 },
+     { "fromUserAccount": "8SuUBLw4pm4Nw46bGTfnDUh22muNwQe3fm1xyfZmwt1t", "toUserAccount": "AgmLJBMDCqWynYnQiPCuj9ewsNNsBJXyzoUhD9LJzN51", "amount": 1488440 },
+     { "fromUserAccount": "AgmLJBMDCqWynYnQiPCuj9ewsNNsBJXyzoUhD9LJzN51", "toUserAccount": "AgmLJBMDCqWynYnQiPCuj9ewsNNsBJXyzoUhD9LJzN51", "amount": 0 }
+    ],
+    "tokenTransfers": [
+     { "fromUserAccount": "8SuUBLw4pm4Nw46bGTfnDUh22muNwQe3fm1xyfZmwt1t", "toUserAccount": "kjyvYyLXh2msLew9begdA9b33u7tL5nLf4Wr4jix4B9", "fromTokenAccount": "AFw5QjL9mL4Hg7W9NUcy2NGfwEBA5JjWLWKuigpah8zm", "toTokenAccount": "ZU5cpa7oikcBx1w6SHBg9THjyPKYt3EcwfTUje4EsmB", "rawTokenAmount": 3418497861088, "decimals": 6, "tokenStandard": "Fungible", "mint": "7XFPrrafUF5JL3eCNZF4ogKKTUNUHwzy6tp47FrEpump" },
+     { "fromUserAccount": "8SuUBLw4pm4Nw46bGTfnDUh22muNwQe3fm1xyfZmwt1t", "toUserAccount": "8FnX3xo2yYw3EUE6w3nQA4GfXGS9wpK6oj3veJpbFzLo", "fromTokenAccount": "D18Jk76bsRqDS6SB3VWEBMva6nLagDCCSwPANsgqK59", "toTokenAccount": "ATRsNGv2nDw7hSMfkUTBoVUDsFDwN7po7KbecyiGWNB4", "rawTokenAmount": 163345415, "decimals": 9, "tokenStandard": "Fungible", "mint": "So11111111111111111111111111111111111111112" },
+     { "fromUserAccount": "8FnX3xo2yYw3EUE6w3nQA4GfXGS9wpK6oj3veJpbFzLo", "toUserAccount": "8SuUBLw4pm4Nw46bGTfnDUh22muNwQe3fm1xyfZmwt1t", "fromTokenAccount": "2Y7HATmn9aJBcxCskE5V2U2epmjvkZmB51zTJBbhj4cU", "toTokenAccount": "CQ1RhjPBfhPteVhSb2QBv3kRUc6zyJxUpQUmanJ4crgk", "rawTokenAmount": 11892919, "decimals": 6, "tokenStandard": "Fungible", "mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v" },
+     { "fromUserAccount": "8SuUBLw4pm4Nw46bGTfnDUh22muNwQe3fm1xyfZmwt1t", "toUserAccount": "R4rNJHaffSUotNmqSKNEfDcJE8A7zJUkaoM5Jkd7cYX", "fromTokenAccount": "CQ1RhjPBfhPteVhSb2QBv3kRUc6zyJxUpQUmanJ4crgk", "toTokenAccount": "HrTf9CzXR1dRH4Sof5QrpmGWwpwAf3qZzwCsEjQpXcSq", "rawTokenAmount": 242445, "decimals": 6, "tokenStandard": "Fungible", "mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v" }
+    ],
+    "summary": {
+     "type": "swap",
+     "description": "",
+     "parsedData": null
+    },
+    "instructions": [
+     {
+      "instructionIndex": 0,
+      "innerInstructionIndex": 10,
+      "programId": "6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P",
+      "rawData": "b8WmrpJDiMq6X8gnpBQFpjmgpzbzghhzpQspH2FP1u9BuHmiRG7dCbeZpfFGb46NaZK6JTxYvTHSGzq8tooP8ucBbmQTaNbR9EWBJNLReQJedxjNWVzL7inURVWNFYadungF95Er29CeSa79GZzrbhEd9wLrZGp48aFZansw5z1uN4zKW2TKvuDD8E3xgBgHYT9CgFEh2Q6uJf8LCQBGoNJdJBAnMDHeLokyhvYAVPFqraUF6omGQrduthsCeXJvudYfwnB3LHSB68NWv3bmQ69EvTMhSRsemLaTYAQ9RYW5JFP3fnWBdSKSGYERcRCgrneS87eDjFz2RQ1Pk28dYufPyJ4teWpvf9e9jaSsAiDknCe1kdQsgXeeZRwfgoZhctU1J6X1RyPL8x8PveVKq8TeVU3S8zv7XewhWXPxr3ziVkDbr9BtenDwPgjDQDRutPmbpvXW4q3xhYK46nVVZvfAUJqioqRw34cFcwYAR796BWCd89wEGhjjYvaJgwMkdjw1pXXobHVW1J5L6pjGARvsbPwvhnSZM"
+     }
+    ]
+   },
+   "chain": {
+    "wallet": "8SuUBLw4pm4Nw46bGTfnDUh22muNwQe3fm1xyfZmwt1t",
+    "coin": -3418497.861088,
+    "sol": 0,
+    "dollars": 11.650474
+   }
+  },
+  "dbcBuy": {
+   "coin": "ACRES",
+   "note": "A buy on Meteora DBC's curve.",
+   "signature": "2woWgp3pxpEDXf3qnS82SwbB5iyibMN8oAHqWCrWA3UvmLS2fsv1nMXgFD5sGJdeVebBx9sNTryB8gvRmhNjj8Cw",
+   "parserStatus": "OK",
+   "parsed": {
+    "slot": 471798900,
+    "blockTime": 1795190946,
+    "fee": 5536,
+    "feePayer": "H6QPj9ZnTSjftRbYA5FhUwWfnG91Y6er9hkVVhFZ5uSF",
+    "transactionStatus": "OK",
+    "nativeTransfers": [
+     { "fromUserAccount": "H6QPj9ZnTSjftRbYA5FhUwWfnG91Y6er9hkVVhFZ5uSF", "toUserAccount": "KfHbT5Jrr5SV3CDkQVCLiSNWyVv5DmuVaCzbAHrzMFQ", "amount": 125000 },
+     { "fromUserAccount": "H6QPj9ZnTSjftRbYA5FhUwWfnG91Y6er9hkVVhFZ5uSF", "toUserAccount": "HEcGukeybxsWqkHoPF2vDE74B865REPgaEVusyBc5GeV", "amount": 75000 },
+     { "fromUserAccount": "H6QPj9ZnTSjftRbYA5FhUwWfnG91Y6er9hkVVhFZ5uSF", "toUserAccount": "8CKhii3fCsBfgqN336H14AnHmhV2rAsmVGEVWGNMCWyJ", "amount": 1488440 },
+     { "fromUserAccount": "H6QPj9ZnTSjftRbYA5FhUwWfnG91Y6er9hkVVhFZ5uSF", "toUserAccount": "8CKhii3fCsBfgqN336H14AnHmhV2rAsmVGEVWGNMCWyJ", "amount": 49800000 },
+     { "fromUserAccount": "8CKhii3fCsBfgqN336H14AnHmhV2rAsmVGEVWGNMCWyJ", "toUserAccount": "H6QPj9ZnTSjftRbYA5FhUwWfnG91Y6er9hkVVhFZ5uSF", "amount": 1488440 },
+     { "fromUserAccount": "H6QPj9ZnTSjftRbYA5FhUwWfnG91Y6er9hkVVhFZ5uSF", "toUserAccount": "wyvPkWjVZz1M8fHQnMMCDTQDbkManefNNhweYk5WkcF", "amount": 10000 }
+    ],
+    "tokenTransfers": [
+     { "fromUserAccount": "H6QPj9ZnTSjftRbYA5FhUwWfnG91Y6er9hkVVhFZ5uSF", "toUserAccount": "FhVo3mqL8PW5pH5U2CN4XE33DokiyZnUwuGpH2hmHLuM", "fromTokenAccount": "8CKhii3fCsBfgqN336H14AnHmhV2rAsmVGEVWGNMCWyJ", "toTokenAccount": "4o1BGgfdJ2ZkzfvSpt6BhpEQKhKe1iX76aHtAj9h7uVm", "rawTokenAmount": 49750200, "decimals": 9, "tokenStandard": "Fungible", "mint": "So11111111111111111111111111111111111111112" },
+     { "fromUserAccount": "FhVo3mqL8PW5pH5U2CN4XE33DokiyZnUwuGpH2hmHLuM", "toUserAccount": "H6QPj9ZnTSjftRbYA5FhUwWfnG91Y6er9hkVVhFZ5uSF", "fromTokenAccount": "6LPcXhBSKjd24nYzAkmfdnUwq2mmwfh5UGKqrHoYzxGo", "toTokenAccount": "7p1oivX27tGoP8gtuhvK4mK8xvFky2Cj2hc4v6U26rKN", "rawTokenAmount": 169691681631, "decimals": 6, "tokenStandard": "Fungible", "mint": "5ekqGuwRQR573sw6RdXnyj4AJhYwGgG1qDxWsMGBKB9p" },
+     { "fromUserAccount": "H6QPj9ZnTSjftRbYA5FhUwWfnG91Y6er9hkVVhFZ5uSF", "toUserAccount": "3CgvbiM3op4vjrrjH2zcrQUwsqh5veNVRjFCB9N6sRoD", "fromTokenAccount": "8CKhii3fCsBfgqN336H14AnHmhV2rAsmVGEVWGNMCWyJ", "toTokenAccount": "39FWQJxqTmUkFqHKjEs3CawQ1b1rqLcKmHfJ1FWMAWdu", "rawTokenAmount": 49800, "decimals": 9, "tokenStandard": "Fungible", "mint": "So11111111111111111111111111111111111111112" }
+    ],
+    "summary": null,
+    "instructions": []
+   },
+   "chain": {
+    "wallet": "H6QPj9ZnTSjftRbYA5FhUwWfnG91Y6er9hkVVhFZ5uSF",
+    "coin": 169691.681631,
+    "sol": -0.05001,
+    "dollars": 0
+   }
+  },
+  "tinyBuy": {
+   "coin": "ACRES",
+   "note": "Two hundred tokens bought with a fixed fee on top: what the wallet paid is twenty times the market price.",
+   "signature": "5h9zLuCKRWE8opzascxYkVXMA7iqC2BRUrcMNXu5tVoB87ScDo9nuskjopYYCjZVqsSKuejEJkVtFTh3GfeG1LnZ",
+   "parserStatus": "OK",
+   "parsed": {
+    "slot": 471797217,
+    "blockTime": 1795190587,
+    "fee": 13890,
+    "feePayer": "FDhoU1DEGR2ts3Dza2srrFahYtzPXUeCNTK615BwVWTM",
+    "transactionStatus": "OK",
+    "nativeTransfers": [
+     { "fromUserAccount": "FDhoU1DEGR2ts3Dza2srrFahYtzPXUeCNTK615BwVWTM", "toUserAccount": "CNnnfJp1tkiPzsse9yCzr6iDDY1AtQM7reLeDMa6Jwzk", "amount": 1537895 },
+     { "fromUserAccount": "CNnnfJp1tkiPzsse9yCzr6iDDY1AtQM7reLeDMa6Jwzk", "toUserAccount": "FDhoU1DEGR2ts3Dza2srrFahYtzPXUeCNTK615BwVWTM", "amount": 1488934 },
+     { "fromUserAccount": "FDhoU1DEGR2ts3Dza2srrFahYtzPXUeCNTK615BwVWTM", "toUserAccount": "2ApLdwLrGayEmxgpLX9BTR47Q2QprfMg5SpjrLeaK8s7", "amount": 494 },
+     { "fromUserAccount": "FDhoU1DEGR2ts3Dza2srrFahYtzPXUeCNTK615BwVWTM", "toUserAccount": "CH5jhgNAb15UypNJxCUYU3RYK2FBkeojE5SCsrvTgAdD", "amount": 1091110 }
+    ],
+    "tokenTransfers": [
+     { "fromUserAccount": "FDhoU1DEGR2ts3Dza2srrFahYtzPXUeCNTK615BwVWTM", "toUserAccount": "FhVo3mqL8PW5pH5U2CN4XE33DokiyZnUwuGpH2hmHLuM", "fromTokenAccount": "CNnnfJp1tkiPzsse9yCzr6iDDY1AtQM7reLeDMa6Jwzk", "toTokenAccount": "4o1BGgfdJ2ZkzfvSpt6BhpEQKhKe1iX76aHtAj9h7uVm", "rawTokenAmount": 48961, "decimals": 9, "tokenStandard": "Fungible", "mint": "So11111111111111111111111111111111111111112" },
+     { "fromUserAccount": "FhVo3mqL8PW5pH5U2CN4XE33DokiyZnUwuGpH2hmHLuM", "toUserAccount": "FDhoU1DEGR2ts3Dza2srrFahYtzPXUeCNTK615BwVWTM", "fromTokenAccount": "6LPcXhBSKjd24nYzAkmfdnUwq2mmwfh5UGKqrHoYzxGo", "toTokenAccount": "Doo6hTGG2v1PzHGzTc7N5AueuZPDeGDHHPsPr1Wt9oKv", "rawTokenAmount": 204782297, "decimals": 6, "tokenStandard": "Fungible", "mint": "5ekqGuwRQR573sw6RdXnyj4AJhYwGgG1qDxWsMGBKB9p" },
+     { "fromUserAccount": "FhVo3mqL8PW5pH5U2CN4XE33DokiyZnUwuGpH2hmHLuM", "toUserAccount": "8vFGAKdwpn4hk7kc1cBgfWZzpyW3MEMDATDzVZhddeQb", "fromTokenAccount": "4o1BGgfdJ2ZkzfvSpt6BhpEQKhKe1iX76aHtAj9h7uVm", "toTokenAccount": "7PHhpricf3VeeAxK8MCS7qLwHjkKSKbBGtkP9etbmu3m", "rawTokenAmount": 58, "decimals": 9, "tokenStandard": "Fungible", "mint": "So11111111111111111111111111111111111111112" }
+    ],
+    "summary": null,
+    "instructions": []
+   },
+   "chain": {
+    "wallet": "FDhoU1DEGR2ts3Dza2srrFahYtzPXUeCNTK615BwVWTM",
+    "coin": 204.78229700028896,
+    "sol": -0.001140565,
+    "dollars": 0
+   }
+  },
+  "custodyBuy": {
+   "coin": "HCAT",
+   "note": "A bot's buy paid from its program's own account: the wallet itself paid only a tip.",
+   "signature": "Fei1bdzY159s9tTAgUZ9UrYwqj8qbo3e4ZaHaGiCTX3vkPJzz9YseMasNUJFZCrngA7Vbb7mm5KPDbXSRzFUTmw",
+   "parserStatus": "OK",
+   "parsed": {
+    "slot": 471797633,
+    "blockTime": 1795190676,
+    "fee": 5000,
+    "feePayer": "GydP1i2nX57f8LY4De9JFd1rtdfdNfh3k5b2c9KkwCWU",
+    "transactionStatus": "OK",
+    "nativeTransfers": [
+     { "fromUserAccount": "GydP1i2nX57f8LY4De9JFd1rtdfdNfh3k5b2c9KkwCWU", "toUserAccount": "97c4HGantGHXKNe5gwod7aBmfa2L9VL6ZmBk7uMrLHkA", "amount": 2039280 },
+     { "fromUserAccount": "GydP1i2nX57f8LY4De9JFd1rtdfdNfh3k5b2c9KkwCWU", "toUserAccount": "SpEediGKLbbXndSYTzwmz6Z3NDgHQLDcTDEvGFkSMH9", "amount": 1550000 }
+    ],
+    "tokenTransfers": [
+     { "fromUserAccount": "Fhbh1DTUDKt6qu9zVg8Q5VgnZa1WWWbxBxG6pCoJoggA", "toUserAccount": "GydP1i2nX57f8LY4De9JFd1rtdfdNfh3k5b2c9KkwCWU", "fromTokenAccount": "6DGBpBRFhJzWg2sF7Q1V8di2httCS446JQ5qpdg826JC", "toTokenAccount": "H59iJLj5k91Ufx8m1bHQwMpaeby7DXTgw9F4DYBSkifX", "rawTokenAmount": 779298349, "decimals": 9, "tokenStandard": "Fungible", "mint": "he1iusmfkpAdwvxLNGV8Y1iSbj4rUy6yMhEA3fotn9A" },
+     { "fromUserAccount": "HyVGUgeMhkgXh7vkABWoQTfsCgeSasXAiwajvso5v7mi", "toUserAccount": "GydP1i2nX57f8LY4De9JFd1rtdfdNfh3k5b2c9KkwCWU", "fromTokenAccount": "3SLK5mPH4FbhB8HFFKPzNhUuuZc8WVXrgnWLi9G5S5G3", "toTokenAccount": "97c4HGantGHXKNe5gwod7aBmfa2L9VL6ZmBk7uMrLHkA", "rawTokenAmount": 10319031132941, "decimals": 6, "tokenStandard": "Fungible", "mint": "9U76nMfZepDZYRpqfL2tcmbgM7QLQ3RRTPVCoJeGxRSe" },
+     { "fromUserAccount": "GydP1i2nX57f8LY4De9JFd1rtdfdNfh3k5b2c9KkwCWU", "toUserAccount": "HyVGUgeMhkgXh7vkABWoQTfsCgeSasXAiwajvso5v7mi", "fromTokenAccount": "H59iJLj5k91Ufx8m1bHQwMpaeby7DXTgw9F4DYBSkifX", "toTokenAccount": "Hw5VX4VFLFHd3PTyj7DHUEazUimSggYzYsu8LxSeDLYW", "rawTokenAmount": 775667484, "decimals": 9, "tokenStandard": "Fungible", "mint": "he1iusmfkpAdwvxLNGV8Y1iSbj4rUy6yMhEA3fotn9A" },
+     { "fromUserAccount": "GydP1i2nX57f8LY4De9JFd1rtdfdNfh3k5b2c9KkwCWU", "toUserAccount": "EHAAiTxcdDwQ3U4bU6YcMsQGaekdzLS3B5SmYo46kJtL", "fromTokenAccount": "H59iJLj5k91Ufx8m1bHQwMpaeby7DXTgw9F4DYBSkifX", "toTokenAccount": "GqwmBTjVdW1TBFrR1U5HgAznLRvq9jVjkM8h9cDCiEug", "rawTokenAmount": 3630865, "decimals": 9, "tokenStandard": "Fungible", "mint": "he1iusmfkpAdwvxLNGV8Y1iSbj4rUy6yMhEA3fotn9A" }
+    ],
+    "summary": null,
+    "instructions": [
+     {
+      "instructionIndex": 6,
+      "innerInstructionIndex": 3,
+      "programId": "6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P",
+      "rawData": "xP5X2rtd7D1PF6YVZfjxs5VFZvMaDvbovJftkwyhHLcHAMvKRBcUaRzG7PN3b6JRye9QqVKQg5dqyQadR21pMxWCAM9aGu2VFDaEdVynF4V6FVaP91dxRxpXhmPzCKSVuPX1xyQcSRTmSfxUgp4RVBwhR3fBDDtCeXFyt357CcgjxqzkWHngp1FX5uvkUL15YxMYa5yVSVYMsp2PvAWrYv2eqy3zviLynd2tyT55xVqPgbfP72nhEC7SnuGe4yhqgHQhqkqQfN2DNjX8sUr7AHLViXsDvAgXLZCQwiuo1iz8Dm694mhx4Nhe6VwLFSCz6sqzzhwRSuQbbcvBSt9dYYm3DjCgN9VSsfKvFjf2HhhUkaYgSwTQpumNoHrVPE51cvPEw3cJz1oubx5knwbW8sjf2tY9cscxTz9bC4NLC7W6vGHWSngubGFY9hwT7tKD2MSjyuUrj5Xfkt2SQCVLh9cKGHYzBdn5XP8LBPytMuswptpd6SWZLygzusLVcZJk8oZ3ecMb4is5wzPBoJDzbZQPgrkcCHGrfYUzKBnxbRKPNWWLMMXu"
+     }
+    ]
+   },
+   "chain": {
+    "wallet": "GydP1i2nX57f8LY4De9JFd1rtdfdNfh3k5b2c9KkwCWU",
+    "coin": 10319031.132941,
+    "sol": -0.00155,
+    "dollars": 0
+   }
+  },
+  "custodySale": {
+   "coin": "HCAT",
+   "note": "A bot's sale whose SOL went to its program's own account: the wallet got nothing.",
+   "signature": "U3tQKgNoxztTdQkMeka874ZiwfPq6jjdXhKSeXXDtHyqbspiQQhb7Eb1LrbHGGWPJ9gQa5BQcU2h43eu4cdbEgi",
+   "parserStatus": "OK",
+   "parsed": {
+    "slot": 471798195,
+    "blockTime": 1795190797,
+    "fee": 105000,
+    "feePayer": "GydP1i2nX57f8LY4De9JFd1rtdfdNfh3k5b2c9KkwCWU",
+    "transactionStatus": "OK",
+    "nativeTransfers": [
+     { "fromUserAccount": "97c4HGantGHXKNe5gwod7aBmfa2L9VL6ZmBk7uMrLHkA", "toUserAccount": "GydP1i2nX57f8LY4De9JFd1rtdfdNfh3k5b2c9KkwCWU", "amount": 2039280 }
+    ],
+    "tokenTransfers": [
+     { "fromUserAccount": "GydP1i2nX57f8LY4De9JFd1rtdfdNfh3k5b2c9KkwCWU", "toUserAccount": "HyVGUgeMhkgXh7vkABWoQTfsCgeSasXAiwajvso5v7mi", "fromTokenAccount": "97c4HGantGHXKNe5gwod7aBmfa2L9VL6ZmBk7uMrLHkA", "toTokenAccount": "3SLK5mPH4FbhB8HFFKPzNhUuuZc8WVXrgnWLi9G5S5G3", "rawTokenAmount": 14752341901162, "decimals": 6, "tokenStandard": "Fungible", "mint": "9U76nMfZepDZYRpqfL2tcmbgM7QLQ3RRTPVCoJeGxRSe" },
+     { "fromUserAccount": "HyVGUgeMhkgXh7vkABWoQTfsCgeSasXAiwajvso5v7mi", "toUserAccount": "GydP1i2nX57f8LY4De9JFd1rtdfdNfh3k5b2c9KkwCWU", "fromTokenAccount": "Hw5VX4VFLFHd3PTyj7DHUEazUimSggYzYsu8LxSeDLYW", "toTokenAccount": "H59iJLj5k91Ufx8m1bHQwMpaeby7DXTgw9F4DYBSkifX", "rawTokenAmount": 1315442035, "decimals": 9, "tokenStandard": "Fungible", "mint": "he1iusmfkpAdwvxLNGV8Y1iSbj4rUy6yMhEA3fotn9A" },
+     { "fromUserAccount": "HyVGUgeMhkgXh7vkABWoQTfsCgeSasXAiwajvso5v7mi", "toUserAccount": "EHAAiTxcdDwQ3U4bU6YcMsQGaekdzLS3B5SmYo46kJtL", "fromTokenAccount": "Hw5VX4VFLFHd3PTyj7DHUEazUimSggYzYsu8LxSeDLYW", "toTokenAccount": "GqwmBTjVdW1TBFrR1U5HgAznLRvq9jVjkM8h9cDCiEug", "rawTokenAmount": 6372616, "decimals": 9, "tokenStandard": "Fungible", "mint": "he1iusmfkpAdwvxLNGV8Y1iSbj4rUy6yMhEA3fotn9A" },
+     { "fromUserAccount": "GydP1i2nX57f8LY4De9JFd1rtdfdNfh3k5b2c9KkwCWU", "toUserAccount": "Fhbh1DTUDKt6qu9zVg8Q5VgnZa1WWWbxBxG6pCoJoggA", "fromTokenAccount": "H59iJLj5k91Ufx8m1bHQwMpaeby7DXTgw9F4DYBSkifX", "toTokenAccount": "6DGBpBRFhJzWg2sF7Q1V8di2httCS446JQ5qpdg826JC", "rawTokenAmount": 1315442035, "decimals": 9, "tokenStandard": "Fungible", "mint": "he1iusmfkpAdwvxLNGV8Y1iSbj4rUy6yMhEA3fotn9A" }
+    ],
+    "summary": null,
+    "instructions": [
+     {
+      "instructionIndex": 1,
+      "innerInstructionIndex": 4,
+      "programId": "6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P",
+      "rawData": "b8WmrpJDiMq6X8gnpBQFpjucpMN6Pw3T31S42yUNFbGTh4cMAZsjbPujh6bECuuv8R2aTd25Mw3aJdj27zU6zeqiixfnxwoVYqgdxqab46dyuqsq8PPg1qgkMMuHqAeTLshrNxGNe8y9452GPShHH9rmsyLrjzFnuV9G1NGMDmXpDD9k2FGtUi7SnShGPAapGU7GAiFEC49rTeAzkVfZwXXk2oNgwAioMcfviM2JHs6wS3CEpd83uBAxAG4Z19VT2XR3YYD1zwm2nvopYn11QDUAdy83TQeLw9hq4Rsd1LrZayVRQap74dcUWryERWgnLtdraPY4YQeKor43RWKoPCZF9g81DvrQsw4HwdsaUT6NttFQYeASnvhX9LxGZ8KMzCjmSW5KZpz2UpXssdF1PtQ3ykdMSQ3vPjfAXxAT2srV1U7h6E6u3Dvo1x95jRztgUSCEqUs87NNRJ15rynTdguDRPkjnTeEDYjraKxyT2FR5wBTSKgd7aVcwn4qgxzrpsJoNmkD6frY38MyRDXxuC2zTGMkU1voH"
+     }
+    ]
+   },
+   "chain": {
+    "wallet": "GydP1i2nX57f8LY4De9JFd1rtdfdNfh3k5b2c9KkwCWU",
+    "coin": -14752341.901162,
+    "sol": 0,
+    "dollars": 0
+   }
+  }
+ },
+ "run": [
+  {
+   "coin": "HCAT",
+   "signature": "4UNsWASG1CZ1PEaECuvBRTP9H7PkMPQ5f2NqAAgsi1tr5sxqFfVUS5CqkKB52drLNWweQ6gYK2mUDCtWhvor5FiV",
+   "parserStatus": "OK",
+   "parsed": {
+    "slot": 471798017,
+    "blockTime": 1795190759,
+    "fee": 7828,
+    "feePayer": "AVY74B271rKHo4yW5P12nhhp8ckogMx5Dgf6xVMcTJyf",
+    "transactionStatus": "OK",
+    "nativeTransfers": [
+     { "fromUserAccount": "AVY74B271rKHo4yW5P12nhhp8ckogMx5Dgf6xVMcTJyf", "toUserAccount": "HEcGukeybxsWqkHoPF2vDE74B865REPgaEVusyBc5GeV", "amount": 4200000 },
+     { "fromUserAccount": "AVY74B271rKHo4yW5P12nhhp8ckogMx5Dgf6xVMcTJyf", "toUserAccount": "KfHbT5Jrr5SV3CDkQVCLiSNWyVv5DmuVaCzbAHrzMFQ", "amount": 7000000 },
+     { "fromUserAccount": "AVY74B271rKHo4yW5P12nhhp8ckogMx5Dgf6xVMcTJyf", "toUserAccount": "BKcJkHy5vwNdugHaMMkpm1wc2mFwSM5jTM4jXcY56vGA", "amount": 1488440 },
+     { "fromUserAccount": "AVY74B271rKHo4yW5P12nhhp8ckogMx5Dgf6xVMcTJyf", "toUserAccount": "BKcJkHy5vwNdugHaMMkpm1wc2mFwSM5jTM4jXcY56vGA", "amount": 2788800000 },
+     { "fromUserAccount": "BKcJkHy5vwNdugHaMMkpm1wc2mFwSM5jTM4jXcY56vGA", "toUserAccount": "AVY74B271rKHo4yW5P12nhhp8ckogMx5Dgf6xVMcTJyf", "amount": 1488440 },
+     { "fromUserAccount": "AVY74B271rKHo4yW5P12nhhp8ckogMx5Dgf6xVMcTJyf", "toUserAccount": "2q5pghRs6arqVjRvT5gfgWfWcHWmw1ZuCzphgd5KfWGJ", "amount": 10000 }
+    ],
+    "tokenTransfers": [
+     { "fromUserAccount": "AVY74B271rKHo4yW5P12nhhp8ckogMx5Dgf6xVMcTJyf", "toUserAccount": "BQ72nSv9f3PRyRKCBnHLVrerrv37CYTHm5h3s9VSGQDV", "fromTokenAccount": "BKcJkHy5vwNdugHaMMkpm1wc2mFwSM5jTM4jXcY56vGA", "toTokenAccount": "8ctcHN52LY21FEipCjr1MVWtoZa1irJQTPyAaTj72h7S", "rawTokenAmount": 2788800000, "decimals": 9, "tokenStandard": "Fungible", "mint": "So11111111111111111111111111111111111111112" },
+     { "fromUserAccount": "BQ72nSv9f3PRyRKCBnHLVrerrv37CYTHm5h3s9VSGQDV", "toUserAccount": "8Nvoi2pqCy143Bv9RbHsQzQVNBUWj5q4frHfwuudDPmL", "fromTokenAccount": "8ctcHN52LY21FEipCjr1MVWtoZa1irJQTPyAaTj72h7S", "toTokenAccount": "GWTv6VBbtcegGWvDxMQt1L13PcoL5AX789DbmMfLPZqp", "rawTokenAmount": 1150658880, "decimals": 9, "tokenStandard": "Fungible", "mint": "So11111111111111111111111111111111111111112" },
+     { "fromUserAccount": "8Nvoi2pqCy143Bv9RbHsQzQVNBUWj5q4frHfwuudDPmL", "toUserAccount": "BQ72nSv9f3PRyRKCBnHLVrerrv37CYTHm5h3s9VSGQDV", "fromTokenAccount": "HsoCTNVnWGybgY4HsNxU27Lap4FHajGZEU6NDGqfT7xd", "toTokenAccount": "91Aue249fhyGfPbQrqord9fGpEDjDdkZqvfivHgVVvyP", "rawTokenAmount": 943586994, "decimals": 9, "tokenStandard": "Fungible", "mint": "jupSoLaHXQiZZTSfEWMTRRgpnyFm8f6sZdosWBjx93v" },
+     { "fromUserAccount": "BQ72nSv9f3PRyRKCBnHLVrerrv37CYTHm5h3s9VSGQDV", "toUserAccount": "HNEiXeGESQuBU3yGPBnpv4RoDoGWWAHJEq7zZvBi8z7G", "fromTokenAccount": "91Aue249fhyGfPbQrqord9fGpEDjDdkZqvfivHgVVvyP", "toTokenAccount": "Dg9Gf1ujkakcpc2UZJaECjcTHQJ3bYwwrXwP7qg5iuA9", "rawTokenAmount": 943586994, "decimals": 9, "tokenStandard": "Fungible", "mint": "jupSoLaHXQiZZTSfEWMTRRgpnyFm8f6sZdosWBjx93v" },
+     { "fromUserAccount": "HNEiXeGESQuBU3yGPBnpv4RoDoGWWAHJEq7zZvBi8z7G", "toUserAccount": "BQ72nSv9f3PRyRKCBnHLVrerrv37CYTHm5h3s9VSGQDV", "fromTokenAccount": "5UEB74WhSVkuyFwb1fGh962HRgb8MYbDgoWvWkfogKNH", "toTokenAccount": "FL2a8ASbc7rqdb2QHcW4WfP5z3HeFVDAeMwQNzSMA19N", "rawTokenAmount": 961324666, "decimals": 9, "tokenStandard": "Fungible", "mint": "he1iusmfkpAdwvxLNGV8Y1iSbj4rUy6yMhEA3fotn9A" },
+     { "fromUserAccount": "BQ72nSv9f3PRyRKCBnHLVrerrv37CYTHm5h3s9VSGQDV", "toUserAccount": "51V5bAPGaz3vj4SiJeoLGNzAQNxGr4Vps8gSBKmSZx71", "fromTokenAccount": "8ctcHN52LY21FEipCjr1MVWtoZa1irJQTPyAaTj72h7S", "toTokenAccount": "2cmtL8TPhZBYV1CTnjUsM7qnSLo7kWGdGbNJP8k6Vh9d", "rawTokenAmount": 1638141120, "decimals": 9, "tokenStandard": "Fungible", "mint": "So11111111111111111111111111111111111111112" },
+     { "fromUserAccount": "51V5bAPGaz3vj4SiJeoLGNzAQNxGr4Vps8gSBKmSZx71", "toUserAccount": "BQ72nSv9f3PRyRKCBnHLVrerrv37CYTHm5h3s9VSGQDV", "fromTokenAccount": "28EtijVFBtsocRWUGTNeSDk9QTvYnbnp5sfYZsNvBGfP", "toTokenAccount": "FL2a8ASbc7rqdb2QHcW4WfP5z3HeFVDAeMwQNzSMA19N", "rawTokenAmount": 1368644584, "decimals": 9, "tokenStandard": "Fungible", "mint": "he1iusmfkpAdwvxLNGV8Y1iSbj4rUy6yMhEA3fotn9A" },
+     { "fromUserAccount": "BQ72nSv9f3PRyRKCBnHLVrerrv37CYTHm5h3s9VSGQDV", "toUserAccount": "AVY74B271rKHo4yW5P12nhhp8ckogMx5Dgf6xVMcTJyf", "fromTokenAccount": "FL2a8ASbc7rqdb2QHcW4WfP5z3HeFVDAeMwQNzSMA19N", "toTokenAccount": "27y3N1i5NjSdmTQEjePvchXoxKHvbHNPUkKwikpJ2HGh", "rawTokenAmount": 2329969250, "decimals": 9, "tokenStandard": "Fungible", "mint": "he1iusmfkpAdwvxLNGV8Y1iSbj4rUy6yMhEA3fotn9A" },
+     { "fromUserAccount": "HyVGUgeMhkgXh7vkABWoQTfsCgeSasXAiwajvso5v7mi", "toUserAccount": "AVY74B271rKHo4yW5P12nhhp8ckogMx5Dgf6xVMcTJyf", "fromTokenAccount": "3SLK5mPH4FbhB8HFFKPzNhUuuZc8WVXrgnWLi9G5S5G3", "toTokenAccount": "7EvGPtjVBRjhx2U9gGK3nzadXsJdPNxcNfXtKhguuzx2", "rawTokenAmount": 27276802469819, "decimals": 6, "tokenStandard": "Fungible", "mint": "9U76nMfZepDZYRpqfL2tcmbgM7QLQ3RRTPVCoJeGxRSe" },
+     { "fromUserAccount": "AVY74B271rKHo4yW5P12nhhp8ckogMx5Dgf6xVMcTJyf", "toUserAccount": "HyVGUgeMhkgXh7vkABWoQTfsCgeSasXAiwajvso5v7mi", "fromTokenAccount": "27y3N1i5NjSdmTQEjePvchXoxKHvbHNPUkKwikpJ2HGh", "toTokenAccount": "Hw5VX4VFLFHd3PTyj7DHUEazUimSggYzYsu8LxSeDLYW", "rawTokenAmount": 2319113582, "decimals": 9, "tokenStandard": "Fungible", "mint": "he1iusmfkpAdwvxLNGV8Y1iSbj4rUy6yMhEA3fotn9A" },
+     { "fromUserAccount": "AVY74B271rKHo4yW5P12nhhp8ckogMx5Dgf6xVMcTJyf", "toUserAccount": "5YxQFdt3Tr9zJLvkFccqXVUwhdTWJQc1fFg2YPbxvxeD", "fromTokenAccount": "27y3N1i5NjSdmTQEjePvchXoxKHvbHNPUkKwikpJ2HGh", "toTokenAccount": "JDRJsLMzUemGX4D2bD2KeAqSvRwcmBvLosQ159zCWYh1", "rawTokenAmount": 10855668, "decimals": 9, "tokenStandard": "Fungible", "mint": "he1iusmfkpAdwvxLNGV8Y1iSbj4rUy6yMhEA3fotn9A" }
+    ],
+    "summary": null,
+    "instructions": [
+     {
+      "instructionIndex": 3,
+      "innerInstructionIndex": 22,
+      "programId": "6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P",
+      "rawData": "xP5X2rtd7D1PF6YVZfjxs5VFZvMaDvbovJftkwyhHLcHAMvKRBcUaRzG7PN3b6JRye9QqVKQg5dr5VKzYobHWhpgAGHTHJjX7ggWrzPchfrKiJdpvUiQju8dhz3VC1vLDiAQeBjwcFodvrNyxAvnbfu1epfXMhu6dcfBTPGfSpSLWLRTdspRxxt3a9Mw9zPtoioTByizHUQRPcvVSVYznyQZVKT5s1N8pMNdtCe8AASk6DtZxjqE3p2EGsLRfZwfdV4ruU1ajAcKHvtrPiL9bnbgVDvE3xaZKn35YCurWjkvMVQ4SrLDs1HmFoq5XrYCdNaAWVZnLFUr77k4JVQyud2hjJvhx69MeYtqij4mJK2sK9guyeRwukQBfPRPLbe4M6PG9spE6vyotSRyayyNfd1UkMhbJRK2BhaHebtXzQkuiFDbhNXQgTuvBqu7imB1T7H1uXdG8Ci4Rk9Mhwr2hm6dBgmAAPhgCiSzciPLWfSwCVzzaWWk3AaK2C2v6orWSCqUnvobujrV9jHuA9QNKqhFu3xY6KuTDCzec1nuRdDNWXGtCkHD"
+     }
+    ]
+   },
+   "chain": {
+    "wallet": "AVY74B271rKHo4yW5P12nhhp8ckogMx5Dgf6xVMcTJyf",
+    "coin": 27276802.469819,
+    "sol": -2.80001,
+    "dollars": 0
+   }
+  },
+  {
+   "coin": "HCAT",
+   "signature": "LFKevN69pEjswUFhGZXrih3hoGhCobmgTf7u4cresuxSCzWvgyxSCCYcKz2NPkFSpKoQADTbV4ey85KevpYtJxk",
+   "parserStatus": "OK",
+   "parsed": {
+    "slot": 471797960,
+    "blockTime": 1795190747,
+    "fee": 64536,
+    "feePayer": "AQdmrWxVph26KL4brdFscqyoZToLye7Buvw6zhfk9hWG",
+    "transactionStatus": "OK",
+    "nativeTransfers": [
+     { "fromUserAccount": "AQdmrWxVph26KL4brdFscqyoZToLye7Buvw6zhfk9hWG", "toUserAccount": "EqbZppGJT7wCkdYwoUX9bbBsP78nknmKCRWjt8t2fe2P", "amount": 1488440 },
+     { "fromUserAccount": "AQdmrWxVph26KL4brdFscqyoZToLye7Buvw6zhfk9hWG", "toUserAccount": "EqbZppGJT7wCkdYwoUX9bbBsP78nknmKCRWjt8t2fe2P", "amount": 20000000 },
+     { "fromUserAccount": "AQdmrWxVph26KL4brdFscqyoZToLye7Buvw6zhfk9hWG", "toUserAccount": "6XVsJjYWPCqhamJQrhfrZQUHxEeqWTuNVKFAs1dbrkFV", "amount": 1513840 },
+     { "fromUserAccount": "AQdmrWxVph26KL4brdFscqyoZToLye7Buvw6zhfk9hWG", "toUserAccount": "HAjeBS1qUbn6RXcGrXQCrRpDJhSUDwJee4hW3YCEASxe", "amount": 1346200 },
+     { "fromUserAccount": "EqbZppGJT7wCkdYwoUX9bbBsP78nknmKCRWjt8t2fe2P", "toUserAccount": "AQdmrWxVph26KL4brdFscqyoZToLye7Buvw6zhfk9hWG", "amount": 1488440 },
+     { "fromUserAccount": "AQdmrWxVph26KL4brdFscqyoZToLye7Buvw6zhfk9hWG", "toUserAccount": "2nyhqdwKcJZR2vcqCyrYsaPVdAnFoJjiksCXJ7hfEYgD", "amount": 5000 }
+    ],
+    "tokenTransfers": [
+     { "fromUserAccount": "AQdmrWxVph26KL4brdFscqyoZToLye7Buvw6zhfk9hWG", "toUserAccount": "51V5bAPGaz3vj4SiJeoLGNzAQNxGr4Vps8gSBKmSZx71", "fromTokenAccount": "EqbZppGJT7wCkdYwoUX9bbBsP78nknmKCRWjt8t2fe2P", "toTokenAccount": "2cmtL8TPhZBYV1CTnjUsM7qnSLo7kWGdGbNJP8k6Vh9d", "rawTokenAmount": 19980000, "decimals": 9, "tokenStandard": "Fungible", "mint": "So11111111111111111111111111111111111111112" },
+     { "fromUserAccount": "51V5bAPGaz3vj4SiJeoLGNzAQNxGr4Vps8gSBKmSZx71", "toUserAccount": "AQdmrWxVph26KL4brdFscqyoZToLye7Buvw6zhfk9hWG", "fromTokenAccount": "28EtijVFBtsocRWUGTNeSDk9QTvYnbnp5sfYZsNvBGfP", "toTokenAccount": "75dqnog8Ags73t4eWGNa2ANniPwEPrMMVk2Thc5r2zYA", "rawTokenAmount": 16693750, "decimals": 9, "tokenStandard": "Fungible", "mint": "he1iusmfkpAdwvxLNGV8Y1iSbj4rUy6yMhEA3fotn9A" },
+     { "fromUserAccount": "HyVGUgeMhkgXh7vkABWoQTfsCgeSasXAiwajvso5v7mi", "toUserAccount": "AQdmrWxVph26KL4brdFscqyoZToLye7Buvw6zhfk9hWG", "fromTokenAccount": "3SLK5mPH4FbhB8HFFKPzNhUuuZc8WVXrgnWLi9G5S5G3", "toTokenAccount": "6XVsJjYWPCqhamJQrhfrZQUHxEeqWTuNVKFAs1dbrkFV", "rawTokenAmount": 203267890084, "decimals": 6, "tokenStandard": "Fungible", "mint": "9U76nMfZepDZYRpqfL2tcmbgM7QLQ3RRTPVCoJeGxRSe" },
+     { "fromUserAccount": "AQdmrWxVph26KL4brdFscqyoZToLye7Buvw6zhfk9hWG", "toUserAccount": "HyVGUgeMhkgXh7vkABWoQTfsCgeSasXAiwajvso5v7mi", "fromTokenAccount": "75dqnog8Ags73t4eWGNa2ANniPwEPrMMVk2Thc5r2zYA", "toTokenAccount": "Hw5VX4VFLFHd3PTyj7DHUEazUimSggYzYsu8LxSeDLYW", "rawTokenAmount": 16615971, "decimals": 9, "tokenStandard": "Fungible", "mint": "he1iusmfkpAdwvxLNGV8Y1iSbj4rUy6yMhEA3fotn9A" },
+     { "fromUserAccount": "AQdmrWxVph26KL4brdFscqyoZToLye7Buvw6zhfk9hWG", "toUserAccount": "9M4giFFMxmFGXtc3feFzRai56WbBqehoSeRE5GK7gf7", "fromTokenAccount": "75dqnog8Ags73t4eWGNa2ANniPwEPrMMVk2Thc5r2zYA", "toTokenAccount": "25QQeEH6c4Pq8pfpSE1wsEGEhoPanikUhg6QRynpmNwH", "rawTokenAmount": 77779, "decimals": 9, "tokenStandard": "Fungible", "mint": "he1iusmfkpAdwvxLNGV8Y1iSbj4rUy6yMhEA3fotn9A" },
+     { "fromUserAccount": "AQdmrWxVph26KL4brdFscqyoZToLye7Buvw6zhfk9hWG", "toUserAccount": "3CgvbiM3op4vjrrjH2zcrQUwsqh5veNVRjFCB9N6sRoD", "fromTokenAccount": "EqbZppGJT7wCkdYwoUX9bbBsP78nknmKCRWjt8t2fe2P", "toTokenAccount": "39FWQJxqTmUkFqHKjEs3CawQ1b1rqLcKmHfJ1FWMAWdu", "rawTokenAmount": 20000, "decimals": 9, "tokenStandard": "Fungible", "mint": "So11111111111111111111111111111111111111112" }
+    ],
+    "summary": null,
+    "instructions": [
+     {
+      "instructionIndex": 6,
+      "innerInstructionIndex": 8,
+      "programId": "6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P",
+      "rawData": "xP5X2rtd7D1PF6YVZfjxs5VFZvMaDvbovJftkwyhHLcHAMvKRBcUaRzG7PN3b6JRye9QqVKQg5dr4i1nriES9j8xigLTp1w1775TnZUhSbt1L6F8y8CQqBvxKHvfjED2wToSFAwvCVvfzJocYwgGBjM7ZwwG2sgKLAfPdzfEXEZeisEGgfbN9odwdKyRVMbb6BKrqMgacf5MCFvPANtj8rLQcegVZpj17H9uey9cmU5TrHB3gdhPuYy7qqy9EPctwkPLNsUzQ7LdBoyg7XxawdwAk2ayHnhGxtapgdpkRxLNhWh5gbSY4S3ChnW4yAPGZcAAbpmbjEjgE5iua7zcKAsjMFNXvvQUrckqXJqbtkhwZrdbpP2SASGtuP7nDVUAkqYyrSiVUAkD6vZedoy9WaFRs4NfycRtKF8DBeKqZqitUq4cngSBAHoZFaEa66j4HxvMZ885ys1WBAPXWJXi7fiLzwAW96hg64FjgJNChdHF3ANMZY1Sqdu6CEPAvde8ojtxuqHigbFmkuhev3M1AYVEUBimb3dkNcjZRatoTZUWwa3Mzc2s"
+     }
+    ]
+   },
+   "chain": {
+    "wallet": "AQdmrWxVph26KL4brdFscqyoZToLye7Buvw6zhfk9hWG",
+    "coin": 203267.890084,
+    "sol": -0.020005,
+    "dollars": 0
+   }
+  },
+  {
+   "coin": "HCAT",
+   "signature": "Hh1gruGhARheFZJY4tW7uvU2ibLZWZfnuJ1UvqxvtAyCwQGe1NdVWMqY82Ss7MtK6o8kB4jSFFr8mCQY2BMBwag",
+   "parserStatus": "OK",
+   "parsed": {
+    "slot": 471797959,
+    "blockTime": 1795190746,
+    "fee": 505000,
+    "feePayer": "G3r9iXnyGkkgR8nXXQHbMd3RjhfZ7fjDPgfGXeSGi41Q",
+    "transactionStatus": "OK",
+    "nativeTransfers": [
+     { "fromUserAccount": "G3r9iXnyGkkgR8nXXQHbMd3RjhfZ7fjDPgfGXeSGi41Q", "toUserAccount": "A1siebv4tViDMJ9sUkqLo2dZ4V95oDWjxPKUdDp45BBt", "amount": 1488440 },
+     { "fromUserAccount": "G3r9iXnyGkkgR8nXXQHbMd3RjhfZ7fjDPgfGXeSGi41Q", "toUserAccount": "A1siebv4tViDMJ9sUkqLo2dZ4V95oDWjxPKUdDp45BBt", "amount": 1000000000 },
+     { "fromUserAccount": "A1siebv4tViDMJ9sUkqLo2dZ4V95oDWjxPKUdDp45BBt", "toUserAccount": "G3r9iXnyGkkgR8nXXQHbMd3RjhfZ7fjDPgfGXeSGi41Q", "amount": 1488440 },
+     { "fromUserAccount": "G3r9iXnyGkkgR8nXXQHbMd3RjhfZ7fjDPgfGXeSGi41Q", "toUserAccount": "5BGzTphM7hWhtxAYqtENFq82LzXW8hZHh7FLC9j3PC1L", "amount": 1513840 },
+     { "fromUserAccount": "G3r9iXnyGkkgR8nXXQHbMd3RjhfZ7fjDPgfGXeSGi41Q", "toUserAccount": "9yMwSPk9mrXSN7yDHUuZurAh1sjbJsfpUqjZ7SvVtdco", "amount": 10000000 },
+     { "fromUserAccount": "G3r9iXnyGkkgR8nXXQHbMd3RjhfZ7fjDPgfGXeSGi41Q", "toUserAccount": "BGT8Vm1u5nyW255LgWjD8wzsRs8g3KxBnB3Pm1FjC9fV", "amount": 100000 }
+    ],
+    "tokenTransfers": [
+     { "fromUserAccount": "G3r9iXnyGkkgR8nXXQHbMd3RjhfZ7fjDPgfGXeSGi41Q", "toUserAccount": "51V5bAPGaz3vj4SiJeoLGNzAQNxGr4Vps8gSBKmSZx71", "fromTokenAccount": "A1siebv4tViDMJ9sUkqLo2dZ4V95oDWjxPKUdDp45BBt", "toTokenAccount": "2cmtL8TPhZBYV1CTnjUsM7qnSLo7kWGdGbNJP8k6Vh9d", "rawTokenAmount": 1000000000, "decimals": 9, "tokenStandard": "Fungible", "mint": "So11111111111111111111111111111111111111112" },
+     { "fromUserAccount": "51V5bAPGaz3vj4SiJeoLGNzAQNxGr4Vps8gSBKmSZx71", "toUserAccount": "G3r9iXnyGkkgR8nXXQHbMd3RjhfZ7fjDPgfGXeSGi41Q", "fromTokenAccount": "28EtijVFBtsocRWUGTNeSDk9QTvYnbnp5sfYZsNvBGfP", "toTokenAccount": "CUV47SMmd7TTWf8ZnHyhrpFBYgiTTWwxcaXLT1xmMavx", "rawTokenAmount": 835531169, "decimals": 9, "tokenStandard": "Fungible", "mint": "he1iusmfkpAdwvxLNGV8Y1iSbj4rUy6yMhEA3fotn9A" },
+     { "fromUserAccount": "HyVGUgeMhkgXh7vkABWoQTfsCgeSasXAiwajvso5v7mi", "toUserAccount": "G3r9iXnyGkkgR8nXXQHbMd3RjhfZ7fjDPgfGXeSGi41Q", "fromTokenAccount": "3SLK5mPH4FbhB8HFFKPzNhUuuZc8WVXrgnWLi9G5S5G3", "toTokenAccount": "5BGzTphM7hWhtxAYqtENFq82LzXW8hZHh7FLC9j3PC1L", "rawTokenAmount": 10323941503762, "decimals": 6, "tokenStandard": "Fungible", "mint": "9U76nMfZepDZYRpqfL2tcmbgM7QLQ3RRTPVCoJeGxRSe" },
+     { "fromUserAccount": "G3r9iXnyGkkgR8nXXQHbMd3RjhfZ7fjDPgfGXeSGi41Q", "toUserAccount": "HyVGUgeMhkgXh7vkABWoQTfsCgeSasXAiwajvso5v7mi", "fromTokenAccount": "CUV47SMmd7TTWf8ZnHyhrpFBYgiTTWwxcaXLT1xmMavx", "toTokenAccount": "Hw5VX4VFLFHd3PTyj7DHUEazUimSggYzYsu8LxSeDLYW", "rawTokenAmount": 831638307, "decimals": 9, "tokenStandard": "Fungible", "mint": "he1iusmfkpAdwvxLNGV8Y1iSbj4rUy6yMhEA3fotn9A" },
+     { "fromUserAccount": "G3r9iXnyGkkgR8nXXQHbMd3RjhfZ7fjDPgfGXeSGi41Q", "toUserAccount": "5YxQFdt3Tr9zJLvkFccqXVUwhdTWJQc1fFg2YPbxvxeD", "fromTokenAccount": "CUV47SMmd7TTWf8ZnHyhrpFBYgiTTWwxcaXLT1xmMavx", "toTokenAccount": "JDRJsLMzUemGX4D2bD2KeAqSvRwcmBvLosQ159zCWYh1", "rawTokenAmount": 3892862, "decimals": 9, "tokenStandard": "Fungible", "mint": "he1iusmfkpAdwvxLNGV8Y1iSbj4rUy6yMhEA3fotn9A" }
+    ],
+    "summary": null,
+    "instructions": [
+     {
+      "instructionIndex": 1,
+      "innerInstructionIndex": 14,
+      "programId": "6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P",
+      "rawData": "8jV3ThAnvn3jwQVVxYoxU8TRRmwd7ZBXNJKN5XU3YrTADhhBTduGzdujJExLJepLHdi92xHZFiFBFtw8YpamCN79zJQCjAryGPv1VWpGcUfXDDju9WBXDVmG1264CZveMkNLNtQjSm5TNVj9KVpFjdiKEjzr9Aba1AZnuaXgw2xj48ETweBEKVMse4ymQw4woJNKEWh8An5ioEjJPvyTkwctsC664hC3wYJfivBumuwwcRX4DkcbmUXTy9dy6uQyV1KkfTVw2bYx8vqbVUunGttkKDddNUUjPivxQZc14M47tP2VcU1NNxEukpkgKy3xAt5PW9A9oBRQTEMzz8uRAPEH8F4VvGrkbqFfFKJsdGLQqXuRoGq8NadpeD7LwjcKi4hc9PAu5oG2G9TEJLGKqcicSC2fmxNKrJsmQJm2WxhSNx1fbhEuN5jDG2xYpCp2CSLBrVw36XqR9aWSEbHw28rJnj7kfn8TG49ewj8Erx6tHh5Vj68NoCPpa2WFtCntzsHwrJvTgxNAA8sEWAydeQnebYfwv5dZ"
+     }
+    ]
+   },
+   "chain": {
+    "wallet": "G3r9iXnyGkkgR8nXXQHbMd3RjhfZ7fjDPgfGXeSGi41Q",
+    "coin": 10323941.503762,
+    "sol": -1.0101,
+    "dollars": 0
+   }
+  },
+  {
+   "coin": "HCAT",
+   "signature": "BwE3Sc1Cs5EwNFFJqXapXvqy7qvK72em7tJBUJ47X97fYLvpNptUBYgpNx1FWFFzsjNuDuHHTdqfhSBv6rRNfss",
+   "parserStatus": "OK",
+   "parsed": {
+    "slot": 471797941,
+    "blockTime": 1795190742,
+    "fee": 76549,
+    "feePayer": "BJjXanC1xxZHbPtQeWecB6aKhsKS78mjruVvZCLRtMF6",
+    "transactionStatus": "OK",
+    "nativeTransfers": [
+     { "fromUserAccount": "BJjXanC1xxZHbPtQeWecB6aKhsKS78mjruVvZCLRtMF6", "toUserAccount": "JAWGiX4mZyBsuc8jakE2xhwdMxJ1a3fLaU47RYcxVP6q", "amount": 1488440 },
+     { "fromUserAccount": "BJjXanC1xxZHbPtQeWecB6aKhsKS78mjruVvZCLRtMF6", "toUserAccount": "JAWGiX4mZyBsuc8jakE2xhwdMxJ1a3fLaU47RYcxVP6q", "amount": 1000000000 },
+     { "fromUserAccount": "BJjXanC1xxZHbPtQeWecB6aKhsKS78mjruVvZCLRtMF6", "toUserAccount": "5F7zZbFgdugPXz9PZajvHPyn8AEaa9aAbEqE6T13dDXh", "amount": 1513840 },
+     { "fromUserAccount": "BJjXanC1xxZHbPtQeWecB6aKhsKS78mjruVvZCLRtMF6", "toUserAccount": "3BRKFaW9uwKYMMUXmqc7SnoWACpdzuPjdPcUgzPiZnG1", "amount": 1488440 },
+     { "fromUserAccount": "JAWGiX4mZyBsuc8jakE2xhwdMxJ1a3fLaU47RYcxVP6q", "toUserAccount": "BJjXanC1xxZHbPtQeWecB6aKhsKS78mjruVvZCLRtMF6", "amount": 1488440 },
+     { "fromUserAccount": "BJjXanC1xxZHbPtQeWecB6aKhsKS78mjruVvZCLRtMF6", "toUserAccount": "dBhdrmwBkRa66XxBuAK4WZeZnsZ6bHeHCCLXa3a8bTJ", "amount": 10000000 },
+     { "fromUserAccount": "BJjXanC1xxZHbPtQeWecB6aKhsKS78mjruVvZCLRtMF6", "toUserAccount": "AsTRAEoyMofR3vUPpf9k68Gsfb6ymTZttEtsAbv8Bk4d", "amount": 428450 }
+    ],
+    "tokenTransfers": [
+     { "fromUserAccount": "BJjXanC1xxZHbPtQeWecB6aKhsKS78mjruVvZCLRtMF6", "toUserAccount": "51V5bAPGaz3vj4SiJeoLGNzAQNxGr4Vps8gSBKmSZx71", "fromTokenAccount": "JAWGiX4mZyBsuc8jakE2xhwdMxJ1a3fLaU47RYcxVP6q", "toTokenAccount": "2cmtL8TPhZBYV1CTnjUsM7qnSLo7kWGdGbNJP8k6Vh9d", "rawTokenAmount": 1000000000, "decimals": 9, "tokenStandard": "Fungible", "mint": "So11111111111111111111111111111111111111112" },
+     { "fromUserAccount": "51V5bAPGaz3vj4SiJeoLGNzAQNxGr4Vps8gSBKmSZx71", "toUserAccount": "BJjXanC1xxZHbPtQeWecB6aKhsKS78mjruVvZCLRtMF6", "fromTokenAccount": "28EtijVFBtsocRWUGTNeSDk9QTvYnbnp5sfYZsNvBGfP", "toTokenAccount": "3BRKFaW9uwKYMMUXmqc7SnoWACpdzuPjdPcUgzPiZnG1", "rawTokenAmount": 835626260, "decimals": 9, "tokenStandard": "Fungible", "mint": "he1iusmfkpAdwvxLNGV8Y1iSbj4rUy6yMhEA3fotn9A" },
+     { "fromUserAccount": "HyVGUgeMhkgXh7vkABWoQTfsCgeSasXAiwajvso5v7mi", "toUserAccount": "BJjXanC1xxZHbPtQeWecB6aKhsKS78mjruVvZCLRtMF6", "fromTokenAccount": "3SLK5mPH4FbhB8HFFKPzNhUuuZc8WVXrgnWLi9G5S5G3", "toTokenAccount": "5F7zZbFgdugPXz9PZajvHPyn8AEaa9aAbEqE6T13dDXh", "rawTokenAmount": 10628573301303, "decimals": 6, "tokenStandard": "Fungible", "mint": "9U76nMfZepDZYRpqfL2tcmbgM7QLQ3RRTPVCoJeGxRSe" },
+     { "fromUserAccount": "BJjXanC1xxZHbPtQeWecB6aKhsKS78mjruVvZCLRtMF6", "toUserAccount": "HyVGUgeMhkgXh7vkABWoQTfsCgeSasXAiwajvso5v7mi", "fromTokenAccount": "3BRKFaW9uwKYMMUXmqc7SnoWACpdzuPjdPcUgzPiZnG1", "toTokenAccount": "Hw5VX4VFLFHd3PTyj7DHUEazUimSggYzYsu8LxSeDLYW", "rawTokenAmount": 831732955, "decimals": 9, "tokenStandard": "Fungible", "mint": "he1iusmfkpAdwvxLNGV8Y1iSbj4rUy6yMhEA3fotn9A" },
+     { "fromUserAccount": "BJjXanC1xxZHbPtQeWecB6aKhsKS78mjruVvZCLRtMF6", "toUserAccount": "5YxQFdt3Tr9zJLvkFccqXVUwhdTWJQc1fFg2YPbxvxeD", "fromTokenAccount": "3BRKFaW9uwKYMMUXmqc7SnoWACpdzuPjdPcUgzPiZnG1", "toTokenAccount": "JDRJsLMzUemGX4D2bD2KeAqSvRwcmBvLosQ159zCWYh1", "rawTokenAmount": 3893305, "decimals": 9, "tokenStandard": "Fungible", "mint": "he1iusmfkpAdwvxLNGV8Y1iSbj4rUy6yMhEA3fotn9A" }
+    ],
+    "summary": null,
+    "instructions": [
+     {
+      "instructionIndex": 6,
+      "innerInstructionIndex": 7,
+      "programId": "6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P",
+      "rawData": "xP5X2rtd7D1PF6YVZfjxs5VFZvMaDvbovJftkwyhHLcHAMvKRBcUaRzG7PN3b6JRye9QqVKQg5dqzs822puuHHaG8oQyxAPJvYWc6mZZJS6V8Mgvbojuqf5LHQ7pV6T15PLkK4g4bwoVbVEQPWGERDuUnAhxAEABqC948tEesxJmSa29SaKyxdmzZCnGGUpY3VEhe8u8nJiH5V12PUdk7UGTEHMiMeaP3HgJX6hHSZAcjX26mLKxAVavyRjSiyWwC5UawJftboEUM3YSUigCEwGxu1EHEALV1a89S47wfuuPyPkN21y9ShCjiGexsnr7whymecLFJ7j42JnR6uq8DeJ592GdscgHmaS4FvSSD64NwHXS6GKYJPJfECi2jELNpSR8364VyLBL2znKyKuuUYBR27ETfNPajCvF1Gi5eodGgaxFusqNsQsJuf9ZiCQ4JdwVNyAg9hxekrpgJuzZnndkCEMoWiYWHEdpv8QZp4ED3QEsV4MixVYQmXLpmancxPFeaCKkhP4ykCvj2Nt77b5TAygioevud99uEP8NACjj7fJfX4iT"
+     }
+    ]
+   },
+   "chain": {
+    "wallet": "BJjXanC1xxZHbPtQeWecB6aKhsKS78mjruVvZCLRtMF6",
+    "coin": 10628573.301303,
+    "sol": -1.01042845,
+    "dollars": 0
+   }
+  },
+  {
+   "coin": "HCAT",
+   "signature": "X6LjC8K5a99VAYUv3sKAju7UbehTE5zFibAMi2rbDY1MoYSkV5pCQjNWnnGavbNot8FCKka1EDe4Q2xPSm3cmj2",
+   "parserStatus": "OK",
+   "parsed": {
+    "slot": 471797802,
+    "blockTime": 1795190712,
+    "fee": 305000,
+    "feePayer": "9yaQCxct1n9hnDNbU2gj38kN4rJDneJpM5NtDDzCeYb7",
+    "transactionStatus": "OK",
+    "nativeTransfers": [
+     { "fromUserAccount": "9yaQCxct1n9hnDNbU2gj38kN4rJDneJpM5NtDDzCeYb7", "toUserAccount": "SLamrHWcmjgh4QyKDobVxk9wjiSmbMjTNsF8V1sKQQE", "amount": 1488440 },
+     { "fromUserAccount": "9yaQCxct1n9hnDNbU2gj38kN4rJDneJpM5NtDDzCeYb7", "toUserAccount": "SLamrHWcmjgh4QyKDobVxk9wjiSmbMjTNsF8V1sKQQE", "amount": 100000000 },
+     { "fromUserAccount": "SLamrHWcmjgh4QyKDobVxk9wjiSmbMjTNsF8V1sKQQE", "toUserAccount": "9yaQCxct1n9hnDNbU2gj38kN4rJDneJpM5NtDDzCeYb7", "amount": 1488440 },
+     { "fromUserAccount": "9yaQCxct1n9hnDNbU2gj38kN4rJDneJpM5NtDDzCeYb7", "toUserAccount": "7sHXjs1j7sDJGVSMSPjD1b4v3FD6uRSvRWfhRdfv5BiA", "amount": 1000000 },
+     { "fromUserAccount": "9yaQCxct1n9hnDNbU2gj38kN4rJDneJpM5NtDDzCeYb7", "toUserAccount": "astraRVUuTHjpwEVvNBeQEgwYx9w9CFyfxjYoobCZhL", "amount": 700000 }
+    ],
+    "tokenTransfers": [
+     { "fromUserAccount": "9yaQCxct1n9hnDNbU2gj38kN4rJDneJpM5NtDDzCeYb7", "toUserAccount": "51V5bAPGaz3vj4SiJeoLGNzAQNxGr4Vps8gSBKmSZx71", "fromTokenAccount": "SLamrHWcmjgh4QyKDobVxk9wjiSmbMjTNsF8V1sKQQE", "toTokenAccount": "2cmtL8TPhZBYV1CTnjUsM7qnSLo7kWGdGbNJP8k6Vh9d", "rawTokenAmount": 100000000, "decimals": 9, "tokenStandard": "Fungible", "mint": "So11111111111111111111111111111111111111112" },
+     { "fromUserAccount": "51V5bAPGaz3vj4SiJeoLGNzAQNxGr4Vps8gSBKmSZx71", "toUserAccount": "9yaQCxct1n9hnDNbU2gj38kN4rJDneJpM5NtDDzCeYb7", "fromTokenAccount": "28EtijVFBtsocRWUGTNeSDk9QTvYnbnp5sfYZsNvBGfP", "toTokenAccount": "DeiLc4GHtuSy6s1XvFVRbkjj3G7tDiuj2sS2bmwtzQsZ", "rawTokenAmount": 83582177, "decimals": 9, "tokenStandard": "Fungible", "mint": "he1iusmfkpAdwvxLNGV8Y1iSbj4rUy6yMhEA3fotn9A" },
+     { "fromUserAccount": "HyVGUgeMhkgXh7vkABWoQTfsCgeSasXAiwajvso5v7mi", "toUserAccount": "9yaQCxct1n9hnDNbU2gj38kN4rJDneJpM5NtDDzCeYb7", "fromTokenAccount": "3SLK5mPH4FbhB8HFFKPzNhUuuZc8WVXrgnWLi9G5S5G3", "toTokenAccount": "CRH52rqc95ZExbUZbiERqEfZu545vQsU87TwFzZVPjqJ", "rawTokenAmount": 1080317299734, "decimals": 6, "tokenStandard": "Fungible", "mint": "9U76nMfZepDZYRpqfL2tcmbgM7QLQ3RRTPVCoJeGxRSe" },
+     { "fromUserAccount": "9yaQCxct1n9hnDNbU2gj38kN4rJDneJpM5NtDDzCeYb7", "toUserAccount": "HyVGUgeMhkgXh7vkABWoQTfsCgeSasXAiwajvso5v7mi", "fromTokenAccount": "DeiLc4GHtuSy6s1XvFVRbkjj3G7tDiuj2sS2bmwtzQsZ", "toTokenAccount": "Hw5VX4VFLFHd3PTyj7DHUEazUimSggYzYsu8LxSeDLYW", "rawTokenAmount": 83192755, "decimals": 9, "tokenStandard": "Fungible", "mint": "he1iusmfkpAdwvxLNGV8Y1iSbj4rUy6yMhEA3fotn9A" },
+     { "fromUserAccount": "9yaQCxct1n9hnDNbU2gj38kN4rJDneJpM5NtDDzCeYb7", "toUserAccount": "5YxQFdt3Tr9zJLvkFccqXVUwhdTWJQc1fFg2YPbxvxeD", "fromTokenAccount": "DeiLc4GHtuSy6s1XvFVRbkjj3G7tDiuj2sS2bmwtzQsZ", "toTokenAccount": "JDRJsLMzUemGX4D2bD2KeAqSvRwcmBvLosQ159zCWYh1", "rawTokenAmount": 389422, "decimals": 9, "tokenStandard": "Fungible", "mint": "he1iusmfkpAdwvxLNGV8Y1iSbj4rUy6yMhEA3fotn9A" }
+    ],
+    "summary": null,
+    "instructions": [
+     {
+      "instructionIndex": 6,
+      "innerInstructionIndex": 7,
+      "programId": "6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P",
+      "rawData": "xP5X2rtd7D1PF6YVZfjxs5VFZvMaDvbovJftkwyhHLcHAMvKRBcUaRzG7PN3b6JRye9QqVKQg5dqyjgjZy5xtDKEH41fctdBwh5fBRCJzmCuK7LwALofEUt5a9sCy4Javi85D8KrSck3eSbUsQsQFPrL9wXKCJFvkhmAmMjvUxkrUKxGwxNzkEYkugdgi7pW1PNVuhvxyejMMykeBsGPsmF3ZQNpb7xHkDm6Scxp4enjYF9vqBi26FZMSrMD2fuWZYa8S9Rpbyir1JaEoJcie6jJkJTAGjjnhTCB25PsR55FzDmJk5p3jjCmTaXjBN5sFYaWwCEutSsNK3nGFCcWx2rxZdezL18Ayi4Q1Tbt5cf8DDekyPdK15EZgLMivvqodqtvjQCLkWbLvCrawxgSxgKpqKhuiZhUEPW3rsj7jfLoycwV5UWF4yCWPU9y9Q881sdNBRirwmCBc7qmrREFzQaNAdQknajKdoLQmBo1W1y8JRE2vkycikVDRY28fkwNSak6nhLTqQNgi2Zjmy9JEi1UnR6RdYt6VrCzN8T8WiSazR6aAyTd"
+     }
+    ]
+   },
+   "chain": {
+    "wallet": "9yaQCxct1n9hnDNbU2gj38kN4rJDneJpM5NtDDzCeYb7",
+    "coin": 1080317.299734,
+    "sol": -0.1017,
+    "dollars": 0
+   }
+  },
+  {
+   "coin": "HCAT",
+   "signature": "64AdrkFkDtZJhjZ74dXfwXsAdZgZs61p4WUizA8f5tJfqWDQYae8DZ53mQSLxsNsgeMyoymJQLrFpJkzRzF14koP",
+   "parserStatus": "OK",
+   "parsed": {
+    "slot": 471797633,
+    "blockTime": 1795190676,
+    "fee": 5000,
+    "feePayer": "EJX629cpqnoa7jNRUBsFeevfPLxFWoa4KWWfsX7teLHr",
+    "transactionStatus": "OK",
+    "nativeTransfers": [
+     { "fromUserAccount": "EJX629cpqnoa7jNRUBsFeevfPLxFWoa4KWWfsX7teLHr", "toUserAccount": "BMWRaA2WemzQyPHmnvXDm2nNR9BsQptKwkAQLbJPLhE5", "amount": 2039280 },
+     { "fromUserAccount": "EJX629cpqnoa7jNRUBsFeevfPLxFWoa4KWWfsX7teLHr", "toUserAccount": "speEdrSEpox5GUfHWcBc7tQjRuSfUin2yvB7qoYvvJh", "amount": 1100000 }
+    ],
+    "tokenTransfers": [
+     { "fromUserAccount": "Fhbh1DTUDKt6qu9zVg8Q5VgnZa1WWWbxBxG6pCoJoggA", "toUserAccount": "EJX629cpqnoa7jNRUBsFeevfPLxFWoa4KWWfsX7teLHr", "fromTokenAccount": "6DGBpBRFhJzWg2sF7Q1V8di2httCS446JQ5qpdg826JC", "toTokenAccount": "GGVCQfQnCQcRdAgtauEveqdjTrAEWRYTDGnqqvJWBXHc", "rawTokenAmount": 249791004, "decimals": 9, "tokenStandard": "Fungible", "mint": "he1iusmfkpAdwvxLNGV8Y1iSbj4rUy6yMhEA3fotn9A" },
+     { "fromUserAccount": "HyVGUgeMhkgXh7vkABWoQTfsCgeSasXAiwajvso5v7mi", "toUserAccount": "EJX629cpqnoa7jNRUBsFeevfPLxFWoa4KWWfsX7teLHr", "fromTokenAccount": "3SLK5mPH4FbhB8HFFKPzNhUuuZc8WVXrgnWLi9G5S5G3", "toTokenAccount": "BMWRaA2WemzQyPHmnvXDm2nNR9BsQptKwkAQLbJPLhE5", "rawTokenAmount": 3247642282832, "decimals": 6, "tokenStandard": "Fungible", "mint": "9U76nMfZepDZYRpqfL2tcmbgM7QLQ3RRTPVCoJeGxRSe" },
+     { "fromUserAccount": "EJX629cpqnoa7jNRUBsFeevfPLxFWoa4KWWfsX7teLHr", "toUserAccount": "HyVGUgeMhkgXh7vkABWoQTfsCgeSasXAiwajvso5v7mi", "fromTokenAccount": "GGVCQfQnCQcRdAgtauEveqdjTrAEWRYTDGnqqvJWBXHc", "toTokenAccount": "Hw5VX4VFLFHd3PTyj7DHUEazUimSggYzYsu8LxSeDLYW", "rawTokenAmount": 248627191, "decimals": 9, "tokenStandard": "Fungible", "mint": "he1iusmfkpAdwvxLNGV8Y1iSbj4rUy6yMhEA3fotn9A" },
+     { "fromUserAccount": "EJX629cpqnoa7jNRUBsFeevfPLxFWoa4KWWfsX7teLHr", "toUserAccount": "EHAAiTxcdDwQ3U4bU6YcMsQGaekdzLS3B5SmYo46kJtL", "fromTokenAccount": "GGVCQfQnCQcRdAgtauEveqdjTrAEWRYTDGnqqvJWBXHc", "toTokenAccount": "GqwmBTjVdW1TBFrR1U5HgAznLRvq9jVjkM8h9cDCiEug", "rawTokenAmount": 1163813, "decimals": 9, "tokenStandard": "Fungible", "mint": "he1iusmfkpAdwvxLNGV8Y1iSbj4rUy6yMhEA3fotn9A" }
+    ],
+    "summary": null,
+    "instructions": [
+     {
+      "instructionIndex": 6,
+      "innerInstructionIndex": 3,
+      "programId": "6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P",
+      "rawData": "xP5X2rtd7D1PF6YVZfjxs5VFZvMaDvbovJftkwyhHLcHAMvKRBcUaRzG7PN3b6JRye9QqVKQg5dr1ktSnGwTHgTeZ3J1skgyUt869qyiJLRXWWWpdTBL8duMyohq5GngRLfjeF2YhjhmZSTcE5gM2DvLYPWU87kZByF9jCeKoACsb17iVz4AshRcAanwUUf8ApK7zeNU5CPD49U5zmkessDxHui8xKLbziyiy5v1AuoT1vp5S2cVpaoApDGanhYXxfHRPr7UrgYg1gmcBvJEA6zy3vBhtYBW2RePts978NCmvWgugoGruscWnTF6noCSGhZ51FybaukEr8mAmYD6XEf6e8Pv8o4FxSopC1dXubEbjTEyzxSUs66Y9N49v6VyAFkEKgWcjUFz9xKiNcV9VfKEKjUw8nktpdQSwuwtsxHeP7jKKXVRMLYbPVh4n7vXuRS3rZ4zzwcw3tdg3XTLNntb8Apdgfex2wLcx2SoCtf5nC9zkU3WeT543FxoxUJqFz5K99DvQw3VTYsqkpMjkwimJk5hbLFoVg6i2PW3YtB7peqTcM6w"
+     }
+    ]
+   },
+   "chain": {
+    "wallet": "EJX629cpqnoa7jNRUBsFeevfPLxFWoa4KWWfsX7teLHr",
+    "coin": 3247642.282832,
+    "sol": -0.0011,
+    "dollars": 0
+   }
+  },
+  {
+   "coin": "HCAT",
+   "signature": "Fei1bdzY159s9tTAgUZ9UrYwqj8qbo3e4ZaHaGiCTX3vkPJzz9YseMasNUJFZCrngA7Vbb7mm5KPDbXSRzFUTmw",
+   "parserStatus": "OK",
+   "parsed": {
+    "slot": 471797633,
+    "blockTime": 1795190676,
+    "fee": 5000,
+    "feePayer": "GydP1i2nX57f8LY4De9JFd1rtdfdNfh3k5b2c9KkwCWU",
+    "transactionStatus": "OK",
+    "nativeTransfers": [
+     { "fromUserAccount": "GydP1i2nX57f8LY4De9JFd1rtdfdNfh3k5b2c9KkwCWU", "toUserAccount": "97c4HGantGHXKNe5gwod7aBmfa2L9VL6ZmBk7uMrLHkA", "amount": 2039280 },
+     { "fromUserAccount": "GydP1i2nX57f8LY4De9JFd1rtdfdNfh3k5b2c9KkwCWU", "toUserAccount": "SpEediGKLbbXndSYTzwmz6Z3NDgHQLDcTDEvGFkSMH9", "amount": 1550000 }
+    ],
+    "tokenTransfers": [
+     { "fromUserAccount": "Fhbh1DTUDKt6qu9zVg8Q5VgnZa1WWWbxBxG6pCoJoggA", "toUserAccount": "GydP1i2nX57f8LY4De9JFd1rtdfdNfh3k5b2c9KkwCWU", "fromTokenAccount": "6DGBpBRFhJzWg2sF7Q1V8di2httCS446JQ5qpdg826JC", "toTokenAccount": "H59iJLj5k91Ufx8m1bHQwMpaeby7DXTgw9F4DYBSkifX", "rawTokenAmount": 779298349, "decimals": 9, "tokenStandard": "Fungible", "mint": "he1iusmfkpAdwvxLNGV8Y1iSbj4rUy6yMhEA3fotn9A" },
+     { "fromUserAccount": "HyVGUgeMhkgXh7vkABWoQTfsCgeSasXAiwajvso5v7mi", "toUserAccount": "GydP1i2nX57f8LY4De9JFd1rtdfdNfh3k5b2c9KkwCWU", "fromTokenAccount": "3SLK5mPH4FbhB8HFFKPzNhUuuZc8WVXrgnWLi9G5S5G3", "toTokenAccount": "97c4HGantGHXKNe5gwod7aBmfa2L9VL6ZmBk7uMrLHkA", "rawTokenAmount": 10319031132941, "decimals": 6, "tokenStandard": "Fungible", "mint": "9U76nMfZepDZYRpqfL2tcmbgM7QLQ3RRTPVCoJeGxRSe" },
+     { "fromUserAccount": "GydP1i2nX57f8LY4De9JFd1rtdfdNfh3k5b2c9KkwCWU", "toUserAccount": "HyVGUgeMhkgXh7vkABWoQTfsCgeSasXAiwajvso5v7mi", "fromTokenAccount": "H59iJLj5k91Ufx8m1bHQwMpaeby7DXTgw9F4DYBSkifX", "toTokenAccount": "Hw5VX4VFLFHd3PTyj7DHUEazUimSggYzYsu8LxSeDLYW", "rawTokenAmount": 775667484, "decimals": 9, "tokenStandard": "Fungible", "mint": "he1iusmfkpAdwvxLNGV8Y1iSbj4rUy6yMhEA3fotn9A" },
+     { "fromUserAccount": "GydP1i2nX57f8LY4De9JFd1rtdfdNfh3k5b2c9KkwCWU", "toUserAccount": "EHAAiTxcdDwQ3U4bU6YcMsQGaekdzLS3B5SmYo46kJtL", "fromTokenAccount": "H59iJLj5k91Ufx8m1bHQwMpaeby7DXTgw9F4DYBSkifX", "toTokenAccount": "GqwmBTjVdW1TBFrR1U5HgAznLRvq9jVjkM8h9cDCiEug", "rawTokenAmount": 3630865, "decimals": 9, "tokenStandard": "Fungible", "mint": "he1iusmfkpAdwvxLNGV8Y1iSbj4rUy6yMhEA3fotn9A" }
+    ],
+    "summary": null,
+    "instructions": [
+     {
+      "instructionIndex": 6,
+      "innerInstructionIndex": 3,
+      "programId": "6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P",
+      "rawData": "xP5X2rtd7D1PF6YVZfjxs5VFZvMaDvbovJftkwyhHLcHAMvKRBcUaRzG7PN3b6JRye9QqVKQg5dqyQadR21pMxWCAM9aGu2VFDaEdVynF4V6FVaP91dxRxpXhmPzCKSVuPX1xyQcSRTmSfxUgp4RVBwhR3fBDDtCeXFyt357CcgjxqzkWHngp1FX5uvkUL15YxMYa5yVSVYMsp2PvAWrYv2eqy3zviLynd2tyT55xVqPgbfP72nhEC7SnuGe4yhqgHQhqkqQfN2DNjX8sUr7AHLViXsDvAgXLZCQwiuo1iz8Dm694mhx4Nhe6VwLFSCz6sqzzhwRSuQbbcvBSt9dYYm3DjCgN9VSsfKvFjf2HhhUkaYgSwTQpumNoHrVPE51cvPEw3cJz1oubx5knwbW8sjf2tY9cscxTz9bC4NLC7W6vGHWSngubGFY9hwT7tKD2MSjyuUrj5Xfkt2SQCVLh9cKGHYzBdn5XP8LBPytMuswptpd6SWZLygzusLVcZJk8oZ3ecMb4is5wzPBoJDzbZQPgrkcCHGrfYUzKBnxbRKPNWWLMMXu"
+     }
+    ]
+   },
+   "chain": {
+    "wallet": "GydP1i2nX57f8LY4De9JFd1rtdfdNfh3k5b2c9KkwCWU",
+    "coin": 10319031.132941,
+    "sol": -0.00155,
+    "dollars": 0
+   }
+  },
+  {
+   "coin": "HCAT",
+   "signature": "5YhGSksYqWZKKLGgsRCFb31G2zV5oivho8XfenLL44QUT8V6aSqoc2SKxgk8d1XRMbJDhSVjWCHZx2gbuoV3Fzb6",
+   "parserStatus": "OK",
+   "parsed": {
+    "slot": 471797633,
+    "blockTime": 1795190676,
+    "fee": 206266,
+    "feePayer": "Fxpt8hzJgeEav5G6JduoTp6WpNRY2WgbMMptp53FvvWV",
+    "transactionStatus": "OK",
+    "nativeTransfers": [
+     { "fromUserAccount": "Fxpt8hzJgeEav5G6JduoTp6WpNRY2WgbMMptp53FvvWV", "toUserAccount": "ABSxTzQDz7heEVZ7MEYX5vCL2C7Potsmq4jVXbReF6o4", "amount": 1488440 },
+     { "fromUserAccount": "Fxpt8hzJgeEav5G6JduoTp6WpNRY2WgbMMptp53FvvWV", "toUserAccount": "ABSxTzQDz7heEVZ7MEYX5vCL2C7Potsmq4jVXbReF6o4", "amount": 1000000000 },
+     { "fromUserAccount": "Fxpt8hzJgeEav5G6JduoTp6WpNRY2WgbMMptp53FvvWV", "toUserAccount": "GxmVWbTQj3W8PmR6P34PAiwBxMoHHc7zwgkjtCk63k5Y", "amount": 1513840 },
+     { "fromUserAccount": "ABSxTzQDz7heEVZ7MEYX5vCL2C7Potsmq4jVXbReF6o4", "toUserAccount": "Fxpt8hzJgeEav5G6JduoTp6WpNRY2WgbMMptp53FvvWV", "amount": 1488440 },
+     { "fromUserAccount": "Fxpt8hzJgeEav5G6JduoTp6WpNRY2WgbMMptp53FvvWV", "toUserAccount": "ByRRgnZenY6W2sddo1VJzX9o4sMU4gPDUkcmgrpGBxRy", "amount": 10000000 },
+     { "fromUserAccount": "Fxpt8hzJgeEav5G6JduoTp6WpNRY2WgbMMptp53FvvWV", "toUserAccount": "AsTra79FET4aCKWspPqeSFvjJNyp96SvAnrmyAxqg5b7", "amount": 1000000 }
+    ],
+    "tokenTransfers": [
+     { "fromUserAccount": "Fxpt8hzJgeEav5G6JduoTp6WpNRY2WgbMMptp53FvvWV", "toUserAccount": "51V5bAPGaz3vj4SiJeoLGNzAQNxGr4Vps8gSBKmSZx71", "fromTokenAccount": "ABSxTzQDz7heEVZ7MEYX5vCL2C7Potsmq4jVXbReF6o4", "toTokenAccount": "2cmtL8TPhZBYV1CTnjUsM7qnSLo7kWGdGbNJP8k6Vh9d", "rawTokenAmount": 1000000000, "decimals": 9, "tokenStandard": "Fungible", "mint": "So11111111111111111111111111111111111111112" },
+     { "fromUserAccount": "51V5bAPGaz3vj4SiJeoLGNzAQNxGr4Vps8gSBKmSZx71", "toUserAccount": "Fxpt8hzJgeEav5G6JduoTp6WpNRY2WgbMMptp53FvvWV", "fromTokenAccount": "28EtijVFBtsocRWUGTNeSDk9QTvYnbnp5sfYZsNvBGfP", "toTokenAccount": "FsQyvcRjqpT11hkSR9PtLMbo1zoxwoDfuTD6uTmDKqz9", "rawTokenAmount": 835857975, "decimals": 9, "tokenStandard": "Fungible", "mint": "he1iusmfkpAdwvxLNGV8Y1iSbj4rUy6yMhEA3fotn9A" },
+     { "fromUserAccount": "HyVGUgeMhkgXh7vkABWoQTfsCgeSasXAiwajvso5v7mi", "toUserAccount": "Fxpt8hzJgeEav5G6JduoTp6WpNRY2WgbMMptp53FvvWV", "fromTokenAccount": "3SLK5mPH4FbhB8HFFKPzNhUuuZc8WVXrgnWLi9G5S5G3", "toTokenAccount": "GxmVWbTQj3W8PmR6P34PAiwBxMoHHc7zwgkjtCk63k5Y", "rawTokenAmount": 11393506419917, "decimals": 6, "tokenStandard": "Fungible", "mint": "9U76nMfZepDZYRpqfL2tcmbgM7QLQ3RRTPVCoJeGxRSe" },
+     { "fromUserAccount": "Fxpt8hzJgeEav5G6JduoTp6WpNRY2WgbMMptp53FvvWV", "toUserAccount": "HyVGUgeMhkgXh7vkABWoQTfsCgeSasXAiwajvso5v7mi", "fromTokenAccount": "FsQyvcRjqpT11hkSR9PtLMbo1zoxwoDfuTD6uTmDKqz9", "toTokenAccount": "Hw5VX4VFLFHd3PTyj7DHUEazUimSggYzYsu8LxSeDLYW", "rawTokenAmount": 831963590, "decimals": 9, "tokenStandard": "Fungible", "mint": "he1iusmfkpAdwvxLNGV8Y1iSbj4rUy6yMhEA3fotn9A" },
+     { "fromUserAccount": "Fxpt8hzJgeEav5G6JduoTp6WpNRY2WgbMMptp53FvvWV", "toUserAccount": "5YxQFdt3Tr9zJLvkFccqXVUwhdTWJQc1fFg2YPbxvxeD", "fromTokenAccount": "FsQyvcRjqpT11hkSR9PtLMbo1zoxwoDfuTD6uTmDKqz9", "toTokenAccount": "JDRJsLMzUemGX4D2bD2KeAqSvRwcmBvLosQ159zCWYh1", "rawTokenAmount": 3894385, "decimals": 9, "tokenStandard": "Fungible", "mint": "he1iusmfkpAdwvxLNGV8Y1iSbj4rUy6yMhEA3fotn9A" }
+    ],
+    "summary": null,
+    "instructions": [
+     {
+      "instructionIndex": 6,
+      "innerInstructionIndex": 7,
+      "programId": "6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P",
+      "rawData": "xP5X2rtd7D1PF6YVZfjxs5VFZvMaDvbovJftkwyhHLcHAMvKRBcUaRzG7PN3b6JRye9QqVKQg5dr67nFpUmAUY8Syvx1F6JULVq5gDSiBfbUx1iQUf7tYcVxg4jYN11z7Za98MCbZsFaNgfbFWw2vFSufDy7tkGAPWbzN8DLzMpqQ1Aut6eVhAoeCvwZKYG5YT7ZnxvfznDtqqqQivUwkj4qW1poR8Fod1taALBvCRE5NNMoDuvmpGs4VW5QbEz7wnWmooNkmQG2sSTh8GUFWxCua12dodzT1MWQCsmvQ3uGkEPhYduYbJXVGmf3cznYVQXNaAtmvpPv7Dh2Qt3KD4J8Mop1BHYf6JyuBX1SPRXLKqAUZAnbw4LECVTFx6XpvKLKizoqXK6kJNpQpFi3nktnNpSgoJ6UTx1oxGnex7eP9KXhZEGHJVwTVuFFnCVQT3GermJh7PKMxVfJfDF29949UtBK7XcQVg6HD2ZVQTmxLyZQhq8tRfEXjH1gX1pnKnmvJNUeWrcwee8RGwEiLiEGvGDFhQs428E9AgVaYiJRSyKAPAzK"
+     }
+    ]
+   },
+   "chain": {
+    "wallet": "Fxpt8hzJgeEav5G6JduoTp6WpNRY2WgbMMptp53FvvWV",
+    "coin": 11393506.419917,
+    "sol": -1.011,
+    "dollars": 0
+   }
+  },
+  {
+   "coin": "HCAT",
+   "signature": "5Q5G6ZawdBqqgSeu5nPEzhrnrKETYaw5YvZ4yHkzuRiGQU2HxgHKw5VHRgykmVRhGq2ZxHJ9Vcc9u9CR6XwGUQyz",
+   "parserStatus": "OK",
+   "parsed": {
+    "slot": 471797579,
+    "blockTime": 1795190665,
+    "fee": 410000,
+    "feePayer": "AgmLJBMDCqWynYnQiPCuj9ewsNNsBJXyzoUhD9LJzN51",
+    "transactionStatus": "OK",
+    "nativeTransfers": [
+     { "fromUserAccount": "AgmLJBMDCqWynYnQiPCuj9ewsNNsBJXyzoUhD9LJzN51", "toUserAccount": "6idobGVVrjGpvE4UFggDcsDCZSnrKsEAUrSck82uPTvC", "amount": 1488440 },
+     { "fromUserAccount": "AgmLJBMDCqWynYnQiPCuj9ewsNNsBJXyzoUhD9LJzN51", "toUserAccount": "7PgKDQmkm9kXJ5aZ5FwdLkxbFgnwFB1hGhxbv6HikAHx", "amount": 1346200 },
+     { "fromUserAccount": "Pgd9rPSqdkiwRFD7v95GGow5wutkJfKkJFY6HYSBetm", "toUserAccount": "AgmLJBMDCqWynYnQiPCuj9ewsNNsBJXyzoUhD9LJzN51", "amount": 1346200 },
+     { "fromUserAccount": "AgmLJBMDCqWynYnQiPCuj9ewsNNsBJXyzoUhD9LJzN51", "toUserAccount": "HcKjo9KNiu8KBzDigrLftFfLcSmaAtZWtuP4rpowaGiL", "amount": 1488440 },
+     { "fromUserAccount": "6idobGVVrjGpvE4UFggDcsDCZSnrKsEAUrSck82uPTvC", "toUserAccount": "AgmLJBMDCqWynYnQiPCuj9ewsNNsBJXyzoUhD9LJzN51", "amount": 1488440 },
+     { "fromUserAccount": "HcKjo9KNiu8KBzDigrLftFfLcSmaAtZWtuP4rpowaGiL", "toUserAccount": "Pgd9rPSqdkiwRFD7v95GGow5wutkJfKkJFY6HYSBetm", "amount": 1488453 },
+     { "fromUserAccount": "Pgd9rPSqdkiwRFD7v95GGow5wutkJfKkJFY6HYSBetm", "toUserAccount": "AgmLJBMDCqWynYnQiPCuj9ewsNNsBJXyzoUhD9LJzN51", "amount": 1488440 },
+     { "fromUserAccount": "AgmLJBMDCqWynYnQiPCuj9ewsNNsBJXyzoUhD9LJzN51", "toUserAccount": "AgmLJBMDCqWynYnQiPCuj9ewsNNsBJXyzoUhD9LJzN51", "amount": 0 }
+    ],
+    "tokenTransfers": [
+     { "fromUserAccount": "Pgd9rPSqdkiwRFD7v95GGow5wutkJfKkJFY6HYSBetm", "toUserAccount": "HyVGUgeMhkgXh7vkABWoQTfsCgeSasXAiwajvso5v7mi", "fromTokenAccount": "6ikfUJefmxAPamjZq8B4RTbWriS17Q9H37Cd8Le2WKoL", "toTokenAccount": "3SLK5mPH4FbhB8HFFKPzNhUuuZc8WVXrgnWLi9G5S5G3", "rawTokenAmount": 105414684305, "decimals": 6, "tokenStandard": "Fungible", "mint": "9U76nMfZepDZYRpqfL2tcmbgM7QLQ3RRTPVCoJeGxRSe" },
+     { "fromUserAccount": "HyVGUgeMhkgXh7vkABWoQTfsCgeSasXAiwajvso5v7mi", "toUserAccount": "Pgd9rPSqdkiwRFD7v95GGow5wutkJfKkJFY6HYSBetm", "fromTokenAccount": "Hw5VX4VFLFHd3PTyj7DHUEazUimSggYzYsu8LxSeDLYW", "toTokenAccount": "6idobGVVrjGpvE4UFggDcsDCZSnrKsEAUrSck82uPTvC", "rawTokenAmount": 7327164, "decimals": 9, "tokenStandard": "Fungible", "mint": "he1iusmfkpAdwvxLNGV8Y1iSbj4rUy6yMhEA3fotn9A" },
+     { "fromUserAccount": "HyVGUgeMhkgXh7vkABWoQTfsCgeSasXAiwajvso5v7mi", "toUserAccount": "5YxQFdt3Tr9zJLvkFccqXVUwhdTWJQc1fFg2YPbxvxeD", "fromTokenAccount": "Hw5VX4VFLFHd3PTyj7DHUEazUimSggYzYsu8LxSeDLYW", "toTokenAccount": "JDRJsLMzUemGX4D2bD2KeAqSvRwcmBvLosQ159zCWYh1", "rawTokenAmount": 35496, "decimals": 9, "tokenStandard": "Fungible", "mint": "he1iusmfkpAdwvxLNGV8Y1iSbj4rUy6yMhEA3fotn9A" },
+     { "fromUserAccount": "Pgd9rPSqdkiwRFD7v95GGow5wutkJfKkJFY6HYSBetm", "toUserAccount": "51V5bAPGaz3vj4SiJeoLGNzAQNxGr4Vps8gSBKmSZx71", "fromTokenAccount": "6idobGVVrjGpvE4UFggDcsDCZSnrKsEAUrSck82uPTvC", "toTokenAccount": "28EtijVFBtsocRWUGTNeSDk9QTvYnbnp5sfYZsNvBGfP", "rawTokenAmount": 7327164, "decimals": 9, "tokenStandard": "Fungible", "mint": "he1iusmfkpAdwvxLNGV8Y1iSbj4rUy6yMhEA3fotn9A" },
+     { "fromUserAccount": "51V5bAPGaz3vj4SiJeoLGNzAQNxGr4Vps8gSBKmSZx71", "toUserAccount": "Pgd9rPSqdkiwRFD7v95GGow5wutkJfKkJFY6HYSBetm", "fromTokenAccount": "2cmtL8TPhZBYV1CTnjUsM7qnSLo7kWGdGbNJP8k6Vh9d", "toTokenAccount": "HcKjo9KNiu8KBzDigrLftFfLcSmaAtZWtuP4rpowaGiL", "rawTokenAmount": 8764607, "decimals": 9, "tokenStandard": "Fungible", "mint": "So11111111111111111111111111111111111111112" },
+     { "fromUserAccount": "Pgd9rPSqdkiwRFD7v95GGow5wutkJfKkJFY6HYSBetm", "toUserAccount": "7R3ZCZHf4y9E8oy41YJoYFSxVmQfUtcDBNFFgBRUh6zw", "fromTokenAccount": "HcKjo9KNiu8KBzDigrLftFfLcSmaAtZWtuP4rpowaGiL", "toTokenAccount": "MXRyxFjF3mqGgEGdoQ6LwAUKVjdp2TgjNCcvugpJQ6w", "rawTokenAmount": 8764594, "decimals": 9, "tokenStandard": "Fungible", "mint": "So11111111111111111111111111111111111111112" },
+     { "fromUserAccount": null, "toUserAccount": "FDbLZ5DRo61queVRH9LL1mQnsiAoubQEnoCRuPEmH9M8", "fromTokenAccount": null, "toTokenAccount": "CAtPGrHP2CbY8AXBBUYduxiWNhHnVDHoozNjnnzBF7M5", "rawTokenAmount": 109657, "decimals": 2, "tokenStandard": "Fungible", "mint": "5kvBykCa3dTU2HVpikGuZ5gsuqrf7L1ywrdMBozh8Hj8" },
+     { "fromUserAccount": "7R3ZCZHf4y9E8oy41YJoYFSxVmQfUtcDBNFFgBRUh6zw", "toUserAccount": "Pgd9rPSqdkiwRFD7v95GGow5wutkJfKkJFY6HYSBetm", "fromTokenAccount": "GsVQjvW7KzEqe8thTSXDLQVoiDxAvCpMPYbBaeSZQfK6", "toTokenAccount": "B9pVrcrw2RiaqD6Lgrkh4txaSngSchfhLH37S3uZAaQT", "rawTokenAmount": 595819, "decimals": 6, "tokenStandard": "Fungible", "mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v" },
+     { "fromUserAccount": "Pgd9rPSqdkiwRFD7v95GGow5wutkJfKkJFY6HYSBetm", "toUserAccount": "R4rNJHaffSUotNmqSKNEfDcJE8A7zJUkaoM5Jkd7cYX", "fromTokenAccount": "B9pVrcrw2RiaqD6Lgrkh4txaSngSchfhLH37S3uZAaQT", "toTokenAccount": "HrTf9CzXR1dRH4Sof5QrpmGWwpwAf3qZzwCsEjQpXcSq", "rawTokenAmount": 100000, "decimals": 6, "tokenStandard": "Fungible", "mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v" }
+    ],
+    "summary": null,
+    "instructions": [
+     {
+      "instructionIndex": 0,
+      "innerInstructionIndex": 12,
+      "programId": "6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P",
+      "rawData": "b8WmrpJDiMq6X8gnpBQFpjucpMN6Pw3T31S42yUNFbGTh4cMAZsjbPujh6bECuuv8R2aTd25Mw3aKUjj4VwFZY5FXHiuiSLnKT7rNifGHqTWsrWxZYeukn8uUc3QiX9qVkKXyfps7bbiZsQL4F4AEgBFKHdv4CUEA7zhTYRHndPF3bvzFe42HW3zKsNxa1c9KFPBMHy3PEmgYiJ1Tn6c8LoTdTQoAiFzJQwf3Nwnckzgp2go3cotbNV9jcZ3uU3bNyY9YYd5GnK9DW17Jdi3aZJHbTcQNuFRbV5grRwYNmQwxWLcVXudx1SL6crB5AfmSzm7ZsZJLtWuiXWK4RgEPAt9w98ppCuMf59jePheRAGJj7dDiz8YvWvKtPqzc9ijAR4uPgbMZ6h8RNDtk3puz6y34Fkwk1eggohbTTJkf8ok8rPK6DRzDKUz3tiv9CRf2qkFoQ8gP1op4M6LyhT9kkngCYFTLYi4t9MjXMMgUiUJARvxDy1CKKeBjfzndjMGxg6oMXAUXVyjriLDUNoSZrNPxrCXPnwEF"
+     }
+    ]
+   },
+   "chain": {
+    "wallet": "Pgd9rPSqdkiwRFD7v95GGow5wutkJfKkJFY6HYSBetm",
+    "coin": -105414.684305,
+    "sol": 1.3e-8,
+    "dollars": 0.495819
+   }
+  },
+  {
+   "coin": "HCAT",
+   "signature": "s2vgB8cq4qTqrfEYXrDaoNePwMcx7PN1b8SCV9WzpDweHSqkYFN1CytioCcPqvjVGj5iuZfyv23NFxZqUT6uRYx",
+   "parserStatus": "OK",
+   "parsed": {
+    "slot": 471797556,
+    "blockTime": 1795190660,
+    "fee": 36385,
+    "feePayer": "GVXndNAyARszNNYd1BYnscyYae6d7farHXw1yUDgu7ga",
+    "transactionStatus": "OK",
+    "nativeTransfers": [
+     { "fromUserAccount": "GVXndNAyARszNNYd1BYnscyYae6d7farHXw1yUDgu7ga", "toUserAccount": "5V6e7k2JoKohABcTBmwP1tx9skZiAE3HFsrR6VsFNNGn", "amount": 100488440 },
+     { "fromUserAccount": "5V6e7k2JoKohABcTBmwP1tx9skZiAE3HFsrR6VsFNNGn", "toUserAccount": "GVXndNAyARszNNYd1BYnscyYae6d7farHXw1yUDgu7ga", "amount": 1488440 },
+     { "fromUserAccount": "GVXndNAyARszNNYd1BYnscyYae6d7farHXw1yUDgu7ga", "toUserAccount": "HkJYryz2BNeMQfuuSWDYktWt5fZLV26eK6nqu7EJycoG", "amount": 1000000 },
+     { "fromUserAccount": "GVXndNAyARszNNYd1BYnscyYae6d7farHXw1yUDgu7ga", "toUserAccount": "2qDoKXbts4ePAv5NVhHZLuG7eFqB1ik58Nsb9aDArecj", "amount": 168615 }
+    ],
+    "tokenTransfers": [
+     { "fromUserAccount": "GVXndNAyARszNNYd1BYnscyYae6d7farHXw1yUDgu7ga", "toUserAccount": "9m6cYJ8dd26Smzh35qDvFjkyqvMWYw1CwG5R5F7xWg9Q", "fromTokenAccount": "5V6e7k2JoKohABcTBmwP1tx9skZiAE3HFsrR6VsFNNGn", "toTokenAccount": "FVxDHyNoBRtXfQfoSmaookK19suEk4nkWSph5Qgdcurp", "rawTokenAmount": 99000000, "decimals": 9, "tokenStandard": "Fungible", "mint": "So11111111111111111111111111111111111111112" },
+     { "fromUserAccount": "9m6cYJ8dd26Smzh35qDvFjkyqvMWYw1CwG5R5F7xWg9Q", "toUserAccount": "GVXndNAyARszNNYd1BYnscyYae6d7farHXw1yUDgu7ga", "fromTokenAccount": "8P7ujCnBVbo8t1DNEDjmudMJWPyStSu8TkEjLdcS1S5x", "toTokenAccount": "6i3fDAGZpV6Smc8eRfzy6TvdVxTDbRczShKrWrk9TNiZ", "rawTokenAmount": 82251801, "decimals": 9, "tokenStandard": "Fungible", "mint": "he1iusmfkpAdwvxLNGV8Y1iSbj4rUy6yMhEA3fotn9A" },
+     { "fromUserAccount": "HyVGUgeMhkgXh7vkABWoQTfsCgeSasXAiwajvso5v7mi", "toUserAccount": "GVXndNAyARszNNYd1BYnscyYae6d7farHXw1yUDgu7ga", "fromTokenAccount": "3SLK5mPH4FbhB8HFFKPzNhUuuZc8WVXrgnWLi9G5S5G3", "toTokenAccount": "CwvpDdb4sHemQyxAWAESdLXKC8voMqS3XVC66vTrLvEm", "rawTokenAmount": 1139623992827, "decimals": 6, "tokenStandard": "Fungible", "mint": "9U76nMfZepDZYRpqfL2tcmbgM7QLQ3RRTPVCoJeGxRSe" },
+     { "fromUserAccount": "GVXndNAyARszNNYd1BYnscyYae6d7farHXw1yUDgu7ga", "toUserAccount": "HyVGUgeMhkgXh7vkABWoQTfsCgeSasXAiwajvso5v7mi", "fromTokenAccount": "6i3fDAGZpV6Smc8eRfzy6TvdVxTDbRczShKrWrk9TNiZ", "toTokenAccount": "Hw5VX4VFLFHd3PTyj7DHUEazUimSggYzYsu8LxSeDLYW", "rawTokenAmount": 81868578, "decimals": 9, "tokenStandard": "Fungible", "mint": "he1iusmfkpAdwvxLNGV8Y1iSbj4rUy6yMhEA3fotn9A" },
+     { "fromUserAccount": "GVXndNAyARszNNYd1BYnscyYae6d7farHXw1yUDgu7ga", "toUserAccount": "5cjcW9wExnJJiqgLjq7DEG75Pm6JBgE1hNv4B2vHXUW6", "fromTokenAccount": "6i3fDAGZpV6Smc8eRfzy6TvdVxTDbRczShKrWrk9TNiZ", "toTokenAccount": "7VQFXe19wYdk5xyFMA3G8kvDwoZmemmDMrrgydng7NT6", "rawTokenAmount": 383223, "decimals": 9, "tokenStandard": "Fungible", "mint": "he1iusmfkpAdwvxLNGV8Y1iSbj4rUy6yMhEA3fotn9A" }
+    ],
+    "summary": null,
+    "instructions": [
+     {
+      "instructionIndex": 2,
+      "innerInstructionIndex": 7,
+      "programId": "6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P",
+      "rawData": "xP5X2rtd7D1PF6YVZfjxs5VFZvMaDvbovJftkwyhHLcHAMvKRBcUaRzG7PN3b6JRye9QqVKQg5dr7j69tnvW42AaBVdByxGKL6r9P8iWKLfrvoWA5RXdfoNxnq2Cd98Dcpu6GTNSrG1EqR1bsW2EJc8KJPZnoBomgfWtpztAVfv2XjVeW85XhxX8N7NzPVkbjxKkwCfnnHkaYDwGZz9KXmZEUArMKtH55jV9dsL7DW2EbULxghJqYnME2csncpNbC4TfHpZgX52TdA8zPJMvhQH2SAdX2ipZdpRRG7McTKUrRJdSAjHdYRP4MF7WieknFkWAmLgfV386dsM82ahVn9HNpWQqRRjjkupSsabLDaw4DGS2UDosvXgV7HUrX9iyvhUpio4zUBCwRCPnp2aJBcENReAwUEDLMrdQ9GN9cRgtBaCQyGQQxBhxvpvHjpKGzofWwdpT3E4a3LeJCvL7BahkPdeUKnL28VnzZekDAeDfhKA4SLUCmTGNjbLm2ytPunpDMasDxgr3ZabzzQCUzortLW6W9uNMgXj24JCRVaetm8hfrTM9"
+     }
+    ]
+   },
+   "chain": {
+    "wallet": "GVXndNAyARszNNYd1BYnscyYae6d7farHXw1yUDgu7ga",
+    "coin": 1139623.992827,
+    "sol": -0.100168615,
+    "dollars": 0
+   }
+  },
+  {
+   "coin": "HCAT",
+   "signature": "3Sa8uraXQNAutUD4a6wLZteeuQce517EY6VuZeLfBSxxNj4hdCG12E6JxfrV9i3sBQS2eJkuiKUVDpSdtJNgmAok",
+   "parserStatus": "OK",
+   "parsed": {
+    "slot": 471797537,
+    "blockTime": 1795190656,
+    "fee": 905000,
+    "feePayer": "8waVUYuzbwqyG7omzv8Ps1uAMHDbT87HkjBT2DMmzF18",
+    "transactionStatus": "OK",
+    "nativeTransfers": [
+     { "fromUserAccount": "8waVUYuzbwqyG7omzv8Ps1uAMHDbT87HkjBT2DMmzF18", "toUserAccount": "9ZH6GV24oAfo5RoX64c5Xh7GvWxAWtDya98nEf9eVLbK", "amount": 1488440 },
+     { "fromUserAccount": "8waVUYuzbwqyG7omzv8Ps1uAMHDbT87HkjBT2DMmzF18", "toUserAccount": "Dy3kCRC3KBQdUXxhzie1UhDmWwi3Ryqr7r32oLSYfkEw", "amount": 1488440 },
+     { "fromUserAccount": "9ZH6GV24oAfo5RoX64c5Xh7GvWxAWtDya98nEf9eVLbK", "toUserAccount": "8waVUYuzbwqyG7omzv8Ps1uAMHDbT87HkjBT2DMmzF18", "amount": 1488440 },
+     { "fromUserAccount": "Dy3kCRC3KBQdUXxhzie1UhDmWwi3Ryqr7r32oLSYfkEw", "toUserAccount": "8waVUYuzbwqyG7omzv8Ps1uAMHDbT87HkjBT2DMmzF18", "amount": 137038655 },
+     { "fromUserAccount": "8waVUYuzbwqyG7omzv8Ps1uAMHDbT87HkjBT2DMmzF18", "toUserAccount": "7HkiWXe5deJvzn4D6kgMUFCADwX9Z4DMrdjNSSxN6bPp", "amount": 1100000 }
+    ],
+    "tokenTransfers": [
+     { "fromUserAccount": "8waVUYuzbwqyG7omzv8Ps1uAMHDbT87HkjBT2DMmzF18", "toUserAccount": "8waVUYuzbwqyG7omzv8Ps1uAMHDbT87HkjBT2DMmzF18", "fromTokenAccount": "5HGaKFvfsHF2G7eHRa1r2JeWjWRaGJRa3igXtZCPeugy", "toTokenAccount": "5HGaKFvfsHF2G7eHRa1r2JeWjWRaGJRa3igXtZCPeugy", "rawTokenAmount": 1664215263878, "decimals": 6, "tokenStandard": "Fungible", "mint": "9U76nMfZepDZYRpqfL2tcmbgM7QLQ3RRTPVCoJeGxRSe" },
+     { "fromUserAccount": "8waVUYuzbwqyG7omzv8Ps1uAMHDbT87HkjBT2DMmzF18", "toUserAccount": "HyVGUgeMhkgXh7vkABWoQTfsCgeSasXAiwajvso5v7mi", "fromTokenAccount": "5HGaKFvfsHF2G7eHRa1r2JeWjWRaGJRa3igXtZCPeugy", "toTokenAccount": "3SLK5mPH4FbhB8HFFKPzNhUuuZc8WVXrgnWLi9G5S5G3", "rawTokenAmount": 1664215263878, "decimals": 6, "tokenStandard": "Fungible", "mint": "9U76nMfZepDZYRpqfL2tcmbgM7QLQ3RRTPVCoJeGxRSe" },
+     { "fromUserAccount": "HyVGUgeMhkgXh7vkABWoQTfsCgeSasXAiwajvso5v7mi", "toUserAccount": "Ah3jKa4rfRMXxUF9XM3tLi8FKkZRD9m4iQYfzVfqsDP5", "fromTokenAccount": "Hw5VX4VFLFHd3PTyj7DHUEazUimSggYzYsu8LxSeDLYW", "toTokenAccount": "7UycbvqjVr9yPLUeuqqbFJieveDJBSEQYKM63TBKEaa9", "rawTokenAmount": 1178979, "decimals": 9, "tokenStandard": "Fungible", "mint": "he1iusmfkpAdwvxLNGV8Y1iSbj4rUy6yMhEA3fotn9A" },
+     { "fromUserAccount": "HyVGUgeMhkgXh7vkABWoQTfsCgeSasXAiwajvso5v7mi", "toUserAccount": "8waVUYuzbwqyG7omzv8Ps1uAMHDbT87HkjBT2DMmzF18", "fromTokenAccount": "Hw5VX4VFLFHd3PTyj7DHUEazUimSggYzYsu8LxSeDLYW", "toTokenAccount": "9ZH6GV24oAfo5RoX64c5Xh7GvWxAWtDya98nEf9eVLbK", "rawTokenAmount": 115598885, "decimals": 9, "tokenStandard": "Fungible", "mint": "he1iusmfkpAdwvxLNGV8Y1iSbj4rUy6yMhEA3fotn9A" },
+     { "fromUserAccount": "HyVGUgeMhkgXh7vkABWoQTfsCgeSasXAiwajvso5v7mi", "toUserAccount": "5eHhjP8JaYkz83CWwvGU2uMUXefd3AazWGx4gpcuEEYD", "fromTokenAccount": "Hw5VX4VFLFHd3PTyj7DHUEazUimSggYzYsu8LxSeDLYW", "toTokenAccount": "VS5tmzzpo216gwFrg7wbKxs2zXvGucVmBXQw3oKfiYx", "rawTokenAmount": 560015, "decimals": 9, "tokenStandard": "Fungible", "mint": "he1iusmfkpAdwvxLNGV8Y1iSbj4rUy6yMhEA3fotn9A" },
+     { "fromUserAccount": "HyVGUgeMhkgXh7vkABWoQTfsCgeSasXAiwajvso5v7mi", "toUserAccount": "CebN5WGQ4jvEPvsVU4EoHEpgzq1VV7AbicfhtW4xC9iM", "fromTokenAccount": "Hw5VX4VFLFHd3PTyj7DHUEazUimSggYzYsu8LxSeDLYW", "toTokenAccount": "HagijbzYsq4M4ZzmPjg93dGb1gRkyYfBEfg4s74GM5LG", "rawTokenAmount": 560015, "decimals": 9, "tokenStandard": "Fungible", "mint": "he1iusmfkpAdwvxLNGV8Y1iSbj4rUy6yMhEA3fotn9A" },
+     { "fromUserAccount": "8waVUYuzbwqyG7omzv8Ps1uAMHDbT87HkjBT2DMmzF18", "toUserAccount": "8waVUYuzbwqyG7omzv8Ps1uAMHDbT87HkjBT2DMmzF18", "fromTokenAccount": "9ZH6GV24oAfo5RoX64c5Xh7GvWxAWtDya98nEf9eVLbK", "toTokenAccount": "9ZH6GV24oAfo5RoX64c5Xh7GvWxAWtDya98nEf9eVLbK", "rawTokenAmount": 115598885, "decimals": 9, "tokenStandard": "Fungible", "mint": "he1iusmfkpAdwvxLNGV8Y1iSbj4rUy6yMhEA3fotn9A" },
+     { "fromUserAccount": "8waVUYuzbwqyG7omzv8Ps1uAMHDbT87HkjBT2DMmzF18", "toUserAccount": "9m6cYJ8dd26Smzh35qDvFjkyqvMWYw1CwG5R5F7xWg9Q", "fromTokenAccount": "9ZH6GV24oAfo5RoX64c5Xh7GvWxAWtDya98nEf9eVLbK", "toTokenAccount": "8P7ujCnBVbo8t1DNEDjmudMJWPyStSu8TkEjLdcS1S5x", "rawTokenAmount": 115598885, "decimals": 9, "tokenStandard": "Fungible", "mint": "he1iusmfkpAdwvxLNGV8Y1iSbj4rUy6yMhEA3fotn9A" },
+     { "fromUserAccount": "9m6cYJ8dd26Smzh35qDvFjkyqvMWYw1CwG5R5F7xWg9Q", "toUserAccount": "8waVUYuzbwqyG7omzv8Ps1uAMHDbT87HkjBT2DMmzF18", "fromTokenAccount": "FVxDHyNoBRtXfQfoSmaookK19suEk4nkWSph5Qgdcurp", "toTokenAccount": "Dy3kCRC3KBQdUXxhzie1UhDmWwi3Ryqr7r32oLSYfkEw", "rawTokenAmount": 136368425, "decimals": 9, "tokenStandard": "Fungible", "mint": "So11111111111111111111111111111111111111112" },
+     { "fromUserAccount": "8waVUYuzbwqyG7omzv8Ps1uAMHDbT87HkjBT2DMmzF18", "toUserAccount": "7kRfYgbpichh83KfYGubHrNrzNukesSzgD4xvf6CcB5D", "fromTokenAccount": "Dy3kCRC3KBQdUXxhzie1UhDmWwi3Ryqr7r32oLSYfkEw", "toTokenAccount": "4RAnsC6m5gqb6eod2RdW4mKqhTNBckJrsjf2Z9JD5N2s", "rawTokenAmount": 818210, "decimals": 9, "tokenStandard": "Fungible", "mint": "So11111111111111111111111111111111111111112" }
+    ],
+    "summary": null,
+    "instructions": [
+     {
+      "instructionIndex": 0,
+      "innerInstructionIndex": 13,
+      "programId": "6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P",
+      "rawData": "b8WmrpJDiMq6X8gnpBQFpjucpMN6Pw3T31S42yUNFbGTh4cMAZsjbPujh6bECuuv8R2aTd25Mw3aKFGvGJoH2WCfxdR91c5GQ1H99Kxx7zmR8cpA934i6PAQUD1ZBZug7jDiN64ykBJfwN7DivtG8RLAXok2Wwsnu8FoAtjTQKmn7RxWzjPhH5uzzJTwdacgdS8Z7u6zpmUts1tzMtEAKFL6aeHeXfhrn91MFU4DQ1VzJic735CoGv7DKQ4YrokyQSEWeFe5sMGHkgXQbKgxYv2jPu8E18wH1cfoNYHczqh33PddSVpy84JoJSyXNSY2m83zvoM5WdCFoscAhz2YcJXfz31u2SzA7bNFt6Vsipnqfd97KRdHdJnBunXgAVqV9huRfxsGQ57jf8aaVLyTwxYcaDzM6njN46Qp8hqaP4GK57JibzeUXi2ceGBNw7FEBdHHSDxFAmh3rmhifNa2C3CwLiTRjmUL66pDgkM8evZTGoBvqeRnd9pwswpJUTgBXShdDBF9FTZbL2F79GWGwE2ppNsavT6B9"
+     }
+    ]
+   },
+   "chain": {
+    "wallet": "8waVUYuzbwqyG7omzv8Ps1uAMHDbT87HkjBT2DMmzF18",
+    "coin": -1664215.263878,
+    "sol": 0.134450215,
+    "dollars": 0
+   }
+  },
+  {
+   "coin": "HCAT",
+   "signature": "4b8Y8WWAMv7as84YRjFQdYk2GH2NUtv8FXXBTTFaxZbGWws8ke8fMPyRnNxMmTgcomEjSTAxTwDFD9tVeNdgg4kQ",
+   "parserStatus": "OK",
+   "parsed": {
+    "slot": 471797518,
+    "blockTime": 1795190652,
+    "fee": 54000,
+    "feePayer": "2Hj72Z1CP6he3MArFDQo2hanb5QurqAKuf2Z3RjygRFF",
+    "transactionStatus": "OK",
+    "nativeTransfers": [
+     { "fromUserAccount": "2Hj72Z1CP6he3MArFDQo2hanb5QurqAKuf2Z3RjygRFF", "toUserAccount": "4vieeGHPYPG2MmyPRcYjdiDmmhN3ww7hsFNap8pVN3Ey", "amount": 5000 },
+     { "fromUserAccount": "2Hj72Z1CP6he3MArFDQo2hanb5QurqAKuf2Z3RjygRFF", "toUserAccount": "ENAn5Dp39X8aR2uEHveBDPNrtUUkaqyHZBqKCgE78z9g", "amount": 1513840 },
+     { "fromUserAccount": "2Hj72Z1CP6he3MArFDQo2hanb5QurqAKuf2Z3RjygRFF", "toUserAccount": "4u33jVSsS3M82Jw9pcJWu7biWCQQ4cbFbTm8fSmdC6Fe", "amount": 1488440 },
+     { "fromUserAccount": "2Hj72Z1CP6he3MArFDQo2hanb5QurqAKuf2Z3RjygRFF", "toUserAccount": "4u33jVSsS3M82Jw9pcJWu7biWCQQ4cbFbTm8fSmdC6Fe", "amount": 500000000 },
+     { "fromUserAccount": "2Hj72Z1CP6he3MArFDQo2hanb5QurqAKuf2Z3RjygRFF", "toUserAccount": "84jXqpxXbJF1Vp41DJSR9VhAXL6houRuwbtVnEtrjBdJ", "amount": 1488440 },
+     { "fromUserAccount": "4u33jVSsS3M82Jw9pcJWu7biWCQQ4cbFbTm8fSmdC6Fe", "toUserAccount": "2Hj72Z1CP6he3MArFDQo2hanb5QurqAKuf2Z3RjygRFF", "amount": 1488440 },
+     { "fromUserAccount": "2Hj72Z1CP6he3MArFDQo2hanb5QurqAKuf2Z3RjygRFF", "toUserAccount": "6etFFcuEY5sNgiYbA1f6b7HAn18eADfHbdBQnxfex5gu", "amount": 5000000 }
+    ],
+    "tokenTransfers": [
+     { "fromUserAccount": "2Hj72Z1CP6he3MArFDQo2hanb5QurqAKuf2Z3RjygRFF", "toUserAccount": "51V5bAPGaz3vj4SiJeoLGNzAQNxGr4Vps8gSBKmSZx71", "fromTokenAccount": "4u33jVSsS3M82Jw9pcJWu7biWCQQ4cbFbTm8fSmdC6Fe", "toTokenAccount": "2cmtL8TPhZBYV1CTnjUsM7qnSLo7kWGdGbNJP8k6Vh9d", "rawTokenAmount": 500000000, "decimals": 9, "tokenStandard": "Fungible", "mint": "So11111111111111111111111111111111111111112" },
+     { "fromUserAccount": "51V5bAPGaz3vj4SiJeoLGNzAQNxGr4Vps8gSBKmSZx71", "toUserAccount": "2Hj72Z1CP6he3MArFDQo2hanb5QurqAKuf2Z3RjygRFF", "fromTokenAccount": "28EtijVFBtsocRWUGTNeSDk9QTvYnbnp5sfYZsNvBGfP", "toTokenAccount": "84jXqpxXbJF1Vp41DJSR9VhAXL6houRuwbtVnEtrjBdJ", "rawTokenAmount": 417923869, "decimals": 9, "tokenStandard": "Fungible", "mint": "he1iusmfkpAdwvxLNGV8Y1iSbj4rUy6yMhEA3fotn9A" },
+     { "fromUserAccount": "HyVGUgeMhkgXh7vkABWoQTfsCgeSasXAiwajvso5v7mi", "toUserAccount": "2Hj72Z1CP6he3MArFDQo2hanb5QurqAKuf2Z3RjygRFF", "fromTokenAccount": "3SLK5mPH4FbhB8HFFKPzNhUuuZc8WVXrgnWLi9G5S5G3", "toTokenAccount": "ENAn5Dp39X8aR2uEHveBDPNrtUUkaqyHZBqKCgE78z9g", "rawTokenAmount": 5818053313702, "decimals": 6, "tokenStandard": "Fungible", "mint": "9U76nMfZepDZYRpqfL2tcmbgM7QLQ3RRTPVCoJeGxRSe" },
+     { "fromUserAccount": "2Hj72Z1CP6he3MArFDQo2hanb5QurqAKuf2Z3RjygRFF", "toUserAccount": "HyVGUgeMhkgXh7vkABWoQTfsCgeSasXAiwajvso5v7mi", "fromTokenAccount": "84jXqpxXbJF1Vp41DJSR9VhAXL6houRuwbtVnEtrjBdJ", "toTokenAccount": "Hw5VX4VFLFHd3PTyj7DHUEazUimSggYzYsu8LxSeDLYW", "rawTokenAmount": 415976700, "decimals": 9, "tokenStandard": "Fungible", "mint": "he1iusmfkpAdwvxLNGV8Y1iSbj4rUy6yMhEA3fotn9A" },
+     { "fromUserAccount": "2Hj72Z1CP6he3MArFDQo2hanb5QurqAKuf2Z3RjygRFF", "toUserAccount": "5YxQFdt3Tr9zJLvkFccqXVUwhdTWJQc1fFg2YPbxvxeD", "fromTokenAccount": "84jXqpxXbJF1Vp41DJSR9VhAXL6houRuwbtVnEtrjBdJ", "toTokenAccount": "JDRJsLMzUemGX4D2bD2KeAqSvRwcmBvLosQ159zCWYh1", "rawTokenAmount": 1947169, "decimals": 9, "tokenStandard": "Fungible", "mint": "he1iusmfkpAdwvxLNGV8Y1iSbj4rUy6yMhEA3fotn9A" }
+    ],
+    "summary": null,
+    "instructions": [
+     {
+      "instructionIndex": 6,
+      "innerInstructionIndex": 7,
+      "programId": "6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P",
+      "rawData": "xP5X2rtd7D1PF6YVZfjxs5VFZvMaDvbovJftkwyhHLcHAMvKRBcUaRzG7PN3b6JRye9QqVKQg5dr4ksUFYhtBVk91E4R6Jf9YNBNuUS5rrJ1B2fi6pHPLBPizUhNxNiUa8zCYXqUoy32oDCPF4bVatiUSUKzYmhAHY6V5eo9JCPSfYcAjyKJRVUFMRgpJyEySeQJ7f8UFU1PNrDd96pCb4XCadrA8FaMvrNMbPN5YPJwgNjwjSxNGNVueFxbBRMDwXYetcgAeiGHixQZ6caMadtX3Ze2JfopdgkH265RpfwsTbpMctGDBo7DNYfARqHEtfDCzAJxAHopVdV7uqnxkP5ZWd4qKX6u3XZhFd4Q2gnzfzNqEZvtqBDBgNkdQGwH5VWddFd9121f4A26i4UAXA1XyXFdVJP8e3B32QQ1vop5b69nb7QueyoEtAvadhMxyEXU185QXdYHfiz2DHMARPVKTMgJdeMSpJPVdB7KVQBG4mXakXJNTatmzYMQnbx8NbGUJUi2S1TUpf49UWQYULSidMY5gNgyXa8NLGqRbjhri3aag5Cj"
+     }
+    ]
+   },
+   "chain": {
+    "wallet": "2Hj72Z1CP6he3MArFDQo2hanb5QurqAKuf2Z3RjygRFF",
+    "coin": 5818053.313702,
+    "sol": -0.505005,
+    "dollars": 0
+   }
+  },
+  {
+   "coin": "HCAT",
+   "signature": "5VRSYT4sDcExKRhvyR8BZ3fFuBiyKJM1V8RQGobAT9YuMhxXm3RFLJawC62L5roeK8ML4Fa73HhvK2vGCwunsnM9",
+   "parserStatus": "OK",
+   "parsed": {
+    "slot": 471797507,
+    "blockTime": 1795190650,
+    "fee": 655302,
+    "feePayer": "STorreSu8X6yPLmiEScNHSGDinqV7j84hWjmvH9SPwk",
+    "transactionStatus": "OK",
+    "nativeTransfers": [
+     { "fromUserAccount": "STorreSu8X6yPLmiEScNHSGDinqV7j84hWjmvH9SPwk", "toUserAccount": "DJVyC9Nu6o48C4XnH6shKvu51oqJkZT8AALLig9Lw1tp", "amount": 1488440 },
+     { "fromUserAccount": "DJVyC9Nu6o48C4XnH6shKvu51oqJkZT8AALLig9Lw1tp", "toUserAccount": "STorreSu8X6yPLmiEScNHSGDinqV7j84hWjmvH9SPwk", "amount": 908402620 },
+     { "fromUserAccount": "STorreSu8X6yPLmiEScNHSGDinqV7j84hWjmvH9SPwk", "toUserAccount": "astraEJ2fEj8Xmy6KLG7B3VfbKfsHXhHrNdCQx7iGJK", "amount": 10000 }
+    ],
+    "tokenTransfers": [
+     { "fromUserAccount": "STorreSu8X6yPLmiEScNHSGDinqV7j84hWjmvH9SPwk", "toUserAccount": "HyVGUgeMhkgXh7vkABWoQTfsCgeSasXAiwajvso5v7mi", "fromTokenAccount": "BjHZ6AQMk1dYf75ngUik3Ku9NZKQnJc7F4YcmgWZHMcW", "toTokenAccount": "3SLK5mPH4FbhB8HFFKPzNhUuuZc8WVXrgnWLi9G5S5G3", "rawTokenAmount": 10901574041195, "decimals": 6, "tokenStandard": "Fungible", "mint": "9U76nMfZepDZYRpqfL2tcmbgM7QLQ3RRTPVCoJeGxRSe" },
+     { "fromUserAccount": "HyVGUgeMhkgXh7vkABWoQTfsCgeSasXAiwajvso5v7mi", "toUserAccount": "STorreSu8X6yPLmiEScNHSGDinqV7j84hWjmvH9SPwk", "fromTokenAccount": "Hw5VX4VFLFHd3PTyj7DHUEazUimSggYzYsu8LxSeDLYW", "toTokenAccount": "J673aHMP96EpVjvbf51A7tKF51L8QR2PKuzQgNWVDTPp", "rawTokenAmount": 758204823, "decimals": 9, "tokenStandard": "Fungible", "mint": "he1iusmfkpAdwvxLNGV8Y1iSbj4rUy6yMhEA3fotn9A" },
+     { "fromUserAccount": "HyVGUgeMhkgXh7vkABWoQTfsCgeSasXAiwajvso5v7mi", "toUserAccount": "GXPFM2caqTtQYC2cJ5yJRi9VDkpsYZXzYdwYpGnLmtDL", "fromTokenAccount": "Hw5VX4VFLFHd3PTyj7DHUEazUimSggYzYsu8LxSeDLYW", "toTokenAccount": "51JmHacRWdcbd1BQ2uxsBZjXK6FZuBbb2Cd7HBccvPyB", "rawTokenAmount": 3673098, "decimals": 9, "tokenStandard": "Fungible", "mint": "he1iusmfkpAdwvxLNGV8Y1iSbj4rUy6yMhEA3fotn9A" },
+     { "fromUserAccount": "STorreSu8X6yPLmiEScNHSGDinqV7j84hWjmvH9SPwk", "toUserAccount": "51V5bAPGaz3vj4SiJeoLGNzAQNxGr4Vps8gSBKmSZx71", "fromTokenAccount": "J673aHMP96EpVjvbf51A7tKF51L8QR2PKuzQgNWVDTPp", "toTokenAccount": "28EtijVFBtsocRWUGTNeSDk9QTvYnbnp5sfYZsNvBGfP", "rawTokenAmount": 758204823, "decimals": 9, "tokenStandard": "Fungible", "mint": "he1iusmfkpAdwvxLNGV8Y1iSbj4rUy6yMhEA3fotn9A" },
+     { "fromUserAccount": "51V5bAPGaz3vj4SiJeoLGNzAQNxGr4Vps8gSBKmSZx71", "toUserAccount": "STorreSu8X6yPLmiEScNHSGDinqV7j84hWjmvH9SPwk", "fromTokenAccount": "2cmtL8TPhZBYV1CTnjUsM7qnSLo7kWGdGbNJP8k6Vh9d", "toTokenAccount": "DJVyC9Nu6o48C4XnH6shKvu51oqJkZT8AALLig9Lw1tp", "rawTokenAmount": 906914180, "decimals": 9, "tokenStandard": "Fungible", "mint": "So11111111111111111111111111111111111111112" }
+    ],
+    "summary": null,
+    "instructions": [
+     {
+      "instructionIndex": 3,
+      "innerInstructionIndex": 4,
+      "programId": "6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P",
+      "rawData": "b8WmrpJDiMq6X8gnpBQFpjucpMN6Pw3T31S42yUNFbGTh4cMAZsjbPujh6bECuuv8R2aTd25Mw3aJfbf1DTPifCosv3tFMyaPoYEG1aPeWi3fM6rK6TxPKVgzcUduUyHjs2vrr64EMAitbQR7Bc6jhuEqo6fjw95PFhLPwxK3kLVwqvC36rZmkGkZEEEAozzWWUzY7SojxWSs64atU5n2DM8RT1k6Zdrwghijxbiu9tZERWE25TLLSgPDEfZMYBRpBCWLA8q26rzCaEpJHMdrZzgvvGwWiQ7VqbxE6K4bfJzvXeDAyz6XgbV8jXveHR1ALGAVmdXwoPQEovSB4DPvPhtF61JMnfHvx2QaYYww9WeSaVA4AwhrtPvNHvU6BT3wZe7gL1LW5VvyCCnRENLqbeGkjpar7MriQqRGp2q1AmLX9Y4QEiD2UMfD4FZzdhkoJNqM43s8MsQExGJHce56T9UTV4KJNUdHyo3SQeswMe2rNa8YqTQj3qaokz4as9YVmRdj48Bt1h5ghjy97y26LQ8P9n3Rrsrw"
+     }
+    ]
+   },
+   "chain": {
+    "wallet": "STorreSu8X6yPLmiEScNHSGDinqV7j84hWjmvH9SPwk",
+    "coin": -10901574.041195,
+    "sol": 0.90690418,
+    "dollars": 0
+   }
+  }
+ ]
+}

@@ -16,6 +16,7 @@ import { chainOf, loadChains, move, pickCoin, requestQuote, setRecipient, setTyp
 import { RELAY_BRIDGE } from './bridge-words';
 import { BridgePick, BridgeWallets, CoinMark } from './BridgePick';
 import { BridgeTrip } from './BridgeTrip';
+import t from '@/terminal/coin/ticket.module.css';
 import s from './swap.module.css';
 import b from './bridge.module.css';
 
@@ -221,6 +222,9 @@ export function BridgeForm() {
   const impact = fresh && loss !== null && loss <= -2 ? w.loss(digits(Math.abs(loss).toFixed(1))) : null;
   const canMax = held !== null && held !== '0' && !(origin?.vm === 'evm' && from.address === '0x0000000000000000000000000000000000000000');
 
+  // The landing as its one plain line — the wallet it lands in and «Another address» — not the field.
+  const landPlain = destination !== null && destination.owner !== null && recipientTyped === null;
+  const info = <ExplainButton label={terms ? w.details : w.how} open={details} controls={detailsId} onToggle={() => setDetails((was) => !was)} />;
   return (
     <>
       <Field
@@ -261,29 +265,37 @@ export function BridgeForm() {
       </div>
       <Field label={w.get} usd={getUsd} coin={<CoinButton side="to" coin={to} network={destination?.label ?? ''} label={w.pickGet} onClick={() => setView('to')} disabled={!chains} />}>
         <span className={s.bigOut}>
-          {loading && !getValue ? <span className={cx(s.bones, s.bigShimmer)} aria-hidden="true" /> : <span className={cx(s.bigAmount, !getValue && s.bigNone)}>{getValue ?? '0'}</span>}
+          {loading && !getValue ? <span className={cx(t.shimmer, s.bigShimmer)} aria-hidden="true" /> : <span className={cx(s.bigAmount, !getValue && s.bigNone)}>{getValue ?? '0'}</span>}
         </span>
       </Field>
-      <Landing ownRecipient={parties.ownRecipient} />
-      {terms ? (
-        <div className={s.terms}>
-          <span className={s.termsLine}>{terms}</span>
-          <ExplainButton label={w.details} open={details} controls={detailsId} onToggle={() => setDetails((was) => !was)} />
-        </div>
-      ) : null}
-      {details && fresh && amountRaw ? (
+      {/* The form's one «i»: beside «Another address» while that line stands — never alone on a row of its own
+          under it, as a phone showed it; in the line of the time and the fee otherwise. */}
+      <Landing ownRecipient={parties.ownRecipient} info={landPlain ? info : null} />
+      {/* The time and the fee on the left, the form's one «i» on the right: one line in its own place before a price too
+          (eyes pass 20.11, №19: the «i» stood alone in the page's corner, away from the form) — no jump when the price
+          comes. Before a price the «i» says how the bridge works; with one, the transfer's breakdown and then that. */}
+      <div className={s.terms}>
+        <span className={s.termsLine}>{terms ?? (loading ? <span className={cx(t.shimmer, s.rateShimmer)} aria-hidden="true" /> : null)}</span>
+        {landPlain ? null : info}
+      </div>
+      {details ? (
         <ExplainBox id={detailsId}>
-          <Rows
-            rows={[
-              [w.youSend, `${digits(formatUnits(fresh.facts.send.amountRaw, fresh.facts.send.decimals))} ${fresh.facts.send.symbol}`],
-              [w.atLeast, `${digits(formatUnits(fresh.facts.get.minimumRaw, fresh.facts.get.decimals, 'down'))} ${fresh.facts.get.symbol}`],
-              ...(fresh.facts.fees.relayUsd !== null ? [[w.relayFee, digits(dollarsOf(fresh.facts.fees.relayUsd) ?? '')] as const] : []),
-              ...(fresh.facts.fees.gasUsd !== null ? [[w.gasFee, digits(dollarsOf(fresh.facts.fees.gasUsd) ?? '')] as const] : []),
-              ...(fresh.facts.fees.ryntraUsd !== null ? [[w.ryntraFee, digits(dollarsOf(fresh.facts.fees.ryntraUsd) ?? '')] as const] : []),
-              ...(eta ? [[w.arrivesIn, eta] as const] : []),
-              [w.through, 'Relay'],
-            ]}
-          />
+          <span className={s.explainLines}>
+            {fresh && amountRaw ? (
+              <Rows
+                rows={[
+                  [w.youSend, `${digits(formatUnits(fresh.facts.send.amountRaw, fresh.facts.send.decimals))} ${fresh.facts.send.symbol}`],
+                  [w.atLeast, `${digits(formatUnits(fresh.facts.get.minimumRaw, fresh.facts.get.decimals, 'down'))} ${fresh.facts.get.symbol}`],
+                  ...(fresh.facts.fees.relayUsd !== null ? [[w.relayFee, digits(dollarsOf(fresh.facts.fees.relayUsd) ?? '')] as const] : []),
+                  ...(fresh.facts.fees.gasUsd !== null ? [[w.gasFee, digits(dollarsOf(fresh.facts.fees.gasUsd) ?? '')] as const] : []),
+                  ...(fresh.facts.fees.ryntraUsd !== null ? [[w.ryntraFee, digits(dollarsOf(fresh.facts.fees.ryntraUsd) ?? '')] as const] : []),
+                  ...(eta ? [[w.arrivesIn, eta] as const] : []),
+                  [w.through, 'Relay'],
+                ]}
+              />
+            ) : null}
+            <span>{w.howText}</span>
+          </span>
         </ExplainBox>
       ) : null}
       {moved || impact ? (
@@ -299,7 +311,7 @@ export function BridgeForm() {
 }
 
 /** Where the money lands: the person's own wallet there by default; another address only typed, checked and warned. */
-function Landing({ ownRecipient }: { ownRecipient: string | null }) {
+function Landing({ ownRecipient, info }: { ownRecipient: string | null; info: ReactNode }) {
   const w = useWords(RELAY_BRIDGE);
   const chains = useBridge((st) => st.chains);
   const to = useBridge((st) => st.to);
@@ -313,9 +325,12 @@ function Landing({ ownRecipient }: { ownRecipient: string | null }) {
     return (
       <div className={b.land}>
         <span className={b.landWho}>{ownRecipient ? <>{w.toWallet} <b translate="no">{shortOf(ownRecipient)}</b></> : null}</span>
-        <button type="button" className={b.link} onClick={() => setRecipient('')} data-bridge-another>
-          {ownRecipient ? w.change : w.another}
-        </button>
+        <span className={b.landEnd}>
+          <button type="button" className={b.link} onClick={() => setRecipient('')} data-bridge-another>
+            {ownRecipient ? w.change : w.another}
+          </button>
+          {info}
+        </span>
       </div>
     );
   }

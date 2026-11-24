@@ -6,7 +6,7 @@ import { useLang } from '@/city/lib/i18n/lang';
 import { useWallet } from '@/city/lib/trade/wallet';
 import { decodeLinkSecret } from '@/lib/privacy/codes';
 import { canReceive, readLink, solText, takeLink, type LinkState } from '@/lib/privacy/flows';
-import { explorerUrl } from '@/lib/privacy/network';
+import { PRIVATE_TEST, explorerUrl } from '@/lib/privacy/network';
 import { loadPrivate } from '@/lib/privacy/sdk.client';
 import { isPhoneUserAgent, withoutFragment } from '@/lib/solana/open-in-wallet';
 import { connectWallet } from '@/terminal/shell/Wallet';
@@ -115,7 +115,7 @@ export function ClaimScreen() {
 
   return (
     <Page data-screen="private-claim">
-      <PageHead title={w.claimTitle} mark={<Chip>{w.net}</Chip>} />
+      <PageHead title={w.claimTitle} mark={PRIVATE_TEST ? <Chip>{w.net}</Chip> : undefined} />
       <ActionBody
         sideLabel={w.claimHolds}
         side={

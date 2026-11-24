@@ -7,9 +7,8 @@ signing, no transaction building: this package answers what a stock token
 and whether the issuer still *supports* the token — the four questions a
 venue has to answer before it shows a price.
 
-These are the modules the Ryntra product runs on at
-[ryntra.io/app/stocks](https://ryntra.io/app/stocks), imported rather than
-copied.
+These are the modules the [Ryntra](https://ryntra.io) product runs on,
+imported rather than copied.
 
 ## The model
 

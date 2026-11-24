@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
-import { IBM_Plex_Mono, Onest, Unbounded } from "next/font/google";
 
 import { sitePageMetadata } from "@/app/site/seo";
+import { LANDING_FONTS } from "@/app/fonts/landing";
 import styles from "@/app/(home)/landing.module.css";
 
 /*
@@ -11,11 +11,9 @@ import styles from "@/app/(home)/landing.module.css";
  *
  * The three families load in this segment rather than in the root layout,
  * because this segment, the landing and `/agent-control` are the only places
- * that use them and the rest of the site should not carry them.
+ * that use them and the rest of the site should not carry them
+ * (`app/fonts/landing.ts`).
  */
-const display = Unbounded({ subsets: ["latin"], weight: ["400", "600", "700"], display: "swap", variable: "--font-sora" });
-const sans = Onest({ subsets: ["latin"], display: "swap", variable: "--font-geist" });
-const mono = IBM_Plex_Mono({ subsets: ["latin"], weight: ["400", "500", "600"], display: "swap", variable: "--font-geist-mono" });
 
 export const metadata: Metadata = sitePageMetadata({
   path: "/product-map",
@@ -27,7 +25,7 @@ export const metadata: Metadata = sitePageMetadata({
 export default function ProductMapLayout({ children }: { children: React.ReactNode }) {
   return (
     <div
-      className={`${display.variable} ${sans.variable} ${mono.variable} ${styles.root}`}
+      className={`${LANDING_FONTS.className} ${styles.root}`}
     >
       {children}
     </div>

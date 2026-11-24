@@ -1,7 +1,8 @@
 /**
  * The facts a pool page shows when one side of the pool is a stock: is it a stock, whose, is the exchange
  * open (and when that changes), whether new liquidity waits around a dividend or a split, and where the issuer's terms
- * are. One pure read for the pool page, the Grid and the stock limits; the server's reader is
+ * are.
+ * One pure read for the pool page, the Grid and the stock limits; the server's reader is
  * `pool-facts.server.ts`, the one public door `GET /api/v1/stocks/pool-facts`.
  *
  * Every fact comes from the stocks engine as it is: the session from the issuer's own trading period, or the feed
@@ -15,6 +16,7 @@
 
 import { dividendGuard, GUARD_BEFORE_MS, type StepKind, type StockStep } from "../../city/lib/earn/stock-pier-hours.ts";
 import { ISSUER_TERMS } from "./issuer-terms.ts";
+import { listedCompanyFor, type ListedCompany } from "./company-listings.ts";
 import type { StockIssuerId } from "./representations.ts";
 import type { Session } from "./session.ts";
 import { ACTIVATION_WINDOW_MS } from "./units.ts";
@@ -48,7 +50,45 @@ export type PoolFacts = Readonly<{
   dividendGuard: PoolGuard | null;
   /** The issuer's own document on where its tokens are offered. */
   termsUrl: string | null;
+  /** A listed company's share, or a private company's token before its IPO; null — no stock. */
+  kind?: "listed-equity" | "pre-ipo" | null;
+  /** What the issuer can do to every holder's token, as the mint's own extensions state it; null — nothing, or not read. */
+  powers?: IssuerPowers | null;
+  /** A private token whose company has gone public — the company, its ticker and its share's token on Solana. */
+  listed?: ListedCompany | null;
 }>;
+
+/**
+ * What the mint lets its issuer do to a holder's token (Token-2022's own extensions, read from the chain): `take` — a
+ * permanent delegate that can move or burn any holder's balance; `pause` — a pause of every transfer; `paused` — whether
+ * that pause is on now (null: the mint has no pause).
+ */
+export type IssuerPowers = Readonly<{ take: boolean; pause: boolean; paused: boolean | null }>;
+
+/** The mint's facts the powers are read from — `OnchainMint` of the stocks engine satisfies it as it is. */
+export type MintRights = Readonly<{ permanentDelegate: string | null; pausable: Readonly<{ paused: boolean }> | null }>;
+
+/** The powers a mint gives its issuer; null when it gives none, or the mint was not read. */
+export function issuerPowersOf(mint: MintRights | null | undefined): IssuerPowers | null {
+  if (!mint) return null;
+  const take = typeof mint.permanentDelegate === "string" && mint.permanentDelegate.length > 0;
+  const pause = mint.pausable !== null && mint.pausable !== undefined;
+  if (!take && !pause) return null;
+  return { take, pause, paused: pause ? mint.pausable!.paused === true : null };
+}
+
+/**
+ * The powers in one line a person reads — «Емітент може зупинити й забрати токен» — without the chain's words; a pause
+ * that is on now is said as the state it is. Null when the mint gives its issuer neither.
+ */
+export function issuerPowersLine(powers: IssuerPowers | null | undefined, lang: "en" | "uk"): string | null {
+  if (!powers || (!powers.take && !powers.pause)) return null;
+  const uk = lang === "uk";
+  if (powers.paused === true) return uk ? (powers.take ? "Перекази зупинено емітентом · емітент може забрати токен" : "Перекази зупинено емітентом") : powers.take ? "Transfers paused by the issuer · the issuer can take the token" : "Transfers paused by the issuer";
+  if (powers.take && powers.pause) return uk ? "Емітент може зупинити й забрати токен" : "The issuer can pause and take the token";
+  if (powers.take) return uk ? "Емітент може забрати токен" : "The issuer can take the token";
+  return uk ? "Емітент може зупинити перекази" : "The issuer can pause transfers";
+}
 
 /** The stock row's parts the facts read — a `StockRow` of the universe satisfies it as it is. */
 export type PoolFactsRow = Readonly<{
@@ -56,13 +96,14 @@ export type PoolFactsRow = Readonly<{
     mint: string;
     issuer: Readonly<{ id: StockIssuerId; label: string }>;
     exchange: Readonly<{ timezone: string }> | null;
+    instrument?: Readonly<{ class: "listed-equity" | "pre-ipo" }>;
   }>;
   session: Session;
 }>;
 
 /** A mint the stocks engine does not know as a stock. */
 export function notAStock(mint: string): PoolFacts {
-  return { mint, isStock: false, issuer: null, session: "unknown", nextChangeAt: null, dividendGuard: null, termsUrl: null };
+  return { mint, isStock: false, issuer: null, session: "unknown", nextChangeAt: null, dividendGuard: null, termsUrl: null, kind: null, powers: null, listed: null };
 }
 
 /** The hour of the day at the exchange (0–23), in its own time zone; null when the zone is unknown. */
@@ -106,8 +147,11 @@ export function poolGuardOf(step: StockStep | null, nowMs: number): PoolGuard | 
   return { from: new Date(from).toISOString(), to: new Date(to).toISOString(), step: guard.step, now: guard.kind === "hold" };
 }
 
-/** The facts of one mint: its stock row (null when the engine knows no such stock) and the multiplier's scheduled step. */
-export function poolFactsOf(input: Readonly<{ mint: string; row: PoolFactsRow | null; step: StockStep | null; nowMs: number }>): PoolFacts {
+/**
+ * The facts of one mint: its stock row (null when the engine knows no such stock), the multiplier's scheduled step, and
+ * the mint's own rights as the chain states them (null — not read).
+ */
+export function poolFactsOf(input: Readonly<{ mint: string; row: PoolFactsRow | null; step: StockStep | null; nowMs: number; rights?: MintRights | null }>): PoolFacts {
   const { mint, row, nowMs } = input;
   if (!row || row.representation.mint !== mint) return notAStock(mint);
   const next = row.session.nextChangeAt === null ? Number.NaN : Date.parse(row.session.nextChangeAt);
@@ -121,6 +165,9 @@ export function poolFactsOf(input: Readonly<{ mint: string; row: PoolFactsRow | 
     nextChangeAt: session !== "unknown" && Number.isFinite(next) && next > nowMs ? new Date(next).toISOString() : null,
     dividendGuard: poolGuardOf(input.step, nowMs),
     termsUrl: ISSUER_TERMS[issuer.id]?.document.url ?? null,
+    kind: row.representation.instrument?.class ?? "listed-equity",
+    powers: issuerPowersOf(input.rights),
+    listed: row.representation.instrument?.class === "pre-ipo" ? listedCompanyFor({ mint }) : null,
   };
 }
 

@@ -1,11 +1,12 @@
 import { z } from "zod";
+import { isoDateTime } from "../zod/iso-datetime.ts";
 
 import { EvidenceItemSchema, PolicyResultSchema } from "../guard/contracts.ts";
 
 const CAIP2 = /^[a-z0-9-]+:[A-Za-z0-9-]+$/;
 const DECIMAL_STRING = /^(?:0|[1-9]\d*)(?:\.\d+)?$/;
 const HEX_HASH = /^0x[0-9a-f]{64}$/;
-const timestamp = z.string().datetime({ offset: true });
+const timestamp = isoDateTime({ offset: true });
 
 export const AGENT_ACTION_KINDS = [
   "CREATE_JOB_DRAFT",

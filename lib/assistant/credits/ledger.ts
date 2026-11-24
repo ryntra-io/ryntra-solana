@@ -28,6 +28,7 @@
 import { randomBytes } from "node:crypto";
 
 import { z } from "zod";
+import { isoDateTime } from "../../zod/iso-datetime.ts";
 
 import { withBoundedCasRetry, type GuardAtomicVersionedWrite, type GuardStore } from "../../guard/store.ts";
 import { CREDIT_ACTIONS, type CreditAction, type CreditsConfig } from "./prices.ts";
@@ -58,7 +59,7 @@ const AMOUNT_MAX = 1_000_000_000;
 const CAS_ROUNDS = 12;
 
 const Day = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
-const Iso = z.string().datetime({ offset: true });
+const Iso = isoDateTime({ offset: true });
 const Count = z.number().int().min(0).max(AMOUNT_MAX);
 const Parts = z.object({ free: Count, bonus: Count, paid: Count }).strict();
 const Delta = z.object({ free: z.number().int(), bonus: z.number().int(), paid: z.number().int() }).strict();

@@ -97,6 +97,12 @@ const PATHS: Readonly<Record<MenuItemId | `group-${MenuGroupId}` | 'out', ReactN
   send: <path d="M21 3L10 14M21 3l-7 18-4-7-7-4z" />,
   receive: <path d="M12 4v12M6 10l6 6 6-6M4 20h16" />,
   invoices: <path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1" />,
+  payouts: (
+    <>
+      <circle cx="12" cy="6" r="3" />
+      <path d="M12 9v4M5 21v-3a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v3M5 13h14" />
+    </>
+  ),
   private: (
     <>
       <rect x="5" y="11" width="14" height="10" />

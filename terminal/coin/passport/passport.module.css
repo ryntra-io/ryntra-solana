@@ -1,0 +1,248 @@
+/* The coin's passport: the head's row of figures and the risk line by the buy button, with its list behind
+   «i». Tokens only; the figures are written as the head writes its own (head.module.css), so the two stand as one row. */
+
+/* ── the head's row ───────────────────────────────────────────────────────── */
+
+/* The row takes the room its place gives it (a flex row's free space, a panel's width) and reads that room. */
+.row {
+  container: passport-row / inline-size;
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.figures {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  margin: 0;
+}
+
+.figure {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  gap: 4px;
+  padding: 0 16px;
+  border-left: 1px solid var(--line);
+  white-space: nowrap;
+}
+
+.figure dt {
+  font-size: var(--type-micro);
+  font-weight: 600;
+  color: var(--dim);
+}
+
+.figure dd {
+  margin: 0;
+  font-size: var(--type-body);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--ice);
+}
+
+.figure dd[data-tone='up'] {
+  color: var(--mint);
+}
+
+.figure dd[data-tone='down'] {
+  color: var(--flare);
+}
+
+/* While it reads, each number keeps its place: a quiet bar of the number's height. */
+.bone {
+  display: inline-block;
+  width: 48px;
+  height: 1em;
+  vertical-align: middle;
+  background: var(--line);
+}
+
+/* The least read figures go first when the room is short: traders, then the full value and six hours, then the hour. */
+@container passport-row (max-width: 639px) {
+  .figure[data-rank='3'] {
+    display: none;
+  }
+}
+
+@container passport-row (max-width: 459px) {
+  .figure[data-rank='2'] {
+    display: none;
+  }
+}
+
+@container passport-row (max-width: 299px) {
+  .figure[data-key='h1'] {
+    display: none;
+  }
+}
+
+/* ── the risk line ────────────────────────────────────────────────────────── */
+
+.line {
+  container: passport-line / inline-size;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+}
+
+/* The «i» with, before it, one quiet sign — a small square mark, straight as every form of the terminal — when any
+   fact is worth a look. */
+.side {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 8px;
+}
+
+/* The one sentence of risk over the buy button and under a phone's price: its sign, then the fact. */
+.sentence {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: var(--type-caption);
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--warm);
+}
+
+.sign {
+  flex: none;
+  width: 6px;
+  height: 6px;
+  background: var(--warm);
+}
+
+/* By the buy button the line keeps the height of four facts, read or not, so the button under it never moves. */
+.items {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  min-height: calc(4 * 1.45 * var(--type-caption) + 12px);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.item {
+  font-size: var(--type-caption);
+  font-weight: 600;
+  line-height: 1.45;
+  font-variant-numeric: tabular-nums;
+  color: var(--soft);
+}
+
+.item[data-tone='warn'] {
+  color: var(--warm);
+}
+
+/* A wide place — a row under the head — lays the facts side by side with quiet rules between. */
+@container passport-line (min-width: 560px) {
+  .items {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 4px 0;
+    min-height: 0;
+  }
+
+  .item {
+    padding: 0 12px;
+    border-left: 1px solid var(--line);
+    white-space: nowrap;
+  }
+
+  .item:first-child {
+    padding-left: 0;
+    border-left: 0;
+  }
+}
+
+.failed {
+  min-height: calc(4 * 1.45 * var(--type-caption) + 12px);
+  margin: 0;
+  font-size: var(--type-caption);
+  font-weight: 600;
+  color: var(--dim);
+}
+
+.boneLine {
+  display: block;
+  width: 60%;
+  height: 12px;
+  background: var(--line);
+}
+
+.line[aria-busy='true'] {
+  flex-direction: column;
+  justify-content: flex-start;
+  gap: 8px;
+  min-height: calc(4 * 1.45 * var(--type-caption) + 12px);
+}
+
+/* Behind «i»: a word and its value, a row each. */
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.listRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.listWord {
+  color: var(--soft);
+}
+
+.listValue {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  color: var(--ice);
+}
+
+.listValue[data-tone='warn'] {
+  color: var(--warm);
+}
+
+.listValue[data-tone='ok'] {
+  color: var(--mint);
+}
+
+/* ── the phone ────────────────────────────────────────────────────────────── */
+
+/* The head's row on a phone: two even rows of three, every figure, a line above them. */
+@media (max-width: 767px) {
+  .row {
+    flex-basis: 100%;
+  }
+
+  .figures {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px 8px;
+    padding-top: 10px;
+    border-top: 1px solid var(--line);
+  }
+
+  .figure[data-rank],
+  .figure[data-key] {
+    display: flex;
+    min-width: 0;
+    padding: 0;
+    border-left: 0;
+  }
+
+  .figure dt,
+  .figure dd {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}

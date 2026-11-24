@@ -17,7 +17,7 @@ import { inboxKeyOf } from "../monitoring/apply.ts";
 import { inQuietHours } from "../monitoring/quiet-hours.ts";
 import { inboxOf, outboxKey, outboxOf, readPreferences, type InboxRecord, type OutboxRecord } from "../monitoring/store.ts";
 import { burstNote, NOTE_CTA, shortAddress, tradeNote, type NoteWords } from "./notes.ts";
-import { changePaper, fillCopy, listPapers, type FillFacts, type PaperRecord } from "./paper.ts";
+import { changePaper, fillCopy, listPapers, type FillFacts, type PaperCopy, type PaperRecord } from "./paper.ts";
 import { birthsOf, refreshActivity, type FactsReader, type WalletChain } from "./read.ts";
 import { claimSend, listFollows, pruneSent, pruneStale, readActivity, readTold, TOLD_KEPT, writeTold, type FollowsRecord, type WalletFollow } from "./store.ts";
 import { labelsOf, WRAPPED_SOL, type WalletLabel, type WalletTrade } from "./trades.ts";
@@ -31,6 +31,41 @@ export const NEWS_WINDOW_S = 2 * 3_600;
 /** Trades of one wallet that each get a note; more at once are one note. */
 export const NOTES_PER_BURST = 3;
 
+/**
+ * The day's ceiling on what reading the copied wallets costs: a wallet copied on paper and followed by nobody
+ * is read for the copies alone, on the node's credits (Helius's in production). Its worst cost is asked before the read
+ * and its calls are paid after; a wallet the day no longer holds is not read this pass — its trades wait, and a copy that
+ * waits too long misses them as late, said, never filled at a stale price. A wallet someone follows is read as before.
+ */
+export type CopyReads = Readonly<{
+  allows(credits: number, nowMs: number): boolean;
+  spend(credits: number, nowMs: number): void;
+}>;
+
+/** What one call of the node costs at most, credits: an archival read's price, the worst a standard call is billed. */
+export const COPY_CALL_CREDITS = 10;
+/** The new transactions one read of a wallet takes at most. */
+export const READ_MAX_NEW = 25;
+/**
+ * The worst cost of one read of a wallet copied by agents alone: its list and its new transactions. Its holdings are not
+ * read — a copy fills from the leader's trades, never from what it holds (lead's review of #1966: holdings were three of
+ * a quiet wallet's four calls, and the day's ceiling held one quiet leader).
+ */
+export const COPY_READ_WORST = (1 + READ_MAX_NEW) * COPY_CALL_CREDITS;
+
+/** How long past its term an agent's copy that still holds coins keeps its leader read, waiting for the leader's sale. */
+export const COPY_AFTER_TERM_MS = 7 * 86_400_000;
+
+/**
+ * An agent's copy still wants its leader read — inside its term, or, for a week after it, holding what the leader
+ * may yet sell (a coin the leader never sells does not keep the read going for good; her «Stop» or the stop rule is hers).
+ */
+export function agentCopyLive(copy: PaperCopy, nowMs: number): boolean {
+  if (copy.agent === undefined) return false;
+  const ends = Date.parse(copy.agent.endsAt);
+  return ends > nowMs || (Object.keys(copy.positions).length > 0 && ends + COPY_AFTER_TERM_MS > nowMs);
+}
+
 export type PassDeps = Readonly<{
   store: GuardStore;
   chain: WalletChain;
@@ -38,9 +73,20 @@ export type PassDeps = Readonly<{
   clock: () => number;
   /** Sends the rows this pass queued (production: the monitoring delivery narrowed to them). */
   deliver?: (rows: ReadonlySet<string>, atMs: number) => Promise<void>;
+  /** The day's ceiling of reading wallets for their copies alone; absent — no ceiling (the tests'). */
+  copyReads?: CopyReads;
 }>;
 
-export type PassReport = Readonly<{ wallets: number; read: number; notes: number; delivered: number; capped: number; quiet: number; paperFills: number; pruned: number; ms: number }>;
+export type PassReport = Readonly<{ wallets: number; read: number; notes: number; delivered: number; capped: number; quiet: number; paperFills: number; copyCapped: number; pruned: number; ms: number }>;
+
+/** The chain for a wallet copied by agents alone: each call counted, its holdings never asked. The copy with money reads its leaders through it too. */
+export function metered(chain: WalletChain, count: (calls: number) => void): WalletChain {
+  return {
+    signatures: (address, options) => (count(1), chain.signatures(address, options)),
+    transaction: (signature) => (count(1), chain.transaction(signature)),
+    holdings: async () => null,
+  };
+}
 
 export function walletNoteId(owner: string, identity: string): string {
   return `inb_${createHash("sha256").update(`wallet-watch:${owner}:${identity}`).digest("hex").slice(0, 24)}`;
@@ -185,10 +231,14 @@ export async function runWalletWatchPass(deps: PassDeps): Promise<PassReport> {
   const records = await listFollows(deps.store);
   const followers = new Map<string, { record: FollowsRecord; follow: WalletFollow }[]>();
   for (const record of records) for (const follow of record.wallets) if (follow.alerts !== "off") followers.set(follow.address, [...(followers.get(follow.address) ?? []), { record, follow }]);
-  /* A wallet copied on paper is read as a followed one, alerts or not. */
+  /* A wallet copied on paper is read as a followed one, alerts or not — an agent's copy only while it lives (its term, or
+     what it still holds); a leader whose agents' copies all ended empty is not read at all. */
   const papers = await listPapers(deps.store).catch(() => [] as PaperRecord[]);
-  for (const record of papers) for (const copy of record.copies) if (!followers.has(copy.leader)) followers.set(copy.leader, []);
+  const copiesOf = new Map<string, PaperCopy[]>();
+  for (const record of papers) for (const copy of record.copies) copiesOf.set(copy.leader, [...(copiesOf.get(copy.leader) ?? []), copy]);
+  for (const [leader, copies] of copiesOf) if (!followers.has(leader) && copies.some((copy) => copy.agent === undefined || agentCopyLive(copy, started))) followers.set(leader, []);
   let paperFills = 0;
+  let copyCapped = 0;
   const tally: Tally = { notes: 0, delivered: 0, capped: 0, quiet: 0, queued: new Set() };
   let read = 0;
   /* The longest unread first: a pass that runs out of time leaves the freshest, and the next one starts where it stopped. */
@@ -197,7 +247,17 @@ export async function runWalletWatchPass(deps: PassDeps): Promise<PassReport> {
   for (const [wallet, list] of order) {
     if (deps.clock() - started > PASS_BUDGET_MS) break;
     const nowMs = deps.clock();
-    const activity = await refreshActivity(deps.store, deps.chain, wallet, { nowMs, freshMs: 45_000, maxNew: 25, concurrency: 2 }).catch(() => null);
+    /* Read for agents' copies alone: only while the day's ceiling holds its worst cost, and its calls paid after. A wallet
+       someone follows, or one SOL-R3's copies read, is read as before the ceiling. */
+    const copyOnly = list.length === 0 && deps.copyReads !== undefined && !(copiesOf.get(wallet) ?? []).some((copy) => copy.agent === undefined);
+    if (copyOnly && !deps.copyReads!.allows(COPY_READ_WORST, nowMs)) {
+      copyCapped += 1;
+      continue;
+    }
+    let calls = 0;
+    const chain = copyOnly ? metered(deps.chain, (n) => (calls += n)) : deps.chain;
+    const activity = await refreshActivity(deps.store, chain, wallet, { nowMs, freshMs: 45_000, maxNew: READ_MAX_NEW, concurrency: 2 }).catch(() => null);
+    if (copyOnly && calls > 0) deps.copyReads!.spend(calls * COPY_CALL_CREDITS, deps.clock());
     if (!activity) continue;
     read += 1;
     paperFills += await fillPapers(deps, papers, wallet, activity.trades, nowMs).catch(() => 0);
@@ -217,5 +277,5 @@ export async function runWalletWatchPass(deps: PassDeps): Promise<PassReport> {
   /* Swept twice an hour rather than every pass: the old hours' counts, and the records of wallets nobody follows. */
   const sweep = new Date(deps.clock()).getUTCMinutes() % 30 < 2;
   const pruned = sweep ? (await pruneSent(deps.store, deps.clock()).catch(() => 0)) + (await pruneStale(deps.store, new Set([...records.flatMap((record) => record.wallets.map((row) => row.address)), ...papers.flatMap((record) => record.copies.map((copy) => copy.leader))]), deps.clock()).catch(() => 0)) : 0;
-  return { wallets: followers.size, read, notes: tally.notes, delivered: tally.delivered, capped: tally.capped, quiet: tally.quiet, paperFills, pruned, ms: deps.clock() - started };
+  return { wallets: followers.size, read, notes: tally.notes, delivered: tally.delivered, capped: tally.capped, quiet: tally.quiet, paperFills, copyCapped, pruned, ms: deps.clock() - started };
 }

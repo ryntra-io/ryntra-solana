@@ -28,14 +28,14 @@ export const CITY_PAGES: readonly CityPage[] = [
   { path: '/launches', updated: '2026-11-02', priority: 0.8, changeFrequency: 'daily' },
   /* The public roadmap: what is done, being built and next — read from the registry at every release. */
   { path: '/roadmap', updated: '2026-10-31', priority: 0.6, changeFrequency: 'weekly' },
-  /* «What we're building» — how Ryntra works, in full, with its PDF; and the partner page with «Copy my link». */
-  { path: '/build', updated: '2026-11-01', priority: 0.6, changeFrequency: 'weekly' },
+  /* The partner page with «Copy my link». «What we're building» leads to the documentation since 21.11
+     (`lib/site/retired-pages.ts`): it described the city. */
   { path: '/partners', updated: '2026-11-01', priority: 0.6, changeFrequency: 'monthly' },
   /* The documents the city's windows took over at their own addresses. */
   { path: '/docs', updated: '2026-11-18', priority: 0.7, changeFrequency: 'weekly' },
   /* The documentation's sections, each at its own address — the terminal's (`app/docs/_book/book.ts`
-     SECTION_IDS); the city's old ones that lead there are not listed. */
-  ...['start', 'market', 'trade', 'spot', 'launch', 'bots', 'agent', 'earn', 'portfolio', 'money', 'rewards', 'meteora', 'keys', 'help'].map((id): CityPage => ({ path: `/docs/${id}`, updated: '2026-11-18', priority: 0.6, changeFrequency: 'weekly' })),
+     SECTION_IDS, in its order); the city's old ones that lead there are not listed. «Say it» and «Stocks» came on 20.11. */
+  ...['start', 'say', 'market', 'trade', 'spot', 'stocks', 'launch', 'bots', 'agent', 'earn', 'portfolio', 'money', 'rewards', 'meteora', 'keys', 'help'].map((id): CityPage => ({ path: `/docs/${id}`, updated: id === 'say' || id === 'stocks' ? '2026-11-20' : '2026-11-18', priority: 0.6, changeFrequency: 'weekly' })),
   { path: '/developers', updated: '2026-10-31', priority: 0.6, changeFrequency: 'monthly' },
   /* Ryntra in AI chats: the connector's documentation. */
   { path: '/connector', updated: '2026-10-31', priority: 0.6, changeFrequency: 'monthly' },

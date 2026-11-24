@@ -19,7 +19,7 @@ trade, a term, any — with no ceiling of Ryntra's (`lib/mandate/budget.ts`).
 
 | Said | The agent |
 | --- | --- |
-| `торгуй на 1 SOL на день`, `trade 1 SOL a day`, `let my agent trade 2 SOL daily`, `запусти бота на 0,5 SOL` | buys within that daily budget — exactly what was said, never cut; half the day a trade, the term from her wallet |
+| `торгуй на 1 SOL на день`, `trade 1 SOL a day`, `let my agent trade 2 SOL daily`, `запусти бота на 0,5 SOL` | buys within that daily budget — exactly what was said, never cut; half the day a trade, the term from the person's wallet |
 | `торгуй за мене`, `trade for me`, `запусти бота` | the same, the budget picked with one tap |
 | `запусти мені токен`, `launch me a token`, `launch me a coin called Neon Fox`, `запусти токен Moon Cat $MOON` | prepares a launch: the person's name and ticker as said, the agent's for what was left out, and a coin picture it draws |
 
@@ -37,20 +37,20 @@ A question, a refusal, a plain trade of a coin («trade JUP»), a budget in doll
    in the book, the steady strategy (`lib/mandate/strategy.ts`) spreads the day's budget into equal buys — the first at
    once — each built for the vault, judged and signed by the agent's own signer, the coins straight to the person's
    wallet. A trade outside the limits is never signed; the chain refuses it again. One claim per slot: two instances
-   never buy the same slot. Every trade ends with the rule that the money reached her (`lib/mandate/result.ts`). It
+   never buy the same slot. Every trade ends with the rule that the money reached the person (`lib/mandate/result.ts`). It
    leaves a mandate the person stopped, one that ended or spent its budget, and pauses itself (`AUTOSTOP`,
    `lib/mandate/strategy.ts`): 15 % down, three losing buys in a row, three failed trades in a row, or a figure it cannot read.
 4. **What it earned** (`GET /api/bots/mandate/agent`): its own trades — what went in, what came to the person, what that
    is worth at the pool's price now. «Mine» shows it in one row; the card shows it big, with «Share» (the share
-   card, kind `agent`, marked «DEVNET» on devnet) and «Stop» — one more signature, the rest back to her wallet.
+   card, kind `agent`, marked «DEVNET» on devnet) and «Stop» — one more signature, the rest back to the person's wallet.
 5. **A launch**: «Launch $SYM» fills the launch sheet and opens it on its review; the person's wallet signs the launch
    there.
 
 ## Selling what the agent bought
 
-In the coin's window, where the person's agent bought that coin for her, «Your agent holds» offers 25 %, 50 % or all and
-one «Sell». Before the press: what she gets at least and Ryntra's fee, one line each (the engine's figures,
-`POST /api/bots/mandate/sell`); the rest behind «i». The press is one signature of hers — the coin into her own vault under
+In the coin's window, where the person's agent bought that coin for them, «Your agent holds» offers 25 %, 50 % or all and
+one «Sell». Before the press: what they get at least and Ryntra's fee, one line each (the engine's figures,
+`POST /api/bots/mandate/sell`); the rest behind «i». The press is one signature of theirs — the coin into their own vault under
 a sale's mandate — and the agent sells at once (`POST /api/bots/mandate/sell/go`); the receipt is one line. A
 sale that did not go comes back with one more signature (`/sell/back`). The engine is `lib/mandate/sale.ts` and
 `sale.server.ts`; here `sell.ts` (the store), `sell-sign.ts` (the press, loaded on it), `sell.test.mjs`, and the block
@@ -58,8 +58,8 @@ sale that did not go comes back with one more signature (`/sell/back`). The engi
 
 ## Strategies
 
-The same sentence can say how the agent buys: «купуй BONK на просіданнях», «buy the dip −10 %», «торгуй сіткою», «grid
-BONK step 4 %», «фіксуй +20 %», «stop loss 10 %», «купуй нові запуски». `read.ts` reads it into a plan of
+The same sentence can say how the agent buys: «купуй JUP на просіданнях», «buy the dip −10 %», «торгуй сіткою», «grid
+JUP step 4 %», «фіксуй +20 %», «stop loss 10 %», «купуй нові запуски». `read.ts` reads it into a plan of
 `lib/mandate/plans.ts` (`steady`, `dip`, `grid`, `early`, with a `take`/`stop` exit); the card says it in one line
 (`plan-line.ts`), its rules and its run on history behind «Details». «Practice first» runs the agent on paper with the same
 rules (`runs.ts` → `GET /api/bots/mandate/test`), «Go live · sign once» takes the very plan to the mandate. The mandate's
@@ -68,24 +68,24 @@ limits never change: a strategy only holds back a buy the mandate allows. Tests 
 
 ## The agent's day
 
-The person comes back because the agent works while she is away, and says so once a day: «today 3 trades, +$4». Every
+The person comes back because the agent works while they are away, and says so once a day: «today 3 trades, +$4». Every
 figure is the agent's own book, priced now (`lib/mandate/report.ts` `dayOf`): the trades that landed in the span, what
 they spent, the coin they brought, what it is worth at the venue's price, and the result in SOL and dollars. A figure
 that was not read is left out — never a zero, never a promise.
 
 - **In the app** (`NEXT_PUBLIC_RYNTRA_CITY_AGENT_REPORT=open`): one quiet line by the coin the agent buys («Today · 3
-  trades · +0.012 SOL», `AgentTowerTag.tsx`); on her return after 20 minutes or more, one card «While you were away: 3
+  trades · +0.012 SOL», `AgentTowerTag.tsx`); on their return after 20 minutes or more, one card «While you were away: 3
   trades, +0.012 SOL» with one «Share» — the agent's card for X over that span (`AgentAway.tsx`); in the agent's card,
   «Today: …» and the daily report's one switch.
 - **Telegram and the phone** (`RYNTRA_AGENT_REPORT=on` on the server): the cron `/api/cron/agent-report` (hourly, at
-  :07) tells each person once a day at her hour on her clock (20:00 at first) what the agent did since the last report,
-  through the engine's inbox and delivery — Telegram where her account has a chat, the app's push, the browser's push,
+  :07) tells each person once a day at their hour on their own clock (20:00 at first) what the agent did since the last report,
+  through the engine's inbox and delivery — Telegram where their account has a chat, the app's push, the browser's push,
   quiet hours and retries as every note. The message carries «Turn off daily report»; one tap turns it off (`agr:off:`),
   and the button becomes «Turn it back on». A day without a trade is passed quietly.
-- **Her settings** (`/api/bots/mandate/report`): `GET ?owner=` — on and the hour; `POST` — her clock and language, and the
-  switch, only under her wallet's own proof. Kept in the Guard store's `agentReports`, `r:<owner>`.
+- **Their settings** (`/api/bots/mandate/report`): `GET ?owner=` — on and the hour; `POST` — their clock and language, and the
+  switch, only under their wallet's own proof. Kept in the Guard store's `agentReports`, `r:<owner>`.
 
-Files: `report.ts` (the switches, the words, her hour, pure), `report-watch.ts` (the pass, the note), `report-watch.server.ts`
+Files: `report.ts` (the switches, the words, their hour, pure), `report-watch.ts` (the pass, the note), `report-watch.server.ts`
 (production: the book through `agentResult`, Jupiter's catalogue for the ticker and SOL in dollars, the monitoring
 delivery), `report-telegram.ts` and `.server.ts` (the button), `report-client.ts` (the page: when it last saw the agent,
 the card, the switch), `report.test.mjs`.

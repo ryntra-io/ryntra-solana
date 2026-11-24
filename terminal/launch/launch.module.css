@@ -17,69 +17,6 @@
   display: none;
 }
 
-/* ── the agent's line, first ───────────────────────────────────────────── */
-
-.say {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  width: 100%;
-  min-height: 64px;
-  padding: 12px 18px;
-  text-align: left;
-  color: var(--ice);
-  border: 1px solid var(--act-edge);
-  background:
-    linear-gradient(100deg, color-mix(in srgb, var(--amber) 12%, transparent), color-mix(in srgb, var(--violet) 8%, transparent) 55%, transparent),
-    var(--panel);
-  transition: border-color 0.15s, background-color 0.15s;
-}
-
-.say:hover {
-  border-color: color-mix(in srgb, var(--amber) 62%, transparent);
-}
-
-.say:focus-visible {
-  outline: 2px solid var(--amber);
-  outline-offset: 2px;
-}
-
-.saySign {
-  display: flex;
-  flex: none;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
-  color: var(--amber);
-  background: color-mix(in srgb, var(--amber) 14%, transparent);
-}
-
-.sayWords {
-  display: flex;
-  flex: 1 1 0;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
-}
-
-.sayWords > b {
-  font-size: var(--type-base);
-  font-weight: 700;
-}
-
-.sayWords > span {
-  overflow: hidden;
-  font-size: var(--type-small);
-  color: var(--soft);
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.sayArrow {
-  color: var(--amber);
-}
-
 /* ── the ready formats ─────────────────────────────────────────────────── */
 
 .formats {
@@ -357,10 +294,13 @@
   outline: none;
 }
 
+/* A sample in a field reads as a sample, never as a value typed: the face's regular weight and fainter than
+   the line's own grey; a typed value is the field's bold white. */
 .text::placeholder,
 .textArea::placeholder,
 .linkText::placeholder {
-  color: color-mix(in srgb, var(--dim) 70%, transparent);
+  color: color-mix(in srgb, var(--dim) 55%, transparent);
+  font-weight: 400;
   opacity: 1;
 }
 
@@ -376,6 +316,12 @@
   font-stretch: 125%;
   font-size: var(--type-title);
   color: var(--amber);
+  transition: color 0.15s;
+}
+
+/* Until a ticker is typed, its «$» is as faint as the sample beside it. */
+.tickerRow[data-empty] .dollar {
+  color: color-mix(in srgb, var(--dim) 55%, transparent);
 }
 
 .about {
@@ -499,8 +445,7 @@
 
 .openChip,
 .format,
-.drop,
-.say {
+.drop {
   border-radius: var(--r-ctl);
 }
 
@@ -1020,10 +965,11 @@
   font-weight: 600;
 }
 
+/* «My coins» with nothing to list: one column in the middle of the card — the art as a band on top, the line
+   and the one press under it, centred; never the words pressed to the left with the card's right half empty. */
 .blank {
   display: grid;
-  grid-template-columns: 220px minmax(0, 1fr);
-  align-items: center;
+  grid-template-columns: minmax(0, 1fr);
   overflow: hidden;
 }
 
@@ -1049,14 +995,22 @@
 .blankWords {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
+  align-items: center;
   gap: 16px;
-  padding: 24px 32px;
+  padding: 24px 32px 32px;
+  text-align: center;
 }
 
 .blankWords > button {
-  align-self: stretch;
+  width: 100%;
   max-width: 400px;
+}
+
+/* The wallets to pick, opened from the line's press: the press's width, its own rows read from the left. */
+.blankWords > :not(b):not(button) {
+  width: 100%;
+  max-width: 400px;
+  text-align: start;
 }
 
 .blankWords > b {
@@ -1090,10 +1044,13 @@
   }
 }
 
-/* The «New» tab: the market's new coins as cards, two to a row on a desk. */
+/* The «New» tab: the market's new coins as cards across the whole page — as many to a row as the screen holds (two on a
+   laptop, three or four on a big screen, one on a phone). Each card draws its own top and left line; the first column's
+   left line stands outside the panel's edge. */
 .freshGrid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 420px), 1fr));
+  overflow: hidden;
 }
 
 .freshCard {
@@ -1103,15 +1060,9 @@
   min-height: 72px;
   padding: 12px 18px;
   border-top: 1px solid var(--line);
-  transition: background-color 0.15s;
-}
-
-.freshCard:nth-child(even) {
   border-left: 1px solid var(--line);
-}
-
-.freshCard:last-child:nth-child(odd) {
-  grid-column: 1 / -1;
+  margin-left: -1px;
+  transition: background-color 0.15s;
 }
 
 .freshCard:hover {
@@ -1191,6 +1142,23 @@
   white-space: nowrap;
 }
 
+/* A new coin's line: the name gives way first, the count of holders stands whole. */
+.freshLine {
+  display: flex;
+  gap: 4px;
+  min-width: 0;
+}
+
+.freshName {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.freshHeld {
+  flex: none;
+}
+
 .listAge {
   font-size: var(--type-small);
   color: var(--dim);
@@ -1220,12 +1188,45 @@
   }
 }
 
-/* A tall wide desk (2560 × 1440): the same wizard a step roomier, so the form and its card hold the screen's height. */
-@media (min-width: 1800px) and (min-height: 1300px) {
-  .say {
-    min-height: 72px;
+/* Two columns (EYES-2 №113: on 1920 the side column ended 80 px above the form in English, 40 px below it in Ukrainian):
+   the side column is as tall as the form and adds nothing to it — the coin as people will see it on top, and «New on the
+   market» down to the form's last line, with as many whole rows as its place holds. A row that does not fit wraps into
+   a second column the list does not show, so none is cut in half. */
+@media (min-width: 1100px) {
+  .newBody > [data-page-side] {
+    align-self: stretch;
+    contain: size;
   }
 
+  .newBody > [data-page-side] > :first-child {
+    flex: none;
+  }
+
+  .newBody > [data-page-side] > :last-child:not(:first-child) {
+    display: flex;
+    flex: 1 1 0;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .newBody > [data-page-side] .listRows {
+    display: flex;
+    flex: 1 1 0;
+    flex-flow: column wrap;
+    align-content: flex-start;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .newBody > [data-page-side] .listRows > li {
+    display: block;
+    width: 100%;
+  }
+}
+
+/* A tall wide desk (2560 × 1440): the same wizard a step roomier, so the form and its card hold the screen's height. */
+@media (min-width: 1800px) and (min-height: 1300px) {
   .format {
     min-height: 104px;
   }
@@ -1290,16 +1291,6 @@
     display: flex;
     flex-direction: column;
     padding: 0 16px;
-  }
-
-  .say {
-    min-height: 56px;
-    padding: 8px 14px;
-  }
-
-  .saySign {
-    width: 36px;
-    height: 36px;
   }
 
   .formats {
@@ -1385,6 +1376,26 @@
     padding: 12px 14px;
   }
 
+  /* The form's «i» as the kit draws it on a phone (EYES-2 №22: a 44 px empty square with a small pale «i» beside «Launch
+     fee · Your share»): the sign larger in a 36 px square, its place for a thumb still 44 px. The same on every «i» of
+     the form — the terms, the ladder and the shield, the reward and the ready sets. */
+  .coinPanel button[aria-expanded][aria-label] {
+    position: relative;
+    width: 36px;
+    height: 36px;
+  }
+
+  .coinPanel button[aria-expanded][aria-label] > svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .coinPanel button[aria-expanded][aria-label]::after {
+    content: '';
+    position: absolute;
+    inset: -4px;
+  }
+
   /* The figures spread across the row; a long name takes two lines, each figure stands on one line under it. */
   .termList {
     display: grid;
@@ -1421,10 +1432,6 @@
     padding-bottom: 24px;
   }
 
-  .blank {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
   .blankArt {
     height: 160px;
   }
@@ -1440,10 +1447,6 @@
   .freshCard {
     min-height: 64px;
     padding: 8px 16px;
-  }
-
-  .freshCard:nth-child(even) {
-    border-left: 0;
   }
 
   .listAge {

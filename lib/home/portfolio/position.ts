@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import { z } from "zod";
+import { isoDateTime } from "../../zod/iso-datetime.ts";
 
 import { canonicalJson, compareCanonicalStrings } from "../../guard/canonical-json.ts";
 
@@ -60,7 +61,7 @@ const NONNEGATIVE_INTEGER = /^(?:0|[1-9]\d*)$/;
 const POSITION_ID = /^pos_v1_[0-9a-f]{64}$/;
 
 const identifier = z.string().regex(IDENTIFIER);
-const timestamp = z.string().datetime({ offset: true }).max(40);
+const timestamp = isoDateTime({ offset: true }).max(40);
 const evidenceRefs = z
   .array(identifier)
   .min(1)

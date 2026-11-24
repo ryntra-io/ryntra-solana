@@ -13,8 +13,11 @@
  * category: `pre-ipo` is a class of instrument, `prestocks` is an issuer,
  * confirmed by its own catalogue. xStocks (Backed) publishes assets,
  * references, multipliers and reserves; PreStocks publishes its mints and its
- * own marks; Backpack Securities and Ondo Global Markets are known here by
- * the venue's tag only, so their representations carry
+ * own marks; Backpack publishes its list of assets with each one's Solana
+ * contract address: a Backpack token the list names is confirmed
+ * by the issuer, one it does not name stays confirmed by the venue's tag
+ * alone, as before the list was read. Ondo Global Markets is known here by
+ * the venue's tag only, so its representations carry
  * `issuerConfirmation: "tag-only"` and no issuer reference until a source
  * exists. Ondo tokens with no on-chain route say so by route state, never by
  * issuer name.
@@ -26,6 +29,7 @@
 
 import type { SpotMarket } from "../spot/markets.ts";
 import type { Instrument } from "./instrument.ts";
+import type { BackpackAsset } from "./issuer-backpack.server.ts";
 import type { PreStocksAsset } from "./issuer-prestocks.server.ts";
 
 export const STOCK_ISSUER_IDS = ["xstocks", "backpack", "ondo", "prestocks"] as const;
@@ -35,7 +39,7 @@ export type StockIssuer = Readonly<{ id: StockIssuerId; label: string; /** Wheth
 
 export const STOCK_ISSUERS: Readonly<Record<StockIssuerId, StockIssuer>> = {
   xstocks: { id: "xstocks", label: "xStocks · Backed Finance", catalogue: true },
-  backpack: { id: "backpack", label: "Backpack Securities", catalogue: false },
+  backpack: { id: "backpack", label: "Backpack Securities", catalogue: true },
   ondo: { id: "ondo", label: "Ondo Global Markets", catalogue: false },
   prestocks: { id: "prestocks", label: "PreStocks", catalogue: true },
 };
@@ -119,6 +123,8 @@ export type StockRepresentation = Readonly<{
 export type IssuerCatalogues = Readonly<{
   xstocks: ReadonlyMap<string, XStocksAsset> | null;
   prestocks: ReadonlyMap<string, PreStocksAsset> | null;
+  /** Backpack's list of assets; absent or null — not read, and every Backpack row stays `tag-only`. */
+  backpack?: ReadonlyMap<string, BackpackAsset> | null;
 }>;
 
 export const NO_CATALOGUES: IssuerCatalogues = { xstocks: null, prestocks: null };
@@ -192,6 +198,29 @@ export function buildRepresentation(market: SpotMarket, catalogues: IssuerCatalo
       issuerUrl: asset.productUrl,
       issuerNote: asset.description ? asset.description.split("\n")[0].slice(0, 400) : null,
       sources: ["jupiter-verified", "prestocks-public-api"],
+    };
+  }
+
+  /* Backpack's own list names the mint: confirmed by the issuer, with the exchange ticker and the company it states. */
+  const listed = issuerId === "backpack" ? (books.backpack?.get(market.mint) ?? null) : null;
+  if (listed && listed.solanaMint === market.mint) {
+    const name = listed.name ?? underlyingNameFromTokenName(market.name, issuerId);
+    return {
+      mint: market.mint,
+      symbol: market.symbol,
+      name: market.name,
+      issuer,
+      issuerConfirmation: "issuer-catalogue",
+      instrument,
+      underlying: { symbol: listed.ticker, isin: null, listingCountry: null, name },
+      companyKey: companyKeyOf(name),
+      exchange: null,
+      tokenProgram: market.tokenProgram,
+      decimals: market.decimals,
+      tradingHalted: null,
+      issuerUrl: null,
+      issuerNote: null,
+      sources: ["jupiter-verified", "backpack-public-api"],
     };
   }
 

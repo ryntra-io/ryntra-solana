@@ -29,7 +29,7 @@ export function MarketScreen() {
       <h1 className={m.hidden}>{names.market}</h1>
       <HomeHero towers={towers} />
       <Tiles towers={towers} />
-      <Pulse />
+      <Pulse towers={towers} />
       <DepthMarket />
       <QuickPop />
     </Page>

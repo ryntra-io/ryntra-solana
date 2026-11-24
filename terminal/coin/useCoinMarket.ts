@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { directFetch, namedPools, readTradesDirect } from '@/city/lib/chart/direct';
 import type { SpotMarket } from '@/lib/spot/markets';
-import { mergeTape, type TokenHolder, type TokenPool, type TokenTrade } from './tape-view';
+import { mergeTape, tapeMarksOf, type HoldersReach, type LabelBasis, type TapeMarks, type TokenHolder, type TokenPool, type TokenTrade, type TraderRow, type TradersBasis } from './tape-view';
 
 /**
  * The reads of one coin's desk, all the engine's own and all reads only:
@@ -12,7 +12,10 @@ import { mergeTape, type TokenHolder, type TokenPool, type TokenTrade } from './
  *   top holders' and the creator's share, the mint's rights, its site and X — read again every half minute;
  * - its trades (`/api/spot/token?part=trades`): the pool's latest trades, read again every few seconds while the page is
  *   in view, the new ones laid over those on screen;
- * - its holders and its pools (`part=holders`, `part=pools`): read when a tab asks for them.
+ * - its holders, its traders and its pools (`part=holders`, `part=traders`, `part=pools`): read when a tab asks for them.
+ *
+ * The marks of the trades, the holders' worth and how far their list reaches are read where the engine sends them and
+ * are never required: without them every list is as it was.
  *
  * A read that fails keeps what is on screen; one that never came is said as failed, never drawn as an empty list.
  */
@@ -21,6 +24,7 @@ const MARKET_MS = 30_000;
 const TRADES_MS = 8_000;
 const HOLDERS_MS = 60_000;
 const POOLS_MS = 120_000;
+const TRADERS_MS = 30_000;
 
 type Status = 'reading' | 'ready' | 'failed' | 'none';
 
@@ -94,8 +98,13 @@ export function useSpotMarket(mint: string): SpotMarket | null {
   return read.value;
 }
 
-/** `stale` — the last read failed and the trades on screen are the last good ones. */
-export type Tape = Readonly<{ status: Status; trades: readonly TokenTrade[]; fresh: ReadonlySet<string>; stale: boolean }>;
+/**
+ * `stale` — the last read failed and the trades on screen are the last good ones. `mint` — the coin they are of; `marks`
+ * — what the trades' marks stand on, null where the read carried none.
+ */
+export type Tape = Readonly<{ status: Status; trades: readonly TokenTrade[]; fresh: ReadonlySet<string>; stale: boolean; mint?: string; marks?: TapeMarks | null }>;
+
+type TradesRead = Readonly<{ trades: readonly TokenTrade[]; marks: TapeMarks | null }>;
 
 const NO_FRESH: ReadonlySet<string> = new Set();
 
@@ -109,29 +118,41 @@ export function useTape(mint: string, on = true, price: number | null = null): T
   priceRef.current = price;
   const held = useRef<Readonly<{ mint: string; trades: readonly TokenTrade[] }>>({ mint, trades: [] });
   const [tape, setTape] = useState<Readonly<{ mint: string; trades: readonly TokenTrade[]; fresh: ReadonlySet<string> }>>({ mint, trades: [], fresh: NO_FRESH });
-  const read = usePolled<readonly TokenTrade[], Readonly<{ trades?: readonly TokenTrade[] } & NoneAnswer>>(
+  const read = usePolled<TradesRead, Readonly<{ trades?: readonly TokenTrade[]; labelBasis?: LabelBasis } & NoneAnswer>>(
     on ? `/api/spot/token?mint=${encodeURIComponent(mint)}&part=trades` : null,
     TRADES_MS,
-    (body) => (body.none ? 'none' : Array.isArray(body.trades) ? body.trades : null),
+    (body) => (body.none ? 'none' : Array.isArray(body.trades) ? { trades: body.trades, marks: tapeMarksOf(body.labelBasis) } : null),
     // The engine refused with none held — the same pools' trades, read by this browser (no cookie, no referrer).
-    (refusal, signal) => readTradesDirect(mint, namedPools(refusal), priceRef.current, { fetch: directFetch, now: () => Date.now(), signal }),
+    async (refusal, signal) => {
+      const trades = await readTradesDirect(mint, namedPools(refusal), priceRef.current, { fetch: directFetch, now: () => Date.now(), signal });
+      return trades ? { trades, marks: null } : null;
+    },
   );
   useEffect(() => {
     if (!read.value) return;
     const before = held.current.mint === mint ? held.current.trades : [];
-    const next = mergeTape(before, read.value);
+    const next = mergeTape(before, read.value.trades);
     held.current = { mint, trades: next.trades };
     setTape({ mint, trades: next.trades, fresh: next.fresh });
   }, [read.value, mint]);
   const trades = tape.mint === mint ? tape.trades : [];
-  return { status: trades.length ? 'ready' : read.status, trades, fresh: tape.mint === mint ? tape.fresh : NO_FRESH, stale: read.stale };
+  return { status: trades.length ? 'ready' : read.status, trades, fresh: tape.mint === mint ? tape.fresh : NO_FRESH, stale: read.stale, mint, marks: read.value?.marks ?? null };
 }
 
-export type HoldersRead = Readonly<{ holders: readonly TokenHolder[]; programPct: number | null; supply: number | null }>;
+/** `reach` — how far the list reaches, where the engine says it. */
+export type HoldersRead = Readonly<{ holders: readonly TokenHolder[]; programPct: number | null; supply: number | null; reach: HoldersReach | null }>;
 
 /** The coin's largest holders, with their share and what each did in the trades read; read while a tab shows them. */
 export function useHolders(mint: string, on: boolean): Readonly<{ status: Status; value: HoldersRead | null; stale: boolean }> {
-  return usePolled<HoldersRead, HoldersRead & NoneAnswer>(on ? `/api/spot/token?mint=${encodeURIComponent(mint)}&part=holders` : null, HOLDERS_MS, (body) => (body.none ? 'none' : Array.isArray(body.holders) ? { holders: body.holders, programPct: body.programPct ?? null, supply: body.supply ?? null } : null));
+  return usePolled<HoldersRead, HoldersRead & NoneAnswer>(on ? `/api/spot/token?mint=${encodeURIComponent(mint)}&part=holders` : null, HOLDERS_MS, (body) => (body.none ? 'none' : Array.isArray(body.holders) ? { holders: body.holders, programPct: body.programPct ?? null, supply: body.supply ?? null, reach: body.reach ?? null } : null));
+}
+
+/** The coin's traders as the engine counts them: bought, sold, average prices, the result; and what the table stands on. */
+export type TradersRead = Readonly<{ traders: readonly TraderRow[]; basis: TradersBasis | null }>;
+
+/** The coin's traders with their results; read while a tab shows them. `mint` null reads nothing. */
+export function useTraders(mint: string | null, on: boolean): Readonly<{ status: Status; value: TradersRead | null; stale: boolean }> {
+  return usePolled<TradersRead, Readonly<{ traders?: readonly TraderRow[]; basis?: TradersBasis }> & NoneAnswer>(on && mint ? `/api/spot/token?mint=${encodeURIComponent(mint)}&part=traders` : null, TRADERS_MS, (body) => (body.none ? 'none' : Array.isArray(body.traders) ? { traders: body.traders, basis: body.basis ?? null } : null));
 }
 
 /** Where the coin trades, the deepest pool first; read while a tab shows them. */

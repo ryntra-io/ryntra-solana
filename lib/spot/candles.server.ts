@@ -254,8 +254,9 @@ async function sharedRecent<T extends Readonly<{ ok: true; observedAt: string }>
   seconds: number,
   read: () => Promise<T | F>,
   limits: Readonly<{ heldMs: number }>,
+  keep: (value: T | F) => boolean = (value) => value.ok,
 ): Promise<T | F> {
-  const shared = await sharedOrNow<T | F>(key, seconds, read, (value) => value.ok);
+  const shared = await sharedOrNow<T | F>(key, seconds, read, keep);
   if (!shared.ok) return shared;
   const age = Date.now() - Date.parse(shared.observedAt);
   if (!(age > limits.heldMs)) return shared;
@@ -265,8 +266,17 @@ async function sharedRecent<T extends Readonly<{ ok: true; observedAt: string }>
 type PoolRefusal = "NO_POOL" | "NO_MAJOR_QUOTE" | "THIN" | "QUIET";
 const pools = new Map<string, { value: SpotPool | null; refusal: PoolRefusal | null; readAt: number; market: boolean }>();
 /* The answer the choice was made from, kept for the token page's pools and trades: one read of the mint's pools serves both. */
-const poolBodies = new Map<string, { body: unknown; readAt: number }>();
+const poolBodies = new Map<string, { body: unknown; readAt: number; empty: boolean }>();
 const POOL_BODY_TTL_MS = 5 * 60_000;
+/* A list with no pool of the mint — a coin minutes old the source has not seen yet — is asked again this soon, and never
+   shared between instances: the coin's chart and trades come within half a minute of the source seeing its pool, not five
+   or ten minutes later (a coin a minute old said «No chart yet» and «No trades» under a head that already had volume). */
+export const POOL_EMPTY_TTL_MS = 30_000;
+
+/** Whether the source's list of a mint's pools names at least one pool with the mint on a side. */
+export function listsPool(body: unknown, mint: string): boolean {
+  return chooseSpotPool(body, mint).reason !== "NO_POOL";
+}
 
 type PoolsBody = Readonly<{ ok: true; body: unknown; observedAt: string }>;
 
@@ -278,7 +288,7 @@ type PoolsBody = Readonly<{ ok: true; body: unknown; observedAt: string }>;
 export async function readTokenPoolsBody(mint: string, priority: "chart" | "page" = "chart"): Promise<PoolsBody | SpotCandlesFailure> {
   const hit = poolBodies.get(mint);
   const now = Date.now();
-  if (hit && now - hit.readAt < POOL_BODY_TTL_MS) return { ok: true, body: hit.body, observedAt: new Date(hit.readAt).toISOString() };
+  if (hit && now - hit.readAt < (hit.empty ? POOL_EMPTY_TTL_MS : POOL_BODY_TTL_MS)) return { ok: true, body: hit.body, observedAt: new Date(hit.readAt).toISOString() };
   /* The chart and the page's pools ask for the same mint at once: one read. */
   const read = await once(`pools:${mint}`, () =>
     sharedRecent<PoolsBody, SpotCandlesFailure>(
@@ -289,17 +299,20 @@ export async function readTokenPoolsBody(mint: string, priority: "chart" | "page
         return answer.ok ? { ok: true, body: answer.body, observedAt: new Date().toISOString() } : answer;
       },
       { heldMs: POOL_TTL_MS },
+      (value) => value.ok && listsPool(value.body, mint),
     ),
   );
   if (!read.ok) {
-    if (hit && now - hit.readAt < POOL_TTL_MS) return { ok: true, body: hit.body, observedAt: new Date(hit.readAt).toISOString() };
+    if (hit && !hit.empty && now - hit.readAt < POOL_TTL_MS) return { ok: true, body: hit.body, observedAt: new Date(hit.readAt).toISOString() };
     return read;
   }
   const at = Date.parse(read.observedAt);
-  if (!hit || (Number.isFinite(at) && at > hit.readAt)) poolBodies.set(mint, { body: read.body, readAt: Number.isFinite(at) ? at : now });
+  const empty = !listsPool(read.body, mint);
+  /* A list that names the mint's pool replaces one that named none, whatever their times. */
+  if (!hit || (Number.isFinite(at) && at > hit.readAt) || (hit.empty && !empty)) poolBodies.set(mint, { body: read.body, readAt: Number.isFinite(at) ? at : now, empty });
   trim(poolBodies);
   /* The newer of this instance's copy and the shared one. */
-  const kept = poolBodies.get(mint) ?? { body: read.body, readAt: Number.isFinite(at) ? at : now };
+  const kept = poolBodies.get(mint) ?? { body: read.body, readAt: Number.isFinite(at) ? at : now, empty };
   return { ok: true, body: kept.body, observedAt: new Date(kept.readAt).toISOString() };
 }
 /* A refusal is remembered for less than a choice: a pool can be funded or
@@ -314,7 +327,7 @@ const POOL_REFUSAL_TTL_MS = 10 * 60_000;
 export async function resolveSpotPool(mint: string, priority: "chart" | "page" = "chart"): Promise<{ ok: true; pool: SpotPool; market?: boolean } | SpotCandlesFailure> {
   const hit = pools.get(mint);
   const now = Date.now();
-  if (hit && now - hit.readAt < (hit.value && !hit.market ? POOL_TTL_MS : POOL_REFUSAL_TTL_MS)) {
+  if (hit && now - hit.readAt < (hit.value && !hit.market ? POOL_TTL_MS : hit.refusal === "NO_POOL" ? POOL_EMPTY_TTL_MS : POOL_REFUSAL_TTL_MS)) {
     if (hit.value) return { ok: true, pool: hit.value, market: hit.market };
     const refusal = hit.refusal ?? "NO_POOL";
     return { ok: false, code: refusal, reason: NO_CHART_REASONS[refusal] };

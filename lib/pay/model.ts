@@ -21,6 +21,7 @@
  */
 
 import { z } from "zod";
+import { isoDateTime } from "../zod/iso-datetime.ts";
 
 import { parseHumanAmount } from "../solana/amounts.ts";
 import { base58Encode } from "../solana/mint.ts";
@@ -79,8 +80,8 @@ export const PaymentRequestRecordSchema = z
     /** The same amount as the creator typed it, for display; null when open. */
     amountDisplay: z.string().min(1).max(40).nullable(),
     description: z.string().min(1).max(PAYMENT_DESCRIPTION_MAX).nullable(),
-    createdAt: z.string().datetime({ offset: true }),
-    expiresAt: z.string().datetime({ offset: true }),
+    createdAt: isoDateTime({ offset: true }),
+    expiresAt: isoDateTime({ offset: true }),
   })
   .strict();
 export type PaymentRequestRecord = z.output<typeof PaymentRequestRecordSchema>;
@@ -97,7 +98,7 @@ export const PaymentRequestOwnerSchema = z
     accountId: z.string().min(1).max(64).nullable(),
     /** The proof session that authorized creation. Never shown anywhere. */
     proofSessionId: z.string().min(1).max(64).nullable(),
-    createdAt: z.string().datetime({ offset: true }),
+    createdAt: isoDateTime({ offset: true }),
   })
   .strict();
 export type PaymentRequestOwner = z.output<typeof PaymentRequestOwnerSchema>;
@@ -136,11 +137,11 @@ export const PaymentRequestSettlementSchema = z
     /** The wallet that paid, when the transaction names one fee payer. */
     payer: z.string().regex(BASE58).nullable(),
     /** Block time of the settling transaction, when the ledger reports one. */
-    paidAt: z.string().datetime({ offset: true }).nullable(),
+    paidAt: isoDateTime({ offset: true }).nullable(),
     /** The last successful read of the reference, whatever it found. */
-    observedAt: z.string().datetime({ offset: true }).nullable(),
+    observedAt: isoDateTime({ offset: true }).nullable(),
     /** The last read attempt, successful or not. */
-    checkedAt: z.string().datetime({ offset: true }),
+    checkedAt: isoDateTime({ offset: true }),
     /** Consecutive reads that failed since the last successful one. */
     failures: z.number().int().min(0).max(1_000),
     lastError: z.string().max(400).nullable(),

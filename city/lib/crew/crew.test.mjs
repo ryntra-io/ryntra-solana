@@ -79,3 +79,12 @@ test("hiring opens cards and signs nothing: the crew's code names no signer and 
     assert.doesNotMatch(flat, /receipt|proof|approval|квитанц|доказ|схвален|перевірк/i, lang);
   }
 });
+
+test("«Hire» the money Autopilot never plans a sum of Ryntra's: its card while it works, else where she says her own", async () => {
+  const { pilotHireWay, PILOT_PAGE } = await import("./pilot-way.ts");
+  assert.equal(pilotHireWay(true, true), "live");
+  assert.equal(pilotHireWay(true, false), "live");
+  assert.equal(pilotHireWay(false, true), "terminal", "the terminal's Autopilot card asks her for the sum");
+  assert.equal(pilotHireWay(false, false), "line", "without the terminal, the line: she says the plan with her sum");
+  assert.equal(PILOT_PAGE, "/bots/autopilot");
+});

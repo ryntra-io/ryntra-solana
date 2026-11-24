@@ -9,7 +9,7 @@ import "server-only";
 import { readPoolCatalog } from "../liquidity/catalog/service.server.ts";
 import type { EarnAdapter } from "../earn/contract.ts";
 import { earnAdapters } from "../earn/service.server.ts";
-import { earnPools, lendRates, type EarnLendRate, type EarnPoolsAnswer } from "./model.ts";
+import { earnPeriods, earnPools, lendRates, type EarnLendRate, type EarnPeriodsAnswer, type EarnPoolsAnswer } from "./model.ts";
 
 export const LEND_TTL_MS = 2 * 60 * 1000;
 export const LEND_NEGATIVE_TTL_MS = 60 * 1000;
@@ -58,4 +58,14 @@ export async function readEarnPools(deps: EarnPoolsDeps = {}): Promise<EarnPools
     at: times[0] ?? null,
     sources: { dlmm: catalog.sources.dlmm.ok, dammV2: catalog.sources["damm-v2"].ok, lend: lend.rates.length > 0 },
   };
+}
+
+/**
+ * The chooser's pools by window (`GET /api/earn/pools/periods`), for the table's «30 min · 1 h · 2 h · 24 h»:
+ * the same catalogue read, kept two minutes for every visitor, so the windows cost Meteora no call of their own.
+ */
+export async function readEarnPeriods(): Promise<EarnPeriodsAnswer> {
+  const catalog = await readPoolCatalog(null);
+  const times = [catalog.sources.dlmm.at, catalog.sources["damm-v2"].at].filter((at): at is string => at !== null).sort();
+  return { pools: earnPeriods(catalog.pools), at: times[0] ?? null };
 }

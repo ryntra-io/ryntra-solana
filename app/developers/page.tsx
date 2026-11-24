@@ -1,15 +1,24 @@
 import type { Metadata, Viewport } from "next";
 
-import { CityDocument } from "@/city/components/pages/CityDocument";
 import { PALETTE } from "@/city/lib/palette";
 import { buildCityPageMetadata } from "@/app/seo";
 
-/* `/developers` — Developers as a page of the city: connect an agent in three steps; the addresses of the API behind «Technical details». */
+import { TerminalFrame } from "../docs/_book/frame";
+import { DevelopersView } from "./_view/DevelopersView";
+
+/* `/developers` — Developers in the terminal's frame and language: connect an agent in three steps; the addresses of the
+   API behind «Technical details». */
+
+export const dynamic = "force-static";
 
 export const metadata: Metadata = buildCityPageMetadata("developers", "/developers");
 
-export const viewport: Viewport = { themeColor: PALETTE.inkDeep, colorScheme: "dark" };
+export const viewport: Viewport = { themeColor: PALETTE.inkDeep, colorScheme: "dark", viewportFit: "cover" };
 
 export default function Page() {
-  return <CityDocument id="developers" />;
+  return (
+    <TerminalFrame>
+      <DevelopersView />
+    </TerminalFrame>
+  );
 }

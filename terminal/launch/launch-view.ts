@@ -134,6 +134,149 @@ export function problemOf(w: W, check: Pick<FormCheck, 'problems' | 'hits'>, pic
 
 /* ------------------------------------------------------------------ the showcase */
 
+/** A right a new coin's mint keeps or gave up, as Jupiter reads it; null — not said. */
+export type Right = 'on' | 'off' | null;
+
+/**
+ * A new coin as the Launch screen's lists read it, from the market's depth list or the Pulse. `out` — the source says it
+ * is never shown here (a stock, a stablecoin, a coin Jupiter flagged, one passing for a stock, Ryntra's own test): it is
+ * still read, so that it takes its older record off the screen (the critic: a coin flagged after it first
+ * showed stood on with its old figures).
+ */
+export type FreshCoin = Readonly<{
+  id: string;
+  symbol: string;
+  name: string;
+  icon: string | null;
+  mcap: number | null;
+  holders: number | null;
+  bornAt: string | null;
+  mint: Right;
+  freeze: Right;
+  out?: true;
+}>;
+
+const right = (value: unknown): Right => (value === 'on' || value === 'off' ? value : null);
+const count = (value: unknown): number | null => (typeof value === 'number' && Number.isFinite(value) && value > 0 ? value : null);
+
+/**
+ * The market's own «New» list (`/api/v1/market/depth?list=fresh`), read defensively: a row it cannot read is left out; a
+ * company's stock, a private company's token and a stablecoin — as the depth list itself marks them — are `out`.
+ */
+export function freshOf(body: unknown): FreshCoin[] {
+  const coins = body && typeof body === 'object' && Array.isArray((body as { coins?: unknown }).coins) ? (body as { coins: unknown[] }).coins : [];
+  const out: FreshCoin[] = [];
+  for (const coin of coins) {
+    if (!coin || typeof coin !== 'object') continue;
+    const c = coin as Record<string, unknown>;
+    if (typeof c.id !== 'string' || typeof c.symbol !== 'string') continue;
+    out.push({
+      id: c.id,
+      symbol: c.symbol,
+      name: typeof c.name === 'string' ? c.name : c.symbol,
+      icon: typeof c.icon === 'string' ? c.icon : null,
+      mcap: count(c.mcap),
+      holders: count(c.holders),
+      bornAt: typeof c.bornAt === 'string' ? c.bornAt : null,
+      mint: right(c.mint),
+      freeze: right(c.freeze),
+      ...(c.stock === true || c.stable === true || c.kind === 'stock' || c.kind === 'preipo' ? { out: true as const } : {}),
+    });
+  }
+  return out;
+}
+
+/** A Pulse feed's rights, where Jupiter stated the token's audit: «on» — the creator kept it; unread — not said. */
+const pulseRight = (row: Record<string, unknown>, notice: string): Right => (row.auditRead === true ? (Array.isArray(row.notices) && row.notices.includes(notice) ? 'on' : 'off') : null);
+
+/**
+ * The Pulse's feeds of new coins (`/api/spot/pulse?feed=new|soon`, pump.fun and the launchpads, what the Market's Pulse
+ * shows), read defensively for the showcase: a row it cannot read is left out; one Jupiter flagged, one passing for a
+ * stock and one of Ryntra's own test launches are `out`.
+ */
+export function pulseFresh(body: unknown): FreshCoin[] {
+  const rows = body && typeof body === 'object' && Array.isArray((body as { rows?: unknown }).rows) ? (body as { rows: unknown[] }).rows : [];
+  const out: FreshCoin[] = [];
+  for (const row of rows) {
+    if (!row || typeof row !== 'object') continue;
+    const r = row as Record<string, unknown>;
+    if (typeof r.mint !== 'string' || typeof r.symbol !== 'string') continue;
+    const flagged = Boolean(r.passesFor) || (Array.isArray(r.notices) && r.notices.includes('FLAGGED'));
+    const test = Boolean(r.ryntra && typeof r.ryntra === 'object' && (r.ryntra as { technicalValidation?: unknown }).technicalValidation === true);
+    out.push({
+      id: r.mint,
+      symbol: r.symbol,
+      name: typeof r.name === 'string' ? r.name : r.symbol,
+      icon: typeof r.icon === 'string' ? r.icon : null,
+      mcap: count(r.marketCapUsd),
+      holders: count(r.holders),
+      bornAt: typeof r.firstPoolAt === 'string' ? r.firstPoolAt : null,
+      mint: pulseRight(r, 'MINT_AUTHORITY'),
+      freeze: pulseRight(r, 'FREEZE_AUTHORITY'),
+      ...(flagged || test ? { out: true as const } : {}),
+    });
+  }
+  return out;
+}
+
+/** Newest first by birth; a coin whose birth is not said goes last. */
+export const byAge = (a: Readonly<{ bornAt: string | null }>, b: Readonly<{ bornAt: string | null }>): number => (Date.parse(b.bornAt ?? '') || 0) - (Date.parse(a.bornAt ?? '') || 0);
+
+/** A coin's record with the figures `b` measured wherever `a` measured none. */
+const filled = (a: FreshCoin, b: FreshCoin): FreshCoin => ({
+  ...a,
+  icon: a.icon ?? b.icon,
+  mcap: a.mcap ?? b.mcap,
+  holders: a.holders ?? b.holders,
+  bornAt: a.bornAt ?? b.bornAt,
+  mint: a.mint ?? b.mint,
+  freeze: a.freeze ?? b.freeze,
+});
+
+/**
+ * The coins the showcase stands after a read: what the sources answered now, newest first, through the
+ * showcase's rules, then the coins shown before that no source answered this time. A coin answered now replaces its
+ * older record — with its new figures, or gone when it no longer passes (a dump, a flag, a stock) —, and the cap and the
+ * one-per-ticker rule fall on the newest. A coin any source marks `out` is out, whatever another source says of it; a
+ * figure no source measured now keeps the one shown before, so a row never goes and comes back for a figure not read.
+ * At most `max`.
+ */
+export function freshMerge(was: readonly FreshCoin[], read: readonly FreshCoin[], max: number): FreshCoin[] {
+  const answered = new Set(read.map((coin) => coin.id));
+  const out = new Set(read.filter((coin) => coin.out).map((coin) => coin.id));
+  const before = new Map(was.map((coin) => [coin.id, coin]));
+  const merged = new Map<string, FreshCoin>();
+  for (const coin of read) {
+    if (out.has(coin.id)) continue;
+    const same = merged.get(coin.id);
+    merged.set(coin.id, same ? filled(same, coin) : coin);
+  }
+  const records = [...merged.values()].map((coin) => {
+    const had = before.get(coin.id);
+    return had ? filled(coin, had) : coin;
+  });
+  const now = showcase(records.sort(byAge), (coin) => ({ ...coin, kept: coin.mint === 'on' || coin.freeze === 'on' }), max);
+  return showcase([...now, ...was.filter((coin) => !answered.has(coin.id))].sort(byAge), (coin) => coin, max);
+}
+
+/** A ticker as a key beside the addresses a list leaves out: «$NWI» and «nwi» are one; no address starts with «$». */
+export const tickerKey = (symbol: string): string => `$${symbol.trim().replace(/^\$+/, '').toUpperCase()}`;
+
+/**
+ * What the market's new coins leave out beside the launches on Ryntra: every launch Ryntra took down
+ * or launched as its own test — wherever it is listed —, and, where the launches on Ryntra stand above the list (a phone),
+ * the ones shown there, by address and by ticker, so no coin stands twice.
+ */
+export function freshSkip(rows: readonly Readonly<{ token: string; symbol: string; hidden?: true; technicalValidation: boolean }>[], shown: readonly Readonly<{ token: string; symbol: string }>[] | null): ReadonlySet<string> {
+  const skip = new Set<string>();
+  for (const row of rows) if (row.hidden || row.technicalValidation) skip.add(row.token);
+  for (const row of shown ?? []) {
+    skip.add(row.token);
+    skip.add(tickerKey(row.symbol));
+  }
+  return skip;
+}
+
 /** What the Launch screen reads of a new coin to decide whether it stands in its lists. */
 export type Showcased = Readonly<{ symbol: string; name: string; icon: string | null; mcap: number | null; holders?: number | null; kept?: boolean }>;
 
@@ -142,14 +285,54 @@ export const SHOWCASE_HOLDERS = 5;
 /** The least market cap, dollars, of a coin the showcase shows: below it a coin is a test nobody bought. */
 export const SHOWCASE_MCAP_USD = 1_000;
 
-/* Names the showcase leaves out as borrowed beside the form's own list: a game, a studio, an assistant, an «official», a
-   politician's slogan, a tech company. */
-const BORROWED = ['gta', 'grandtheftauto', 'theftauto', 'leonida', 'vicecity', 'rockstar', 'nintendo', 'mario', 'yoshi', 'pikachu', 'pokemon', 'claude', 'openai', 'chatgpt', 'intel', 'nvidia', 'tesla', 'spacex', 'official', 'maga', 'wwgwga', 'weknowthetruth'];
+/* Names the showcase leaves out as borrowed beside the form's own list, anywhere inside a word of the ticker or the name
+   («SUPERGROK», «GTAVI», «BASEDCLAWD» — never across two words: «Frog Tank» is not «gta», «Puma Gang» not «maga»): a game,
+   its studio and its people, an assistant («clawd» — EYES 19.11), an «official», a politician's slogan, a company. */
+const BORROWED = ['gta', 'leonida', 'rockstar', 'nintendo', 'mario', 'yoshi', 'pikachu', 'pokemon', 'claude', 'clawd', 'grok', 'intel', 'nvidia', 'broadcom', 'sandisk', 'hynix', 'tesla', 'neuralink', 'anduril', 'microstrategy', 'nasdaq', 'proshares', 'polymarket', 'kalshi', 'official', 'maga', 'wwgwga'];
+/* Ordinary words that hold a borrowed one: «Grokking Cat», «Clawdia». */
+const BORROWED_NOT = /grokk|clawdia/g;
+/* Names of several words, borrowed across them within the ticker or the name: «Grand Theft Auto», «Take-Two», «Open AI». */
+const BORROWED_SPAN = ['grandtheftauto', 'theftauto', 'vicecity', 'taketwo', 'carljohnson', 'doctordoom', 'advancedmicro', 'openai', 'chatgpt', 'spacex', 'weknowthetruth'];
+/* Borrowed only as a word of its own, or with a meme word glued on («JUPITERDOG», «ZELLEPAY»), being part of ordinary
+   words too: a game's heroine («Lucia's Feet» in the feed of 17.11 — never «Lucian»), a payment brand («ZelleUSD» — never
+   «Gazelle»), a partner's name, a trader's, a camera, a studio, a stock issuer. */
+const BORROWED_WORDS: readonly string[] = ['lucia', 'zelle', 'jupiter', 'ansem', 'gopro', 'marvel', 'ondo'];
+const MEME_AFFIXES: ReadonlySet<string> = new Set(['coin', 'token', 'inu', 'dog', 'cat', 'ai', 'pay', 'sol', 'x', 'baby', 'pepe', 'bot', 'fi']);
 /* «Grand … Auto», whatever stands between. */
 const BORROWED_GAME = /grand\p{L}{0,12}auto/u;
+/* Not a coin someone launched, as its name says it where the source did not: a company's share on the chain («Apple
+   xStock», «Kalshi PreStocks», «Snap - Backpack Securities», «SpaceX (Ondo Tokenized)») — never «Six Stocks» — or a coin of
+   another chain wrapped («Wrapped NEAR», ticker «wNEAR») — never «Gift Wrapped». */
+const NOT_A_LAUNCH = /(?:^|[\s(-])(?:x|pre)stocks?\b|\bsecurities\b|\btokenized\b|\((?:sollet|wormhole|portal|allbridge)\b/i;
+const WRAPPED = (coin: Showcased) => /^wrapped\s/i.test(coin.name.trim()) && /^w[a-z0-9]{2,5}$/i.test(coin.symbol.trim());
+/* A dollar at the ticker's end, with at most one sign after it, is a stablecoin («ZLUSD», «JupUSD», «USDG», «sUSDe»,
+   «syrupUSDC»), and so is a euro's («EURC») — never «BUSDRIVER», «USDUCK». */
+const STABLE_TICKER = /usd[a-z0-9]?$|^\$?eur[ct]?$/i;
 
 /* Names that are a test or an advert, never a coin: «test», «awd awd», «asdf», «Sponsored». */
 const JUNK = /^(?:test(?:ing)?\d*|awd(?:\s*awd)*|asdf+|qwe(?:rty)?|sponsored|promo|ad|scam|rug|honeypot|airdrop)$/i;
+/* An advert anywhere in the name: a casino's token («1win Token» in the feed of 17.11). */
+const ADVERT = /\b1\s?win\b|casino/i;
+
+/** A name's words, lower case: split on what is not a letter and on camel case («ZelleUSD» → «zelle», «usd»). */
+const wordsOf = (text: string): string[] =>
+  text
+    .replace(/(\p{Ll})(\p{Lu})/gu, '$1 $2')
+    .toLowerCase()
+    .split(/[^\p{L}]+/u)
+    .filter(Boolean);
+
+/** A name's words as written, lower case: split on what is not a letter only («SanDisk» → «sandisk»). */
+const plainWordsOf = (text: string): string[] => text.toLowerCase().split(/[^\p{L}]+/u).filter(Boolean);
+
+/** A word that is the brand, or the brand with meme words glued on either side («jupiterdog», «babyzelle»). */
+function wordIs(word: string, brand: string): boolean {
+  if (word === brand) return true;
+  const at = word.indexOf(brand);
+  if (at < 0) return false;
+  const glued = (rest: string) => rest === '' || MEME_AFFIXES.has(rest) || [...MEME_AFFIXES].some((affix) => rest.startsWith(affix) && MEME_AFFIXES.has(rest.slice(affix.length)));
+  return glued(word.slice(0, at)) && glued(word.slice(at + brand.length));
+}
 
 /**
  * Whether a new coin stands in the Launch screen's lists: the screen shows what a launch looks like beside the
@@ -163,11 +346,19 @@ export function showcased(coin: Showcased): boolean {
   if (coin.holders !== undefined && (coin.holders ?? 0) < SHOWCASE_HOLDERS) return false;
   // A ticker of signs or figures alone («******», «34%») or a test or an advert is not a coin to show.
   if ((coin.symbol.match(/\p{L}/gu) ?? []).length < 2) return false;
-  if (JUNK.test(coin.symbol.trim().replace(/^\$+/, '')) || JUNK.test(coin.name.trim())) return false;
+  if (JUNK.test(coin.symbol.trim().replace(/^\$+/, '')) || JUNK.test(coin.name.trim()) || ADVERT.test(`${coin.symbol} ${coin.name}`)) return false;
+  // A stablecoin, a company's share or a wrapped coin is not a launch.
+  if (STABLE_TICKER.test(coin.symbol.trim()) || NOT_A_LAUNCH.test(coin.name) || WRAPPED(coin)) return false;
   if (rudeName(coin.symbol, coin.name)) return false;
-  // Borrowed anywhere in the name — here a false match only hides a coin.
-  const glued = `${coin.symbol} ${coin.name}`.toLowerCase().replace(/[^\p{L}]+/gu, '');
-  if (BORROWED.some((word) => glued.includes(word)) || BORROWED_GAME.test(glued)) return false;
+  // Borrowed in the ticker or the name — here a false match only hides a coin.
+  for (const field of [coin.symbol, coin.name]) {
+    const glued = field.toLowerCase().replace(/[^\p{L}]+/gu, '');
+    if (BORROWED_SPAN.some((name) => glued.includes(name)) || BORROWED_GAME.test(glued)) return false;
+  }
+  // Inside a word as it is written («SanDisk», «GoPro» stay one word here), and a short brand also as camel case splits it.
+  const plain = [...plainWordsOf(coin.symbol), ...plainWordsOf(coin.name)];
+  if (plain.some((word) => BORROWED.some((name) => word.replace(BORROWED_NOT, '').includes(name)))) return false;
+  if ([...plain, ...wordsOf(coin.symbol), ...wordsOf(coin.name)].some((word) => BORROWED_WORDS.some((brand) => wordIs(word, brand)))) return false;
   return launchNameHits({ name: coin.name, symbol: coin.symbol }).length === 0;
 }
 

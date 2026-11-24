@@ -1,9 +1,9 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync, readdirSync, statSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
-import { join } from "node:path";
+import { join, sep } from "node:path";
 
 /**
  * The gate that would have caught what reached the founder.
@@ -91,6 +91,15 @@ const CORE_TOKENS = [createRequire(import.meta.url).resolve("@ryntra/core/tokens
 const TERMINAL_ROOT = fileURLToPath(new URL("../../../../terminal/styles/terminal.module.css", import.meta.url));
 const ON_TERMINAL_ROOT = [join("app", "docs", "_book"), join("app", "roadmap"), join("app", "legal", "_view")];
 const TERMINAL_TOKENS = new Set([...readFileSync(TERMINAL_ROOT, "utf8").replace(/\/\*[\s\S]*?\*\//g, "").matchAll(/(?<!var\(\s*)(--[a-zA-Z0-9_-]+)\s*:/g)].map((m) => m[1]));
+
+/* `/build` stands in the city's frame: `app/build/page.tsx` wraps the page in the city
+   root (`city/styles/city.module.css`, `.root` — the palette and the type scale), and its sheet paints with that root's
+   tokens. Those references resolve there — only the tokens the `.root` block itself defines, only for that page — and a
+   test below holds the page inside the root, so the allowance cannot outlive the frame. */
+const CITY_ROOT = fileURLToPath(new URL("../../../../city/styles/city.module.css", import.meta.url));
+const ON_CITY_ROOT = [join("app", "build")];
+const CITY_ROOT_BLOCK = /^\.root\s*\{([\s\S]*?)^\}/m.exec(readFileSync(CITY_ROOT, "utf8").replace(/\/\*[\s\S]*?\*\//g, ""))?.[1] ?? "";
+const CITY_TOKENS = new Set([...CITY_ROOT_BLOCK.matchAll(/(?<!var\(\s*)(--[a-zA-Z0-9_-]+)\s*:/g)].map((m) => m[1]));
 const SOURCES = walk(ROOT, (name) => name.endsWith(".ts") || name.endsWith(".tsx"));
 
 /** CSS comments are prose. A regex cannot tell the difference, so they go first. */
@@ -128,6 +137,7 @@ function sweep() {
     for (const [, token] of css.matchAll(CSS_DEFINITION)) defined.add(token);
     for (const [, token] of css.matchAll(REFERENCE)) {
       if (TERMINAL_TOKENS.has(token) && ON_TERMINAL_ROOT.some((dir) => file.includes(dir))) continue;
+      if (CITY_TOKENS.has(token) && ON_CITY_ROOT.some((dir) => file.startsWith(dir + sep))) continue;
       if (!referenced.has(token)) referenced.set(token, new Set());
       referenced.get(token).add(file);
     }
@@ -189,5 +199,17 @@ test("the sweep actually looked at something", () => {
       !defined.has(retired),
       `${retired} is defined again. It was never a token; the real names are --border and --text-faint.`,
     );
+  }
+});
+
+test("a page that paints with the city root's tokens stands inside that root", () => {
+  /* The allowance above is true only while the page is wrapped in the city's root: the day it leaves the frame, its
+     sheet's references resolve nowhere, and this is what says so. */
+  assert.ok(CITY_TOKENS.has("--ice") && CITY_TOKENS.has("--type-body"), "the city root's own tokens were read");
+  /* A copy of the code without such a page (the public snapshot leaves `app/build` out) has nothing here to hold. */
+  for (const dir of ON_CITY_ROOT.filter((d) => existsSync(join(d, "page.tsx")))) {
+    const page = readFileSync(join(dir, "page.tsx"), "utf8");
+    assert.match(page, /^import city from "@\/city\/styles\/city\.module\.css";$/m, `${dir}/page.tsx loads the city's root`);
+    assert.match(page, /<div className=\{`\$\{city\.root\}[^`]*`\}/, `${dir}/page.tsx stands its page inside the city's root`);
   }
 });

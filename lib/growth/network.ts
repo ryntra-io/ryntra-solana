@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { isoDateTime } from "../zod/iso-datetime.ts";
 
 import {
   NETWORK_DAY_MS,
@@ -69,7 +70,7 @@ export const FOUNDING_KEY = "seats" as const;
 
 const SOLANA_ADDRESS = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
 const SIGNED = /^(?:0|-?[1-9][0-9]*)$/;
-const AT = z.string().datetime({ offset: true });
+const AT = isoDateTime({ offset: true });
 
 export const NETWORK_ENTRY_KINDS = ["EARNED", "REVERSAL", "CORRECTION"] as const;
 export type NetworkEntryKind = (typeof NETWORK_ENTRY_KINDS)[number];

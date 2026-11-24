@@ -1,0 +1,636 @@
+{
+ "note": "A stock's pools as the engine's reads answer them, for the tests and the stand. Recorded on the live read of 19.11.2026 (docs/research/meteora-full-2026-11-19/REPORT.md §4.1): ANT, its DLMM depths ($799K, $547K, $493K against USDC; $452K, $56K against SOL), the first ANT/USDC pool's address, bin step 20, fee 0.8 % and $2.4M day; the DLMM Pro pool ANT/SOL Cuwq452D… (static, fee 0.80 %, depth $1,554) and its ladder (placing, the owner's bonus 0.32 %). Everything else is a stand value, not a reading: the other pools' addresses (…Stand…), their volumes and steps, the DLMM Pro pool's day, TSLAx's pools, and the pools the shelf must leave out (a USDC on another mint, a blacklisted pool, dust, a test coin, an empty pool, another mint's pool).",
+ "ant": {
+  "mint": "ANTBTZQ1EUuTxUs3tfeampxdqTWPHmwyJmcWj4xoAyNe",
+  "symbol": "ANT",
+  "dlmmPage": {
+   "total": 8,
+   "pages": 1,
+   "current_page": 0,
+   "page_size": 120,
+   "data": [
+    {
+     "address": "8GTCUyGQsVNq7cdWEszyNb6w9uiUo727BdGu6v7UmpdX",
+     "name": "ANT-USDC",
+     "token_x": {
+      "address": "ANTBTZQ1EUuTxUs3tfeampxdqTWPHmwyJmcWj4xoAyNe",
+      "name": "Anthropic - Backpack Securities",
+      "symbol": "ANT",
+      "decimals": 6,
+      "is_verified": true,
+      "price": 95.43
+     },
+     "token_y": {
+      "address": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+      "name": "USD Coin",
+      "symbol": "USDC",
+      "decimals": 6,
+      "is_verified": true,
+      "price": 0.9999
+     },
+     "pool_config": {
+      "bin_step": 20,
+      "base_fee_pct": 0.8,
+      "max_fee_pct": 0.0,
+      "protocol_fee_pct": 5.0,
+      "collect_fee_mode": 0
+     },
+     "dynamic_fee_pct": 0.0,
+     "tvl": 799000,
+     "current_price": null,
+     "volume": {
+      "24h": 2400000
+     },
+     "fees": {
+      "24h": 19200.0
+     },
+     "is_blacklisted": false,
+     "created_at": 1795000000000,
+     "launchpad": "",
+     "tags": []
+    },
+    {
+     "address": "AntUsdcStand22222222222222222222222222222222",
+     "name": "ANT-USDC",
+     "token_x": {
+      "address": "ANTBTZQ1EUuTxUs3tfeampxdqTWPHmwyJmcWj4xoAyNe",
+      "name": "Anthropic - Backpack Securities",
+      "symbol": "ANT",
+      "decimals": 6,
+      "is_verified": true,
+      "price": 95.43
+     },
+     "token_y": {
+      "address": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+      "name": "USD Coin",
+      "symbol": "USDC",
+      "decimals": 6,
+      "is_verified": true,
+      "price": 0.9999
+     },
+     "pool_config": {
+      "bin_step": 50,
+      "base_fee_pct": 0.5,
+      "max_fee_pct": 0.0,
+      "protocol_fee_pct": 5.0,
+      "collect_fee_mode": 0
+     },
+     "dynamic_fee_pct": 0.0,
+     "tvl": 547000,
+     "current_price": null,
+     "volume": {
+      "24h": 610000
+     },
+     "fees": {
+      "24h": 3050.0
+     },
+     "is_blacklisted": false,
+     "created_at": 1795000000000,
+     "launchpad": "",
+     "tags": []
+    },
+    {
+     "address": "AntUsdcStand33333333333333333333333333333333",
+     "name": "ANT-USDC",
+     "token_x": {
+      "address": "ANTBTZQ1EUuTxUs3tfeampxdqTWPHmwyJmcWj4xoAyNe",
+      "name": "Anthropic - Backpack Securities",
+      "symbol": "ANT",
+      "decimals": 6,
+      "is_verified": true,
+      "price": 95.43
+     },
+     "token_y": {
+      "address": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+      "name": "USD Coin",
+      "symbol": "USDC",
+      "decimals": 6,
+      "is_verified": true,
+      "price": 0.9999
+     },
+     "pool_config": {
+      "bin_step": 100,
+      "base_fee_pct": 1.0,
+      "max_fee_pct": 0.0,
+      "protocol_fee_pct": 5.0,
+      "collect_fee_mode": 0
+     },
+     "dynamic_fee_pct": 0.0,
+     "tvl": 493000,
+     "current_price": null,
+     "volume": {
+      "24h": 402000
+     },
+     "fees": {
+      "24h": 4020.0
+     },
+     "is_blacklisted": false,
+     "created_at": 1795000000000,
+     "launchpad": "",
+     "tags": []
+    },
+    {
+     "address": "AntSoLStand444444444444444444444444444444444",
+     "name": "ANT-SOL",
+     "token_x": {
+      "address": "ANTBTZQ1EUuTxUs3tfeampxdqTWPHmwyJmcWj4xoAyNe",
+      "name": "Anthropic - Backpack Securities",
+      "symbol": "ANT",
+      "decimals": 6,
+      "is_verified": true,
+      "price": 95.43
+     },
+     "token_y": {
+      "address": "So11111111111111111111111111111111111111112",
+      "name": "Wrapped SOL",
+      "symbol": "SOL",
+      "decimals": 9,
+      "is_verified": true,
+      "price": 132.1
+     },
+     "pool_config": {
+      "bin_step": 80,
+      "base_fee_pct": 0.8,
+      "max_fee_pct": 0.0,
+      "protocol_fee_pct": 5.0,
+      "collect_fee_mode": 0
+     },
+     "dynamic_fee_pct": 0.0,
+     "tvl": 452000,
+     "current_price": null,
+     "volume": {
+      "24h": 388000
+     },
+     "fees": {
+      "24h": 3104.0
+     },
+     "is_blacklisted": false,
+     "created_at": 1795000000000,
+     "launchpad": "",
+     "tags": []
+    },
+    {
+     "address": "AntSoLStand555555555555555555555555555555555",
+     "name": "ANT-SOL",
+     "token_x": {
+      "address": "ANTBTZQ1EUuTxUs3tfeampxdqTWPHmwyJmcWj4xoAyNe",
+      "name": "Anthropic - Backpack Securities",
+      "symbol": "ANT",
+      "decimals": 6,
+      "is_verified": true,
+      "price": 95.43
+     },
+     "token_y": {
+      "address": "So11111111111111111111111111111111111111112",
+      "name": "Wrapped SOL",
+      "symbol": "SOL",
+      "decimals": 9,
+      "is_verified": true,
+      "price": 132.1
+     },
+     "pool_config": {
+      "bin_step": 100,
+      "base_fee_pct": 1.0,
+      "max_fee_pct": 0.0,
+      "protocol_fee_pct": 5.0,
+      "collect_fee_mode": 0
+     },
+     "dynamic_fee_pct": 0.0,
+     "tvl": 56000,
+     "current_price": null,
+     "volume": {
+      "24h": 21000
+     },
+     "fees": {
+      "24h": 210.0
+     },
+     "is_blacklisted": false,
+     "created_at": 1795000000000,
+     "launchpad": "",
+     "tags": []
+    },
+    {
+     "address": "AntFakeUsdcStand6666666666666666666666666666",
+     "name": "ANT-USDC",
+     "token_x": {
+      "address": "ANTBTZQ1EUuTxUs3tfeampxdqTWPHmwyJmcWj4xoAyNe",
+      "name": "Anthropic - Backpack Securities",
+      "symbol": "ANT",
+      "decimals": 6,
+      "is_verified": true,
+      "price": 95.43
+     },
+     "token_y": {
+      "address": "FakeUsdcMintStand777777777777777777777777777",
+      "name": "USD Coin",
+      "symbol": "USDC",
+      "decimals": 6,
+      "is_verified": false,
+      "price": 1.0
+     },
+     "pool_config": {
+      "bin_step": 20,
+      "base_fee_pct": 0.5,
+      "max_fee_pct": 0.0,
+      "protocol_fee_pct": 5.0,
+      "collect_fee_mode": 0
+     },
+     "dynamic_fee_pct": 0.0,
+     "tvl": 88000,
+     "current_price": null,
+     "volume": {
+      "24h": 90000
+     },
+     "fees": {
+      "24h": 450.0
+     },
+     "is_blacklisted": false,
+     "created_at": 1795000000000,
+     "launchpad": "",
+     "tags": []
+    },
+    {
+     "address": "AntBadStand888888888888888888888888888888888",
+     "name": "ANT-USDC",
+     "token_x": {
+      "address": "ANTBTZQ1EUuTxUs3tfeampxdqTWPHmwyJmcWj4xoAyNe",
+      "name": "Anthropic - Backpack Securities",
+      "symbol": "ANT",
+      "decimals": 6,
+      "is_verified": true,
+      "price": 95.43
+     },
+     "token_y": {
+      "address": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+      "name": "USD Coin",
+      "symbol": "USDC",
+      "decimals": 6,
+      "is_verified": true,
+      "price": 0.9999
+     },
+     "pool_config": {
+      "bin_step": 20,
+      "base_fee_pct": 0.5,
+      "max_fee_pct": 0.0,
+      "protocol_fee_pct": 5.0,
+      "collect_fee_mode": 0
+     },
+     "dynamic_fee_pct": 0.0,
+     "tvl": 64000,
+     "current_price": null,
+     "volume": {
+      "24h": 5000
+     },
+     "fees": {
+      "24h": 25.0
+     },
+     "is_blacklisted": true,
+     "created_at": 1795000000000,
+     "launchpad": "",
+     "tags": []
+    },
+    {
+     "address": "AntDustStand99999999999999999999999999999999",
+     "name": "ANT-SOL",
+     "token_x": {
+      "address": "ANTBTZQ1EUuTxUs3tfeampxdqTWPHmwyJmcWj4xoAyNe",
+      "name": "Anthropic - Backpack Securities",
+      "symbol": "ANT",
+      "decimals": 6,
+      "is_verified": true,
+      "price": 95.43
+     },
+     "token_y": {
+      "address": "So11111111111111111111111111111111111111112",
+      "name": "Wrapped SOL",
+      "symbol": "SOL",
+      "decimals": 9,
+      "is_verified": true,
+      "price": 132.1
+     },
+     "pool_config": {
+      "bin_step": 20,
+      "base_fee_pct": 0.5,
+      "max_fee_pct": 0.0,
+      "protocol_fee_pct": 5.0,
+      "collect_fee_mode": 0
+     },
+     "dynamic_fee_pct": 0.0,
+     "tvl": 40,
+     "current_price": null,
+     "volume": {
+      "24h": 0
+     },
+     "fees": {
+      "24h": 0.0
+     },
+     "is_blacklisted": false,
+     "created_at": 1795000000000,
+     "launchpad": "",
+     "tags": []
+    }
+   ]
+  },
+  "pro": [
+   {
+    "address": "Cuwq452DQpCoti14YML8f8WMCeahTDt1T5hnC75Vcu8N",
+    "kind": "static",
+    "x": {
+     "mint": "ANTBTZQ1EUuTxUs3tfeampxdqTWPHmwyJmcWj4xoAyNe",
+     "symbol": "ANT",
+     "name": "Anthropic - Backpack Securities",
+     "decimals": 6,
+     "icon": null,
+     "verified": true,
+     "usd": 95.43
+    },
+    "y": {
+     "mint": "So11111111111111111111111111111111111111112",
+     "symbol": "SOL",
+     "name": "Solana",
+     "decimals": 9,
+     "icon": null,
+     "verified": true,
+     "usd": 132.1
+    },
+    "price": 0.7224,
+    "tickSpacing": 64,
+    "stepBps": 64,
+    "fee": {
+     "totalBps": 80,
+     "baseBps": 80,
+     "dynamicBps": 0,
+     "mode": "fixed",
+     "protocolShareBps": 2000,
+     "collectedIn": "output"
+    },
+    "bonusBps": 32,
+    "reserves": {
+     "xRaw": "0",
+     "yRaw": "0"
+    },
+    "tvlUsd": 1554,
+    "rewards": 0,
+    "open": {
+     "swap": true,
+     "deposits": true
+    }
+   },
+   {
+    "address": "AntTestProStand22222222222222222222222222222",
+    "kind": "static",
+    "x": {
+     "mint": "ANTBTZQ1EUuTxUs3tfeampxdqTWPHmwyJmcWj4xoAyNe",
+     "symbol": "ANT",
+     "name": "Anthropic - Backpack Securities",
+     "decimals": 6,
+     "icon": null,
+     "verified": true,
+     "usd": 95.43
+    },
+    "y": {
+     "mint": "TestCoinStand2222222222222222222222222222222",
+     "symbol": "TEST",
+     "name": "Test token",
+     "decimals": 6,
+     "icon": null,
+     "verified": null,
+     "usd": 0.01
+    },
+    "price": 1000.0,
+    "tickSpacing": 64,
+    "stepBps": 64,
+    "fee": {
+     "totalBps": 100,
+     "baseBps": 100,
+     "dynamicBps": 0,
+     "mode": "fixed",
+     "protocolShareBps": 2000,
+     "collectedIn": "output"
+    },
+    "bonusBps": 40,
+    "reserves": {
+     "xRaw": "0",
+     "yRaw": "0"
+    },
+    "tvlUsd": 2200,
+    "rewards": 0,
+    "open": {
+     "swap": true,
+     "deposits": true
+    }
+   },
+   {
+    "address": "AntEmptyProStand3333333333333333333333333333",
+    "kind": "static",
+    "x": {
+     "mint": "ANTBTZQ1EUuTxUs3tfeampxdqTWPHmwyJmcWj4xoAyNe",
+     "symbol": "ANT",
+     "name": "Anthropic - Backpack Securities",
+     "decimals": 6,
+     "icon": null,
+     "verified": true,
+     "usd": 95.43
+    },
+    "y": {
+     "mint": "So11111111111111111111111111111111111111112",
+     "symbol": "SOL",
+     "name": "Solana",
+     "decimals": 9,
+     "icon": null,
+     "verified": true,
+     "usd": 132.1
+    },
+    "price": 0.7224,
+    "tickSpacing": 64,
+    "stepBps": 64,
+    "fee": {
+     "totalBps": 80,
+     "baseBps": 80,
+     "dynamicBps": 0,
+     "mode": "fixed",
+     "protocolShareBps": 2000,
+     "collectedIn": "output"
+    },
+    "bonusBps": 32,
+    "reserves": {
+     "xRaw": "0",
+     "yRaw": "0"
+    },
+    "tvlUsd": 0,
+    "rewards": 0,
+    "open": {
+     "swap": true,
+     "deposits": true
+    }
+   },
+   {
+    "address": "PreSoLProStand444444444444444444444444444444",
+    "kind": "static",
+    "x": {
+     "mint": "Pren1FvFX6J3E4kXhJuCiAD5aDmGEb7qJRncwA8Lkhw",
+     "symbol": "ANTHROPIC",
+     "name": "Anthropic (PreStocks)",
+     "decimals": 9,
+     "icon": null,
+     "verified": true,
+     "usd": 1100.0
+    },
+    "y": {
+     "mint": "So11111111111111111111111111111111111111112",
+     "symbol": "SOL",
+     "name": "Solana",
+     "decimals": 9,
+     "icon": null,
+     "verified": true,
+     "usd": 132.1
+    },
+    "price": 8.3,
+    "tickSpacing": 64,
+    "stepBps": 64,
+    "fee": {
+     "totalBps": 80,
+     "baseBps": 80,
+     "dynamicBps": 0,
+     "mode": "fixed",
+     "protocolShareBps": 2000,
+     "collectedIn": "output"
+    },
+    "bonusBps": 32,
+    "reserves": {
+     "xRaw": "0",
+     "yRaw": "0"
+    },
+    "tvlUsd": 0.3,
+    "rewards": 0,
+    "open": {
+     "swap": true,
+     "deposits": true
+    }
+   }
+  ],
+  "states": {
+   "step": {
+    "running": false,
+    "startedAgo": 20000,
+    "endedAgo": 5000
+   },
+   "pools": [
+    {
+     "pool": "Cuwq452DQpCoti14YML8f8WMCeahTDt1T5hnC75Vcu8N",
+     "writtenAgo": 30000,
+     "summary": {
+      "stats": {
+       "whole": false,
+       "volume": {
+        "coinRaw": "0",
+        "quoteRaw": "0",
+        "usd": 186.4
+       }
+      }
+     }
+    }
+   ]
+  },
+  "ladder": {
+   "pool": "Cuwq452DQpCoti14YML8f8WMCeahTDt1T5hnC75Vcu8N",
+   "ownerBps": 32,
+   "placing": true
+  }
+ },
+ "tsla": {
+  "mint": "XsDoVfqeBukxuZHWhdvWHBhgEHjGNst4MLodqsJHzoB",
+  "symbol": "TSLAx",
+  "dlmmPage": {
+   "total": 2,
+   "pages": 1,
+   "current_page": 0,
+   "page_size": 120,
+   "data": [
+    {
+     "address": "TsLAUsdcStand2222222222222222222222222222222",
+     "name": "TSLAx-USDC",
+     "token_x": {
+      "address": "XsDoVfqeBukxuZHWhdvWHBhgEHjGNst4MLodqsJHzoB",
+      "name": "Tesla xStock",
+      "symbol": "TSLAx",
+      "decimals": 8,
+      "is_verified": true,
+      "price": 402.18
+     },
+     "token_y": {
+      "address": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+      "name": "USD Coin",
+      "symbol": "USDC",
+      "decimals": 6,
+      "is_verified": true,
+      "price": 0.9999
+     },
+     "pool_config": {
+      "bin_step": 10,
+      "base_fee_pct": 0.25,
+      "max_fee_pct": 0.0,
+      "protocol_fee_pct": 5.0,
+      "collect_fee_mode": 0
+     },
+     "dynamic_fee_pct": 0.004,
+     "tvl": 212000,
+     "current_price": null,
+     "volume": {
+      "24h": 380000
+     },
+     "fees": {
+      "24h": 965.2
+     },
+     "is_blacklisted": false,
+     "created_at": 1790000000000,
+     "launchpad": "",
+     "tags": []
+    },
+    {
+     "address": "TsLASoLStand33333333333333333333333333333333",
+     "name": "TSLAx-SOL",
+     "token_x": {
+      "address": "XsDoVfqeBukxuZHWhdvWHBhgEHjGNst4MLodqsJHzoB",
+      "name": "Tesla xStock",
+      "symbol": "TSLAx",
+      "decimals": 8,
+      "is_verified": true,
+      "price": 402.18
+     },
+     "token_y": {
+      "address": "So11111111111111111111111111111111111111112",
+      "name": "Wrapped SOL",
+      "symbol": "SOL",
+      "decimals": 9,
+      "is_verified": true,
+      "price": 132.1
+     },
+     "pool_config": {
+      "bin_step": 25,
+      "base_fee_pct": 0.4,
+      "max_fee_pct": 0.0,
+      "protocol_fee_pct": 5.0,
+      "collect_fee_mode": 0
+     },
+     "dynamic_fee_pct": 0.0,
+     "tvl": 31000,
+     "current_price": null,
+     "volume": {
+      "24h": 22000
+     },
+     "fees": {
+      "24h": 88.0
+     },
+     "is_blacklisted": false,
+     "created_at": 1790000000000,
+     "launchpad": "",
+     "tags": []
+    }
+   ]
+  },
+  "pro": [],
+  "states": null,
+  "ladder": null
+ }
+}

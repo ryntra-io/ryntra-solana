@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { isoDateTime } from "../zod/iso-datetime.ts";
 
 import type { WalletClusters } from "../city-economy/honest-count.ts";
 import type { GuardStore } from "../guard/store.ts";
@@ -33,7 +34,7 @@ import { caseOf, walletSubject } from "./review.ts";
 
 export const REFERRAL_PAIR_COLLECTION = "rewardReferralPairs" as const;
 
-const AT = z.string().datetime({ offset: true });
+const AT = isoDateTime({ offset: true });
 
 export const ReferralPairSchema = z
   .object({

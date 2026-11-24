@@ -47,6 +47,8 @@ import type { CurveRuleSet } from "../core/launch/curve-rules.ts";
 import { feeShareProblems, typedSharesOpenOn, type FeeShare } from "../core/launch/fee-shares.ts";
 import { isCrewPreset } from "../core/launch/crew.ts";
 import { quoteAssetRefusalWords } from "../core/launch/quote-asset.ts";
+import { stockPairOpen } from "../core/launch/stock-pair.ts";
+import { dbcSdkOf, dbcTokenBadgeAddress } from "../core/venues/meteora-dbc/sdk.server.ts";
 import { crewSharesFor, holdCrew, releaseCrew } from "./crew.server.ts";
 import type { GuardStore } from "../guard/store.ts";
 import { launchKey } from "./record-key.ts";
@@ -60,7 +62,7 @@ import { signTransaction, type LaunchSigner } from "./signer/signer.server.ts";
 import { LAUNCHES_PER_CREATOR_PER_DAY, LAUNCHES_PER_HOUR, POOL_PAYER_FLOOR_LAMPORTS, launchPair, launchWritesHere, type LaunchNetwork } from "./config.server.ts";
 import { advancedConfigFor, markAdvancedConfigUsed, returnAdvancedConfig, takeAdvancedConfig } from "./advanced.server.ts";
 import { checkLaunchForm } from "./form.ts";
-import { quoteAssetFor, type QuotePriceReader } from "./quote-asset.server.ts";
+import { quoteAssetFor, type QuotePriceReader, type StockShelfReader } from "./quote-asset.server.ts";
 import { quotePaused } from "./quote-watch.server.ts";
 import { metadataOfUri } from "./metadata.server.ts";
 import { beginLaunchTrade, failLaunchTrade } from "./record.server.ts";
@@ -97,6 +99,8 @@ export type LaunchDeps = Readonly<{
   partners?: PartnerDeps;
   /** Where a checked pair currency's price is read (SOL-L11); absent — Jupiter, as every Ryntra surface prices a token. */
   quotePrice?: QuotePriceReader;
+  /** Where the shelf of checked stocks is read while a stock-paired launch is open; absent — the stocks engine. */
+  stockShelf?: StockShelfReader;
 }>;
 
 export type LaunchFailureCode =
@@ -384,6 +388,8 @@ export async function prepareLaunch(deps: LaunchDeps, input: PrepareInput, conte
 
   /* «Розширений»: the creator's own config, made here for this launch and not yet used. */
   let advanced: AdvancedTerms | null = null;
+  /* The pair currency's token badge, named in the pool's creation while a stock-paired launch is open. */
+  let tokenBadge: string | undefined;
   let configs = deps.network.configs;
   if (preset.id === "advanced") {
     const made = await advancedConfigFor(deps, input.creator, input.advancedConfig ?? "");
@@ -396,13 +402,15 @@ export async function prepareLaunch(deps: LaunchDeps, input: PrepareInput, conte
      * still be the ones checked, or the creator keeps their config and launches nothing on a pair that moved.
      */
     if (advanced.quoteMint !== undefined) {
-      const asset = await quoteAssetFor({ cluster: deps.network.cluster, connection: deps.connection, env: deps.env ?? process.env, now: deps.now, price: deps.quotePrice }, advanced.quoteMint);
+      const asset = await quoteAssetFor({ cluster: deps.network.cluster, connection: deps.connection, env: deps.env ?? process.env, now: deps.now, price: deps.quotePrice, shelf: deps.stockShelf }, advanced.quoteMint);
       if (!asset) return fail("PRESET_UNAVAILABLE", "This pair currency is not one Ryntra checked on this network.");
       if (asset.state !== "OPEN") {
         const why = quoteAssetRefusalWords(asset.problems) || "the pair currency could not be checked now";
         return fail("QUOTE_PAUSED", `A launch in this pair is closed: ${why}. Nothing was built.`);
       }
       pairMint = asset.record.mint;
+      /* The badge is named only for a stock of the shelf; every other pair launches as before. */
+      if (asset.shelf && stockPairOpen(deps.env ?? process.env)) tokenBadge = dbcTokenBadgeAddress(pairMint, dbcSdkOf(deps.env ?? process.env)).toBase58();
     }
   }
   const venue = createMeteoraDbcLaunchVenue({ connection: deps.connection, configs, poolPayer: deps.poolPayer.publicKey.toBase58(), advancedFeeClaimer: deps.network.advanced?.feeClaimer ?? null, curveRules: deps.network.curveRules ?? null });
@@ -419,7 +427,7 @@ export async function prepareLaunch(deps: LaunchDeps, input: PrepareInput, conte
         creatorFirstBuyRaw: input.firstBuyRaw,
         pairMint,
       },
-      { creatorCoversPayer: true, feeShares: shares, ...(input.crew !== undefined || (shares.length > 0 && isCrewPreset(preset.id)) ? { crew: true } : {}), ...(advanced ? { custom: advancedPresetOf(advanced) } : {}) },
+      { creatorCoversPayer: true, feeShares: shares, ...(input.crew !== undefined || (shares.length > 0 && isCrewPreset(preset.id)) ? { crew: true } : {}), ...(advanced ? { custom: advancedPresetOf(advanced) } : {}), ...(tokenBadge ? { tokenBadge } : {}) },
     );
   } catch (error) {
     if (error instanceof LaunchRefusal && error.code === "CREATOR_BUY_ABOVE_CAP") return fail("FIRST_BUY_ABOVE_CAP", "The first purchase is above the preset's cap.");

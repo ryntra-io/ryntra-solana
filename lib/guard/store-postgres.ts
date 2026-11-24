@@ -9,6 +9,9 @@ import {
   type GuardStore,
   type GuardVersionedCollection,
   type GuardVersionedRecord,
+  assertRateCounts,
+  deletablePrefix,
+  prefixLimit,
 } from "./store.ts";
 
 /**
@@ -203,6 +206,67 @@ export function createPostgresGuardStore(options: PostgresGuardStoreOptions): Gu
         await pool.query(`DELETE FROM ${TABLE} WHERE collection = $1 AND key = $2`, [name, key]);
       },
 
+      async deleteWithPrefix(keyPrefix) {
+        assertRateCounts(name);
+        await ensureReady();
+        /* One statement for the whole prefix, escaped as `valuesWithPrefix`
+           escapes it. Two instances deleting the same prefix at once: the
+           second waits on the rows the first locked, finds them gone, and
+           counts none — each row goes once. */
+        const pattern = `${deletablePrefix(keyPrefix).replace(/[\\%_]/g, "\\$&")}%`;
+        const result = await pool.query(
+          `DELETE FROM ${TABLE} WHERE collection = $1 AND key LIKE $2 ESCAPE '\\'`,
+          [name, pattern],
+        );
+        return result.rowCount ?? 0;
+      },
+
+      async countStep(key, step) {
+        assertRateCounts(name);
+        if (!Number.isSafeInteger(step.windowStartMs)) throw new TypeError("A count step needs a whole window start.");
+        await ensureReady();
+        /* One statement each way, so the row lock decides the race and no
+           caller ever retries: the same rule as `nextCount`. Up: insert the
+           count at one, or on the existing row add one — start over at one
+           when it names another window — only while it is below the limit; a
+           row at the limit is left as it is and nothing comes back. Down: one
+           less only in that window and above zero. A value that is no count
+           fails its cast and the statement throws. */
+        if (step.by === 1) {
+          if (!Number.isSafeInteger(step.limit) || step.limit < 1) return null;
+          const result = await pool.query<{ used: string }>(
+            `INSERT INTO ${TABLE} (collection, key, value)
+             VALUES ($1, $2::text, jsonb_build_object('version', 0, 'windowStartMs', $3::bigint, 'used', 1, 'key', $2::text))
+             ON CONFLICT (collection, key) DO UPDATE SET
+               value = jsonb_build_object(
+                 'version', COALESCE((${TABLE}.value->>'version')::bigint, 0) + 1,
+                 'windowStartMs', $3::bigint,
+                 'used', CASE WHEN (${TABLE}.value->>'windowStartMs')::bigint = $3::bigint
+                              THEN (${TABLE}.value->>'used')::bigint + 1 ELSE 1 END,
+                 'key', $2::text),
+               updated_at = now()
+             WHERE (${TABLE}.value->>'windowStartMs')::bigint IS DISTINCT FROM $3::bigint
+                OR (${TABLE}.value->>'used')::bigint < $4::bigint
+             RETURNING value->>'used' AS used`,
+            [name, key, step.windowStartMs, step.limit],
+          );
+          return result.rows.length ? Number(result.rows[0].used) : null;
+        }
+        const result = await pool.query<{ used: string }>(
+          `UPDATE ${TABLE} SET
+             value = jsonb_set(
+               jsonb_set(value, '{used}', to_jsonb((value->>'used')::bigint - 1)),
+               '{version}', to_jsonb(COALESCE((value->>'version')::bigint, 0) + 1)),
+             updated_at = now()
+           WHERE collection = $1 AND key = $2
+             AND (value->>'windowStartMs')::bigint = $3::bigint
+             AND (value->>'used')::bigint > 0
+           RETURNING value->>'used' AS used`,
+          [name, key, step.windowStartMs],
+        );
+        return result.rows.length ? Number(result.rows[0].used) : null;
+      },
+
       async has(key) {
         await ensureReady();
         const result = await pool.query(
@@ -212,16 +276,19 @@ export function createPostgresGuardStore(options: PostgresGuardStoreOptions): Gu
         return (result.rowCount ?? 0) > 0;
       },
 
-      async valuesWithPrefix(keyPrefix) {
+      async valuesWithPrefix(keyPrefix, options) {
         await ensureReady();
         /* `like_escape` keeps a tenant id containing % or _ from widening the
            scan into another tenant's rows. Ordering by insertion keeps
-           "latest wins" readers deterministic across instances. */
+           "latest wins" readers deterministic across instances. A limit, when
+           asked, is the database's own: the rows past it are never sent. */
+        const limit = prefixLimit(options);
+        const pattern = `${keyPrefix.replace(/[\\%_]/g, "\\$&")}%`;
         const result = await pool.query<{ value: T }>(
           `SELECT value FROM ${TABLE}
            WHERE collection = $1 AND key LIKE $2 ESCAPE '\\'
-           ORDER BY created_at, key`,
-          [name, `${keyPrefix.replace(/[\\%_]/g, "\\$&")}%`],
+           ORDER BY created_at, key${limit === null ? "" : "\n           LIMIT $3"}`,
+          limit === null ? [name, pattern] : [name, pattern, limit],
         );
         return result.rows.map((row) => row.value);
       },

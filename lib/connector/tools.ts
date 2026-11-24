@@ -228,22 +228,22 @@ function shapeLimit(key: string, limit: number) {
 const TOOLS: ConnectorTool[] = [
   {
     name: "list_city_towers",
-    title: "Ryntra City towers",
+    title: "Coins on Ryntra's market",
     description:
-      "The Solana coins standing as towers in Ryntra City right now: price, market cap, liquidity, holders, 5m/1h/24h change, 24h volume, traders and Jupiter verification. Filter by district (core, heights, strip, avenue, docks — docks are new launches) and sort by a figure.",
+      "The Solana coins on Ryntra's market right now: price, market cap, liquidity, holders, 5m/1h/24h change, 24h volume, traders and Jupiter verification. Filter by group (core — majors and liquid staking, heights — DeFi, strip — the most liquid memes, avenue — tokenized stocks and gold, docks — new launches) and sort by a figure.",
     scope: "market:read",
     inputSchema: {
-      district: z.enum(DISTRICTS).optional().describe("Only towers of this district."),
+      district: z.enum(DISTRICTS).optional().describe("Only coins of this group."),
       sort: z.enum(TOWER_SORT).default("volume24h").describe("The figure to rank by, highest first."),
-      limit: z.number().int().min(1).max(100).default(25).describe("How many towers to return."),
+      limit: z.number().int().min(1).max(100).default(25).describe("How many coins to return."),
     },
     plan: (args) => ({ route: "city", input: {}, shape: shapeTowers(args) }),
   },
   {
     name: "get_tower",
-    title: "A coin's tower in Ryntra City",
+    title: "A coin's place on Ryntra's market",
     description:
-      "Where one Solana coin stands in Ryntra City right now: whether it has a tower, its district, its rank by 24h volume in the city and in its district, its figures, and the ryntra.io address that opens the city on it.",
+      "Where one Solana coin stands on Ryntra's market right now: whether it is listed, its group, its rank by 24h volume on the whole market and in its group, its figures, and the ryntra.io address of its page.",
     scope: "market:read",
     inputSchema: { mint: MINT.describe("The coin's mint address.") },
     plan: (args, context) => ({ route: "city", input: {}, shape: (body) => towerPlace(body, String(args.mint), context.origin) }),
@@ -285,7 +285,7 @@ const TOOLS: ConnectorTool[] = [
     name: "get_token_passport",
     title: "Token passport",
     description:
-      "One Solana token's passport in a single answer: what it is and its price windows, every risk fact with its source, and where it stands in Ryntra City. A part that could not be read is named with its reason, never left out.",
+      "One Solana token's passport in a single answer: what it is and its price windows, every risk fact with its source, and where it stands on Ryntra's market. A part that could not be read is named with its reason, never left out.",
     scope: "market:read",
     inputSchema: { mint: MINT.describe("The token's mint address.") },
     plan: (args, context) => {

@@ -93,6 +93,9 @@ const held = (position: PortfolioPosition, reason: ExitReason): ExitHeld => ({
   untilTime: position.exit.untilTime,
 });
 
+/** A position one step does not take out now, with the reason the overview found beside the portfolio's own (a coin Jupiter carries no route for). */
+export const exitHeldOf = (position: PortfolioPosition, reason: ExitReason): ExitHeld => held(position, reason);
+
 const item = (position: PortfolioPosition, action: ExitAction, picked: boolean, partBps: number, usd: number | null): ExitItem => ({
   id: position.id,
   protocol: position.protocol,

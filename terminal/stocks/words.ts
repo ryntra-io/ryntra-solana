@@ -55,6 +55,9 @@ export const STOCK_FACTS_STAND = words(
     position: (coin: string) => `${coin} · SOL · DLMM Pro`,
     action: 'Add liquidity',
     live: 'Live read',
+    coin: (coin: string) => `${coin} · coin page`,
+    rights: 'Rights',
+    logos: 'Logos on the glass',
   },
   {
     title: 'Факти акції',
@@ -62,18 +65,58 @@ export const STOCK_FACTS_STAND = words(
     position: (coin: string) => `${coin} · SOL · DLMM Pro`,
     action: 'Додати ліквідність',
     live: 'Живе читання',
+    coin: (coin: string) => `${coin} · сторінка монети`,
+    rights: 'Права',
+    logos: 'Логотипи на склі',
+  },
+);
+
+/**
+ * A coin that passes for a tokenized stock and is not: its short mark beside the ticker («не акція ANT»), and
+ * the whole sentence for a reader and a screen reader.
+ */
+export const STOCK_COPY = words(
+  {
+    mark: (ticker: string) => `not ${ticker} stock`,
+    says: (company: string) => `Not ${company} stock — another coin`,
+  },
+  {
+    mark: (ticker: string) => `не акція ${ticker}`,
+    says: (company: string) => `Не акція ${company} — інша монета`,
+  },
+);
+
+/**
+ * A stock's facts on the coin's page: what the token is and whose, the issuer's terms behind «i», and — for
+ * a token whose company now trades — the company's share, one tap away.
+ */
+export const STOCK_COIN = words(
+  {
+    share: 'Stock token',
+    preIpo: 'Pre-IPO token · not a share',
+    notOffered: (places: string) => `Not offered in: ${places}`,
+    listedNow: (company: string, ticker: string) => `${company} now trades as ${ticker}`,
+    open: (symbol: string) => `Open ${symbol}`,
+  },
+  {
+    share: 'Токен акції',
+    preIpo: 'Токен до IPO · не акція',
+    notOffered: (places: string) => `Не пропонується: ${places}`,
+    listedNow: (company: string, ticker: string) => `${company} вже на біржі · ${ticker}`,
+    open: (symbol: string) => `Відкрити ${symbol}`,
   },
 );
 
 /**
  * The one line said before the signature of a position in a pool of a stock, and what stands behind its
  * «i»: the issuer's rights over its token, the exchange's hours, where the issuer does not offer it, and who looks after
- * the position. The words are a person's, never the token program's.
+ * the position. The line is one short sentence: the rest — taking the token back, the open's jump — is
+ * behind «i». The words are a person's, never the token program's.
  */
 export const STOCK_POSITION = words(
   {
     label: 'Stock in this pool',
-    line: 'The issuer can pause this token and take it back, even from the pool.',
+    line: 'The issuer can pause this token',
     issuerWhy: (issuer: string) =>
       `${issuer} issues this token. It can pause every transfer of it — while it is paused nothing goes into the pool or comes out of it — and it can move or burn the token in any wallet, the pool included.`,
     hoursWhy: 'On Solana the token trades around the clock; the company’s shares trade only while the exchange is open.',
@@ -83,7 +126,7 @@ export const STOCK_POSITION = words(
   },
   {
     label: 'Акція в цьому пулі',
-    line: 'Емітент може зупинити цей токен і забрати його — навіть із пулу.',
+    line: 'Емітент може призупинити цей токен',
     issuerWhy: (issuer: string) =>
       `${issuer} випускає цей токен. Він може зупинити всі його перекази — поки діє пауза, у пул і з пулу нічого не рухається, — і може переміщати чи спалювати токен у будь-якому гаманці, зокрема в пулі.`,
     hoursWhy: 'На Solana токен торгується цілодобово, а акції компанії — лише поки біржа відкрита.',

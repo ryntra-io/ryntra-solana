@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { isoDateTime } from "../zod/iso-datetime.ts";
 
 import { hashCanonical, hashDecisionSettlementReceiptCore } from "./canonical.ts";
 import {
@@ -17,7 +18,7 @@ const ASSET_REF = /^[a-z0-9-]+:[A-Za-z0-9-]+\/[a-z0-9-]+:[A-Za-z0-9._%-]+$/;
 const ARC_EXPLORER_TRANSACTION = /^https:\/\/testnet\.arcscan\.app\/tx\/0x[0-9a-f]{64}$/;
 
 const decimalString = z.string().min(1).max(128).regex(DECIMAL_STRING);
-const timestamp = z.string().datetime({ offset: true });
+const timestamp = isoDateTime({ offset: true });
 
 function exactSixDecimalBaseUnits(value: string): bigint | null {
   const match = /^(0|[1-9]\d*)(?:\.(\d{1,6}))?$/.exec(value);

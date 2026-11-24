@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { isoDateTime } from "../zod/iso-datetime.ts";
 
 import { withBoundedCasRetry, type GuardAtomicVersionedWrite, type GuardStore } from "../guard/store.ts";
 
@@ -39,7 +40,7 @@ export type GrowthBudgetPurpose = (typeof GROWTH_BUDGET_PURPOSES)[number];
 const MICROS = z.string().regex(/^(?:0|[1-9][0-9]*)$/);
 const MONTH = z.string().regex(/^[0-9]{4}-(?:0[1-9]|1[0-2])$/);
 const REF = z.string().regex(/^[A-Za-z0-9:_-]{1,120}$/);
-const AT = z.string().datetime({ offset: true });
+const AT = isoDateTime({ offset: true });
 
 export const GrowthBudgetMonthSchema = z
   .object({

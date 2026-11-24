@@ -1,5 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 
 import { Keypair } from '@solana/web3.js';
 
@@ -99,6 +100,50 @@ test('a closed or silent engine leaves the browser as it was, and is asked again
   assert.equal(useMandate.getState().records[owner], undefined);
   await syncAgents(owner, { fetch: closed, network: 'devnet', now: () => 2 });
   assert.equal(asked, 2);
+});
+
+test('not proven here: the engine says 401 — the browser stays as it was, the readers share that answer, and the wallet is never asked', async () => {
+  const owner = key();
+  let asked = 0;
+  const locked = async () => {
+    asked += 1;
+    return new Response(JSON.stringify({ error: { code: 'UNAUTHORIZED' } }), { status: 401 });
+  };
+  assert.equal(await readAgents(owner, locked), null);
+  asked = 0;
+  const [a, b] = await Promise.all([syncAgents(owner, { fetch: locked, network: 'devnet', now: () => 1_000 }), syncAgents(owner, { fetch: locked, network: 'devnet', now: () => 2_000 })]);
+  assert.equal(a, null);
+  assert.equal(b, null);
+  await syncAgents(owner, { fetch: locked, network: 'devnet', now: () => 3_000 });
+  assert.equal(asked, 1, 'one refusal for the readers that open together — none spends the rate again');
+  assert.equal(useMandate.getState().records[owner], undefined);
+  assert.equal(useAgents.getState().byOwner[owner], undefined);
+  /* Once the wallet is proven (any action that needs it asks), the next read past the window answers. */
+  const proven = async () => new Response(JSON.stringify({ owner, networks: { devnet: net([{ ...mandate(), record: record(owner) }]), mainnet: net() } }));
+  assert.equal((await syncAgents(owner, { fetch: proven, network: 'devnet', now: () => 30_000 })).owner, owner);
+  /* This file never asks the wallet for a proof. */
+  const source = readFileSync(new URL('./agents.ts', import.meta.url), 'utf8');
+  assert.doesNotMatch(source, /proveWallet|trade\/proof|signIn|signMessage/);
+});
+
+test("a 401 marks the wallet «not proven here» for the screens; the next answer clears it", async () => {
+  const owner = key();
+  const locked = async () => new Response(JSON.stringify({ error: { code: 'UNAUTHORIZED' } }), { status: 401 });
+  assert.equal(useAgents.getState().locked[owner], undefined);
+  await syncAgents(owner, { fetch: locked, network: 'devnet', now: () => 1_000 });
+  assert.equal(useAgents.getState().locked[owner], true, "the screens say «sign once» instead of an empty list");
+  /* A closed or silent engine is not a refusal of the proof: no card for it. */
+  const other = key();
+  await syncAgents(other, { fetch: async () => new Response('{}', { status: 404 }), network: 'devnet', now: () => 1_000 });
+  await syncAgents(other, { fetch: async () => { throw new Error('offline'); }, network: 'devnet', now: () => 2_000 });
+  assert.equal(useAgents.getState().locked[other], undefined);
+  /* Signed: the last refusal forgotten, the next read answers — the card goes, the list stands. */
+  forgetAgents(owner);
+  const proven = async () => new Response(JSON.stringify({ owner, networks: { devnet: net([{ ...mandate(), record: record(owner) }]), mainnet: net() } }));
+  const read = await syncAgents(owner, { fetch: proven, network: 'devnet', now: () => 2_000 });
+  assert.equal(read.owner, owner);
+  assert.equal(useAgents.getState().locked[owner], undefined);
+  assert.equal(useAgents.getState().byOwner[owner].networks.devnet.mandates.length, 1);
 });
 
 /* ---------------------------------------------------------------- the portfolio */

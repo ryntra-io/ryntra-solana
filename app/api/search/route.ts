@@ -5,8 +5,9 @@ import { coinShelf, memeShelf, USDC_MINT, USDT_MINT } from "@/lib/spot/coin-shel
 import { withoutOffensiveNames } from "@/lib/spot/offensive-names";
 import { toListRow } from "@/lib/spot/markets";
 import { listSpotMarkets, readSpotMarket, spotListEdgeSeconds } from "@/lib/spot/markets.server";
-import { shelfCompanies, shelfPrivateCompanies } from "@/lib/stocks/shelf";
+import { knownStocksOfRows, shelfCompanies, shelfPrivateCompanies } from "@/lib/stocks/shelf";
 import { readStockUniverse } from "@/lib/stocks/universe.server";
+import { passesForStock, withStocks } from "@/lib/stocks/stock-book";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -40,13 +41,19 @@ export async function GET(request: Request) {
     ...[USDC_MINT, USDT_MINT].map((mint) => readSpotMarket(mint)),
   ]);
   const dollarRows = dollars.flatMap((answer) => (answer.ok && answer.market ? [toListRow(answer.market)] : []));
+  /* A coin passing for a tokenized stock — its ticker or its company's name on another mint — is no coin of
+     the index: a search for «ANT» finds the company's card, never a copy beside it. */
+  const book = withStocks(universe.ok ? knownStocksOfRows(universe.universe.rows) : []);
+  const listRows = [...(crypto.ok ? crypto.rows : []), ...dollarRows, ...(memes.ok ? memes.rows : [])];
+  const copies = new Set(listRows.filter((row) => passesForStock({ symbol: row.symbol, name: row.name, mint: row.mint, verified: row.verified }, book) !== null).map((row) => row.mint));
+  const own = (coin: Readonly<{ mint: string }>) => !copies.has(coin.mint);
   const shelf = coinShelf([...(crypto.ok ? crypto.rows : []), ...dollarRows]);
   const index: SearchIndex = {
     companies: universe.ok ? shelfCompanies(universe.universe.rows) : [],
     privateCompanies: universe.ok ? shelfPrivateCompanies(universe.universe.rows) : [],
     /* A token named with a hate word is not offered (B2b): the index fills Home's «Ринки зараз» and the search. */
-    coins: withoutOffensiveNames(shelf.crypto).slice(0, COINS),
-    memes: memes.ok ? withoutOffensiveNames(memeShelf(memes.rows)).slice(0, MEMES) : [],
+    coins: withoutOffensiveNames(shelf.crypto).filter(own).slice(0, COINS),
+    memes: memes.ok ? withoutOffensiveNames(memeShelf(memes.rows)).filter(own).slice(0, MEMES) : [],
     dollars: shelf.dollars,
   };
   const partial = !universe.ok || !crypto.ok || !memes.ok;

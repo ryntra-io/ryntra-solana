@@ -22,6 +22,9 @@ import { Cell, CoinCell, Quiet, Table, TableHead, TableRow, Tabs, changeTone, co
 import { coinName } from '@/terminal/market/market-view';
 import { positionOf, signedUsd, tradesOf, type OwnTrade } from './coin-view';
 import { LadderOrders, useLadderCount } from './ladder/LadderOrders';
+import { CoinPools, CoinPositions } from './earn-here/EarnHere';
+import { EARN_HERE } from './earn-here/words';
+import { TapeBox } from './MarketTabs';
 import { bare } from './parts';
 import { DESK } from './desk-words';
 import { COIN } from './words';
@@ -32,12 +35,31 @@ import u from './coin.module.css';
  * and the market's — its trades, its holders, its traders. With a wallet the panel opens on the person's own,
  * without one on the market's; a desk too narrow for the trades column has the column's two tabs here too.
  */
-export type UnderTab = 'position' | 'orders' | 'trades' | 'market' | 'holders' | 'traders' | 'depth';
+export type UnderTab = 'position' | 'orders' | 'trades' | 'market' | 'holders' | 'traders' | 'depth' | EarnTab | MoreTab;
+
+/**
+ * Liquidity under the chart — the coin's pools, and with a wallet the person's own positions in them («My
+ * pools»). `earn` says which the panel offers: both on a desk; on a phone only «My pools», the pools being a view of
+ * their own there.
+ */
+export type EarnTab = 'pools' | 'lp';
+
+/** The tabs a screen brings with what they draw — the coin's creator and its largest holders' links. */
+export type MoreTab = 'creator' | 'links';
+export type MoreTabSpec = Readonly<{ id: MoreTab; label: string; draw: () => ReactNode }>;
 
 const NO_STOPS: readonly Stop[] = [];
 const POSITION_COLUMNS = 'minmax(150px, 1.4fr) repeat(4, minmax(84px, 1fr)) 96px';
 const ORDER_COLUMNS = 'minmax(150px, 1.3fr) minmax(110px, 1fr) minmax(110px, 1fr) minmax(110px, 1fr) minmax(96px, auto)';
 const TRADE_COLUMNS = 'minmax(110px, 1fr) minmax(130px, 1.2fr) repeat(3, minmax(90px, 1fr))';
+/*
+ * Under the chart of a tablet the panel is narrow: each table lets its quieter columns go a step at a time —
+ * the position its entry and price, then its amount; an order its amount, then its price; a trade its date, then its
+ * amount — and the row's action stays whole inside the panel.
+ */
+const POSITION_FOLD = ['minmax(150px, 1.4fr) repeat(2, minmax(84px, 1fr)) 96px', 'minmax(96px, 1fr) minmax(72px, 1fr) auto'] as const;
+const ORDER_FOLD = ['minmax(150px, 1.3fr) minmax(110px, 1fr) minmax(110px, 1fr) minmax(96px, auto)', 'minmax(88px, 1fr) minmax(80px, 1fr) auto'] as const;
+const TRADE_FOLD = ['minmax(110px, 1fr) repeat(3, minmax(90px, 1fr))', 'minmax(80px, 1fr) repeat(2, minmax(72px, 1fr))'] as const;
 
 /** The stops that still wait or have just been reached: what «Orders» counts beside the open limit orders. */
 const liveStop = (view: string) => view === 'watching' || view === 'reached';
@@ -50,9 +72,10 @@ const liveStop = (view: string) => view === 'watching' || view === 'reached';
  *
  * `market`, `holders`, `traders` and `depth` are drawn by the screen (`render`): the tables of the market's own read.
  */
-export function CoinUnder({ coin, logo, price, tab, onTab, onSell, market, extra = [] }: { coin: Tower; logo: string | null; price: number | null; tab: UnderTab; onTab: (tab: UnderTab) => void; onSell: () => void; market: (tab: 'market' | 'holders' | 'traders' | 'depth') => ReactNode; extra?: readonly ('market' | 'depth')[] }) {
+export function CoinUnder({ coin, logo, price, tab, onTab, onSell, market, extra = [], more = [], earn = 'all', onPools }: { coin: Tower; logo: string | null; price: number | null; tab: UnderTab; onTab: (tab: UnderTab) => void; onSell: () => void; market: (tab: 'market' | 'holders' | 'traders' | 'depth') => ReactNode; extra?: readonly ('market' | 'depth')[]; more?: readonly MoreTabSpec[]; earn?: 'all' | 'mine'; onPools?: () => void }) {
   const w = useWords(COIN);
   const d = useWords(DESK);
+  const lw = useWords(EARN_HERE);
   const address = useWallet((st) => st.connection?.address ?? null);
   const orders = useSpot((st) => ownOrders(st.orders, address));
   const stops = useSpot((st) => (st.stopsOwner === address ? st.stops : NO_STOPS));
@@ -80,6 +103,7 @@ export function CoinUnder({ coin, logo, price, tab, onTab, onSell, market, extra
   const own = address
     ? [
         { id: 'position' as const, label: w.position },
+        { id: 'lp' as const, label: lw.myPools },
         ...(ordersHere ? [{ id: 'orders' as const, label: w.orders, ...(live ? { count: String(live) } : {}) }] : []),
         { id: 'trades' as const, label: d.history },
       ]
@@ -87,8 +111,10 @@ export function CoinUnder({ coin, logo, price, tab, onTab, onSell, market, extra
   const marketTabs = [
     ...(extra.includes('market') || !address ? [{ id: 'market' as const, label: d.marketTrades }] : []),
     ...(extra.includes('depth') ? [{ id: 'depth' as const, label: d.tapeDepth }] : []),
+    ...(earn === 'all' ? [{ id: 'pools' as const, label: lw.pools }] : []),
     { id: 'holders' as const, label: d.holdersTab },
     { id: 'traders' as const, label: d.tradersTab },
+    ...more.map(({ id, label }) => ({ id, label })),
   ];
   const tabs = [...own, ...marketTabs];
   // A tab that is not on the panel now (the wallet left, the orders shut) gives way to the panel's first.
@@ -99,17 +125,23 @@ export function CoinUnder({ coin, logo, price, tab, onTab, onSell, market, extra
       <div className={u.underHead}>
         <Tabs bare label={w.under} value={shown} onChange={onTab} items={tabs} />
       </div>
-      <div className={u.underBody}>
+      <TapeBox className={u.underBody}>
         {shown === 'position' ? (
           <PositionTab coin={coin} logo={logo} price={price} onSell={onSell} />
         ) : shown === 'orders' ? (
           <OrdersTab coin={coin} ladder={ladder} ladders={ladders} orders={mine} stops={mineStops} stopRows={stopRows} reading={Boolean(address) && (!orders || (orders.status === 'reading' && orders.at === null))} failed={orders?.status === 'failed'} tokens={orders?.tokens ?? {}} />
         ) : shown === 'trades' ? (
           <TradesTab coin={coin} />
+        ) : shown === 'pools' ? (
+          <CoinPools mint={coin.id} sym={bare(coin.symbol)} />
+        ) : shown === 'lp' ? (
+          <CoinPositions mint={coin.id} sym={bare(coin.symbol)} onPools={onPools ?? (() => onTab('pools'))} phone={earn === 'mine'} />
+        ) : shown === 'creator' || shown === 'links' ? (
+          more.find((item) => item.id === shown)?.draw()
         ) : (
           market(shown)
         )}
-      </div>
+      </TapeBox>
     </>
   );
 }
@@ -135,16 +167,16 @@ function PositionTab({ coin, logo, price, onSell }: { coin: Tower; logo: string 
   const position = positionOf(balanceOf(holdings, coin.id), price, entry);
   if (!position) return <Line>{w.noPosition(sym)}</Line>;
   return (
-    <Table columns={POSITION_COLUMNS} minWidth={640} label={w.position}>
+    <Table columns={POSITION_COLUMNS} fold={POSITION_FOLD} minWidth={640} label={w.position}>
       <TableHead>
         <Cell head>{w.colCoin}</Cell>
-        <Cell head end>
+        <Cell head end fold={2}>
           {w.colAmount}
         </Cell>
-        <Cell head end>
+        <Cell head end fold={1}>
           {w.colEntry}
         </Cell>
-        <Cell head end>
+        <Cell head end fold={1}>
           {w.colNow}
         </Cell>
         <Cell head end>
@@ -154,9 +186,15 @@ function PositionTab({ coin, logo, price, onSell }: { coin: Tower; logo: string 
       </TableHead>
       <TableRow>
         <CoinCell icon={logo ?? coinIcon(coin)} symbol={sym} name={coinName(coin)} />
-        <Cell end>{digits(formatUnits(position.amountRaw, position.decimals, 'down'), lang)}</Cell>
-        <Cell end>{position.entry !== null ? priceText(position.entry, lang) : '—'}</Cell>
-        <Cell end>{price !== null ? priceText(price, lang) : '—'}</Cell>
+        <Cell end fold={2}>
+          {digits(formatUnits(position.amountRaw, position.decimals, 'down'), lang)}
+        </Cell>
+        <Cell end fold={1}>
+          {position.entry !== null ? priceText(position.entry, lang) : '—'}
+        </Cell>
+        <Cell end fold={1}>
+          {price !== null ? priceText(price, lang) : '—'}
+        </Cell>
         <Cell end tone={position.resultUsd !== null ? changeTone(position.resultUsd) : undefined}>
           {position.resultUsd !== null ? digits(signedUsd(position.resultUsd), lang) : '—'}
         </Cell>
@@ -240,13 +278,13 @@ function OrdersTab({
           {notice.text}
         </p>
       ) : null}
-      <Table columns={ORDER_COLUMNS} minWidth={640} label={w.orders}>
+      <Table columns={ORDER_COLUMNS} fold={ORDER_FOLD} minWidth={640} label={w.orders}>
         <TableHead>
           <Cell head>{w.colOrder}</Cell>
-          <Cell head end>
+          <Cell head end fold={1}>
             {w.colAmount}
           </Cell>
-          <Cell head end>
+          <Cell head end fold={2}>
             {w.colPrice}
           </Cell>
           <Cell head end>
@@ -260,8 +298,10 @@ function OrdersTab({
           return (
             <TableRow key={row.id}>
               <Cell tone={row.side === 'buy' ? 'up' : 'down'}>{m.stop}</Cell>
-              <Cell end>{digits(row.spends, lang)}</Cell>
-              <Cell end>{`${row.side === 'sell' ? '≤' : '≥'} ${digits(row.price, lang)} ${bare(row.unit)}`}</Cell>
+              <Cell end fold={1}>
+                {digits(row.spends, lang)}
+              </Cell>
+              <Cell end fold={2}>{`${row.side === 'sell' ? '≤' : '≥'} ${digits(row.price, lang)} ${bare(row.unit)}`}</Cell>
               <Cell end tone={row.tone === 'done' ? 'up' : row.tone === 'quiet' ? 'dim' : undefined}>
                 {row.state}
               </Cell>
@@ -284,8 +324,12 @@ function OrdersTab({
           return (
             <TableRow key={row.key}>
               <Cell tone={row.side === 'buy' ? 'up' : 'down'}>{`${row.side === 'buy' ? m.sideBuy : m.sideSell} · ${t.limit}`}</Cell>
-              <Cell end>{row.amount === null ? '—' : `${digits(row.amount, lang)} ${bare(row.coin)}`}</Cell>
-              <Cell end>{row.price === null ? '—' : `${digits(row.price, lang)} ${bare(row.unit)}`}</Cell>
+              <Cell end fold={1}>
+                {row.amount === null ? '—' : `${digits(row.amount, lang)} ${bare(row.coin)}`}
+              </Cell>
+              <Cell end fold={2}>
+                {row.price === null ? '—' : `${digits(row.price, lang)} ${bare(row.unit)}`}
+              </Cell>
               <Cell end tone={row.tone === 'done' ? 'up' : row.tone === 'danger' ? 'down' : row.tone === 'quiet' ? 'dim' : undefined}>
                 {row.filledPct !== null ? `${row.state} · ${m.filled(digits(String(row.filledPct), lang))}` : row.state}
               </Cell>
@@ -379,11 +423,13 @@ function TradesTab({ coin }: { coin: Tower }) {
   }
   if (!mine.trades.length) return <Line>{w.noTrades(sym)}</Line>;
   return (
-    <Table columns={TRADE_COLUMNS} minWidth={600} label={w.trades}>
+    <Table columns={TRADE_COLUMNS} fold={TRADE_FOLD} minWidth={600} label={w.trades}>
       <TableHead>
         <Cell head>{w.colTrade}</Cell>
-        <Cell head>{w.colDate}</Cell>
-        <Cell head end>
+        <Cell head fold={1}>
+          {w.colDate}
+        </Cell>
+        <Cell head end fold={2}>
           {w.colAmount}
         </Cell>
         <Cell head end>
@@ -396,8 +442,10 @@ function TradesTab({ coin }: { coin: Tower }) {
       {mine.trades.map((trade) => (
         <TableRow key={trade.key}>
           <Cell tone={trade.side === 'buy' ? 'up' : 'down'}>{trade.side === 'buy' ? w.bought : w.sold}</Cell>
-          <Cell tone="dim">{dateText(trade.at, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }, lang)}</Cell>
-          <Cell end>{`${digits(formatUnits(trade.quantityRaw, trade.decimals), lang)} ${sym}`}</Cell>
+          <Cell tone="dim" fold={1}>
+            {dateText(trade.at, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }, lang)}
+          </Cell>
+          <Cell end fold={2}>{`${digits(formatUnits(trade.quantityRaw, trade.decimals), lang)} ${sym}`}</Cell>
           <Cell end>{trade.usd !== null ? priceText(trade.usd, lang) : '—'}</Cell>
           <Cell end tone={trade.resultPct !== null ? changeTone(trade.resultPct) : undefined}>
             {trade.resultPct !== null ? formatPct(trade.resultPct) : '—'}

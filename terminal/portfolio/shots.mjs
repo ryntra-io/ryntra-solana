@@ -102,6 +102,8 @@ const fees = (tokens) => tokens.filter((t) => t.role === "fee" || t.role === "re
 const value = (usd) => ({ usd: usd4(usd), sol: sol9(usd) });
 
 const POS = { solUsdc: seeded(60), jupSol: seeded(61), bonkSol: seeded(62), stakeA: seeded(63), stakeB: seeded(64), kamino: seeded(65) };
+/** A wallet's long tail of dust (QA 19.11, eyes 26): sixteen coins of a few cents, so the opened group shows «N more». */
+const TINY = Array.from({ length: 16 }, (_, at) => ({ mint: seeded(120 + at), symbol: `DUST${at + 1}`, usd: Math.round((0.04 + at * 0.11) * 100) / 100 }));
 const jupUsd = priceOf(JUP, 0.27);
 const bonkUsd = priceOf(BONK, 0.0000094);
 const jitoUsd = priceOf(JITO, solUsd * 1.24);
@@ -132,6 +134,7 @@ function portfolio(owner) {
     coin(POPCAT, "POPCAT", 9, 0.85 / priceOf(POPCAT, 0.2), priceOf(POPCAT, 0.2)),
     coin(MEOW, "MEOWX", 6, 4_200, 0.0000952),
     coin(LITTER, "FREE-SOL", 6, 1_000_000, null),
+    ...TINY.map((tiny) => coin(tiny.mint, tiny.symbol, 6, 1_000, tiny.usd / 1_000)),
   ];
   const own = positions.filter((p) => p.origin !== "projection");
   const usd = own.reduce((sum, p) => sum + (p.value.usd ?? 0), 0);
@@ -166,6 +169,7 @@ const cleanRead = (owner, canClean = true) => ({
     item({ account: seeded(4), mint: MEOW, kind: "small", symbol: "MEOWX", name: "Meow X", amountRaw: "4200000000", valueUsd: 0.4, risk: ["unverified", "freeze", "thin"], picked: false }),
     item({ account: seeded(5), mint: LITTER, kind: "litter", symbol: "FREE-SOL", amountRaw: "1000000000000", valueUsd: null, risk: ["unverified", "mint"], picked: false }),
     ...EMPTY_MINTS.map((mint, at) => item({ account: seeded(10 + at), mint, kind: "empty", symbol: ["BONK", "RAY", "GIGA", "MOODENG", "CHILLGUY", "PNUT"][at], icon: at < 2 ? `/api/icon/${mint}` : null, amountRaw: "0", valueUsd: 0 })),
+    ...TINY.map((tiny, at) => item({ account: seeded(140 + at), mint: tiny.mint, kind: "small", symbol: tiny.symbol, amountRaw: "1000000000", valueUsd: tiny.usd })),
   ],
   risky: [
     { mint: MEOW, risk: ["unverified", "freeze", "thin"] },
@@ -274,7 +278,7 @@ for (const size of SIZES) {
     const uk = lang === "uk";
     const context = await browser.newContext({ viewport: { width: size.width, height: size.height }, deviceScaleFactor: size.mobile ? 2 : 1, isMobile: size.mobile, hasTouch: size.mobile, locale: uk ? "uk-UA" : "en-US" });
     const asked = { portfolio: [], reviews: [], submits: 0, signs: [] };
-    const state = { door: true };
+    const state = { door: true, noRoute: false };
     let lastReview = null;
     const ownerOf = (route) => new URL(route.request().url()).searchParams.get("owner") ?? OWNER;
     await context.route("**/api/**", (route) => route.fulfill({ status: 503, contentType: "application/json", body: "{}" }));
@@ -287,7 +291,9 @@ for (const size of SIZES) {
     await context.route("**/api/v1/wallet/clean?*", (route) => json(route, cleanRead(ownerOf(route))));
     await context.route("**/api/v1/wallet/clean/review", (route) => json(route, cleanReview(route.request().postDataJSON().add ?? [])));
     await context.route("**/api/v1/wallet/clean/submit", (route) => ((asked.submits += 1), json(route, {}, 503)));
-    await context.route("**/api/v1/portfolio/exit?*", (route) => json(route, { network: "solana:mainnet", owner: ownerOf(route), mode: "exit", target: "SOL", canExit: state.door, items: [], held: [], estimate: { usd: null, lamports: null, usdcRaw: null }, solUsd, complete: true, at: new Date().toISOString() }));
+    // With `noRoute`, the overview says Jupiter carries no route for JitoSOL now — held with NO_ROUTE, as the engine answers it.
+    const unrouted = () => (state.noRoute ? [{ id: `wallet:${JITO}`, protocol: "wallet", kind: "lst", label: "JitoSOL", reason: "NO_ROUTE", usd: usd4(10.4 * jitoUsd), untilEpoch: null, untilTime: null }] : []);
+    await context.route("**/api/v1/portfolio/exit?*", (route) => json(route, { network: "solana:mainnet", owner: ownerOf(route), mode: "exit", target: "SOL", canExit: state.door, items: [], held: unrouted(), estimate: { usd: null, lamports: null, usdcRaw: null }, solUsd, complete: true, at: new Date().toISOString() }));
     await context.route("**/api/v1/portfolio/exit/review", (route) => {
       const body = route.request().postDataJSON();
       asked.reviews.push(body);
@@ -307,6 +313,8 @@ for (const size of SIZES) {
     await context.route("**/api/bots/pilot*", (route) => json(route, { error: { code: "NO_PILOT", message: "No autopilot for this wallet." } }, 404));
 
     const page = await context.newPage();
+    // A dev stand's own overlay (Next's «Issues» badge) is never part of a shot; a built stand has none.
+    await page.addInitScript(() => document.addEventListener("DOMContentLoaded", () => document.head.append(Object.assign(document.createElement("style"), { textContent: "nextjs-portal { display: none !important; }" }))));
     const errors = [];
     page.on("pageerror", (error) => errors.push(String(error)));
     // What the page itself says is wrong — not the stand's own 503s for what it does not serve.
@@ -397,6 +405,27 @@ for (const size of SIZES) {
       : { field: "Paste a wallet address", show: "Show", exit: "Exit everything", collect: "Collect fees", clean: "Clean wallet", exitNow: "Exit", why: /why GIGAX is marked/, buy: "Buy JUP", dust: /Show Dust/ };
     const bar = (name) => page.getByRole("button", { name, exact: true }).locator("visible=true").first();
 
+    const noRoute = async () => {
+      state.noRoute = true;
+      await open({ wallet: true });
+      await tap(bar(words.exit));
+      await page.waitForTimeout(3000);
+      const line = act().getByRole("note").filter({ hasText: "Jupiter" }).first();
+      if (size.mobile) await line.scrollIntoViewIfNeeded().catch(() => {});
+      await shot("exit-noroute", { block: size.mobile ? null : act() });
+      const said = await line.innerText().catch(() => "—");
+      const asked_ = asked.reviews.at(-1)?.positions ?? [];
+      report.push(`${size.name}/${lang}: no route — the panel says «${said.trim()}»; JitoSOL asked to be built: ${asked_.includes(`wallet:${JITO}`)}`);
+      state.noRoute = false;
+    };
+    // NO_ROUTE_ONLY=1 — just this state, for a task that changes nothing else of the screen.
+    if (process.env.NO_ROUTE_ONLY) {
+      await noRoute();
+      if (errors.length) report.push(`${size.name}/${lang}: page errors — ${errors.join(" | ").slice(0, 600)}`);
+      await context.close();
+      continue;
+    }
+
     // ── no wallet: the address field, the wallet's door, the screen's own form under them ──
     await open({ wallet: false });
     await shot("no-wallet");
@@ -416,6 +445,12 @@ for (const size of SIZES) {
     await shot("wallet");
     await shot("wallet-full", { full: true });
     await note("the wallet's own");
+    // The dust stands folded on a desk too (QA 19.11, eyes 26); opened, its first rows and «N more».
+    const dustPanel = page.locator(`section[aria-label="${uk ? "Дріб’язок" : "Dust"}"]`);
+    report.push(`${size.name}/${lang}: the dust starts folded — ${(await dustPanel.locator("[aria-expanded='false']").count()) > 0}; page ${await page.evaluate(() => document.documentElement.scrollHeight)}px`);
+    await tap(page.getByRole("button", { name: words.dust }).first());
+    await page.waitForTimeout(800);
+    await shot("dust-open", { block: dustPanel });
     if (!size.mobile) {
       await tap(page.getByRole("button", { name: words.why }).first());
       await shot("risk-why", { block: page.getByRole("button", { name: words.why }).first() });
@@ -440,6 +475,8 @@ for (const size of SIZES) {
     const signed = asked.signs.slice(signsFrom);
     const same = signed.length === 1 && lastReview && JSON.stringify(signed[0]) === JSON.stringify(lastReview.transactions);
     report.push(`${size.name}/${lang}: Exit — the wallet was asked ${signed.length} time(s) for ${signed[0]?.length ?? 0} transaction(s); the bytes are the Review's own — ${same}; target ${asked.reviews.at(-1)?.target}; submits ${asked.submits}`);
+
+    await noRoute();
 
     // ── «Collect fees» and «Clean wallet» ──
     await open({ wallet: true });

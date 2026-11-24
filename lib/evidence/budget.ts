@@ -28,6 +28,7 @@
  */
 
 import { z } from "zod";
+import { isoDateTime } from "../zod/iso-datetime.ts";
 
 import { GUARD_CAS_MAX_ATTEMPTS, withBoundedCasRetry, type GuardStore, type GuardVersionedCollection } from "../guard/store.ts";
 import type { CreditGovernor, GovernorSettlement } from "./governor.ts";
@@ -76,11 +77,11 @@ export const EvidenceLedgerRecordSchema = z
     /** The balance the provider last reported after a request; null until the first answer. */
     remainingReported: z.number().int().nullable(),
     lastRequestId: z.string().max(128).nullable(),
-    updatedAt: z.string().datetime({ offset: true }),
+    updatedAt: isoDateTime({ offset: true }),
     /** Failures by the client's kind (auth, plan, rate, timeout, …); absent on records written before the field existed. */
     failures: z.record(z.string().max(32), z.number().int().nonnegative()).default({}),
     /** When the provider last answered a call successfully; null until it has. */
-    lastSucceededAt: z.string().datetime({ offset: true }).nullable().default(null),
+    lastSucceededAt: isoDateTime({ offset: true }).nullable().default(null),
   })
   .strict();
 export type EvidenceLedgerRecord = z.output<typeof EvidenceLedgerRecordSchema>;
